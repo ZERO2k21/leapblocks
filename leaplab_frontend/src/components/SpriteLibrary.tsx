@@ -289,27 +289,31 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
     };
 
     return (
-        <div style={styles.overlay} onClick={onClose}>
-            <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 w-screen h-screen bg-black/50 z-[9999] flex items-center justify-center backdrop-blur-xs" onClick={onClose}>
+            <div className="w-screen h-screen bg-white flex flex-col overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
-                <div style={styles.header}>
-                    <button style={styles.backButton} onClick={onClose}>
+                <div className="bg-gradient-to-r from-[#855CD6] to-[#6D44C0] px-6 py-4 flex items-center justify-between">
+                    <button className="bg-white/20 border-none text-white text-sm font-semibold px-4 py-2 rounded-full cursor-pointer transition-colors hover:bg-white/30" onClick={onClose}>
                         ← Back
                     </button>
-                    <h2 style={styles.title}>Choose a Sprite</h2>
-                    <div style={{ width: 80 }} /> {/* spacer */}
+                    <h2 className="text-white text-lg font-bold m-0 tracking-wide">Choose a Sprite</h2>
+                    <div className="w-20" /> {/* spacer */}
                 </div>
 
                 {/* Tab Bar */}
-                <div style={styles.tabRow}>
+                <div className="flex bg-[#f0f0f0] border-b border-[#d9d9d9]">
                     <button
-                        style={activeTab === 'sprites' ? styles.mainTabActive : styles.mainTab}
+                        className={`flex-1 py-3 px-5 text-sm font-semibold border-none cursor-pointer transition-all ${
+                            activeTab === 'sprites' ? 'bg-white text-[#855CD6] border-b-3 border-[#855CD6]' : 'bg-transparent text-[#575E75]'
+                        }`}
                         onClick={() => setActiveTab('sprites')}
                     >
                         🎭 Sprites
                     </button>
                     <button
-                        style={activeTab === 'emoji' ? styles.mainTabActive : styles.mainTab}
+                        className={`flex-1 py-3 px-5 text-sm font-semibold border-none cursor-pointer transition-all ${
+                            activeTab === 'emoji' ? 'bg-white text-[#855CD6] border-b-3 border-[#855CD6]' : 'bg-transparent text-[#575E75]'
+                        }`}
                         onClick={() => setActiveTab('emoji')}
                     >
                         😀 Emoji
@@ -319,32 +323,30 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
                 {activeTab === 'sprites' ? (
                     <>
                         {/* Search + Category Filters */}
-                        <div style={styles.filterRow}>
-                            <div style={styles.searchBox}>
-                                <span style={styles.searchIcon}>🔍</span>
+                        <div className="p-4 px-5 pb-3 flex flex-col gap-3 border-b border-gray-200">
+                            <div className="flex items-center bg-[#f5f5f5] rounded-full px-4 border border-[#d9d9d9] max-w-[300px]">
+                                <span className="text-sm mr-2">🔍</span>
                                 <input
                                     type="text"
                                     placeholder="Search sprites..."
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
-                                    style={styles.searchInput}
+                                    className="border-none bg-transparent py-2.5 text-sm outline-none flex-1 text-gray-800"
                                 />
                                 {searchQuery && (
-                                    <button style={styles.clearSearch} onClick={() => setSearchQuery('')}>
+                                    <button className="border-none bg-transparent cursor-pointer text-sm text-gray-400 p-1" onClick={() => setSearchQuery('')}>
                                         ✕
                                     </button>
                                 )}
                             </div>
-                            <div style={styles.categoryTabs}>
+                            <div className="flex gap-2 flex-wrap">
                                 {CATEGORIES.map(cat => (
                                     <button
                                         key={cat.id}
-                                        style={{
-                                            ...styles.categoryTab,
-                                            backgroundColor: activeCategory === cat.id ? cat.color : 'transparent',
-                                            color: activeCategory === cat.id ? '#fff' : '#575E75',
-                                            border: activeCategory === cat.id ? 'none' : '1px solid #d9d9d9',
-                                        }}
+                                        style={{ backgroundColor: activeCategory === cat.id ? cat.color : 'transparent' }}
+                                        className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all whitespace-nowrap ${
+                                            activeCategory === cat.id ? 'text-white border-none' : 'text-[#575E75] border border-[#d9d9d9] hover:bg-gray-100'
+                                        }`}
                                         onClick={() => setActiveCategory(cat.id)}
                                     >
                                         {cat.id}
@@ -354,15 +356,14 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
                         </div>
 
                         {/* Sprite Grid */}
-                        <div style={styles.gridContainer}>
-                            <div style={styles.grid}>
+                        <div className="flex-1 overflow-auto p-4 px-5">
+                            <div className="grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-3">
                                 {filteredSprites.map(sprite => (
                                     <div
                                         key={sprite.id}
-                                        style={{
-                                            ...styles.spriteCard,
-                                            ...(hoveredId === sprite.id ? styles.spriteCardHover : {}),
-                                        }}
+                                        className={`bg-white rounded-xl border-2 cursor-pointer transition-all duration-200 overflow-hidden flex flex-col items-center ${
+                                            hoveredId === sprite.id ? 'border-[#855CD6] -translate-y-0.5 shadow-[0_6px_16px_rgba(133,92,214,0.2)]' : 'border-[#e8e8e8]'
+                                        }`}
                                         onClick={() => onSelectSprite(sprite)}
                                         onMouseEnter={() => {
                                             setHoveredId(sprite.id);
@@ -382,7 +383,7 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
                                             setSlideshowIndex(0);
                                         }}
                                     >
-                                        <div style={styles.spritePreview}>
+                                        <div className="w-full h-[90px] flex items-center justify-center bg-[#fafafa] p-2">
                                             {sprite.image || (sprite.costumes && sprite.costumes.length > 0) ? (
                                                 <img
                                                     src={
@@ -391,7 +392,7 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
                                                             : (sprite.image || sprite.costumes?.[0])
                                                     }
                                                     alt={sprite.name}
-                                                    style={styles.spriteImage}
+                                                    className="max-w-[80px] max-h-[80px] object-contain"
                                                     onError={(e) => {
                                                         // Fallback to emoji if image fails
                                                         (e.target as HTMLImageElement).style.display = 'none';
@@ -400,21 +401,21 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
                                                 />
                                             ) : null}
                                             <span
-                                                style={{
-                                                    ...styles.spriteEmoji,
-                                                    ...(sprite.image ? { display: 'none' } : {}),
-                                                    ...(sprite.category === 'Letters' ? styles.letterEmoji : {}),
-                                                }}
+                                                className={`text-[48px] leading-none ${sprite.image ? 'hidden' : ''} ${
+                                                    sprite.category === 'Letters' ? 'text-[42px] font-black text-[#FF8C1A] drop-shadow-[2px_2px_0_#333] font-sans' : ''
+                                                }`}
                                             >
                                                 {sprite.emoji}
                                             </span>
                                         </div>
-                                        <div style={styles.spriteName}>{sprite.name}</div>
+                                        <div className="w-full py-1.5 px-1 text-[11px] font-semibold text-[#575E75] text-center border-t border-gray-200 whitespace-nowrap overflow-hidden text-ellipsis">
+                                            {sprite.name}
+                                        </div>
                                     </div>
                                 ))}
                                 {filteredSprites.length === 0 && (
-                                    <div style={styles.emptyState}>
-                                        <span style={{ fontSize: 48 }}>🔍</span>
+                                    <div className="col-span-full text-center py-15 px-5 text-gray-400">
+                                        <span className="text-5xl block mb-2">🔍</span>
                                         <p>No sprites found for "{searchQuery}"</p>
                                     </div>
                                 )}
@@ -423,16 +424,16 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
                     </>
                 ) : (
                     /* Emoji Picker */
-                    <div style={styles.gridContainer}>
-                        <div style={styles.emojiContent}>
+                    <div className="flex-1 overflow-auto p-4 px-5">
+                        <div className="flex flex-col gap-5">
                             {EMOJI_GROUPS.map(group => (
                                 <div key={group.name}>
-                                    <div style={styles.emojiGroupTitle}>{group.name}</div>
-                                    <div style={styles.emojiGrid}>
+                                    <div className="text-sm font-bold text-[#575E75] py-1 border-b border-gray-200 mb-2">{group.name}</div>
+                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(44px,1fr))] gap-1">
                                         {group.emojis.map((emoji, i) => (
                                             <button
                                                 key={`${group.name}_${i}`}
-                                                style={styles.emojiButton}
+                                                className="w-11 h-11 text-28px border-none bg-transparent rounded-lg cursor-pointer flex items-center justify-center transition-colors hover:bg-purple-100"
                                                 onClick={() => handleEmojiSelect(emoji)}
                                                 title={`Add ${emoji} as sprite`}
                                             >
@@ -447,10 +448,10 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
                 )}
 
                 {/* Floating Action Buttons */}
-                <div style={styles.fabContainer}>
+                <div className="absolute bottom-5 right-6 flex flex-col gap-2.5 z-10">
                     {onPaintSprite && (
                         <button
-                            style={{ ...styles.fab, backgroundColor: '#855CD6' }}
+                            className="w-12 h-12 rounded-full border-none text-22px text-white cursor-pointer flex items-center justify-center shadow-lg hover:scale-110 transition-transform bg-[#855CD6]"
                             onClick={onPaintSprite}
                             title="Paint a sprite"
                         >
@@ -458,14 +459,14 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
                         </button>
                     )}
                     <button
-                        style={{ ...styles.fab, backgroundColor: '#0FBD8C' }}
+                        className="w-12 h-12 rounded-full border-none text-22px text-white cursor-pointer flex items-center justify-center shadow-lg hover:scale-110 transition-transform bg-[#0FBD8C]"
                         onClick={() => setActiveTab('emoji')}
                         title="Choose an emoji"
                     >
                         😀
                     </button>
                     <button
-                        style={{ ...styles.fab, backgroundColor: '#4C97FF' }}
+                        className="w-12 h-12 rounded-full border-none text-22px text-white cursor-pointer flex items-center justify-center shadow-lg hover:scale-110 transition-transform bg-[#4C97FF]"
                         onClick={() => fileInputRef.current?.click()}
                         title="Upload a sprite"
                     >
@@ -479,268 +480,11 @@ export const SpriteLibrary: React.FC<SpriteLibraryProps> = ({
                     type="file"
                     accept="image/*,.svg"
                     onChange={handleFileUpload}
-                    style={{ display: 'none' }}
+                    className="hidden"
                 />
             </div>
         </div>
     );
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// STYLES
-// ═══════════════════════════════════════════════════════════════════════════
-const styles: { [key: string]: React.CSSProperties } = {
-    overlay: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backdropFilter: 'blur(4px)',
-    },
-    modal: {
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: '#fff',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        position: 'relative',
-    },
-    header: {
-        background: 'linear-gradient(135deg, #855CD6, #6D44C0)',
-        padding: '16px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    backButton: {
-        background: 'rgba(255,255,255,0.2)',
-        border: 'none',
-        color: '#fff',
-        fontSize: '14px',
-        fontWeight: '600',
-        padding: '8px 16px',
-        borderRadius: '20px',
-        cursor: 'pointer',
-        transition: 'background 0.2s',
-    },
-    title: {
-        color: '#fff',
-        fontSize: '18px',
-        fontWeight: '700',
-        margin: 0,
-        letterSpacing: '0.3px',
-    },
-    tabRow: {
-        display: 'flex',
-        gap: '0',
-        backgroundColor: '#f0f0f0',
-        borderBottom: '1px solid #d9d9d9',
-    },
-    mainTab: {
-        flex: 1,
-        padding: '12px 20px',
-        fontSize: '14px',
-        fontWeight: '600',
-        border: 'none',
-        background: 'transparent',
-        color: '#575E75',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-    },
-    mainTabActive: {
-        flex: 1,
-        padding: '12px 20px',
-        fontSize: '14px',
-        fontWeight: '600',
-        border: 'none',
-        background: '#fff',
-        color: '#855CD6',
-        cursor: 'pointer',
-        borderBottom: '3px solid #855CD6',
-    },
-    filterRow: {
-        padding: '16px 20px 12px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        borderBottom: '1px solid #eee',
-    },
-    searchBox: {
-        display: 'flex',
-        alignItems: 'center',
-        backgroundColor: '#f5f5f5',
-        borderRadius: '24px',
-        padding: '0 16px',
-        border: '1px solid #d9d9d9',
-        maxWidth: '300px',
-    },
-    searchIcon: {
-        fontSize: '14px',
-        marginRight: '8px',
-    },
-    searchInput: {
-        border: 'none',
-        background: 'transparent',
-        padding: '10px 0',
-        fontSize: '14px',
-        outline: 'none',
-        flex: 1,
-        color: '#333',
-    },
-    clearSearch: {
-        border: 'none',
-        background: 'transparent',
-        cursor: 'pointer',
-        fontSize: '14px',
-        color: '#999',
-        padding: '4px',
-    },
-    categoryTabs: {
-        display: 'flex',
-        gap: '8px',
-        flexWrap: 'wrap',
-    },
-    categoryTab: {
-        padding: '6px 14px',
-        borderRadius: '16px',
-        fontSize: '12px',
-        fontWeight: '600',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        whiteSpace: 'nowrap',
-    },
-    gridContainer: {
-        flex: 1,
-        overflow: 'auto',
-        padding: '16px 20px',
-    },
-    grid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
-        gap: '12px',
-    },
-    spriteCard: {
-        backgroundColor: '#fff',
-        borderRadius: '12px',
-        border: '2px solid #e8e8e8',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-    },
-    spriteCardHover: {
-        border: '2px solid #855CD6',
-        transform: 'translateY(-2px)',
-        boxShadow: '0 6px 16px rgba(133, 92, 214, 0.2)',
-    },
-    spritePreview: {
-        width: '100%',
-        height: '90px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#fafafa',
-        padding: '8px',
-    },
-    spriteImage: {
-        maxWidth: '80px',
-        maxHeight: '80px',
-        objectFit: 'contain',
-    },
-    spriteEmoji: {
-        fontSize: '48px',
-        lineHeight: 1,
-    },
-    letterEmoji: {
-        fontSize: '42px',
-        fontWeight: '900',
-        color: '#FF8C1A',
-        textShadow: '2px 2px 0 #333, -1px -1px 0 #333',
-        fontFamily: '"Arial Black", "Impact", sans-serif',
-    },
-    spriteName: {
-        width: '100%',
-        padding: '6px 4px',
-        fontSize: '11px',
-        fontWeight: '600',
-        color: '#575E75',
-        textAlign: 'center',
-        borderTop: '1px solid #eee',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-    },
-    emptyState: {
-        gridColumn: '1 / -1',
-        textAlign: 'center',
-        padding: '60px 20px',
-        color: '#999',
-    },
-    // Emoji picker styles
-    emojiContent: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px',
-    },
-    emojiGroupTitle: {
-        fontSize: '14px',
-        fontWeight: '700',
-        color: '#575E75',
-        padding: '4px 0',
-        borderBottom: '1px solid #eee',
-        marginBottom: '8px',
-    },
-    emojiGrid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(44px, 1fr))',
-        gap: '4px',
-    },
-    emojiButton: {
-        width: '44px',
-        height: '44px',
-        fontSize: '28px',
-        border: 'none',
-        background: 'transparent',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'background 0.15s',
-    },
-    // FABs
-    fabContainer: {
-        position: 'absolute',
-        bottom: '20px',
-        right: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        zIndex: 10,
-    },
-    fab: {
-        width: '48px',
-        height: '48px',
-        borderRadius: '50%',
-        border: 'none',
-        fontSize: '22px',
-        color: '#fff',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-        transition: 'transform 0.15s',
-    },
 };
 
 export default SpriteLibrary;

@@ -105,16 +105,16 @@ export const MakeTableDialog: React.FC<MakeTableDialogProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div style={styles.overlay}>
-            <div style={styles.dialog}>
-                <div style={styles.header}>
-                    <span style={styles.headerText}>New Table</span>
-                    <button style={styles.closeBtn} onClick={handleCancel}>×</button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10000]">
+            <div className="bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] w-[420px] max-w-[90vw] font-sans overflow-hidden">
+                <div className="bg-[#A52A2A] px-5 py-4 flex justify-between items-center rounded-t-xl">
+                    <span className="text-white text-lg font-semibold">New Table</span>
+                    <button className="bg-transparent border-none text-white text-2xl cursor-pointer w-7.5 h-7.5 flex items-center justify-center rounded-full transition-colors hover:bg-white/20" onClick={handleCancel}>×</button>
                 </div>
 
-                <div style={styles.content}>
-                    <div style={styles.inputGroup}>
-                        <label style={styles.label}>New table name:</label>
+                <div className="p-6 px-5 flex flex-col gap-5">
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-gray-800">New table name:</label>
                         <input
                             type="text"
                             value={tableName}
@@ -124,91 +124,86 @@ export const MakeTableDialog: React.FC<MakeTableDialogProps> = ({
                             }}
                             onKeyDown={handleKeyDown}
                             placeholder="Enter table name"
-                            style={{
-                                ...styles.input,
-                                borderColor: error ? '#ff6b6b' : '#ddd'
-                            }}
+                            className={`p-3 px-3.5 rounded-lg border-2 text-base outline-none transition-colors font-sans ${
+                                error ? 'border-red-400' : 'border-gray-200 focus:border-[#A52A2A]'
+                            }`}
                             autoFocus
                         />
-                        {error && <span style={styles.errorText}>{error}</span>}
+                        {error && <span className="text-red-400 text-xs mt-1">{error}</span>}
                     </div>
 
-                    <div style={styles.dimensionsRow}>
-                        <div style={styles.dimensionInput}>
-                            <label style={styles.label}>Rows:</label>
+                    <div className="flex gap-4">
+                        <div className="flex-1 flex flex-col gap-2">
+                            <label className="text-sm font-medium text-gray-800">Rows:</label>
                             <input
                                 type="number"
                                 min={1}
                                 max={20}
                                 value={rows}
                                 onChange={(e) => setRows(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
-                                style={styles.numberInput}
+                                className="p-3 px-3.5 rounded-lg border-2 border-gray-200 text-base outline-none font-sans text-center focus:border-[#A52A2A]"
                             />
                         </div>
-                        <div style={styles.dimensionInput}>
-                            <label style={styles.label}>Columns:</label>
+                        <div className="flex-1 flex flex-col gap-2">
+                            <label className="text-sm font-medium text-gray-800">Columns:</label>
                             <input
                                 type="number"
                                 min={1}
                                 max={10}
                                 value={cols}
                                 onChange={(e) => setCols(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
-                                style={styles.numberInput}
+                                className="p-3 px-3.5 rounded-lg border-2 border-gray-200 text-base outline-none font-sans text-center focus:border-[#A52A2A]"
                             />
                         </div>
                     </div>
 
-                    <div style={styles.inputGroup}>
-                        <label style={styles.label}>Scope:</label>
-                        <div style={styles.toggleContainer}>
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-gray-800">Scope:</label>
+                        <div className="flex gap-2.5 flex-wrap">
                             <button
-                                style={{
-                                    ...styles.toggleBtn,
-                                    ...(tableScope === 'all_sprites' ? styles.toggleActive : {})
-                                }}
+                                className={`flex-1 min-w-[120px] py-2.5 px-3.5 border-2 rounded-lg bg-white cursor-pointer text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
+                                    tableScope === 'all_sprites' ? 'border-[#A52A2A] bg-[#F5E6E6] text-[#A52A2A]' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                }`}
                                 onClick={() => setTableScope('all_sprites')}
                             >
-                                <span style={styles.toggleIcon}>🌐</span>
+                                <span className="text-sm">🌐</span>
                                 For all sprites
                             </button>
                             <button
-                                style={{
-                                    ...styles.toggleBtn,
-                                    ...(tableScope === 'this_sprite' ? styles.toggleActive : {})
-                                }}
+                                className={`flex-1 min-w-[120px] py-2.5 px-3.5 border-2 rounded-lg bg-white cursor-pointer text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
+                                    tableScope === 'this_sprite' ? 'border-[#A52A2A] bg-[#F5E6E6] text-[#A52A2A]' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                }`}
                                 onClick={() => setTableScope('this_sprite')}
                             >
-                                <span style={styles.toggleIcon}>👤</span>
+                                <span className="text-sm">👤</span>
                                 For this sprite only
                             </button>
                         </div>
                     </div>
 
-                    <div style={styles.previewSection}>
-                        <label style={styles.label}>Preview:</label>
-                        <div style={styles.previewBlock}>
-                            <span style={styles.previewLabel}>set row</span>
-                            <span style={styles.previewValue}>1</span>
-                            <span style={styles.previewLabel}>column</span>
-                            <span style={styles.previewValue}>1</span>
-                            <span style={styles.previewLabel}>of</span>
-                            <span style={styles.previewVariable}>{tableName || 'my table'}</span>
-                            <span style={styles.previewLabel}>to</span>
-                            <span style={styles.previewValue}>0</span>
+                    <div className="flex flex-col gap-2 mt-2">
+                        <label className="text-sm font-medium text-gray-800">Preview:</label>
+                        <div className="bg-[#A52A2A] text-white p-2.5 px-3.5 rounded-lg font-mono text-xs flex items-center gap-1.5 flex-wrap shadow-md shadow-red-900/30">
+                            <span className="font-semibold">set row</span>
+                            <span className="bg-white/35 px-2 py-0.5 rounded text-xs min-w-[20px] text-center">1</span>
+                            <span className="font-semibold">column</span>
+                            <span className="bg-white/35 px-2 py-0.5 rounded text-xs min-w-[20px] text-center">1</span>
+                            <span className="font-semibold">of</span>
+                            <span className="bg-white/25 px-2 py-0.5 rounded text-xs">{tableName || 'my table'}</span>
+                            <span className="font-semibold">to</span>
+                            <span className="bg-white/35 px-2 py-0.5 rounded text-xs min-w-[20px] text-center">0</span>
                         </div>
                     </div>
                 </div>
 
-                <div style={styles.footer}>
-                    <button style={styles.cancelBtn} onClick={handleCancel}>
+                <div className="flex justify-end gap-3 p-4 px-5 border-t border-gray-100">
+                    <button className="px-5 py-2.5 border border-gray-300 rounded-lg bg-white cursor-pointer text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50" onClick={handleCancel}>
                         Cancel
                     </button>
                     <button
-                        style={{
-                            ...styles.okBtn,
-                            opacity: tableName.trim() ? 1 : 0.5,
-                            cursor: tableName.trim() ? 'pointer' : 'not-allowed'
-                        }}
+                        className={`px-6 py-2.5 border-none rounded-lg bg-[#A52A2A] text-white text-sm font-semibold transition-all ${
+                            tableName.trim() ? 'cursor-pointer opacity-100 hover:bg-[#8b2323]' : 'cursor-not-allowed opacity-50'
+                        }`}
                         onClick={handleSubmit}
                         disabled={!tableName.trim()}
                     >
@@ -218,202 +213,6 @@ export const MakeTableDialog: React.FC<MakeTableDialogProps> = ({
             </div>
         </div>
     );
-};
-
-const styles: { [key: string]: React.CSSProperties } = {
-    overlay: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 10000,
-    },
-    dialog: {
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-        width: '420px',
-        maxWidth: '90vw',
-        fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-        overflow: 'hidden',
-    },
-    header: {
-        backgroundColor: '#A52A2A',
-        padding: '16px 20px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderTopLeftRadius: '12px',
-        borderTopRightRadius: '12px',
-    },
-    headerText: {
-        color: 'white',
-        fontSize: '18px',
-        fontWeight: 600,
-    },
-    closeBtn: {
-        background: 'none',
-        border: 'none',
-        color: 'white',
-        fontSize: '24px',
-        cursor: 'pointer',
-        width: '30px',
-        height: '30px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: '50%',
-        transition: 'background 0.2s',
-    },
-    content: {
-        padding: '24px 20px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px',
-    },
-    inputGroup: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-    },
-    label: {
-        fontSize: '14px',
-        fontWeight: 500,
-        color: '#333',
-    },
-    input: {
-        padding: '12px 14px',
-        borderRadius: '8px',
-        border: '2px solid #ddd',
-        fontSize: '15px',
-        outline: 'none',
-        transition: 'border-color 0.2s',
-        fontFamily: 'inherit',
-    },
-    errorText: {
-        color: '#ff6b6b',
-        fontSize: '12px',
-        marginTop: '4px',
-    },
-    dimensionsRow: {
-        display: 'flex',
-        gap: '16px',
-    },
-    dimensionInput: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-    },
-    numberInput: {
-        padding: '12px 14px',
-        borderRadius: '8px',
-        border: '2px solid #ddd',
-        fontSize: '15px',
-        outline: 'none',
-        fontFamily: 'inherit',
-        textAlign: 'center',
-    },
-    toggleContainer: {
-        display: 'flex',
-        gap: '10px',
-        flexWrap: 'wrap',
-    },
-    toggleBtn: {
-        flex: 1,
-        minWidth: '120px',
-        padding: '10px 14px',
-        border: '2px solid #ddd',
-        borderRadius: '8px',
-        backgroundColor: 'white',
-        cursor: 'pointer',
-        fontSize: '13px',
-        fontWeight: 500,
-        color: '#555',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '6px',
-        transition: 'all 0.2s',
-    },
-    toggleActive: {
-        borderColor: '#A52A2A',
-        backgroundColor: '#F5E6E6',
-        color: '#A52A2A',
-    },
-    toggleIcon: {
-        fontSize: '14px',
-    },
-    previewSection: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-        marginTop: '8px',
-    },
-    previewBlock: {
-        backgroundColor: '#A52A2A',
-        color: 'white',
-        padding: '10px 14px',
-        borderRadius: '8px',
-        fontFamily: "'Consolas', 'Monaco', monospace",
-        fontSize: '13px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        flexWrap: 'wrap',
-        boxShadow: '0 2px 8px rgba(165, 42, 42, 0.3)',
-    },
-    previewLabel: {
-        fontWeight: 600,
-    },
-    previewVariable: {
-        backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        padding: '3px 8px',
-        borderRadius: '4px',
-        fontSize: '12px',
-    },
-    previewValue: {
-        backgroundColor: 'rgba(255, 255, 255, 0.35)',
-        padding: '3px 8px',
-        borderRadius: '4px',
-        fontSize: '12px',
-        minWidth: '20px',
-        textAlign: 'center',
-    },
-    footer: {
-        display: 'flex',
-        justifyContent: 'flex-end',
-        gap: '12px',
-        padding: '16px 20px',
-        borderTop: '1px solid #eee',
-    },
-    cancelBtn: {
-        padding: '10px 20px',
-        border: '1px solid #ddd',
-        borderRadius: '8px',
-        backgroundColor: 'white',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: 500,
-        color: '#555',
-        transition: 'background 0.2s',
-    },
-    okBtn: {
-        padding: '10px 24px',
-        border: 'none',
-        borderRadius: '8px',
-        backgroundColor: '#A52A2A',
-        color: 'white',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: 600,
-        transition: 'background 0.2s',
-    },
 };
 
 export default MakeTableDialog;

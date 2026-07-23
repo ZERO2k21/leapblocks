@@ -69,19 +69,17 @@ function ColorPickerInput({ id, propKey, value, updateProp }) {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <div className="flex items-center gap-2.5">
       <input
         type="color"
         value={localValue && localValue !== 'transparent' ? localValue : '#000000'}
-        style={{ width: '36px', height: '36px', padding: '0', cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: 'transparent' }}
-        className="shrink-0 shadow-sm hover:scale-105 transition-transform"
+        className="w-9 h-9 p-0 cursor-pointer border border-slate-300 rounded-lg bg-transparent shrink-0 shadow-sm hover:scale-105 transition-transform"
         onChange={(e) => handleChangeDebounced(e.target.value)}
       />
       <input
         type="text"
         value={localValue || ''}
-        style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0', letterSpacing: '0.05em' }}
-        className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all font-mono text-center text-slate-900"
+        className="h-9 px-3 text-xs font-semibold bg-slate-50 text-slate-900 rounded-lg border border-slate-200 tracking-wider w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all font-mono text-center"
         placeholder="#HEXCODE"
         onChange={(e) => setLocalValue(e.target.value)}
         onBlur={handleBlur}
@@ -335,12 +333,11 @@ export default function PropertiesPanel({ appState }) {
       const currentValue = isAuto ? LENGTH_AUTO : (isFill ? LENGTH_FILL : 'custom');
 
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }} className="w-full">
+        <div className="flex flex-col gap-2 w-full">
           <div className="relative">
             <select
               value={currentValue}
-              style={{ height: '36px', paddingLeft: '12px', paddingRight: '32px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-              className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all appearance-none cursor-pointer"
+              className="w-full h-9 px-3 pr-8 text-xs font-semibold bg-slate-50 text-slate-900 rounded-lg border border-slate-200 hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all appearance-none cursor-pointer"
               onChange={(e) => {
                 const newValue = e.target.value;
                 if (newValue === 'custom') {
@@ -356,21 +353,20 @@ export default function PropertiesPanel({ appState }) {
                 </option>
               ))}
             </select>
-            <ChevronDown style={{ width: '14px', height: '14px', right: '12px', top: '11px' }} className="absolute text-slate-900 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 absolute right-3 top-2.5 text-slate-900 pointer-events-none" />
           </div>
 
           {isCustom && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="flex items-center gap-2">
               <input
                 type="number"
                 min="1"
                 max="9999"
                 value={value}
-                style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all flex-1"
+                className="w-full h-9 px-3 text-xs font-semibold bg-slate-50 text-slate-900 rounded-lg border border-slate-200 hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all flex-1"
                 onChange={(e) => updateProp(id, key, parseInt(e.target.value) || 1)}
               />
-              <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', letterSpacing: '0.05em' }}>PX</span>
+              <span className="text-[10px] font-black text-slate-900 tracking-wider">PX</span>
             </div>
           )}
         </div>
@@ -390,17 +386,9 @@ export default function PropertiesPanel({ appState }) {
         return (
           <div
             key={key}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '14px 20px',
-              borderBottom: '1px solid #f1f5f9',
-              backgroundColor: '#ffffff'
-            }}
-            className="hover:bg-slate-50/50 transition-all duration-200"
+            className="flex items-center justify-between py-3.5 px-5 border-b border-slate-100 bg-white hover:bg-slate-50/50 transition-all duration-200"
           >
-            <span style={{ fontSize: '12px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
               {key.replace(/([A-Z])/g, ' $1').trim()}
             </span>
             <div
@@ -416,17 +404,9 @@ export default function PropertiesPanel({ appState }) {
       return (
         <div
           key={key}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-            padding: '14px 20px',
-            borderBottom: '1px solid #f1f5f9',
-            backgroundColor: '#ffffff'
-          }}
-          className="hover:bg-slate-50/50 transition-all duration-200"
+          className="flex flex-col gap-2 py-3.5 px-5 border-b border-slate-100 bg-white hover:bg-slate-50/50 transition-all duration-200"
         >
-          <label style={{ fontSize: '12px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
             {key.replace(/([A-Z])/g, ' $1').trim()}
           </label>
 
@@ -444,23 +424,21 @@ export default function PropertiesPanel({ appState }) {
             <div className="relative w-full">
               <select
                 value={value}
-                style={{ height: '36px', paddingLeft: '12px', paddingRight: '32px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all appearance-none cursor-pointer"
+                className="w-full h-9 px-3 pr-8 text-xs font-semibold bg-slate-50 text-slate-900 rounded-lg border border-slate-200 hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all appearance-none cursor-pointer"
                 onChange={(e) => updateProp(id, key, e.target.value)}
               >
                 {options.map(option => (
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
-              <ChevronDown style={{ width: '14px', height: '14px', right: '12px', top: '11px' }} className="absolute text-slate-900 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 absolute right-3 top-2.5 text-slate-900 pointer-events-none" />
             </div>
           ) : isArray ? (
             <input
               type="text"
               value={Array.isArray(value) ? value.join(', ') : value || ''}
               placeholder="item1, item2, item3"
-              style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-              className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all"
+              className="w-full h-9 px-3 text-xs font-semibold bg-slate-50 text-slate-900 rounded-lg border border-slate-200 hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all"
               onChange={(e) => {
                 const items = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
                 updateProp(id, key, items);
@@ -470,18 +448,16 @@ export default function PropertiesPanel({ appState }) {
             <input
               type="number"
               value={value}
-              style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-              className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all"
+              className="w-full h-9 px-3 text-xs font-semibold bg-slate-50 text-slate-900 rounded-lg border border-slate-200 hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all"
               onChange={(e) => updateProp(id, key, parseFloat(e.target.value) || 0)}
             />
           ) : MEDIA_PROPERTIES[key] ? (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div className="flex gap-2 items-center">
               <input
                 type="text"
                 value={value ?? ''}
                 readOnly
-                style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f1f5f9', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0', flex: 1, cursor: 'pointer' }}
-                className="w-full"
+                className="w-full h-9 px-3 text-xs font-semibold bg-slate-100 text-slate-900 rounded-lg border border-slate-200 flex-1 cursor-pointer"
                 placeholder="None"
                 onClick={() => {
                   setAssetPickerProp({ key, filter: MEDIA_PROPERTIES[key], currentValue: value || '' });
@@ -493,16 +469,14 @@ export default function PropertiesPanel({ appState }) {
                   setAssetPickerProp({ key, filter: MEDIA_PROPERTIES[key], currentValue: value || '' });
                   setAssetPickerOpen(true);
                 }}
-                style={{ padding: '8px 12px', height: '36px', fontSize: '12px', fontWeight: '700', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', color: '#0f172a', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                className="hover:bg-white hover:border-blue-300 transition-all"
+                className="py-2 px-3 h-9 text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 text-slate-900 cursor-pointer whitespace-nowrap hover:bg-white hover:border-blue-300 transition-all"
               >
                 Select
               </button>
               {value ? (
                 <button
                   onClick={() => updateProp(id, key, '')}
-                  style={{ padding: '8px', height: '36px', width: '36px', fontSize: '14px', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#fef2f2', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700' }}
-                  className="hover:bg-red-50 hover:border-red-300 transition-all"
+                  className="p-2 h-9 w-9 text-sm rounded-lg border border-slate-200 bg-red-50 text-red-600 cursor-pointer flex items-center justify-center font-bold hover:bg-red-100 hover:border-red-300 transition-all"
                   title="Clear"
                 >
                   ×
@@ -513,8 +487,7 @@ export default function PropertiesPanel({ appState }) {
             <input
               type="text"
               value={value ?? ''}
-              style={{ height: '36px', paddingLeft: '12px', paddingRight: '12px', fontSize: '13px', fontWeight: '600', backgroundColor: '#f8fafc', color: '#0f172a', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-              className="w-full hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all"
+              className="w-full h-9 px-3 text-xs font-semibold bg-slate-50 text-slate-900 rounded-lg border border-slate-200 hover:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white transition-all"
               onChange={(e) => updateProp(id, key, e.target.value)}
             />
           )}
@@ -523,13 +496,13 @@ export default function PropertiesPanel({ appState }) {
     };
 
     return (
-      <div style={{ padding: '20px' }} className="min-h-full bg-transparent">
+      <div className="min-h-full bg-transparent p-5">
         {/* Pro Header - Clean Flex Layout */}
-        <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column' }} className="bg-white border border-slate-200 rounded-[20px] shadow-sm overflow-hidden">
+        <div className="mb-6 flex flex-col bg-white border border-slate-200 rounded-[20px] shadow-sm overflow-hidden">
           <div className="h-1.5 bg-blue-600 w-full" />
-          <div style={{ padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+          <div className="p-6 flex items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <div style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '6px' }}>Active Module</div>
+              <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1.5">Active Module</div>
               {isRenaming ? (
                 <input
                   ref={renameInputRef}
@@ -539,16 +512,15 @@ export default function PropertiesPanel({ appState }) {
                   onBlur={handleRenameSubmit}
                   onKeyDown={handleRenameKeyDown}
                   onClick={(e) => e.stopPropagation()}
-                  style={{ fontSize: '20px', fontWeight: '900', letterSpacing: '-0.02em', padding: '2px 8px', borderRadius: '6px', border: '2px solid #3b82f6', backgroundColor: '#f8fafc', color: '#0f172a', width: '100%' }}
-                  className="outline-none"
+                  className="text-xl font-black tracking-tight p-0.5 px-2 rounded-md border-2 border-blue-500 bg-slate-50 text-slate-900 w-full outline-none"
                 />
               ) : (
-                <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.02em' }} className="truncate">{id}</h3>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight truncate">{id}</h3>
               )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
-                <span style={{ padding: '3px 8px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em', borderRadius: '6px', border: '1px solid #dbeafe', backgroundColor: '#eff6ff', color: '#2563eb' }}>{type}</span>
-                <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#cbd5e1', flexShrink: 0 }} />
-                <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Selected</span>
+              <div className="flex items-center gap-2.5 mt-2.5 flex-wrap">
+                <span className="py-0.75 px-2 text-[10px] font-black uppercase tracking-wider rounded-md border border-blue-100 bg-blue-50 text-blue-600">{type}</span>
+                <div className="w-1 h-1 rounded-full bg-slate-300 shrink-0" />
+                <span className="text-[10px] font-black text-slate-900 uppercase tracking-wider whitespace-nowrap">Selected</span>
               </div>
             </div>
             <div className="flex gap-2 shrink-0">
@@ -573,23 +545,22 @@ export default function PropertiesPanel({ appState }) {
         </div>
 
         {/* Categorized Properties */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="flex flex-col gap-4">
           {Object.entries(categorizedProps).map(([category, props]) => (
             <div key={category} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
               <button
-                style={{ padding: '16px 20px', fontSize: '11px', fontWeight: '900' }}
-                className="w-full flex items-center justify-between bg-white text-slate-900 hover:bg-slate-50 transition-all border-b border-slate-100 uppercase tracking-[0.2em] font-sans"
+                className="w-full flex items-center justify-between bg-white text-slate-900 hover:bg-slate-50 transition-all border-b border-slate-100 uppercase tracking-widest font-sans py-4 px-5 text-[11px] font-black"
                 onClick={() => toggleSection(category)}
               >
                 <span>{category}</span>
                 {collapsedSections[category] ? (
-                  <ChevronRight style={{ width: '14px', height: '14px' }} className="text-slate-900" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-900" />
                 ) : (
-                  <ChevronDown style={{ width: '14px', height: '14px' }} className="text-blue-600" />
+                  <ChevronDown className="w-3.5 h-3.5 text-blue-600" />
                 )}
               </button>
               {!collapsedSections[category] && (
-                <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: '#ffffff' }}>
+                <div className="flex flex-col bg-white">
                   {props.map(([key, value]) => renderSingleProp(key, value))}
                 </div>
               )}
@@ -603,11 +574,8 @@ export default function PropertiesPanel({ appState }) {
   return (
     <div className="w-[320px] bg-white border-l border-slate-100 flex flex-col h-full shrink-0 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.02)] z-20">
       {/* Panel Header */}
-      <div
-        style={{ paddingTop: '16px', paddingBottom: '16px', paddingLeft: '20px', paddingRight: '20px' }}
-        className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between shrink-0 shadow-sm"
-      >
-        <span className="text-[16px] font-bold uppercase tracking-[0.08em] text-slate-900">Properties</span>
+      <div className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between shrink-0 shadow-sm py-4 px-5">
+        <span className="text-base font-bold uppercase tracking-wider text-slate-900">Properties</span>
       </div>
       {/* Property Editor */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden leap-panel-body">
@@ -631,185 +599,53 @@ export default function PropertiesPanel({ appState }) {
       )}
       {deleteConfirm && createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-          style={{
-            backgroundColor: 'rgba(15, 23, 42, 0.7)',
-          }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/70"
           onClick={() => setDeleteConfirm(null)}
         >
           <div
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '20px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              width: '420px',
-              maxWidth: '90vw',
-              margin: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              border: '1px solid #f1f5f9'
-            }}
+            className="bg-white rounded-2xl shadow-2xl w-[420px] max-w-[90vw] m-auto flex flex-col overflow-hidden border border-slate-100"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div style={{
-              padding: '24px 24px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: '#ffffff',
-              flexShrink: 0
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                <div style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '12px',
-                  backgroundColor: '#fff1f2',
-                  color: '#f43f5e',
-                  border: '1px solid #fecdd3',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <Trash2 style={{ width: '22px', height: '22px' }} />
+            <div className="p-6 pb-3 flex items-center justify-between bg-white shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-xl bg-rose-50 text-rose-500 border border-rose-200 flex items-center justify-center shrink-0">
+                  <Trash2 className="w-5.5 h-5.5" />
                 </div>
-                <span style={{
-                  fontSize: '18px',
-                  fontWeight: 900,
-                  color: '#1e293b',
-                  letterSpacing: '-0.02em'
-                }}>Delete Module</span>
+                <span className="text-lg font-black text-slate-800 tracking-tight">Delete Module</span>
               </div>
               <button
                 onClick={() => setDeleteConfirm(null)}
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#94a3b8',
-                  border: '1px solid #e2e8f0',
-                  backgroundColor: 'transparent',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  flexShrink: 0,
-                  marginLeft: '12px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f1f5f9';
-                  e.currentTarget.style.color = '#1e293b';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#94a3b8';
-                }}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-800 border border-slate-200 bg-transparent hover:bg-slate-100 cursor-pointer transition-colors shrink-0 ml-3"
                 title="Close"
               >
-                <X style={{ width: '16px', height: '16px' }} />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Body */}
-            <div style={{ padding: '8px 24px 20px' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '14px',
-                padding: '14px',
-                borderRadius: '14px',
-                backgroundColor: '#f8fafc',
-                border: '1px solid #f1f5f9',
-                marginBottom: '14px'
-              }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  backgroundColor: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '1px solid #e2e8f0',
-                  flexShrink: 0,
-                  color: '#4f46e5'
-                }}>
+            <div className="px-6 pt-2 pb-5">
+              <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 mb-3.5">
+                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-slate-200 shrink-0 text-indigo-600">
                   <ComponentIcon type={deleteConfirm.type} size={24} />
                 </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{
-                    fontSize: '14px',
-                    fontWeight: 800,
-                    color: '#1e293b',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    maxWidth: '240px',
-                    lineHeight: 1.2
-                  }}>{deleteConfirm.id}</div>
-                  <div style={{
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    color: '#94a3b8',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
-                    marginTop: '4px'
-                  }}>
+                <div className="min-w-0">
+                  <div className="text-sm font-extrabold text-slate-800 truncate max-w-[240px] leading-snug">{deleteConfirm.id}</div>
+                  <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">
                     {deleteConfirm.type}
                   </div>
                 </div>
               </div>
-              <p style={{
-                fontSize: '13px',
-                color: '#64748b',
-                fontWeight: 500,
-                lineHeight: 1.7,
-                margin: 0
-              }}>
-                Deleting <span style={{ fontWeight: 800, color: '#1e293b' }}>{deleteConfirm.id}</span> will permanently remove all of its properties and block references from this project.
+              <p className="text-xs text-slate-500 font-medium leading-relaxed m-0">
+                Deleting <span className="font-extrabold text-slate-800">{deleteConfirm.id}</span> will permanently remove all of its properties and block references from this project.
               </p>
             </div>
 
             {/* Footer */}
-            <div style={{
-              padding: '28px 24px',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '12px',
-              alignItems: 'center',
-              backgroundColor: '#f8fafc',
-              borderTop: '1px solid #e2e8f0',
-              flexShrink: 0
-            }}>
+            <div className="p-7 px-6 flex justify-end gap-3 items-center bg-slate-50 border-t border-slate-200 shrink-0">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                style={{
-                  minWidth: '120px',
-                  padding: '14px 28px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '14px',
-                  fontWeight: 800,
-                  fontSize: '15px',
-                  transition: 'all 0.2s',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: '#f8fafc',
-                  color: '#334155',
-                  cursor: 'pointer'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f1f5f9';
-                  e.currentTarget.style.color = '#0f172a';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f8fafc';
-                  e.currentTarget.style.color = '#334155';
-                }}
+                className="min-w-[120px] py-3.5 px-7 inline-flex items-center justify-center rounded-2xl font-extrabold text-sm border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 cursor-pointer transition-colors"
               >
                 Cancel
               </button>
@@ -818,33 +654,9 @@ export default function PropertiesPanel({ appState }) {
                   removeComponent(deleteConfirm.id);
                   setDeleteConfirm(null);
                 }}
-                style={{
-                  minWidth: '130px',
-                  padding: '14px 28px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  borderRadius: '14px',
-                  fontWeight: 800,
-                  fontSize: '15px',
-                  transition: 'all 0.2s',
-                  border: 'none',
-                  backgroundColor: '#e11d48',
-                  color: '#ffffff',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(225, 29, 72, 0.25)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#be123c';
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(225, 29, 72, 0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#e11d48';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(225, 29, 72, 0.25)';
-                }}
+                className="min-w-[130px] py-3.5 px-7 inline-flex items-center justify-center gap-2.5 rounded-2xl font-extrabold text-sm border-none bg-rose-600 hover:bg-rose-700 text-white cursor-pointer transition-all shadow-md shadow-rose-600/25 hover:shadow-lg hover:shadow-rose-600/30"
               >
-                <Trash2 style={{ width: '18px', height: '18px' }} />
+                <Trash2 className="w-4.5 h-4.5" />
                 <span>Delete</span>
               </button>
             </div>

@@ -48,7 +48,7 @@ const getSpriteFallback = (spriteType) => {
             <img
                 src="assets/sprites/robot/robot_idle.svg"
                 alt="Robot"
-                style={{ width: 48, height: 48 }}
+                className="w-12 h-12"
             />
         );
     }
@@ -62,19 +62,7 @@ function ActionButton({ label, onClick }) {
     return (
         <button
             onClick={onClick}
-            style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "6px 10px",
-                border: "none",
-                borderRadius: 6,
-                background: C.PURPLE,
-                color: "#fff",
-                fontSize: 11,
-                fontWeight: 700,
-                cursor: "pointer",
-            }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 border-none rounded-md bg-purple-600 text-white text-[11px] font-bold cursor-pointer hover:bg-purple-700 transition-colors"
         >
             <Plus size={12} />
             {label}
@@ -114,41 +102,12 @@ export default function StagePanel({
     const [showBackdrops, setShowBackdrops] = React.useState(true);
 
     return (
-        <div
-            style={{
-                width: 380,
-                display: "flex",
-                flexDirection: "column",
-                borderLeft: `1px solid ${C.BORDER}`,
-                background: "#fff",
-                flexShrink: 0,
-                minHeight: 0,
-                overflowY: "auto",
-            }}
-        >
-            <div style={{ padding: "12px", borderBottom: `1px solid ${C.BORDER}` }}>
-                <div
-                    style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: C.MUTED,
-                        marginBottom: 8,
-                        letterSpacing: "0.04em",
-                        textTransform: "uppercase",
-                    }}
-                >
+        <div className="w-[380px] flex flex-col border-l border-gray-200 bg-white shrink-0 min-h-0 overflow-y-auto">
+            <div className="p-3 border-b border-gray-200">
+                <div className="text-xs font-bold text-gray-500 mb-2 tracking-wider uppercase">
                     Stage
                 </div>
-                <div
-                    style={{
-                        width: "100%",
-                        height: 240,
-                        border: `1px solid ${C.BORDER}`,
-                        borderRadius: 10,
-                        overflow: "hidden",
-                        background: "#F5F5F5",
-                    }}
-                >
+                <div className="w-full h-[240px] border border-gray-200 rounded-xl overflow-hidden bg-[#f5f5f5]">
                     <StageCanvas
                         sprites={spriteList}
                         selectedSpriteId={selectedSpriteId}
@@ -169,43 +128,22 @@ export default function StagePanel({
                 />
             )}
 
-            <div
-                style={{
-                    borderTop: `1px solid ${C.BORDER}`,
-                    padding: "12px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                }}
-            >
+            <div className="border-t border-gray-200 p-3 flex flex-col gap-2">
                 <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        cursor: showSpritesPanel ? "pointer" : "default",
-                    }}
+                    className={`flex items-center justify-between ${showSpritesPanel ? 'cursor-pointer' : 'cursor-default'}`}
                     onClick={() => showSpritesPanel && setShowSprites((prev) => !prev)}
                 >
-                    <span
-                        style={{
-                            fontSize: 12,
-                            fontWeight: 700,
-                            color: C.MUTED,
-                            letterSpacing: "0.04em",
-                            textTransform: "uppercase",
-                        }}
-                    >
+                    <span className="text-xs font-bold text-gray-500 tracking-wider uppercase">
                         {activeMode === "sprite" ? "Costumes" : "Sprites"}
                     </span>
-                    <span style={{ fontSize: 11, color: C.MUTED }}>
+                    <span className="text-[11px] text-gray-500">
                         {showSprites ? "\u25BC" : "\u25B6"}
                     </span>
                 </div>
 
                 {showSprites && (
                     <>
-                            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                            <div className="flex justify-end">
                                 <ActionButton
                                     label={activeMode === "sprite" ? "Add Costume" : "Add Sprite"}
                                     onClick={() =>
@@ -216,7 +154,7 @@ export default function StagePanel({
 
                             {activeMode === "sprite" ? (
                                 selectedSprite ? (
-                                    <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+                                    <div className="flex gap-2 overflow-x-auto pb-0.5">
                                         {costumeEntries.map(([costumeName, costumeValue]) => {
                                             const isSelected = costumeName === selectedSprite.currentCostume;
 
@@ -226,60 +164,26 @@ export default function StagePanel({
                                                     onClick={() =>
                                                         updateSpriteProperty?.(selectedSprite.id, "currentCostume", costumeName)
                                                     }
-                                                    style={{
-                                                        minWidth: 92,
-                                                        padding: 8,
-                                                        borderRadius: 10,
-                                                        border: `2px solid ${isSelected ? C.PURPLE : "#E5E7EB"}`,
-                                                        background: isSelected ? C.LIGHT_PURPLE : "#F9FAFB",
-                                                        cursor: "pointer",
-                                                        display: "flex",
-                                                        flexDirection: "column",
-                                                        alignItems: "center",
-                                                        gap: 6,
-                                                    }}
+                                                    className={`min-w-[92px] p-2 rounded-xl border-2 cursor-pointer flex flex-col items-center gap-1.5 ${
+                                                        isSelected ? 'border-purple-600 bg-purple-100' : 'border-gray-200 bg-gray-50'
+                                                    }`}
                                                 >
-                                                    <div
-                                                        style={{
-                                                            width: 56,
-                                                            height: 56,
-                                                            borderRadius: 8,
-                                                            background: "#fff",
-                                                            border: isSelected
-                                                                ? `2px solid ${C.PURPLE}`
-                                                                : `1px solid ${C.BORDER}`,
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                            overflow: "hidden",
-                                                        }}
-                                                    >
+                                                    <div className={`w-14 h-14 rounded-lg bg-white flex items-center justify-center overflow-hidden ${
+                                                        isSelected ? 'border-2 border-purple-600' : 'border border-gray-200'
+                                                    }`}>
                                                         {isImageSource(costumeValue) ? (
                                                             <img
                                                                 src={costumeValue}
                                                                 alt={costumeName}
-                                                                style={{
-                                                                    width: "90%",
-                                                                    height: "90%",
-                                                                    objectFit: "contain",
-                                                                }}
+                                                                className="w-[90%] h-[90%] object-contain"
                                                             />
                                                         ) : (
-                                                            <span style={{ fontSize: 28 }}>{costumeValue || "?"}</span>
+                                                            <span className="text-3xl">{costumeValue || "?"}</span>
                                                         )}
                                                     </div>
-                                                    <div
-                                                        style={{
-                                                            fontSize: 11,
-                                                            fontWeight: 700,
-                                                            color: isSelected ? C.PURPLE : C.TEXT,
-                                                            textAlign: "center",
-                                                            maxWidth: 76,
-                                                            overflow: "hidden",
-                                                            textOverflow: "ellipsis",
-                                                            whiteSpace: "nowrap",
-                                                        }}
-                                                    >
+                                                    <div className={`text-[11px] font-bold text-center max-w-[76px] overflow-hidden text-ellipsis whitespace-nowrap ${
+                                                        isSelected ? 'text-purple-600' : 'text-gray-800'
+                                                    }`}>
                                                         {costumeName}
                                                     </div>
                                                 </div>
@@ -287,12 +191,12 @@ export default function StagePanel({
                                         })}
                                     </div>
                                 ) : (
-                                    <div style={{ fontSize: 12, color: C.MUTED, padding: "6px 0" }}>
+                                    <div className="text-xs text-gray-500 py-1.5">
                                         No sprite is linked to {activeFile || "this file"} yet.
                                     </div>
                                 )
                             ) : (
-                                <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+                                <div className="flex gap-2 overflow-x-auto pb-0.5">
                                     {spriteList.map((sprite) => {
                                         const preview = getSpritePreview(sprite);
                                         const isSelected = sprite.id === selectedSpriteId;
@@ -301,19 +205,9 @@ export default function StagePanel({
                                             <div
                                                 key={sprite.id}
                                                 onClick={() => setSelectedSpriteId(sprite.id)}
-                                                style={{
-                                                    minWidth: 86,
-                                                    padding: 8,
-                                                    borderRadius: 10,
-                                                    border: `2px solid ${isSelected ? C.PURPLE : "#E5E7EB"}`,
-                                                    background: isSelected ? C.LIGHT_PURPLE : "#F9FAFB",
-                                                    cursor: "pointer",
-                                                    display: "flex",
-                                                    flexDirection: "column",
-                                                    alignItems: "center",
-                                                    gap: 6,
-                                                    position: "relative",
-                                                }}
+                                                className={`min-w-[86px] p-2 rounded-xl border-2 cursor-pointer flex flex-col items-center gap-1.5 relative ${
+                                                    isSelected ? 'border-purple-600 bg-purple-100' : 'border-gray-200 bg-gray-50'
+                                                }`}
                                             >
                                                 {spriteList.length > 1 && isSelected && (
                                                     <button
@@ -321,84 +215,34 @@ export default function StagePanel({
                                                             event.stopPropagation();
                                                             deleteSprite?.(sprite.id);
                                                         }}
-                                                        style={{
-                                                            position: "absolute",
-                                                            top: -8,
-                                                            right: -8,
-                                                            width: 22,
-                                                            height: 22,
-                                                            borderRadius: "50%",
-                                                            border: "none",
-                                                            background: "#fff",
-                                                            boxShadow: "0 1px 4px rgba(15, 23, 42, 0.18)",
-                                                            color: "#EF4444",
-                                                            cursor: "pointer",
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                        }}
+                                                        className="absolute -top-2 -right-2 w-5.5 h-5.5 rounded-full border-none bg-white shadow-md text-red-500 cursor-pointer flex items-center justify-center"
                                                         title={`Delete ${sprite.name}`}
                                                     >
                                                         <Trash2 size={12} />
                                                     </button>
                                                 )}
 
-                                                <div
-                                                    style={{
-                                                        width: 56,
-                                                        height: 56,
-                                                        borderRadius: 8,
-                                                        background: isSelected ? "#EDE9FE" : "#fff",
-                                                        border: isSelected
-                                                            ? `2px solid ${C.PURPLE}`
-                                                            : "2px solid transparent",
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "center",
-                                                        overflow: "hidden",
-                                                        boxShadow: isSelected
-                                                            ? `0 0 0 2px ${C.PURPLE}40`
-                                                            : "none",
-                                                        transition: "box-shadow 0.2s ease, border 0.2s ease",
-                                                    }}
-                                                >
+                                                <div className={`w-14 h-14 rounded-lg flex items-center justify-center overflow-hidden transition-all ${
+                                                    isSelected ? 'bg-purple-100 border-2 border-purple-600 shadow-[0_0_0_2px_rgba(139,92,246,0.25)]' : 'bg-white border-2 border-transparent'
+                                                }`}>
                                                     {preview && isImageSource(preview) ? (
                                                         <img
                                                             src={preview}
                                                             alt={sprite.name}
-                                                            style={{
-                                                                width: "90%",
-                                                                height: "90%",
-                                                                objectFit: "contain",
-                                                            }}
+                                                            className="w-[90%] h-[90%] object-contain"
                                                         />
                                                     ) : (
-                                                        <span style={{ fontSize: 28 }}>
+                                                        <span className="text-3xl">
                                                             {preview || getSpriteFallback(sprite.type)}
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div
-                                                    style={{
-                                                        fontSize: 11,
-                                                        fontWeight: 700,
-                                                        color: isSelected ? C.PURPLE : C.TEXT,
-                                                        textAlign: "center",
-                                                        maxWidth: 70,
-                                                        overflow: "hidden",
-                                                        textOverflow: "ellipsis",
-                                                        whiteSpace: "nowrap",
-                                                    }}
-                                                >
+                                                <div className={`text-[11px] font-bold text-center max-w-[70px] overflow-hidden text-ellipsis whitespace-nowrap ${
+                                                    isSelected ? 'text-purple-600' : 'text-gray-800'
+                                                }`}>
                                                     {sprite.name}
                                                 </div>
-                                                <div
-                                                    style={{
-                                                        fontSize: 9,
-                                                        color: C.MUTED,
-                                                        fontFamily: "monospace",
-                                                    }}
-                                                >
+                                                <div className="text-[9px] text-gray-500 font-mono">
                                                     x:{Math.round(sprite.position?.x ?? sprite.x ?? 0)} y:
                                                     {Math.round(sprite.position?.y ?? sprite.y ?? 0)}
                                                 </div>
@@ -411,37 +255,15 @@ export default function StagePanel({
                     )}
             </div>
 
-            <div
-                style={{
-                    borderTop: `1px solid ${C.BORDER}`,
-                    padding: "12px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                    minHeight: 0,
-                }}
-            >
+            <div className="border-t border-gray-200 p-3 flex flex-col gap-2 min-h-0">
                 <div
                     onClick={() => showBackdropsPanel && setShowBackdrops((prev) => !prev)}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        cursor: showBackdropsPanel ? "pointer" : "default",
-                    }}
+                    className={`flex items-center justify-between ${showBackdropsPanel ? 'cursor-pointer' : 'cursor-default'}`}
                 >
-                    <span
-                        style={{
-                            fontSize: 12,
-                            fontWeight: 700,
-                            color: C.MUTED,
-                            letterSpacing: "0.04em",
-                            textTransform: "uppercase",
-                        }}
-                    >
+                    <span className="text-xs font-bold text-gray-500 tracking-wider uppercase">
                         Backdrops
                     </span>
-                    <span style={{ fontSize: 11, color: C.MUTED }}>
+                    <span className="text-[11px] text-gray-500">
                         {showBackdropsPanel ? (showBackdrops ? "\u25BC" : "\u25B6") : "\u{1F6AB}"}
                     </span>
                 </div>
@@ -450,14 +272,14 @@ export default function StagePanel({
                     showBackdrops && (
                         <>
                             {activeMode === "stage" && (
-                                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                                <div className="flex justify-end">
                                     <ActionButton
                                         label="Add Backdrop"
                                         onClick={() => onOpenAssetLibrary?.("backdrop")}
                                     />
                                 </div>
                             )}
-                            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+                            <div className="flex gap-2 overflow-x-auto pb-0.5">
                                 {backdropLibrary.map((backdropEntry) => {
                                     const image = backdropEntry.img || backdropEntry.image || null;
                                     const isSelected = backdrop === image;
@@ -466,53 +288,22 @@ export default function StagePanel({
                                         <div
                                             key={backdropEntry.id || backdropEntry.name}
                                             onClick={() => handleSetBackdrop(backdropEntry)}
-                                            style={{
-                                                minWidth: 92,
-                                                padding: 8,
-                                                borderRadius: 10,
-                                                border: `2px solid ${isSelected ? C.PURPLE : "#E5E7EB"}`,
-                                                background: isSelected ? C.LIGHT_PURPLE : "#F9FAFB",
-                                                cursor: "pointer",
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                gap: 6,
-                                            }}
+                                            className={`min-w-[92px] p-2 rounded-xl border-2 cursor-pointer flex flex-col gap-1.5 ${
+                                                isSelected ? 'border-purple-600 bg-purple-100' : 'border-gray-200 bg-gray-50'
+                                            }`}
                                         >
-                                            <div
-                                                style={{
-                                                    width: "100%",
-                                                    height: 56,
-                                                    borderRadius: 8,
-                                                    overflow: "hidden",
-                                                    background: "#fff",
-                                                    border: `1px solid ${C.BORDER}`,
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                }}
-                                            >
+                                            <div className="w-full h-14 rounded-lg overflow-hidden bg-white border border-gray-200 flex items-center justify-center">
                                                 {image ? (
                                                     <img
                                                         src={image}
                                                         alt={backdropEntry.name}
-                                                        style={{
-                                                            width: "100%",
-                                                            height: "100%",
-                                                            objectFit: "cover",
-                                                        }}
+                                                        className="w-full h-full object-cover"
                                                     />
                                                 ) : (
-                                                    <span style={{ fontSize: 11, color: C.MUTED }}>Blank</span>
+                                                    <span className="text-[11px] text-gray-500">Blank</span>
                                                 )}
                                             </div>
-                                            <div
-                                                style={{
-                                                    fontSize: 11,
-                                                    fontWeight: 700,
-                                                    color: C.TEXT,
-                                                    textAlign: "center",
-                                                }}
-                                            >
+                                            <div className="text-[11px] font-bold text-gray-800 text-center">
                                                 {backdropEntry.name}
                                             </div>
                                         </div>
@@ -522,7 +313,7 @@ export default function StagePanel({
                         </>
                     )
                 ) : (
-                    <div style={{ fontSize: 12, color: C.MUTED, padding: "6px 0" }}>
+                    <div className="text-xs text-gray-500 py-1.5">
                         Sprite file selected. Switch to stage.py to edit backdrops.
                     </div>
                 )}

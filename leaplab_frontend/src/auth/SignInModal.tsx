@@ -89,124 +89,36 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
             <div
                 ref={modalRef}
                 onClick={handleOverlayClick}
-                className="leaplab-signin-modal"
-                style={{
-                    position: 'fixed',
-                    inset: 0,
-                    zIndex: 99999,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '16px',
-                    background: 'rgba(10, 1, 40, 0.55)',
-                    backdropFilter: 'blur(14px)',
-                    WebkitBackdropFilter: 'blur(14px)',
-                    animation: 'leaplab-modal-overlay-in 0.25s ease-out',
-                    fontFamily: '"Plus Jakarta Sans", system-ui, -apple-system, sans-serif',
-                }}
+                className="leaplab-signin-modal fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-[#0a0128]/55 backdrop-blur-md animate-[leaplab-modal-overlay-in_0.25s_ease-out] font-sans"
             >
                 {/* ─── Card ─── */}
-                <div
-                    style={{
-                        position: 'relative',
-                        width: '100%',
-                        maxWidth: '380px',
-                        background: '#fff',
-                        borderRadius: '20px',
-                        border: '3px solid #100051',
-                        boxShadow: '6px 6px 0px #100051, 0 24px 48px rgba(10,1,40,0.18)',
-                        padding: '36px 32px 32px',
-                        animation: 'leaplab-modal-card-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    }}
-                >
+                <div className="relative w-full max-w-[380px] bg-white rounded-3xl border-[3px] border-[#100051] shadow-[6px_6px_0px_#100051,0_24px_48px_rgba(10,1,40,0.18)] p-9 px-8 pb-8 animate-[leaplab-modal-card-in_0.3s_cubic-bezier(0.34,1.56,0.64,1)]">
                     {/* ─── Close Button ─── */}
                     <button
                         type="button"
                         onClick={onClose}
                         aria-label="Close sign-in"
-                        style={{
-                            position: 'absolute',
-                            top: '14px',
-                            right: '14px',
-                            width: '30px',
-                            height: '30px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '8px',
-                            border: '2px solid #100051',
-                            background: '#fff',
-                            color: '#100051',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            boxShadow: '2px 2px 0px #100051',
-                            padding: 0,
-                        }}
-                        onMouseEnter={e => {
-                            const el = e.currentTarget;
-                            el.style.background = '#f1f5f9';
-                            el.style.transform = 'translate(1px, 1px)';
-                            el.style.boxShadow = '1px 1px 0px #100051';
-                        }}
-                        onMouseLeave={e => {
-                            const el = e.currentTarget;
-                            el.style.background = '#fff';
-                            el.style.transform = 'translate(0, 0)';
-                            el.style.boxShadow = '2px 2px 0px #100051';
-                        }}
-                        onMouseDown={e => {
-                            const el = e.currentTarget;
-                            el.style.transform = 'translate(2px, 2px)';
-                            el.style.boxShadow = 'none';
-                        }}
-                        onMouseUp={e => {
-                            const el = e.currentTarget;
-                            el.style.transform = 'translate(1px, 1px)';
-                            el.style.boxShadow = '1px 1px 0px #100051';
-                        }}
+                        className="absolute top-3.5 right-3.5 w-7.5 h-7.5 flex items-center justify-center rounded-lg border-2 border-[#100051] bg-white text-[#100051] cursor-pointer transition-all duration-150 shadow-[2px_2px_0px_#100051] p-0 hover:bg-slate-100 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_#100051] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
                     >
-                        <X style={{ width: '14px', height: '14px' }} />
+                        <X className="w-3.5 h-3.5" />
                     </button>
 
                     {/* ─── Header ─── */}
-                    <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+                    <div className="text-center mb-7">
                         {/* Logo */}
-                        <div style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '56px',
-                            height: '56px',
-                            borderRadius: '14px',
-                            border: '3px solid #100051',
-                            background: '#100051',
-                            padding: '8px',
-                            boxShadow: '3px 3px 0px rgba(16,0,81,0.2)',
-                            marginBottom: '16px',
-                        }}>
+                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl border-[3px] border-[#100051] bg-[#100051] p-2 shadow-[3px_3px_0px_rgba(16,0,81,0.2)] mb-4">
                             <img
                                 src="/assets/leaplabicon.ico"
                                 alt="LeapLab Logo"
-                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                className="w-full h-full object-contain"
                             />
                         </div>
                         {/* Title */}
-                        <h2 style={{
-                            fontSize: '22px',
-                            fontWeight: 900,
-                            color: '#100051',
-                            letterSpacing: '-0.02em',
-                            margin: '0 0 4px',
-                        }}>
+                        <h2 className="text-[22px] font-black text-[#100051] tracking-tight m-0 mb-1">
                             Sign in to LeapLab
                         </h2>
                         {/* Subtitle */}
-                        <p style={{
-                            fontSize: '13px',
-                            fontWeight: 500,
-                            color: '#94a3b8',
-                            margin: 0,
-                        }}>
+                        <p className="text-xs font-medium text-slate-400 m-0">
                             Use your school credentials
                         </p>
                     </div>
@@ -214,33 +126,16 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
                     {/* ─── Form ─── */}
                     <form onSubmit={handleSubmit}>
                         {/* Email Field */}
-                        <div style={{ marginBottom: '18px' }}>
+                        <div className="mb-4.5">
                             <label
                                 htmlFor="leaplab-username"
-                                style={{
-                                    display: 'block',
-                                    fontSize: '11px',
-                                    fontWeight: 800,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.08em',
-                                    color: '#100051',
-                                    marginBottom: '6px',
-                                }}
+                                className="block text-[11px] font-extrabold uppercase tracking-wider text-[#100051] mb-1.5"
                             >
                                 Email
                             </label>
-                            <div style={{ position: 'relative' }}>
-                                <div style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    bottom: 0,
-                                    left: '14px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    pointerEvents: 'none',
-                                    zIndex: 1,
-                                }}>
-                                    <Mail style={{ width: '16px', height: '16px', color: '#94a3b8' }} />
+                            <div className="relative">
+                                <div className="absolute top-0 bottom-0 left-3.5 flex items-center pointer-events-none z-10">
+                                    <Mail className="w-4 h-4 text-slate-400" />
                                 </div>
                                 <input
                                     id="leaplab-username"
@@ -250,64 +145,22 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
                                     placeholder="you@school.edu"
                                     autoFocus
                                     autoComplete="username"
-                                    style={{
-                                        width: '100%',
-                                        height: '46px',
-                                        borderRadius: '10px',
-                                        border: '2.5px solid #e2e8f0',
-                                        background: '#f8fafc',
-                                        color: '#0f172a',
-                                        fontWeight: 600,
-                                        fontSize: '14px',
-                                        fontFamily: 'inherit',
-                                        paddingLeft: '42px',
-                                        paddingRight: '14px',
-                                        boxSizing: 'border-box',
-                                        transition: 'all 0.2s ease',
-                                        outline: 'none',
-                                    }}
-                                    onFocus={e => {
-                                        e.currentTarget.style.borderColor = '#4F46E5';
-                                        e.currentTarget.style.background = '#fff';
-                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(79,70,229,0.1)';
-                                    }}
-                                    onBlur={e => {
-                                        e.currentTarget.style.borderColor = '#e2e8f0';
-                                        e.currentTarget.style.background = '#f8fafc';
-                                        e.currentTarget.style.boxShadow = 'none';
-                                    }}
+                                    className="w-full h-11.5 rounded-xl border-[2.5px] border-slate-200 bg-slate-50 text-slate-900 font-semibold text-sm pl-10.5 pr-3.5 box-border transition-all duration-200 outline-none focus:border-indigo-600 focus:bg-white focus:ring-3 focus:ring-indigo-600/10"
                                 />
                             </div>
                         </div>
 
                         {/* Password Field */}
-                        <div style={{ marginBottom: '22px' }}>
+                        <div className="mb-5.5">
                             <label
                                 htmlFor="leaplab-password"
-                                style={{
-                                    display: 'block',
-                                    fontSize: '11px',
-                                    fontWeight: 800,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.08em',
-                                    color: '#100051',
-                                    marginBottom: '6px',
-                                }}
+                                className="block text-[11px] font-extrabold uppercase tracking-wider text-[#100051] mb-1.5"
                             >
                                 Password
                             </label>
-                            <div style={{ position: 'relative' }}>
-                                <div style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    bottom: 0,
-                                    left: '14px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    pointerEvents: 'none',
-                                    zIndex: 1,
-                                }}>
-                                    <Lock style={{ width: '16px', height: '16px', color: '#94a3b8' }} />
+                            <div className="relative">
+                                <div className="absolute top-0 bottom-0 left-3.5 flex items-center pointer-events-none z-10">
+                                    <Lock className="w-4 h-4 text-slate-400" />
                                 </div>
                                 <input
                                     id="leaplab-password"
@@ -316,58 +169,18 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
                                     autoComplete="current-password"
-                                    style={{
-                                        width: '100%',
-                                        height: '46px',
-                                        borderRadius: '10px',
-                                        border: '2.5px solid #e2e8f0',
-                                        background: '#f8fafc',
-                                        color: '#0f172a',
-                                        fontWeight: 600,
-                                        fontSize: '14px',
-                                        fontFamily: 'inherit',
-                                        paddingLeft: '42px',
-                                        paddingRight: '44px',
-                                        boxSizing: 'border-box',
-                                        transition: 'all 0.2s ease',
-                                        outline: 'none',
-                                    }}
-                                    onFocus={e => {
-                                        e.currentTarget.style.borderColor = '#4F46E5';
-                                        e.currentTarget.style.background = '#fff';
-                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(79,70,229,0.1)';
-                                    }}
-                                    onBlur={e => {
-                                        e.currentTarget.style.borderColor = '#e2e8f0';
-                                        e.currentTarget.style.background = '#f8fafc';
-                                        e.currentTarget.style.boxShadow = 'none';
-                                    }}
+                                    className="w-full h-11.5 rounded-xl border-[2.5px] border-slate-200 bg-slate-50 text-slate-900 font-semibold text-sm pl-10.5 pr-11 box-border transition-all duration-200 outline-none focus:border-indigo-600 focus:bg-white focus:ring-3 focus:ring-indigo-600/10"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword((v) => !v)}
                                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                                    style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        bottom: 0,
-                                        right: '12px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        border: 'none',
-                                        background: 'none',
-                                        padding: 0,
-                                        color: '#94a3b8',
-                                        cursor: 'pointer',
-                                        transition: 'color 0.15s',
-                                    }}
-                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#4F46E5'; }}
-                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#94a3b8'; }}
+                                    className="absolute top-0 bottom-0 right-3 flex items-center border-none bg-none p-0 text-slate-400 cursor-pointer transition-colors hover:text-indigo-600"
                                 >
                                     {showPassword ? (
-                                        <EyeOff style={{ width: '16px', height: '16px' }} />
+                                        <EyeOff className="w-4 h-4" />
                                     ) : (
-                                        <Eye style={{ width: '16px', height: '16px' }} />
+                                        <Eye className="w-4 h-4" />
                                     )}
                                 </button>
                             </div>
@@ -378,22 +191,9 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
                             <div
                                 role="alert"
                                 aria-live="polite"
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: '8px',
-                                    borderRadius: '10px',
-                                    border: '2px solid #fecaca',
-                                    background: '#fef2f2',
-                                    padding: '10px 12px',
-                                    fontSize: '13px',
-                                    fontWeight: 600,
-                                    color: '#dc2626',
-                                    marginBottom: '18px',
-                                    animation: 'leaplab-shake 0.4s ease-in-out',
-                                }}
+                                className="flex items-start gap-2 rounded-xl border-2 border-red-200 bg-red-50 p-2.5 px-3 text-xs font-semibold text-red-600 mb-4.5 animate-[leaplab-shake_0.4s_ease-in-out]"
                             >
-                                <AlertCircle style={{ width: '16px', height: '16px', flexShrink: 0, marginTop: '1px' }} />
+                                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                                 <span>{displayError}</span>
                             </div>
                         )}
@@ -402,54 +202,11 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            style={{
-                                width: '100%',
-                                height: '48px',
-                                borderRadius: '12px',
-                                border: '3px solid #100051',
-                                background: 'linear-gradient(135deg, #4F46E5, #6366f1)',
-                                color: '#fff',
-                                fontWeight: 800,
-                                fontSize: '15px',
-                                fontFamily: 'inherit',
-                                cursor: isLoading ? 'not-allowed' : 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '8px',
-                                boxShadow: '4px 4px 0px #100051',
-                                transition: 'all 0.12s ease',
-                                opacity: isLoading ? 0.65 : 1,
-                                letterSpacing: '0.01em',
-                            }}
-                            onMouseEnter={e => {
-                                if (isLoading) return;
-                                const el = e.currentTarget;
-                                el.style.background = 'linear-gradient(135deg, #4338ca, #4F46E5)';
-                                el.style.transform = 'translate(-1px, -1px)';
-                                el.style.boxShadow = '5px 5px 0px #100051';
-                            }}
-                            onMouseLeave={e => {
-                                const el = e.currentTarget;
-                                el.style.background = 'linear-gradient(135deg, #4F46E5, #6366f1)';
-                                el.style.transform = 'translate(0, 0)';
-                                el.style.boxShadow = '4px 4px 0px #100051';
-                            }}
-                            onMouseDown={e => {
-                                if (isLoading) return;
-                                const el = e.currentTarget;
-                                el.style.transform = 'translate(4px, 4px)';
-                                el.style.boxShadow = 'none';
-                            }}
-                            onMouseUp={e => {
-                                const el = e.currentTarget;
-                                el.style.transform = 'translate(-1px, -1px)';
-                                el.style.boxShadow = '5px 5px 0px #100051';
-                            }}
+                            className="w-full h-12 rounded-xl border-[3px] border-[#100051] bg-gradient-to-br from-indigo-600 to-indigo-500 text-white font-extrabold text-sm cursor-pointer flex items-center justify-center gap-2 shadow-[4px_4px_0px_#100051] transition-all duration-125 disabled:opacity-65 disabled:cursor-not-allowed tracking-tight hover:enabled:from-indigo-700 hover:enabled:to-indigo-600 hover:enabled:-translate-x-0.5 hover:enabled:-translate-y-0.5 hover:enabled:shadow-[5px_5px_0px_#100051] active:enabled:translate-x-[4px] active:enabled:translate-y-[4px] active:enabled:shadow-none"
                         >
                             {isLoading ? (
                                 <>
-                                    <Loader2 style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} />
+                                    <Loader2 className="w-4 h-4 animate-spin" />
                                     Signing in…
                                 </>
                             ) : (

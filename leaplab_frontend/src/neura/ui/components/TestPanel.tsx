@@ -102,45 +102,18 @@ export default function TestPanel({
         }
     }
 
-    const cardStyle: React.CSSProperties = {
-        background: 'rgba(255,255,255,0.85)',
-        backdropFilter: 'blur(12px)',
-        borderRadius: '16px',
-        border: '1px solid #e5e7eb',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-    }
-
     return (
-        <div className="animate-fade-in overflow-y-auto neura-scrollbar w-full" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div className="animate-fade-in overflow-y-auto neura-scrollbar w-full flex flex-col h-full">
             {/* Tips */}
-            <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto 10px' }}>
-                <div
-                    style={{
-                        background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
-                        borderRadius: '10px',
-                        padding: '8px 12px',
-                        border: '1px solid rgba(99,14,212,0.1)',
-                    }}
-                >
-                    <div className="flex items-start" style={{ gap: '6px' }}>
-                        <div
-                            style={{
-                                width: '20px',
-                                height: '20px',
-                                borderRadius: '5px',
-                                background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '10px',
-                                flexShrink: 0,
-                            }}
-                        >💡</div>
+            <div className="max-w-[800px] w-full mx-auto mb-2.5">
+                <div className="bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-lg py-2 px-3 border border-[#630ed4]/10">
+                    <div className="flex items-start gap-1.5">
+                        <div className="w-5 h-5 rounded bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-[10px] shrink-0">💡</div>
                         <div>
-                            <div className="flex flex-wrap" style={{ gap: '2px 12px' }}>
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                                 {['Take clear photos', 'Good lighting helps', 'Try different angles', 'Drag & drop images to test'].map((tip) => (
-                                    <span key={tip} className="flex items-center" style={{ gap: '4px', fontSize: '10px', color: '#4b5563' }}>
-                                        <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#630ed4', flexShrink: 0 }} />
+                                    <span key={tip} className="flex items-center gap-1 text-[10px] text-gray-600">
+                                        <span className="w-1 h-1 rounded-full bg-[#630ed4] shrink-0" />
                                         {tip}
                                     </span>
                                 ))}
@@ -150,108 +123,49 @@ export default function TestPanel({
                 </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-4" style={{ flex: 1, minHeight: 0 }}>
+            <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
                 {/* Left - Camera / Image Dropzone */}
                 <div
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    style={{
-                        ...cardStyle,
-                        flex: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        padding: '14px',
-                        minWidth: 0,
-                        position: 'relative',
-                        border: isDragging ? '2px dashed #630ed4' : '1px solid #e5e7eb',
-                        transition: 'all 0.2s ease',
-                    }}
+                    className={`bg-white/85 backdrop-blur-md rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] flex-1 flex flex-col p-3.5 min-w-0 relative transition-all duration-200 ${
+                        isDragging ? 'border-2 border-dashed border-[#630ed4]' : 'border border-gray-200'
+                    }`}
                 >
                     {/* Camera header */}
-                    <div className="flex justify-between items-center" style={{ marginBottom: '10px' }}>
-                        <div className="flex items-center" style={{ gap: '6px' }}>
-                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: cameraOn ? '#10b981' : '#ef4444', boxShadow: cameraOn ? '0 0 6px rgba(16,185,129,0.5)' : 'none' }} />
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    <div className="flex justify-between items-center mb-2.5">
+                        <div className="flex items-center gap-1.5">
+                            <div className={`w-2 h-2 rounded-full ${cameraOn ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'bg-red-500'}`} />
+                            <span className="text-[10px] font-bold text-gray-700 tracking-wider uppercase">
                                 {cameraOn ? 'Live Feed' : 'Camera Off'}
                             </span>
                         </div>
                         <button
                             onClick={onToggleCamera}
-                            style={{
-                                padding: '6px 10px',
-                                borderRadius: '8px',
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                border: 'none',
-                                cursor: 'pointer',
-                                background: cameraOn ? 'linear-gradient(135deg, #ecfdf5, #d1fae5)' : 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
-                                color: cameraOn ? '#059669' : '#630ed4',
-                                boxShadow: cameraOn ? '0 2px 8px rgba(5,150,105,0.15)' : '0 2px 8px rgba(99,14,212,0.12)',
-                                transition: 'all 0.2s ease',
-                            }}
+                            className={`py-1.5 px-2.5 rounded-lg text-[11px] font-bold border-none cursor-pointer flex items-center gap-1 transition-all duration-200 ${
+                                cameraOn
+                                    ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600 shadow-[0_2px_8px_rgba(5,150,105,0.15)]'
+                                    : 'bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] text-[#630ed4] shadow-[0_2px_8px_rgba(99,14,212,0.12)]'
+                            }`}
                         >
-                            <span style={{ fontSize: '12px' }}>{cameraOn ? '📷' : '🚫'}</span>
+                            <span className="text-xs">{cameraOn ? '📷' : '🚫'}</span>
                             {cameraOn ? ' On' : ' Off'}
                         </button>
                     </div>
 
                     {/* Camera viewport */}
-                    <div
-                        style={{
-                            flex: 1,
-                            minHeight: 0,
-                            background: '#1e1b4b',
-                            borderRadius: '12px',
-                            overflow: 'hidden',
-                            position: 'relative',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
+                    <div className="flex-1 min-h-0 bg-[#1e1b4b] rounded-xl overflow-hidden relative flex items-center justify-center">
                         {/* Drag and Drop Active Overlay */}
                         {isDragging && (
-                            <div
-                                style={{
-                                    position: 'absolute',
-                                    inset: 0,
-                                    zIndex: 35,
-                                    background: 'rgba(99, 14, 212, 0.88)',
-                                    backdropFilter: 'blur(10px)',
-                                    borderRadius: '12px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: '#ffffff',
-                                    border: '3px dashed #c084fc',
-                                    boxShadow: '0 8px 32px rgba(99, 14, 212, 0.4)',
-                                    animation: 'onbFadeIn 0.2s ease-out',
-                                    padding: '20px',
-                                    textAlign: 'center',
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        width: '64px',
-                                        height: '64px',
-                                        borderRadius: '20px',
-                                        background: 'rgba(255, 255, 255, 0.2)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '2.2rem',
-                                        marginBottom: '12px',
-                                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
-                                    }}
-                                >
+                            <div className="absolute inset-0 z-[35] bg-[#630ed4]/88 backdrop-blur-md rounded-xl flex flex-col items-center justify-center text-white border-2 border-dashed border-[#c084fc] shadow-[0_8px_32px_rgba(99,14,212,0.4)] animate-fade-in p-5 text-center">
+                                <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-[2.2rem] mb-3 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
                                     📥
                                 </div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '4px', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                                <h3 className="text-[1.1rem] font-extrabold mb-1 drop-shadow-md">
                                     Drop Image Here to Test!
                                 </h3>
-                                <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.85)', margin: 0 }}>
+                                <p className="text-[11px] text-white/85 m-0">
                                     PNG, JPG, WEBP formats supported
                                 </p>
                             </div>
@@ -261,47 +175,28 @@ export default function TestPanel({
                             <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full rounded-2xl -scale-x-100 ${videoFit === 'contain' ? 'object-contain bg-black' : 'object-cover'}`} />
                         )}
                         {!cameraOn && testImage && (
-                            <img src={testImage} alt="Test" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            <img src={testImage} alt="Test" className="w-full h-full object-contain" />
                         )}
                         {!cameraOn && !testImage && (
-                            <div className="flex flex-col items-center text-center animate-fade-in" style={{ padding: '24px' }}>
-                                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
-                                    <span style={{ fontSize: '1.5rem' }}>📸</span>
+                            <div className="flex flex-col items-center text-center animate-fade-in p-6">
+                                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-3">
+                                    <span className="text-[1.5rem]">📸</span>
                                 </div>
-                                <p style={{ fontSize: '13px', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>Camera is off</p>
-                                <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', maxWidth: '220px', marginBottom: '16px', lineHeight: 1.4 }}>
-                                    Turn on camera, <strong>drag & drop an image here</strong>, or upload a picture
+                                <p className="text-[13px] font-extrabold text-white mb-1">Camera is off</p>
+                                <p className="text-[10px] text-white/60 max-w-[220px] mb-4 leading-relaxed">
+                                    Turn on camera, <strong className="text-white">drag & drop an image here</strong>, or upload a picture
                                 </p>
-                                <div style={{ display: 'flex', gap: '8px' }}>
+                                <div className="flex gap-2">
                                     <button
                                         onClick={onToggleCamera}
-                                        style={{
-                                            padding: '8px 16px',
-                                            background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                            color: '#fff',
-                                            borderRadius: '10px',
-                                            fontSize: '11px',
-                                            fontWeight: 700,
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
-                                        }}
+                                        className="px-4 py-2 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.25)]"
                                     >
                                         📷 Turn On Camera
                                     </button>
                                     {fileInputRef && (
                                         <button
                                             onClick={() => fileInputRef.current?.click()}
-                                            style={{
-                                                padding: '8px 16px',
-                                                background: '#fff',
-                                                color: '#630ed4',
-                                                borderRadius: '10px',
-                                                fontSize: '11px',
-                                                fontWeight: 700,
-                                                border: '2px solid #630ed4',
-                                                cursor: 'pointer',
-                                            }}
+                                            className="px-4 py-2 bg-white text-[#630ed4] rounded-xl text-[11px] font-bold border-2 border-[#630ed4] cursor-pointer"
                                         >
                                             📂 Upload Image
                                         </button>
@@ -312,112 +207,43 @@ export default function TestPanel({
 
                         {/* Scan line */}
                         {cameraOn && (
-                            <div style={{
-                                position: 'absolute',
-                                left: 0,
-                                width: '100%',
-                                height: '2px',
-                                background: 'linear-gradient(90deg, transparent, rgba(99,14,212,0.6), transparent)',
-                                boxShadow: '0 0 12px rgba(99,14,212,0.4)',
-                                animation: 'scan 3s infinite ease-in-out',
-                            }} />
+                            <div className="absolute left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#630ed4]/60 to-transparent shadow-[0_0_12px_rgba(99,14,212,0.4)] animate-[scan_3s_infinite_ease-in-out]" />
                         )}
 
                         {/* LIVE indicator */}
                         {cameraOn && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '8px',
-                                left: '8px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                padding: '3px 8px',
-                                background: 'rgba(0,0,0,0.5)',
-                                backdropFilter: 'blur(8px)',
-                                borderRadius: '5px',
-                            }}>
-                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
-                                <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>LIVE</span>
+                            <div className="absolute top-2 left-2 flex items-center gap-1 py-0.75 px-2 bg-black/50 backdrop-blur-md rounded">
+                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]" />
+                                <span className="text-white text-[9px] font-bold">LIVE</span>
                             </div>
                         )}
 
                         {/* Loading overlay - small center badge only */}
                         {(modelLoading || isProcessing) && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '10px 18px',
-                                background: 'rgba(255,255,255,0.9)',
-                                backdropFilter: 'blur(8px)',
-                                borderRadius: '12px',
-                                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                                zIndex: 20,
-                            }}>
-                                <div style={{ width: '16px', height: '16px', border: '2px solid #630ed4', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: '#111827' }}>{modelLoading ? 'Loading model...' : 'Analyzing...'}</span>
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 py-2.5 px-4.5 bg-white/90 backdrop-blur-md rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.15)] z-20">
+                                <div className="w-4 h-4 border-2 border-[#630ed4] border-t-transparent rounded-full animate-spin" />
+                                <span className="text-xs font-bold text-gray-900">{modelLoading ? 'Loading model...' : 'Analyzing...'}</span>
                             </div>
                         )}
 
                         {/* Capture button overlay - visible when camera is on or test image is uploaded */}
                         {(cameraOn || testImage) && (
-                            <div style={{
-                                position: 'absolute',
-                                bottom: '10px',
-                                left: '50%',
-                                transform: 'translateX(-50%)',
-                                display: 'flex',
-                                gap: '8px',
-                                padding: '6px 12px',
-                                background: 'rgba(255,255,255,0.85)',
-                                backdropFilter: 'blur(8px)',
-                                borderRadius: '12px',
-                                border: '1px solid rgba(255,255,255,0.4)',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                zIndex: 15,
-                            }}>
+                            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-2 py-1.5 px-3 bg-white/85 backdrop-blur-md rounded-xl border border-white/40 shadow-md z-15">
                                 {cameraOn && (
                                     <button
                                         onClick={onCapture}
-                                        className="flex items-center"
-                                        style={{
-                                            gap: '4px',
-                                            padding: '6px 14px',
-                                            background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                            color: '#fff',
-                                            borderRadius: '8px',
-                                            fontSize: '11px',
-                                            fontWeight: 700,
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                        }}
+                                        className="flex items-center gap-1 py-1.5 px-3.5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-lg text-[11px] font-bold border-none cursor-pointer"
                                     >
-                                        <span style={{ fontSize: '12px' }}>📸</span>
+                                        <span className="text-xs">📸</span>
                                         Take Photo
                                     </button>
                                 )}
                                 {fileInputRef && (
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="flex items-center"
-                                        style={{
-                                            gap: '4px',
-                                            padding: '6px 14px',
-                                            background: '#fff',
-                                            color: '#374151',
-                                            borderRadius: '8px',
-                                            fontSize: '11px',
-                                            fontWeight: 700,
-                                            border: '1px solid #e5e7eb',
-                                            cursor: 'pointer',
-                                        }}
+                                        className="flex items-center gap-1 py-1.5 px-3.5 bg-white text-gray-700 rounded-lg text-[11px] font-bold border border-gray-200 cursor-pointer"
                                     >
-                                        <span style={{ fontSize: '12px' }}>📂</span>
+                                        <span className="text-xs">📂</span>
                                         {testImage ? 'Upload Another' : 'Upload'}
                                     </button>
                                 )}
@@ -430,68 +256,57 @@ export default function TestPanel({
                 </div>
 
                 {/* Right - Results */}
-                <div style={{ width: '100%', maxWidth: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className="w-full max-w-[280px] shrink-0 flex flex-col gap-2.5">
                     {/* Result card */}
-                    <div style={{ ...cardStyle, padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="bg-white/85 backdrop-blur-md rounded-2xl border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-4 flex-1 flex flex-col items-center justify-center">
                         {prediction ? (
                             <div className="w-full flex flex-col items-center animate-fade-in">
                                 {/* Icon */}
-                                <div style={{
-                                    width: '64px',
-                                    height: '64px',
-                                    borderRadius: '50%',
-                                    background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginBottom: '12px',
-                                    boxShadow: '0 4px 16px rgba(16,185,129,0.15)',
-                                }}>
-                                    <span style={{ fontSize: '2rem' }}>🎯</span>
+                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center mb-3 shadow-[0_4px_16px_rgba(16,185,129,0.15)]">
+                                    <span className="text-2xl">🎯</span>
                                 </div>
 
                                 {/* Label */}
-                                <span style={{ fontSize: '9px', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px', background: '#ecfdf5', padding: '2px 8px', borderRadius: '6px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                                <span className="text-[9px] font-extrabold text-emerald-600 uppercase tracking-widest mb-1 bg-emerald-50 py-0.5 px-2 rounded-md border border-emerald-500/20">
                                     Prediction
                                 </span>
-                                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#131b2e', marginBottom: '12px', textAlign: 'center' }}>
-                                    It's a <span style={{ color: '#630ed4' }}>{getPredictionLabel()}</span>! 🎉
+                                <h2 className="text-[1.1rem] font-extrabold text-[#131b2e] mb-3 text-center">
+                                    It's a <span className="text-[#630ed4]">{getPredictionLabel()}</span>! 🎉
                                 </h2>
 
                                 {/* Confidence */}
-                                <div style={{ width: '100%', marginBottom: '14px' }}>
-                                    <div className="flex justify-between" style={{ marginBottom: '4px' }}>
-                                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280' }}>Confidence</span>
-                                        <span style={{ fontSize: '14px', fontWeight: 800, color: displayConfidence >= 50 ? '#059669' : '#d97706' }}>
+                                <div className="w-full mb-3.5">
+                                    <div className="flex justify-between mb-1">
+                                        <span className="text-[10px] font-bold text-gray-500">Confidence</span>
+                                        <span className={`text-sm font-extrabold ${displayConfidence >= 50 ? 'text-emerald-600' : 'text-amber-600'}`}>
                                             {displayConfidence}%
                                         </span>
                                     </div>
-                                    <div style={{ height: '8px', background: '#f3f4f6', borderRadius: '4px', overflow: 'hidden' }}>
-                                        <div style={{
-                                            height: '100%',
-                                            borderRadius: '4px',
-                                            background: displayConfidence >= 50 ? 'linear-gradient(90deg, #34d399, #10b981)' : 'linear-gradient(90deg, #fbbf24, #d97706)',
-                                            width: `${displayConfidence}%`,
-                                            transition: 'width 0.6s ease',
-                                        }} />
+                                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-[width] duration-600 ease-out ${
+                                                displayConfidence >= 50 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : 'bg-gradient-to-r from-amber-400 to-amber-600'
+                                            }`}
+                                            style={{ width: `${displayConfidence}%` }}
+                                        />
                                     </div>
                                 </div>
 
                                 {/* Class breakdown */}
                                 {sortedConfidences.length > 1 && (
-                                    <div style={{ width: '100%', marginBottom: '14px' }}>
-                                        <span style={{ fontSize: '9px', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>All Classes</span>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <div className="w-full mb-3.5">
+                                        <span className="text-[9px] font-extrabold text-gray-500 uppercase tracking-wider block mb-1.5">All Classes</span>
+                                        <div className="flex flex-col gap-1.5">
                                             {sortedConfidences.slice(0, 4).map(([label, confidence]) => {
                                                 const val = Math.round(confidence * 100)
                                                 return (
                                                     <div key={label}>
-                                                        <div className="flex justify-between" style={{ marginBottom: '2px' }}>
-                                                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151', textTransform: 'capitalize' }}>{label}</span>
-                                                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280' }}>{val}%</span>
+                                                        <div className="flex justify-between mb-0.5">
+                                                            <span className="text-[10px] font-bold text-gray-700 capitalize">{label}</span>
+                                                            <span className="text-[10px] font-bold text-gray-500">{val}%</span>
                                                         </div>
-                                                        <div style={{ height: '4px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
-                                                            <div style={{ height: '100%', borderRadius: '2px', background: 'linear-gradient(90deg, #630ed4, #7c3aed)', width: `${val}%`, transition: 'width 0.5s ease' }} />
+                                                        <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+                                                            <div className="h-full rounded-full bg-gradient-to-r from-[#630ed4] to-[#7c3aed] transition-[width] duration-500 ease-out" style={{ width: `${val}%` }} />
                                                         </div>
                                                     </div>
                                                 )
@@ -501,59 +316,28 @@ export default function TestPanel({
                                 )}
 
                                 {/* Action buttons */}
-                                <div className="flex" style={{ gap: '8px', width: '100%' }}>
+                                <div className="flex gap-2 w-full">
                                     <button
                                         onClick={onTryAnother}
-                                        style={{
-                                            flex: 1,
-                                            padding: '10px',
-                                            background: '#f3f4f6',
-                                            color: '#374151',
-                                            borderRadius: '10px',
-                                            fontSize: '11px',
-                                            fontWeight: 700,
-                                            border: '1px solid #e5e7eb',
-                                            cursor: 'pointer',
-                                        }}
+                                        className="flex-1 p-2.5 bg-gray-100 text-gray-700 rounded-xl text-[11px] font-bold border border-gray-200 cursor-pointer"
                                     >
                                         🔄 Try Another
                                     </button>
                                     <button
                                         onClick={onExport}
-                                        style={{
-                                            flex: 1,
-                                            padding: '10px',
-                                            background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                            color: '#fff',
-                                            borderRadius: '10px',
-                                            fontSize: '11px',
-                                            fontWeight: 700,
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
-                                        }}
+                                        className="flex-1 p-2.5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.25)]"
                                     >
                                         💾 Save Report
                                     </button>
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center" style={{ padding: '20px' }}>
-                                <div style={{
-                                    width: '64px',
-                                    height: '64px',
-                                    borderRadius: '50%',
-                                    background: '#f3f4f6',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginBottom: '12px',
-                                    border: '2px dashed #e5e7eb',
-                                }}>
-                                    <span style={{ fontSize: '1.8rem' }}>🤔</span>
+                            <div className="flex flex-col items-center justify-center p-5">
+                                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-3 border-2 border-dashed border-gray-200">
+                                    <span className="text-[1.8rem]">🤔</span>
                                 </div>
-                                <h3 style={{ fontSize: '12px', fontWeight: 800, color: '#111827', marginBottom: '4px', textAlign: 'center' }}>Awaiting Input</h3>
-                                <p style={{ fontSize: '10px', color: '#9ca3af', textAlign: 'center', maxWidth: '180px' }}>
+                                <h3 className="text-xs font-extrabold text-gray-900 mb-1 text-center">Awaiting Input</h3>
+                                <p className="text-[10px] text-gray-400 text-center max-w-[180px]">
                                     Take a photo or upload an image to test your model
                                 </p>
                             </div>
@@ -561,19 +345,19 @@ export default function TestPanel({
                     </div>
 
                     {/* Stats row */}
-                    <div className="flex" style={{ gap: '10px' }}>
-                        <div style={{ ...cardStyle, flex: 1, padding: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>⚡</div>
+                    <div className="flex gap-2.5">
+                        <div className="bg-white/85 backdrop-blur-md rounded-2xl border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.04)] flex-1 p-3 flex items-center gap-2">
+                            <div className="w-9 h-9 rounded-xl bg-[#f5f3ff] flex items-center justify-center text-base shrink-0">⚡</div>
                             <div>
-                                <span style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>Speed</span>
-                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#131b2e' }}>{inferenceTime}ms</span>
+                                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Speed</span>
+                                <span className="text-sm font-extrabold text-[#131b2e]">{inferenceTime}ms</span>
                             </div>
                         </div>
-                        <div style={{ ...cardStyle, flex: 1, padding: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>📊</div>
+                        <div className="bg-white/85 backdrop-blur-md rounded-2xl border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.04)] flex-1 p-3 flex items-center gap-2">
+                            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-base shrink-0">📊</div>
                             <div>
-                                <span style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>Tests</span>
-                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#131b2e' }}>{testsRun}</span>
+                                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Tests</span>
+                                <span className="text-sm font-extrabold text-[#131b2e]">{testsRun}</span>
                             </div>
                         </div>
                     </div>
@@ -602,42 +386,51 @@ function LegacyTestPanel({ prediction, isProcessing, children }: { prediction: {
     const maxConfidence = sortedConfidences.length > 0 ? sortedConfidences[0][1] : 0
 
     return (
-        <div style={{ maxWidth: '600px', width: '100%' }}>
+        <div className="max-w-[600px] w-full">
             {children}
             {isProcessing && (
-                <div className="flex items-center justify-center" style={{ gap: '10px', padding: '20px' }}>
-                    <div style={{ width: '16px', height: '16px', border: '2px solid #630ed4', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#6b7280' }}>Analyzing... 🔍</span>
+                <div className="flex items-center justify-center gap-2.5 p-5">
+                    <div className="w-4 h-4 border-2 border-[#630ed4] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-bold text-gray-500">Analyzing... 🔍</span>
                 </div>
             )}
             {prediction && !isProcessing && (
-                <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '16px', padding: '20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-                    <div className="text-center" style={{ marginBottom: '16px' }}>
-                        <p style={{ fontSize: '9px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.08em', marginBottom: '8px' }}>🎯 Prediction</p>
-                        <div className="inline-flex items-center" style={{ gap: '10px', padding: '8px 16px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '12px' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '14px' }}>
+                <div className="bg-white/85 backdrop-blur-md rounded-2xl p-5 border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+                    <div className="text-center mb-4">
+                        <p className="text-[9px] text-gray-500 uppercase font-bold tracking-widest mb-2">🎯 Prediction</p>
+                        <div className="inline-flex items-center gap-2.5 py-2 px-4 bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#630ed4] to-[#7c3aed] flex items-center justify-center text-white font-bold text-sm">
                                 {prediction.label.charAt(0).toUpperCase()}
                             </div>
-                            <span style={{ fontSize: '16px', fontWeight: 700, color: '#131b2e' }}>{prediction.label}</span>
+                            <span className="text-base font-bold text-[#131b2e]">{prediction.label}</span>
                         </div>
-                        <div className="flex items-center justify-center" style={{ gap: '6px', marginTop: '8px' }}>
-                            <span style={{ fontSize: '12px', color: '#6b7280' }}>Confidence</span>
-                            <span style={{ fontSize: '14px', fontWeight: 800, color: maxConfidence >= 0.7 ? '#059669' : maxConfidence >= 0.4 ? '#d97706' : '#dc2626' }}>
+                        <div className="flex items-center justify-center gap-1.5 mt-2">
+                            <span className="text-xs text-gray-500">Confidence</span>
+                            <span className={`text-sm font-extrabold ${maxConfidence >= 0.7 ? 'text-emerald-600' : maxConfidence >= 0.4 ? 'text-amber-600' : 'text-red-600'}`}>
                                 {Math.round(maxConfidence * 100)}%
                             </span>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div className="flex flex-col gap-2">
                         {sortedConfidences.map(([label, confidence]) => {
                             const val = Math.round(confidence * 100)
                             return (
                                 <div key={label}>
-                                    <div className="flex justify-between" style={{ marginBottom: '2px' }}>
-                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#374151', textTransform: 'capitalize' }}>{label}</span>
-                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b7280' }}>{val}%</span>
+                                    <div className="flex justify-between mb-0.5">
+                                        <span className="text-xs font-bold text-gray-700 capitalize">{label}</span>
+                                        <span className="text-xs font-bold text-gray-500">{val}%</span>
                                     </div>
-                                    <div style={{ height: '6px', background: '#f3f4f6', borderRadius: '3px', overflow: 'hidden' }}>
-                                        <div style={{ height: '100%', borderRadius: '3px', background: confidence >= 0.7 ? 'linear-gradient(90deg, #34d399, #10b981)' : confidence >= 0.4 ? 'linear-gradient(90deg, #fbbf24, #d97706)' : 'linear-gradient(90deg, #fca5a5, #ef4444)', width: `${val}%`, transition: 'width 0.5s ease' }} />
+                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-[width] duration-500 ease-out ${
+                                                confidence >= 0.7
+                                                    ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
+                                                    : confidence >= 0.4
+                                                    ? 'bg-gradient-to-r from-amber-400 to-amber-600'
+                                                    : 'bg-gradient-to-r from-red-300 to-red-500'
+                                            }`}
+                                            style={{ width: `${val}%` }}
+                                        />
                                     </div>
                                 </div>
                             )
@@ -646,12 +439,12 @@ function LegacyTestPanel({ prediction, isProcessing, children }: { prediction: {
                 </div>
             )}
             {!prediction && !isProcessing && (
-                <div className="flex flex-col items-center justify-center" style={{ padding: '40px', flex: 1 }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px', border: '2px dashed #c4b5fd' }}>
-                        <span style={{ fontSize: '20px' }}>🤔</span>
+                <div className="flex flex-col items-center justify-center p-10 flex-1">
+                    <div className="w-12 h-12 rounded-full bg-[#f5f3ff] flex items-center justify-center mb-2.5 border-2 border-dashed border-purple-300">
+                        <span className="text-xl">🤔</span>
                     </div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#6b7280' }}>Waiting for input</p>
-                    <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>Speak into the mic to test! 🎤</p>
+                    <p className="text-xs font-bold text-gray-500">Waiting for input</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Speak into the mic to test! 🎤</p>
                 </div>
             )}
         </div>

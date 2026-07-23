@@ -263,7 +263,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
         };
 
         return (
-            <div style={styles.container} onClick={handleBackdropClick}>
+            <div className="flex-1 flex flex-col bg-gray-50 overflow-hidden min-h-0 w-full" onClick={handleBackdropClick}>
                 <PaintEditor
                     mode="intermediate"
                     title="Backdrop Editor"
@@ -343,18 +343,18 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
         };
 
         return (
-            <div style={styles.container} key={`${selectedSprite.id}-${refreshTick}`} onClick={handleContainerClick}>
+            <div className="flex-1 flex flex-col bg-gray-50 overflow-hidden min-h-0 w-full" key={`${selectedSprite.id}-${refreshTick}`} onClick={handleContainerClick}>
                 <input
                     ref={fileInputRef}
                     type="file"
                     accept=".png,.jpg,.jpeg,.svg,.gif,image/*"
-                    style={{ display: 'none' }}
+                    className="hidden"
                     onChange={onUploadCostume}
                 />
-                <div style={styles.splitLayout}>
-                    <div style={styles.leftPanel}>
-                        <div style={styles.leftHeader}>Costumes</div>
-                        <div style={styles.costumeList}>
+                <div className="flex h-full w-full min-h-0">
+                    <div className="w-[180px] border-r border-gray-200 bg-white flex flex-col">
+                        <div className="h-[40px] flex items-center px-3 font-bold text-[#4c2f8e] border-b border-[#EEEAF8]">Costumes</div>
+                        <div className="flex-1 overflow-y-auto p-2">
                             {allCostumes.map((c, i) => {
                                 const isActive = i === activeCostumeIndex;
                                 const isDragging = i === draggedIndex;
@@ -392,19 +392,17 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                             console.log(LOG_PREFIX, 'CLICK costume card | index:', i, 'name:', c.name, 'active:', isActive);
                                             selectCostume(i);
                                         }}
-                                        style={{
-                                            ...styles.costumeCard,
-                                            ...(isActive ? styles.costumeCardActive : {}),
-                                            ...(isDragging ? styles.costumeCardDragging : {})
-                                        }}
+                                        className={`relative h-[90px] rounded-xl border mb-2 flex items-center gap-2 p-2 cursor-pointer transition-all duration-200 ${
+                                            isActive ? 'border-2 border-purple-600 bg-purple-600/8' : 'border-[#ECEAF5] bg-white'
+                                        } ${isDragging ? 'opacity-60 scale-105 shadow-xl shadow-black/18' : ''}`}
                                     >
-                                        {dropIndex === i && draggedIndex !== null && draggedIndex !== i && <div style={styles.dropLine} />}
-                                        <div style={styles.dragHandle}>⠿</div>
-                                        <div style={styles.thumbWrap}>
-                                            <span style={styles.numberBadge}>{i + 1}</span>
-                                            <img src={c.image} alt={c.name} style={styles.thumbImg} />
+                                        {dropIndex === i && draggedIndex !== null && draggedIndex !== i && <div className="absolute left-1.5 right-1.5 -top-0.5 h-0.5 bg-purple-600 rounded-xs" />}
+                                        <div className="text-zinc-400 text-sm select-none">⠿</div>
+                                        <div className="w-[60px] h-[60px] rounded-lg bg-white border border-gray-200 flex items-center justify-center relative shrink-0">
+                                            <span className="absolute top-1 left-1 min-w-[16px] h-4 rounded-full px-1 bg-gray-400 text-white text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                                            <img src={c.image} alt={c.name} className="w-full h-full object-contain p-0.5" />
                                         </div>
-                                        <div style={styles.nameWrap}>
+                                        <div className="flex-1 min-w-0">
                                             {renameIndex === i ? (
                                                 <input
                                                     autoFocus
@@ -424,11 +422,11 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                                         if (e.key === 'Enter') saveRename(i);
                                                         if (e.key === 'Escape') setRenameIndex(null);
                                                     }}
-                                                    style={styles.renameInput}
+                                                    className="w-full border-none border-b border-purple-600 outline-none text-xs text-gray-700 bg-transparent py-0.5"
                                                 />
                                             ) : (
                                                 <div
-                                                    style={{ ...styles.costumeName, ...(isActive ? styles.costumeNameActive : {}) }}
+                                                    className={`text-gray-600 text-xs leading-tight line-clamp-2 overflow-hidden text-ellipsis ${isActive ? 'font-bold' : ''}`}
                                                     onDoubleClick={(e) => {
                                                         e.stopPropagation();
                                                         console.log(LOG_PREFIX, 'DOUBLE_CLICK name | index:', i, 'name:', c.name);
@@ -444,46 +442,46 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                                 );
                             })}
                         </div>
-                        <div style={styles.bottomButtons}>
-                            <button style={styles.actionButton} onClick={() => { console.log(LOG_PREFIX, 'CLICK Choose button'); onOpenLibrary?.(); }}>🐱 Choose</button>
-                            <button style={styles.actionButton} onClick={() => { console.log(LOG_PREFIX, 'CLICK Paint button'); createBlankCostume(); }}>🎨 Paint</button>
-                            <button style={styles.actionButton} onClick={() => { console.log(LOG_PREFIX, 'CLICK Surprise button'); addSurpriseCostume(); }}>😮 Surprise</button>
-                            <button style={styles.actionButton} onClick={() => { console.log(LOG_PREFIX, 'CLICK Upload button'); fileInputRef.current?.click(); }}>⬆️ Upload</button>
+                        <div className="border-t border-[#EEEAF8] p-2 grid grid-cols-3 gap-1.5">
+                            <button className="border border-[#d4c8f0] bg-white text-[#4c2f8e] rounded-lg p-2 px-1.5 text-[11px] font-bold cursor-pointer hover:bg-purple-50" onClick={() => { console.log(LOG_PREFIX, 'CLICK Choose button'); onOpenLibrary?.(); }}>🐱 Choose</button>
+                            <button className="border border-[#d4c8f0] bg-white text-[#4c2f8e] rounded-lg p-2 px-1.5 text-[11px] font-bold cursor-pointer hover:bg-purple-50" onClick={() => { console.log(LOG_PREFIX, 'CLICK Paint button'); createBlankCostume(); }}>🎨 Paint</button>
+                            <button className="border border-[#d4c8f0] bg-white text-[#4c2f8e] rounded-lg p-2 px-1.5 text-[11px] font-bold cursor-pointer hover:bg-purple-50" onClick={() => { console.log(LOG_PREFIX, 'CLICK Surprise button'); addSurpriseCostume(); }}>😮 Surprise</button>
+                            <button className="border border-[#d4c8f0] bg-white text-[#4c2f8e] rounded-lg p-2 px-1.5 text-[11px] font-bold cursor-pointer hover:bg-purple-50" onClick={() => { console.log(LOG_PREFIX, 'CLICK Upload button'); fileInputRef.current?.click(); }}>⬆️ Upload</button>
                             <button
-                                style={styles.actionButton}
+                                className="border border-[#d4c8f0] bg-white text-[#4c2f8e] rounded-lg p-2 px-1.5 text-[11px] font-bold cursor-pointer hover:bg-purple-50"
                                 onClick={async () => {
                                     console.log(LOG_PREFIX, 'CLICK Camera button');
                                     try {
                                         const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } } });
                                         console.log(LOG_PREFIX, 'CAMERA stream obtained | tracks:', stream.getTracks().map(t => ({ kind: t.kind, label: t.label, enabled: t.enabled })));
                                         const modal = document.createElement('div');
-                                        modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)';
+                                        modal.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-xs';
                                         const box = document.createElement('div');
-                                        box.style.cssText = 'background:white;border-radius:16px;overflow:hidden;width:480px;max-width:90vw;box-shadow:0 25px 50px rgba(0,0,0,0.25)';
+                                        box.className = 'bg-white rounded-2xl overflow-hidden w-[480px] max-w-[90vw] shadow-2xl';
                                         const header = document.createElement('div');
-                                        header.style.cssText = 'background:#7B4FC4;padding:12px 20px;display:flex;align-items:center;justify-content:space-between';
-                                        header.innerHTML = '<span style="color:white;font-weight:700">📷 Camera Capture</span>';
+                                        header.className = 'bg-[#7B4FC4] p-3 px-5 flex items-center justify-between';
+                                        header.innerHTML = '<span className="text-white font-bold">📷 Camera Capture</span>';
                                         const closeBtn = document.createElement('button');
                                         closeBtn.textContent = '×';
-                                        closeBtn.style.cssText = 'color:white;font-size:20px;font-weight:700;background:none;border:none;cursor:pointer';
+                                        closeBtn.className = 'text-white text-xl font-bold bg-none border-none cursor-pointer';
                                         closeBtn.onclick = () => { console.log(LOG_PREFIX, 'CAMERA modal closed by × button'); stream.getTracks().forEach(t => t.stop()); document.body.removeChild(modal); };
                                         header.appendChild(closeBtn);
                                         const videoWrap = document.createElement('div');
-                                        videoWrap.style.cssText = 'padding:16px';
+                                        videoWrap.className = 'p-4';
                                         const video = document.createElement('video');
                                         video.srcObject = stream;
                                         video.autoplay = true;
                                         video.playsInline = true;
                                         video.muted = true;
-                                        video.style.cssText = 'width:100%;border-radius:8px;background:black;max-height:300px;object-fit:contain';
+                                        video.className = 'w-full rounded-lg bg-black max-h-[300px] object-contain';
                                         video.onloadedmetadata = () => console.log(LOG_PREFIX, 'CAMERA video metadata loaded | video size:', video.videoWidth, 'x', video.videoHeight);
                                         video.onclick = () => console.log(LOG_PREFIX, 'CAMERA video clicked');
                                         videoWrap.appendChild(video);
                                         const btnWrap = document.createElement('div');
-                                        btnWrap.style.cssText = 'display:flex;justify-content:center;padding:0 16px 16px';
+                                        btnWrap.className = 'flex justify-center p-4 pt-0';
                                         const captureBtn = document.createElement('button');
                                         captureBtn.textContent = '📷 CAPTURE';
-                                        captureBtn.style.cssText = 'padding:12px 32px;background:#22c55e;color:white;border:none;border-radius:16px;font-size:18px;font-weight:900;cursor:pointer';
+                                        captureBtn.className = 'p-3 px-8 bg-emerald-500 text-white border-none rounded-2xl text-lg font-black cursor-pointer';
                                         captureBtn.onclick = async () => {
                                             console.log(LOG_PREFIX, 'CAMERA capture clicked | video size:', video.videoWidth, 'x', video.videoHeight);
                                             const offscreen = document.createElement('canvas');
@@ -518,7 +516,7 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                             >📷 Camera</button>
                         </div>
                     </div>
-                    <div style={styles.rightPanel}>
+                    <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
                         <PaintEditor
                             key={`editor-${activeCostumeIndex}-${refreshTick}`}
                             mode="intermediate"
@@ -546,15 +544,15 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                 {contextMenu && (
                     <div
                         style={{
-                            ...styles.contextMenu,
                             left: `${contextMenu.x}px`,
                             top: `${contextMenu.y}px`
                         }}
+                        className="fixed z-[1000] bg-white border border-gray-200 rounded-lg shadow-xl min-w-[120px] p-1"
                         onClick={(e) => { console.log(LOG_PREFIX, 'CONTEXT MENU clicked inside - stopping propagation'); e.stopPropagation(); }}
                     >
-                        <button style={styles.menuItem} onClick={() => { console.log(LOG_PREFIX, 'CONTEXT MENU Duplicate | index:', contextMenu.index); duplicateCostume(contextMenu.index); setContextMenu(null); }}>Duplicate</button>
-                        <button style={styles.menuItem} onClick={() => { console.log(LOG_PREFIX, 'CONTEXT MENU Export | index:', contextMenu.index); exportCostume(contextMenu.index); setContextMenu(null); }}>Export</button>
-                        <button style={{ ...styles.menuItem, color: '#d14343' }} onClick={() => { console.log(LOG_PREFIX, 'CONTEXT MENU Delete | index:', contextMenu.index); deleteCostume(contextMenu.index); setContextMenu(null); }}>Delete</button>
+                        <button className="w-full border-none bg-transparent text-left p-2 px-2.5 rounded-md cursor-pointer text-gray-700 text-xs hover:bg-gray-100" onClick={() => { console.log(LOG_PREFIX, 'CONTEXT MENU Duplicate | index:', contextMenu.index); duplicateCostume(contextMenu.index); setContextMenu(null); }}>Duplicate</button>
+                        <button className="w-full border-none bg-transparent text-left p-2 px-2.5 rounded-md cursor-pointer text-gray-700 text-xs hover:bg-gray-100" onClick={() => { console.log(LOG_PREFIX, 'CONTEXT MENU Export | index:', contextMenu.index); exportCostume(contextMenu.index); setContextMenu(null); }}>Export</button>
+                        <button className="w-full border-none bg-transparent text-left p-2 px-2.5 rounded-md cursor-pointer text-red-600 text-xs hover:bg-red-50" onClick={() => { console.log(LOG_PREFIX, 'CONTEXT MENU Delete | index:', contextMenu.index); deleteCostume(contextMenu.index); setContextMenu(null); }}>Delete</button>
                     </div>
                 )}
             </div>
@@ -568,204 +566,12 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
         console.log(LOG_PREFIX, 'FALLBACK CLICK on:', target.tagName, target.className, '| text:', target.textContent?.slice?.(0, 30), '| pos:', e.clientX, e.clientY);
     };
     return (
-        <div style={styles.container} onClick={handleFallbackClick}>
-            <div style={styles.placeholder}>
-                <span style={{ fontSize: '48px' }}>🎨</span>
-                <h3>No Sprite Selected</h3>
-                <p>Select a sprite or stage from the panel to edit its costumes/backdrops.</p>
+        <div className="flex-1 flex flex-col bg-gray-50 overflow-hidden min-h-0 w-full" onClick={handleFallbackClick}>
+            <div className="flex-1 flex flex-col items-center justify-center text-purple-600 text-center p-8">
+                <span className="text-5xl">🎨</span>
+                <h3 className="text-lg font-bold mt-2">No Sprite Selected</h3>
+                <p className="text-sm text-gray-500 mt-1">Select a sprite or stage from the panel to edit its costumes/backdrops.</p>
             </div>
         </div>
     );
-};
-
-const styles: { [key: string]: React.CSSProperties } = {
-    container: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: '#f9f9f9',
-        overflow: 'hidden',
-        minHeight: 0,
-        width: '100%'
-    },
-    placeholder: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#855CD6',
-        textAlign: 'center' as const,
-        padding: '2rem'
-    },
-    splitLayout: {
-        display: 'flex',
-        height: '100%',
-        width: '100%',
-        minHeight: 0,
-    },
-    leftPanel: {
-        width: '180px',
-        borderRight: '1px solid #E5E7EB',
-        background: '#fff',
-        display: 'flex',
-        flexDirection: 'column'
-    },
-    leftHeader: {
-        height: '40px',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 12px',
-        fontWeight: 700,
-        color: '#4c2f8e',
-        borderBottom: '1px solid #EEEAF8'
-    },
-    costumeList: {
-        flex: 1,
-        overflowY: 'auto',
-        padding: '8px'
-    },
-    costumeCard: {
-        position: 'relative',
-        height: '90px',
-        borderRadius: '10px',
-        border: '1px solid #ECEAF5',
-        background: '#fff',
-        marginBottom: '8px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '8px',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease'
-    },
-    costumeCardActive: {
-        border: '2px solid #7c3aed',
-        background: 'rgba(124, 58, 237, 0.08)'
-    },
-    costumeCardDragging: {
-        opacity: 0.6,
-        transform: 'scale(1.03)',
-        boxShadow: '0 8px 20px rgba(0,0,0,0.18)'
-    },
-    dragHandle: {
-        color: '#A1A1AA',
-        fontSize: '14px',
-        userSelect: 'none'
-    },
-    thumbWrap: {
-        width: '60px',
-        height: '60px',
-        borderRadius: '8px',
-        background: '#fff',
-        border: '1px solid #E5E7EB',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        flexShrink: 0
-    },
-    numberBadge: {
-        position: 'absolute',
-        top: '4px',
-        left: '4px',
-        minWidth: '16px',
-        height: '16px',
-        borderRadius: '999px',
-        padding: '0 4px',
-        background: '#9CA3AF',
-        color: '#fff',
-        fontSize: '10px',
-        fontWeight: 700,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
-    thumbImg: {
-        width: '100%',
-        height: '100%',
-        objectFit: 'contain',
-        padding: '2px'
-    },
-    nameWrap: {
-        flex: 1,
-        minWidth: 0
-    },
-    costumeName: {
-        color: '#4B5563',
-        fontSize: '12px',
-        lineHeight: 1.25,
-        display: '-webkit-box',
-        WebkitLineClamp: 2,
-        WebkitBoxOrient: 'vertical' as const,
-        overflow: 'hidden' as const,
-        textOverflow: 'ellipsis'
-    },
-    costumeNameActive: {
-        fontWeight: 700
-    },
-    renameInput: {
-        width: '100%',
-        border: 'none',
-        borderBottom: '1px solid #7c3aed',
-        outline: 'none',
-        fontSize: '12px',
-        color: '#374151',
-        background: 'transparent',
-        padding: '2px 0'
-    },
-    dropLine: {
-        position: 'absolute',
-        left: '6px',
-        right: '6px',
-        top: '-2px',
-        height: '2px',
-        background: '#7c3aed',
-        borderRadius: '2px'
-    },
-    bottomButtons: {
-        borderTop: '1px solid #EEEAF8',
-        padding: '8px',
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr',
-        gap: '6px'
-    },
-    actionButton: {
-        border: '1px solid #d4c8f0',
-        background: '#fff',
-        color: '#4c2f8e',
-        borderRadius: '8px',
-        padding: '8px 6px',
-        fontSize: '11px',
-        fontWeight: 700,
-        cursor: 'pointer'
-    },
-    rightPanel: {
-        flex: 1,
-        minWidth: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-    },
-    contextMenu: {
-        position: 'fixed',
-        zIndex: 1000,
-        background: '#fff',
-        border: '1px solid #E5E7EB',
-        borderRadius: '8px',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.16)',
-        minWidth: '120px',
-        padding: '4px'
-    },
-    menuItem: {
-        width: '100%',
-        border: 'none',
-        background: 'transparent',
-        textAlign: 'left' as const,
-        padding: '8px 10px',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        color: '#374151',
-        fontSize: '12px'
-    }
 };

@@ -88,58 +88,26 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     }, [isOpen]);
 
     return (
-        <div ref={menuRef} style={{ position: 'relative' }}>
+        <div ref={menuRef} className="relative">
             <button
                 onClick={onToggle}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    padding: '4px 8px',
-                    border: 'none',
-                    color: '#fff',
-                    fontSize: 15,
-                    fontWeight: 500,
-                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    cursor: 'pointer',
-                    borderRadius: 4,
-                    transition: 'all 0.2s ease',
-                    background: isOpen ? 'rgba(255,255,255,0.18)' : 'transparent',
-                    backdropFilter: isOpen ? 'blur(4px)' : 'none',
-                }}
-                onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
-                onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = isOpen ? 'rgba(255,255,255,0.18)' : 'transparent'; }}
+                className={`flex items-center gap-[5px] px-2 py-1 border-none text-white text-[15px] font-medium font-sans cursor-pointer rounded transition-all duration-200 ${
+                    isOpen ? 'bg-white/18 backdrop-blur-[4px]' : 'bg-transparent hover:bg-white/15'
+                }`}
             >
-                {Icon && <Icon size={14} strokeWidth={2.2} style={{ opacity: 0.9 }} />}
+                {Icon && <Icon size={14} strokeWidth={2.2} className="opacity-90" />}
                 {label}
                 <ChevronDown
                     size={12}
                     strokeWidth={2.5}
-                    style={{
-                        opacity: 0.5,
-                        transition: 'transform 0.2s ease',
-                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    }}
+                    className={`opacity-50 transition-transform duration-200 ${
+                        isOpen ? 'rotate-180' : 'rotate-0'
+                    }`}
                 />
             </button>
 
             {isOpen && (
-                <div style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 6px)',
-                    left: 0,
-                    background: 'rgba(255,255,255,0.95)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    borderRadius: 8,
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)',
-                    border: '1px solid rgba(255,255,255,0.6)',
-                    minWidth: 160,
-                    overflow: 'hidden',
-                    zIndex: 1000,
-                    padding: '4px 0',
-                    animation: 'pyMenuSlideIn 0.1s ease-out',
-                }}>
+                <div className="absolute top-[calc(100%+6px)] left-0 bg-white/95 backdrop-blur-[20px] rounded-lg shadow-[0_8px_32px_rgba(0,0,0,0.16),0_2px_8px_rgba(0,0,0,0.08)] border border-white/60 min-w-[160px] overflow-hidden z-[1000] py-1 animate-[pyMenuSlideIn_0.1s_ease-out]">
                     <style>{`
                         @keyframes pyMenuSlideIn {
                             from { opacity: 0; transform: translateY(-4px) scale(0.98); }
@@ -148,43 +116,22 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
                     `}</style>
                     {items.map((item, idx) => (
                         item.divider ? (
-                            <div key={idx} style={{ height: 1, background: 'rgba(0,0,0,0.08)', margin: '4px 12px' }} />
+                            <div key={idx} className="h-px bg-black/8 my-1 mx-3" />
                         ) : (
                             <button
                                 key={idx}
                                 onClick={() => { item.onClick?.(); onClose(); }}
                                 disabled={item.disabled}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 10,
-                                    width: '100%',
-                                    padding: '7px 14px',
-                                    border: 'none',
-                                    background: 'transparent',
-                                    fontSize: 12,
-                                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                                    fontWeight: 500,
-                                    textAlign: 'left',
-                                    cursor: item.disabled ? 'not-allowed' : 'pointer',
-                                    color: item.disabled ? '#bbb' : '#374151',
-                                    transition: 'all 0.12s ease',
-                                }}
-                                onMouseEnter={e => {
-                                    if (!item.disabled) {
-                                        e.currentTarget.style.background = 'rgba(124, 58, 237, 0.08)'; // Purple hover
-                                        e.currentTarget.style.color = '#5A2D82';
-                                    }
-                                }}
-                                onMouseLeave={e => {
-                                    e.currentTarget.style.background = 'transparent';
-                                    e.currentTarget.style.color = item.disabled ? '#bbb' : '#374151';
-                                }}
+                                className={`flex items-center gap-[10px] w-full px-3.5 py-1.75 border-none text-xs font-sans font-medium text-left transition-all duration-150 ${
+                                    item.disabled
+                                        ? 'cursor-not-allowed text-gray-300 bg-transparent'
+                                        : 'cursor-pointer text-gray-700 bg-transparent hover:bg-[#7c3aed]/10 hover:text-[#5A2D82]'
+                                }`}
                             >
-                                {item.icon && <item.icon size={14} color="#7C3AED" strokeWidth={2} style={{ opacity: 0.8 }} />}
-                                <span style={{ flex: 1 }}>{item.label}</span>
+                                {item.icon && <item.icon size={14} color="#7C3AED" strokeWidth={2} className="opacity-80" />}
+                                <span className="flex-1">{item.label}</span>
                                 {item.shortcut && (
-                                    <span style={{ fontSize: 10, color: '#9CA3AF', background: '#F3F4F6', padding: '2px 4px', borderRadius: 4 }}>
+                                    <span className="text-[10px] text-gray-400 bg-gray-100 px-1 py-0.5 rounded">
                                         {item.shortcut}
                                     </span>
                                 )}
@@ -2570,70 +2517,37 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
     };
 
     const renderUploadWorkspace = () => (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
-            <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-                <aside style={{
-                    width: 278,
-                    borderRight: `1px solid ${C.BORDER}`,
-                    background: "#F7F7FB",
-                    display: "flex",
-                    flexDirection: "column",
-                    minWidth: 0,
-                    position: "relative",
-                }}>
-                    <div style={{
-                        padding: "10px 12px",
-                        borderBottom: `1px solid ${C.BORDER}`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 8,
-                    }}>
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex-1 flex min-h-0">
+                <aside className="w-[278px] border-r border-gray-200 bg-[#F7F7FB] flex flex-col min-w-0 relative">
+                    <div className="p-3 border-b border-gray-200 flex items-center justify-between gap-2">
                         <div>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: C.TEXT, letterSpacing: "0.04em" }}>
+                            <div className="text-xs font-bold text-gray-800 tracking-wide">
                                 Project Files
                             </div>
-                            <div style={{ fontSize: 10, color: C.MUTED, marginTop: 2 }}>
+                            <div className="text-[10px] text-gray-500 mt-0.5">
                                 {uploadView === "board"
                                     ? "Main sketch, library headers, and C++ source files."
                                     : "Click a file, then type in the center editor."}
                             </div>
                         </div>
-                        <div style={{ display: "flex", gap: 6 }}>
+                        <div className="flex gap-1.5">
                             <button
                                 onClick={uploadView === "board" ? handleCreateUploadLibrary : handleCreateUploadPythonFile}
-                                style={{
-                                    border: `1px solid ${C.BORDER}`,
-                                    background: "#fff",
-                                    color: C.TEXT,
-                                    borderRadius: 6,
-                                    padding: "5px 8px",
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    cursor: "pointer",
-                                }}
+                                className="border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 rounded-md px-2 py-1 text-[11px] font-semibold cursor-pointer transition-colors"
                             >
                                 {uploadView === "board" ? "New Library" : "New .py"}
                             </button>
                             <button
                                 onClick={uploadView === "board" ? handleReplaceBoardFirmware : handleAddUploadPythonFile}
-                                style={{
-                                    border: "none",
-                                    background: C.PURPLE,
-                                    color: "#fff",
-                                    borderRadius: 6,
-                                    padding: "5px 8px",
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    cursor: "pointer",
-                                }}
+                                className="border-none bg-[#8B5CF6] hover:bg-purple-700 text-white rounded-md px-2 py-1 text-[11px] font-semibold cursor-pointer transition-colors"
                             >
                                 {uploadView === "board" ? "Import Main" : "Import .py"}
                             </button>
                         </div>
                     </div>
 
-                    <div style={{ flex: 1, overflowY: "auto", padding: uploadView === "board" ? "8px 0 132px" : "8px 0" }}>
+                    <div className={`flex-1 overflow-y-auto ${uploadView === "board" ? "py-2 pb-[132px]" : "py-2"}`}>
                         {visibleUploadFiles.map((file) => {
                             const isBoardSource = file === activeBoardFile;
                             const isSelected = uploadActiveFile === file;
@@ -2649,36 +2563,21 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                 <div
                                     key={file}
                                     onClick={() => setUploadActiveFile(file)}
-                                    style={{
-                                        padding: "10px 12px",
-                                        cursor: "pointer",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        gap: 8,
-                                        borderLeft: isSelected ? `3px solid ${C.PURPLE}` : "3px solid transparent",
-                                        background: isSelected ? "#EFE8FF" : "transparent",
-                                    }}
+                                    className={`p-2.5 cursor-pointer flex items-center justify-between gap-2 transition-colors ${
+                                        isSelected ? 'border-l-[3px] border-[#8B5CF6] bg-[#EFE8FF]' : 'border-l-[3px] border-transparent hover:bg-gray-100'
+                                    }`}
                                 >
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                                        <div style={{
-                                            width: 24,
-                                            height: 24,
-                                            borderRadius: 6,
-                                            background: isBoardSource ? "#E3F2FD" : "#E8F5E9",
-                                            color: isBoardSource ? "#1D4ED8" : "#2E7D32",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            flexShrink: 0,
-                                        }}>
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+                                            isBoardSource ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'
+                                        }`}>
                                             {isBoardSource ? <FileCode2 size={13} /> : <FileText size={13} />}
                                         </div>
-                                        <div style={{ minWidth: 0 }}>
-                                            <div style={{ fontSize: 12, fontWeight: 600, color: C.TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                        <div className="min-w-0">
+                                            <div className="text-xs font-semibold text-gray-800 truncate">
                                                 {file}
                                             </div>
-                                            <div style={{ fontSize: 10, color: C.MUTED }}>
+                                            <div className="text-[10px] text-gray-500">
                                                 {fileCategoryLabel}
                                             </div>
                                         </div>
@@ -2689,13 +2588,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                                 event.stopPropagation();
                                                 handleDeleteUploadFile(file);
                                             }}
-                                            style={{
-                                                border: "none",
-                                                background: "transparent",
-                                                color: C.MUTED,
-                                                cursor: "pointer",
-                                                padding: 2,
-                                            }}
+                                            className="border-none bg-transparent text-gray-500 hover:text-red-600 cursor-pointer p-0.5 transition-colors"
                                             title="Delete file"
                                         >
                                             <Trash2 size={13} />
@@ -2706,69 +2599,33 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         })}
                     </div>
 
-                    <div style={{
-                        borderTop: `1px solid ${C.BORDER}`,
-                        padding: 12,
-                        background: "#FAFAFC",
-                        display: "grid",
-                        gap: 10,
-                    }}>
-                        <div style={{
-                            border: `1px solid ${C.BORDER}`,
-                            borderRadius: 10,
-                            background: "#fff",
-                            padding: 10,
-                        }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <div className="border-t border-gray-200 p-3 bg-[#FAFAFC] grid gap-2.5">
+                        <div className="border border-gray-200 rounded-lg bg-white p-2.5">
+                            <div className="flex items-center gap-2 mb-1.5">
                                 <Cpu size={14} color={C.PURPLE} />
-                                <span style={{ fontSize: 11, fontWeight: 700, color: C.TEXT }}>Board</span>
+                                <span className="text-[11px] font-bold text-gray-800">Board</span>
                             </div>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: C.TEXT }}>{selectedBoardName}</div>
-                            <div style={{ fontSize: 11, color: C.MUTED, marginTop: 2 }}>{activeBoardFile}</div>
+                            <div className="text-xs font-semibold text-gray-800">{selectedBoardName}</div>
+                            <div className="text-[11px] text-gray-500 mt-0.5">{activeBoardFile}</div>
                         </div>
-                        <div style={{
-                            border: `1px solid ${C.BORDER}`,
-                            borderRadius: 10,
-                            background: "#fff",
-                            padding: 10,
-                        }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                        <div className="border border-gray-200 rounded-lg bg-white p-2.5">
+                            <div className="flex items-center gap-2 mb-1.5">
                                 <Plug size={14} color={isConnected ? C.GREEN : C.MUTED} />
-                                <span style={{ fontSize: 11, fontWeight: 700, color: C.TEXT }}>Connection</span>
+                                <span className="text-[11px] font-bold text-gray-800">Connection</span>
                             </div>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: C.TEXT }}>
+                            <div className="text-xs font-semibold text-gray-800">
                                 {selectedPort ? formatPortLabel(ports.find((port) => port.path === selectedPort) || { path: selectedPort }) : "No port selected"}
                             </div>
-                            <div style={{ fontSize: 11, color: isConnected ? C.GREEN : C.MUTED, marginTop: 2 }}>
+                            <div className={`text-[11px] mt-0.5 ${isConnected ? 'text-emerald-600' : 'text-gray-500'}`}>
                                 {isConnected ? "Connected" : "Disconnected"}
                             </div>
                         </div>
                     </div>
 
                     {uploadView === "board" && (
-                        <div style={{
-                            position: "absolute",
-                            left: 12,
-                            bottom: 12,
-                            zIndex: 2,
-                        }}
-                            ref={boardCppMenuRef}
-                        >
+                        <div className="absolute left-3 bottom-3 z-10" ref={boardCppMenuRef}>
                             {showBoardCppMenu && (
-                                <div style={{
-                                    position: "absolute",
-                                    left: 0,
-                                    bottom: 72,
-                                    width: 236,
-                                    display: "grid",
-                                    gap: 8,
-                                    padding: 10,
-                                    borderRadius: 18,
-                                    border: "1px solid rgba(123, 79, 196, 0.16)",
-                                    background: "rgba(255, 255, 255, 0.98)",
-                                    boxShadow: "0 20px 36px rgba(91, 45, 130, 0.22)",
-                                    backdropFilter: "blur(16px)",
-                                }}>
+                                <div className="absolute left-0 bottom-[72px] w-[236px] grid gap-2 p-2.5 rounded-2xl border border-purple-600/16 bg-white/98 shadow-2xl backdrop-blur-md z-10">
                                     {boardCppActions.map((action) => {
                                         const Icon = action.icon;
                                         return (
@@ -2779,38 +2636,16 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                                     action.onClick();
                                                 }}
                                                 title={action.label}
-                                                style={{
-                                                    width: "100%",
-                                                    border: "none",
-                                                    borderRadius: 14,
-                                                    padding: "10px 12px",
-                                                    background: "#F8F5FF",
-                                                    color: C.TEXT,
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 10,
-                                                    cursor: "pointer",
-                                                    textAlign: "left",
-                                                }}
+                                                className="w-full border-none rounded-xl p-2.5 bg-[#F8F5FF] hover:bg-[#ECE3FF] text-gray-800 flex items-center gap-2.5 cursor-pointer text-left transition-colors"
                                             >
-                                                <div style={{
-                                                    width: 34,
-                                                    height: 34,
-                                                    borderRadius: 12,
-                                                    background: "linear-gradient(180deg, #7B4FC4 0%, #5A2D82 100%)",
-                                                    color: "#fff",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    flexShrink: 0,
-                                                }}>
+                                                <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-b from-[#7B4FC4] to-[#5A2D82] text-white flex items-center justify-center shrink-0">
                                                     <Icon size={16} />
                                                 </div>
-                                                <div style={{ minWidth: 0 }}>
-                                                    <div style={{ fontSize: 12, fontWeight: 700, color: C.TEXT }}>
+                                                <div className="min-w-0">
+                                                    <div className="text-xs font-bold text-gray-800">
                                                         {action.label}
                                                     </div>
-                                                    <div style={{ fontSize: 10, color: C.MUTED, marginTop: 2, lineHeight: 1.35 }}>
+                                                    <div className="text-[10px] text-gray-500 mt-0.5 leading-snug">
                                                         {action.description}
                                                     </div>
                                                 </div>
@@ -2822,25 +2657,13 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <button
                                 onClick={() => setShowBoardCppMenu((prev) => !prev)}
                                 title={showBoardCppMenu ? "Hide C++ tools" : "Show C++ tools"}
-                                style={{
-                                    width: 58,
-                                    height: 58,
-                                    borderRadius: "50%",
-                                    border: "4px solid #F3E8FF",
-                                    background: showBoardCppMenu
-                                        ? "linear-gradient(180deg, #7B4FC4 0%, #5A2D82 100%)"
-                                        : "#E91E63",
-                                    color: "#fff",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    boxShadow: showBoardCppMenu
-                                        ? "0 12px 26px rgba(91, 45, 130, 0.3)"
-                                        : "0 10px 24px rgba(233, 30, 99, 0.28)",
-                                    cursor: "pointer",
-                                }}
+                                className={`w-[58px] h-[58px] rounded-full border-4 border-purple-100 text-white flex items-center justify-center shadow-lg cursor-pointer transition-all duration-200 ${
+                                    showBoardCppMenu
+                                        ? 'bg-gradient-to-b from-[#7B4FC4] to-[#5A2D82] shadow-purple-900/30'
+                                        : 'bg-[#E91E63] shadow-pink-600/30'
+                                }`}
                             >
-                                <div style={{ display: "flex", alignItems: "center", gap: 2, fontSize: 11, fontWeight: 800 }}>
+                                <div className="flex items-center gap-0.5 text-[11px] font-extrabold">
                                     <Plus size={16} />
                                     <span>C++</span>
                                 </div>
@@ -2849,32 +2672,23 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     )}
                 </aside>
 
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0 }}>
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                        <div style={{
-                            height: 34,
-                            borderBottom: `1px solid ${C.BORDER}`,
-                            background: uploadView === "board" ? "#FFFFFF" : "#F3F4F6",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            padding: "0 12px",
-                            fontSize: 12,
-                            color: C.TEXT,
-                            gap: 12,
-                        }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                <div className="flex-1 flex flex-col min-w-0 min-h-0">
+                    <div className="flex-1 flex flex-col min-h-0">
+                        <div className={`h-[34px] border-b border-gray-200 flex items-center justify-between px-3 text-xs text-gray-800 gap-3 ${
+                            uploadView === "board" ? 'bg-white' : 'bg-gray-100'
+                        }`}>
+                            <div className="flex items-center gap-2 min-w-0">
                                 {uploadActiveFile === activeBoardFile ? <FileCode2 size={14} /> : <FileText size={14} />}
-                                <span style={{ fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                <span className="font-semibold truncate">
                                     {uploadActiveFile}
                                 </span>
                             </div>
-                            <div style={{ fontSize: 11, color: C.MUTED }}>
+                            <div className="text-[11px] text-gray-500">
                                 {uploadActiveFile === activeBoardFile ? `${selectedBoardName} firmware` : "MicroPython project file"}
                             </div>
                         </div>
 
-                        <div style={{ flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }}>
+                        <div className="flex-1 min-h-0 flex overflow-hidden">
                             <MonacoEditor
                                 projectFiles={uploadProjectFiles}
                                 activeFile={uploadActiveFile}
@@ -2904,42 +2718,18 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             />
                         </div>
 
-                        <div style={{
-                            height: 26,
-                            background: "#F3F4F6",
-                            borderTop: `1px solid ${C.BORDER}`,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 14,
-                            padding: "0 12px",
-                            fontSize: 11,
-                            color: C.MUTED,
-                            flexShrink: 0,
-                        }}>
+                        <div className="h-[26px] bg-gray-100 border-t border-gray-200 flex items-center gap-3.5 px-3 text-[11px] text-gray-500 shrink-0">
                             <span>{uploadActiveFile === activeBoardFile ? "Board C++" : "MicroPython"}</span>
                             <span>Ln {editorCursor.line}, Col {editorCursor.col}</span>
-                            <span style={{ marginLeft: "auto" }}>
+                            <span className="ml-auto">
                                 {uploadProgressMessage || "Ready to edit"}
                             </span>
                         </div>
                     </div>
 
-                    <div style={{
-                        height: 244,
-                        borderTop: `1px solid ${C.BORDER}`,
-                        background: "#F8F9FB",
-                        display: "flex",
-                        flexDirection: "column",
-                        flexShrink: 0,
-                    }}>
-                        <div style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            padding: "10px 12px 0",
-                            gap: 10,
-                        }}>
-                            <div style={{ display: "flex", gap: 8 }}>
+                    <div className="h-[244px] border-t border-gray-200 bg-[#F8F9FB] flex flex-col shrink-0">
+                        <div className="flex items-center justify-between p-3 pb-0 gap-2.5">
+                            <div className="flex gap-2">
                                 {[
                                     { id: "terminal", label: "Terminal", icon: TerminalSquare },
                                     { id: "log", label: "Log", icon: ClipboardList },
@@ -2951,19 +2741,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                         <button
                                             key={tab.id}
                                             onClick={() => setUploadPanelTab(tab.id)}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 6,
-                                                border: active ? `1px solid ${C.PURPLE}` : `1px solid ${C.BORDER}`,
-                                                background: active ? "#F3EEFF" : "#fff",
-                                                color: active ? C.PURPLE : C.TEXT,
-                                                borderRadius: 8,
-                                                padding: "7px 12px",
-                                                fontSize: 12,
-                                                fontWeight: 600,
-                                                cursor: "pointer",
-                                            }}
+                                            className={`flex items-center gap-1.5 border rounded-lg px-3 py-1.75 text-xs font-semibold cursor-pointer transition-colors ${
+                                                active ? 'border-[#8B5CF6] bg-[#F3EEFF] text-[#8B5CF6]' : 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50'
+                                            }`}
                                         >
                                             <Icon size={14} />
                                             {tab.label}
@@ -2975,27 +2755,17 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             <button
                                 onClick={handleUploadFirmware}
                                 disabled={isUploadingFirmware}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 8,
-                                    border: "none",
-                                    background: isUploadingFirmware ? "#C4B5FD" : C.PURPLE,
-                                    color: "#fff",
-                                    borderRadius: 8,
-                                    padding: "9px 14px",
-                                    fontSize: 12,
-                                    fontWeight: 700,
-                                    cursor: isUploadingFirmware ? "not-allowed" : "pointer",
-                                }}
+                                className={`flex items-center gap-2 border-none rounded-lg px-3.5 py-2 text-xs font-bold transition-colors ${
+                                    isUploadingFirmware ? 'bg-purple-300 cursor-not-allowed text-white' : 'bg-[#8B5CF6] hover:bg-purple-700 cursor-pointer text-white'
+                                }`}
                             >
-                                {isUploadingFirmware ? <Loader size={15} style={{ animation: "spin 1s linear infinite" }} /> : <Upload size={15} />}
+                                {isUploadingFirmware ? <Loader size={15} className="animate-spin" /> : <Upload size={15} />}
                                 {isUploadingFirmware ? "Uploading..." : "Upload Code"}
                             </button>
                         </div>
 
-                        <div style={{ flex: 1, minHeight: 0, padding: "10px 12px 12px" }}>
-                            <div style={{ height: "100%", border: `1px solid ${C.BORDER}`, borderRadius: 10, overflow: "hidden", background: "#fff" }}>
+                        <div className="flex-1 min-h-0 p-3 pt-2.5">
+                            <div className="h-full border border-gray-200 rounded-lg overflow-hidden bg-white">
                                 {renderUploadOutput()}
                             </div>
                         </div>
@@ -3009,68 +2779,29 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
-        <div style={{
-            display: "flex", flexDirection: "column",
-            height: "100vh", width: "100vw",
-            background: C.BG, color: C.TEXT, overflow: "hidden",
-            fontFamily: "'Inter', 'Segoe UI', sans-serif",
-        }}>
+        <div className="flex flex-col h-screen w-screen bg-gray-50 text-gray-800 overflow-hidden font-sans">
 
             {/* ══ TOPBAR (Junior/Intermediate style) ══════════════════════════════════════ */}
-            <header style={{
-                position: "sticky",
-                top: 0,
-                height: 60,
-                background: "#0a015a",//"#080a25",
-                display: "flex",
-                alignItems: "center",
-                padding: "0 8px",
-                justifyContent: "space-between",
-                color: "#fff",
-                zIndex: 1000,
-                flexShrink: 0,
-                overflow: "visible",
-            }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <header className="sticky top-0 h-[60px] bg-[#0a015a] flex items-center px-2 justify-between text-white z-[1000] shrink-0 overflow-visible">
+                <div className="flex items-center gap-3">
                     <button
                         onClick={onBack}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: 40,
-                            height: 40,
-                            background: 'rgba(255,255,255,0.1)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: 12,
-                            color: '#fff',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            flexShrink: 0,
-                        }}
-                        onMouseEnter={e => {
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-                            e.currentTarget.style.transform = 'scale(1.05)';
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                            e.currentTarget.style.transform = 'scale(1)';
-                        }}
+                        className="flex items-center justify-center w-10 h-10 bg-white/10 hover:bg-white/20 hover:scale-105 border border-white/10 rounded-xl text-white cursor-pointer transition-all duration-200 shrink-0"
                         title="Back to Home"
                     >
                         <Home size={19} strokeWidth={2.2} />
                     </button>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }} onClick={() => {
+                    <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => {
                         sessionStorage.setItem('landingActiveTab', 'modules');
                         sessionStorage.removeItem('myProjectsSelectedMode');
                         onBack();
                     }}>
                         <Logo height={50} />
-                        <span style={{ color: "#ffffffff", fontSize: 17, fontWeight: 1000, letterSpacing: "0.08em", fontFamily: "'sego ui',Inter,system-ui,sans-serif" }}>Logix</span>
+                        <span className="text-white text-[17px] font-black tracking-wider font-sans">Logix</span>
                     </div>
                     {showDesktopMenus && (
                         <>
-                            <div style={{ width: 1, height: 20, background: "rgba(255, 255, 255, 0.71)" }} />
+                            <div className="w-px h-5 bg-white/70" />
 
                             <DropdownMenu
                                 label="File"
@@ -3113,7 +2844,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                             {["Tutorials", "Board", "Connect"].map((menuLabel) => (
                                 <span
                                     key={menuLabel}
-                                    style={{ fontSize: 15, cursor: "pointer", opacity: 0.9, padding: "4px 8px", borderRadius: 4 }}
+                                    className="text-[15px] cursor-pointer opacity-90 hover:opacity-100 hover:bg-white/15 px-2 py-1 rounded transition-colors"
                                     onClick={() => {
                                         if (menuLabel === "Board") {
                                             setIsBoardModalOpen(true);
@@ -3122,8 +2853,6 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                             handleConnectToBoard();
                                         }
                                     }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; e.currentTarget.style.opacity = 1; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.opacity = 0.9; }}
                                 >
                                     {menuLabel}
                                 </span>
@@ -3131,7 +2860,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         </>
                     )}
                 </div>
-                <div style={{ display: "flex", alignItems: "end", gap: 8 }}>
+                <div className="flex items-end gap-2">
                     {showDesktopMenus ? (
                         <>
                             <ProjectNameInput
@@ -3148,7 +2877,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                 activeMode={workflowMode}
                                 onChange={handleWorkflowModeChange}
                             />
-                            <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)" }} />
+                            <div className="w-px h-[18px] bg-white/30" />
                             <ActionButton
                                 variant="subtle"
                                 icon={<Upload size={15} />}
@@ -3161,11 +2890,11 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                                     handleUploadFirmware();
                                 }}
                             />
-                            <div style={{ display: "flex", gap: 4 }}>
-                                <div style={{ width: 38, height: 30, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                            <div className="flex gap-1">
+                                <div className="w-[38px] h-[30px] rounded bg-white/15 hover:bg-white/25 flex items-center justify-center cursor-pointer text-white transition-colors">
                                     <Maximize size={15} />
                                 </div>
-                                <div style={{ width: 38, height: 30, borderRadius: 4, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                                <div className="w-[38px] h-[30px] rounded bg-white/15 hover:bg-white/25 flex items-center justify-center cursor-pointer text-white transition-colors">
                                     <Settings size={15} />
                                 </div>
                             </div>
@@ -3173,12 +2902,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     ) : (
                         <button
                             onClick={() => setMobileMenuOpen(true)}
-                            style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                width: 40, height: 40, borderRadius: 10,
-                                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
-                                color: '#fff', cursor: 'pointer', flexShrink: 0,
-                            }}
+                            className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white cursor-pointer shrink-0 transition-colors"
                         >
                             <MenuIcon size={20} strokeWidth={2.2} />
                         </button>
@@ -3188,21 +2912,14 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 {showDesktopMenus && (
                     <>
                         <TopbarShareButton
-                            style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
+                            className="bg-transparent border-none text-white/70 hover:text-white cursor-pointer px-2 py-1.5 rounded flex items-center transition-colors"
                             size={18}
                             onSave={handleSaveProject}
                             projectName={projectName}
                         />
 
                         {/* CREOLEAP Right Logo */}
-                        <div style={{
-                            marginLeft: 12,
-                            display: 'flex',
-                            alignItems: 'center',
-                            flexShrink: 0,
-                            filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
-                            pointerEvents: 'none',
-                        }}>
+                        <div className="ml-3 flex items-center shrink-0 drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)] pointer-events-none">
                             <CreoleapLogo height={200} style={{ pointerEvents: 'none' }} />
                         </div>
                     </>
@@ -3214,7 +2931,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 onClose={() => setMobileMenuOpen(false)}
                 theme="dark"
             >
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>File Operations</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">File Operations</div>
                 {[
                     { label: 'New Project', icon: File, onClick: handleNewProject },
                     { label: 'Open from your computer', icon: FolderOpen, onClick: handleOpenProject },
@@ -3232,117 +2949,73 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     },
                 ].map((item, i) => (
                     <button key={i} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                            padding: '8px 10px', border: 'none', borderRadius: 8,
-                            background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                            fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                            transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                        className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-[#e0e0e0] hover:bg-purple-600/25 hover:text-white text-xs font-medium cursor-pointer text-left transition-all duration-150"
                     >
                         {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
                         {item.label}
                     </button>
                 ))}
 
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                <div className="h-px bg-white/10 my-1" />
 
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Edit Operations</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Edit Operations</div>
                 {[
                     { label: 'Undo', icon: Undo, onClick: () => editorRef.current?.trigger('keyboard', 'undo', null) },
                     { label: 'Redo', icon: Redo, onClick: () => editorRef.current?.trigger('keyboard', 'redo', null) },
                 ].map((item, i) => (
                     <button key={i} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                            padding: '8px 10px', border: 'none', borderRadius: 8,
-                            background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                            fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                            transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                        className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-[#e0e0e0] hover:bg-purple-600/25 hover:text-white text-xs font-medium cursor-pointer text-left transition-all duration-150"
                     >
                         {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
                         {item.label}
                     </button>
                 ))}
 
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                <div className="h-px bg-white/10 my-1" />
 
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Controls</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Controls</div>
                 {["Tutorials", "Board", "Connect"].map((label) => (
                     <button key={label} onClick={() => {
                         if (label === "Board") setIsBoardModalOpen(true);
                         if (label === "Connect" && workflowMode === "upload") handleConnectToBoard();
                         setMobileMenuOpen(false);
                     }}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                            padding: '8px 10px', border: 'none', borderRadius: 8,
-                            background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                            fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                            transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                        className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-[#e0e0e0] hover:bg-purple-600/25 hover:text-white text-xs font-medium cursor-pointer text-left transition-all duration-150"
                     >
                         {label}
                     </button>
                 ))}
 
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                <div className="h-px bg-white/10 my-1" />
 
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Mode & Actions</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Mode & Actions</div>
                 {[
                     { id: 'ide', label: 'IDE' },
                     { id: 'stage', label: 'Stage' },
                     { id: 'upload', label: 'Upload' },
                 ].map(({ id, label }) => (
                     <button key={id} onClick={() => { handleWorkflowModeChange(id); setMobileMenuOpen(false); }}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                            padding: '8px 10px', border: 'none', borderRadius: 8,
-                            background: workflowMode === id ? 'rgba(124,58,237,0.2)' : 'transparent',
-                            color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
-                            transition: 'all 0.15s ease',
-                        }}
+                        className={`flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg text-white text-xs font-semibold cursor-pointer text-left transition-all duration-150 ${
+                            workflowMode === id ? 'bg-purple-600/20' : 'bg-transparent hover:bg-purple-600/15'
+                        }`}
                     >
                         {label}
-                        {workflowMode === id && <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.6 }}>Active</span>}
+                        {workflowMode === id && <span className="ml-auto text-[11px] opacity-60">Active</span>}
                     </button>
                 ))}
                 <button onClick={() => { handleWorkflowModeChange('upload'); handleUploadFirmware?.(); setMobileMenuOpen(false); }}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                        padding: '8px 10px', border: 'none', borderRadius: 8,
-                        background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                        fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                        transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-[#e0e0e0] hover:bg-purple-600/25 hover:text-white text-xs font-medium cursor-pointer text-left transition-all duration-150"
                 >
                     <Upload size={15} color="#a78bfa" strokeWidth={2} />
                     {workflowMode === "upload" ? "Upload Code" : "Open Upload"}
                 </button>
 
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                <div className="h-px bg-white/10 my-1" />
 
                 <TopbarShareButton size={20} onSave={handleSaveProject} projectName={projectName}>
                     {({ onClick, loading }) => (
                         <button onClick={() => { onClick?.(); setMobileMenuOpen(false); }} disabled={loading}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                                padding: '8px 10px', border: 'none', borderRadius: 8,
-                                background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                                fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                                transition: 'all 0.15s ease',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                            className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-[#e0e0e0] hover:bg-purple-600/25 hover:text-white text-xs font-medium cursor-pointer text-left transition-all duration-150"
                         >
                             <Share size={15} color="#a78bfa" strokeWidth={2} />
                             Share
@@ -3353,81 +3026,60 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
 
             {/* ══ SECOND TOOLBAR (LeapBlox Style) ══════════════════════════════ */}
             {workflowMode === "stage" ? (
-                <div style={{
-                    position: "sticky",
-                    top: 44,
-                    height: 42, background: "#fff", display: "flex",
-                    alignItems: "center", padding: "0 12px",
-                    justifyContent: "space-between", borderBottom: `1px solid ${C.BORDER}`,
-                    zIndex: 90,
-                    flexShrink: 0,
-                }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div className="sticky top-[44px] h-[42px] bg-white flex items-center px-3 justify-between border-b border-gray-200 z-[90] shrink-0">
+                    <div className="flex items-center gap-1.5">
                         {/* Blocks/Python tabs */}
-                        <div style={{ display: "flex", background: "#E8E8E8", borderRadius: 4, overflow: "hidden" }}>
+                        <div className="flex bg-gray-200 rounded overflow-hidden">
                             <div
                                 onClick={() => {
                                     if (onSwitchToBlocks) {
                                         onSwitchToBlocks();
                                     }
                                 }}
-                                style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRight: "1px solid #ddd" }}
+                                className="px-3.5 py-1.5 bg-gray-200 text-gray-600 hover:text-gray-900 text-xs font-semibold cursor-pointer border-r border-gray-300 transition-colors"
                             >Blocks</div>
-                            <div style={{ padding: "6px 14px", background: "#6B46C1", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Python</div>
+                            <div className="px-3.5 py-1.5 bg-purple-700 text-white text-xs font-semibold cursor-pointer">Python</div>
                         </div>
-                        <div style={{ width: 1, height: 20, background: C.BORDER }} />
-                        <div style={{ display: "flex", background: "#E8E8E8", borderRadius: 4, overflow: "hidden" }}>
+                        <div className="w-px h-5 bg-gray-200" />
+                        <div className="flex bg-gray-200 rounded overflow-hidden">
                             <div
                                 onClick={() => {
                                     if (onSwitchToCostumes) {
                                         onSwitchToCostumes();
                                     }
                                 }}
-                                style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRight: "1px solid #ddd" }}
+                                className="px-3.5 py-1.5 bg-gray-200 text-gray-600 hover:text-gray-900 text-xs font-semibold cursor-pointer border-r border-gray-300 transition-colors"
                             >Costumes</div>
-                            <div style={{ padding: "6px 14px", background: "#E8E8E8", color: "#666", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Sounds</div>
+                            <div className="px-3.5 py-1.5 bg-gray-200 text-gray-600 hover:text-gray-900 text-xs font-semibold cursor-pointer transition-colors">Sounds</div>
                         </div>
-                        <div style={{ width: 1, height: 20, background: C.BORDER }} />
+                        <div className="w-px h-5 bg-gray-200" />
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div className="flex items-center gap-1.5">
                         {/* Editing tools */}
-                        <div style={{ display: "flex", gap: 2 }}>
-                            <div title="Undo (Ctrl+Z)" onClick={() => editorRef.current?.trigger('keyboard', 'undo', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        <div className="flex gap-0.5">
+                            <div title="Undo (Ctrl+Z)" onClick={() => editorRef.current?.trigger('keyboard', 'undo', null)} className="cursor-pointer p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
                                 <Undo size={16} />
                             </div>
-                            <div title="Redo (Ctrl+Y)" onClick={() => editorRef.current?.trigger('keyboard', 'redo', null)} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                            <div title="Redo (Ctrl+Y)" onClick={() => editorRef.current?.trigger('keyboard', 'redo', null)} className="cursor-pointer p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
                                 <Redo size={16} />
                             </div>
-                            <div title="Copy (Ctrl+C)" onClick={() => { try { const ed = editorRef.current; if (ed) { const sel = ed.getModel()?.getValueInRange(ed.getSelection()); if (sel && navigator.clipboard) navigator.clipboard.writeText(sel).catch(() => { /* noop */ }); } } catch (_) { /* noop */ } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                                <span style={{ fontSize: 14 }}>📋</span>
+                            <div title="Copy (Ctrl+C)" onClick={() => { try { const ed = editorRef.current; if (ed) { const sel = ed.getModel()?.getValueInRange(ed.getSelection()); if (sel && navigator.clipboard) navigator.clipboard.writeText(sel).catch(() => { /* noop */ }); } } catch (_) { /* noop */ } }} className="cursor-pointer p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
+                                <span className="text-sm">📋</span>
                             </div>
-                            <div title="Paste (Ctrl+V)" onClick={() => { try { if (navigator.clipboard) { navigator.clipboard.readText().then(text => { const ed = editorRef.current; if (ed && text) { const sel = ed.getSelection(); ed.executeEdits('', [{ range: sel, text, forceMoveMarkers: true }]); } }).catch(() => { /* noop */ }); } } catch (_) { /* noop */ } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                                <span style={{ fontSize: 14 }}>📄</span>
+                            <div title="Paste (Ctrl+V)" onClick={() => { try { if (navigator.clipboard) { navigator.clipboard.readText().then(text => { const ed = editorRef.current; if (ed && text) { const sel = ed.getSelection(); ed.executeEdits('', [{ range: sel, text, forceMoveMarkers: true }]); } }).catch(() => { /* noop */ }); } } catch (_) { /* noop */ } }} className="cursor-pointer p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
+                                <span className="text-sm">📄</span>
                             </div>
-                            <div title="Delete" onClick={() => { if (window.confirm('Clear active file?')) { const ed = editorRef.current; if (ed) { ed.setValue(''); } } }} style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }} onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                            <div title="Delete" onClick={() => { if (window.confirm('Clear active file?')) { const ed = editorRef.current; if (ed) { ed.setValue(''); } } }} className="cursor-pointer p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
                                 <Trash2 size={16} />
                             </div>
                         </div>
-                        <div style={{ width: 1, height: 20, background: C.BORDER }} />
+                        <div className="w-px h-5 bg-gray-200" />
                         {/* Quick Run Button (LeapBlox Green) */}
                         <div onClick={handleRun} title="Run Code (Ctrl+Enter or F5)"
-                            className="run-button"
-                            style={{
-                                cursor: isRunning ? "not-allowed" : "pointer",
-                                padding: "6px 14px",
-                                background: isRunning ? "#9CA3AF" : "#4CAF50",
-                                color: "#fff",
-                                borderRadius: 4,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                                fontSize: 12,
-                                fontWeight: 600,
-                                transition: "all 0.2s",
-                            }}>
+                            className={`run-button cursor-pointer px-3.5 py-1.5 ${isRunning ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#4CAF50] hover:bg-[#43a047]'} text-white rounded flex items-center gap-1 text-xs font-semibold transition-all duration-200`}>
                             {isRunning ? (
                                 <>
-                                    <span style={{ animation: "spin 1s linear infinite" }}>⚙</span>
+                                    <span className="animate-spin">⚙</span>
                                     <span>Running...</span>
                                 </>
                             ) : (
@@ -3439,153 +3091,66 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         </div>
                         {/* Run All Button */}
                         <div onClick={handleRun} title="Run All"
-                            style={{
-                                cursor: "pointer",
-                                padding: "6px 10px",
-                                background: "#E8F5E9",
-                                color: "#4CAF50",
-                                borderRadius: 4,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                                fontSize: 11,
-                                fontWeight: 600,
-                                border: "1px solid #C8E6C9",
-                            }}>
+                            className="cursor-pointer px-2.5 py-1.5 bg-[#E8F5E9] hover:bg-emerald-100 text-[#4CAF50] border border-[#C8E6C9] rounded flex items-center gap-1 text-[11px] font-semibold transition-colors">
                             <Play size={10} fill="#4CAF50" />
                             <span>Run All</span>
                         </div>
                         {/* Stop Button (LeapBlox Red) */}
                         <div onClick={handleStop} title="Stop (Escape)"
-                            className="stop-button"
-                            style={{
-                                cursor: "pointer",
-                                padding: "6px 12px",
-                                background: "#FFEBEE",
-                                color: "#F44336",
-                                border: "1px solid #FFCDD2",
-                                borderRadius: 4,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                                fontSize: 12,
-                                fontWeight: 600,
-                                transition: "all 0.2s",
-                            }}>
+                            className="stop-button cursor-pointer px-3 py-1.5 bg-[#FFEBEE] hover:bg-[#EF4444] text-[#F44336] hover:text-white border border-[#FFCDD2] rounded flex items-center gap-1 text-xs font-semibold transition-all duration-200">
                             <Square size={10} fill="#F44336" />
                             <span>Stop</span>
                         </div>
-                        <div style={{ width: 1, height: 20, background: C.BORDER }} />
+                        <div className="w-px h-5 bg-gray-200" />
                         {/* REPL Mode Toggle */}
-                        <div style={{
-                            padding: "5px 10px",
-                            background: "#F5F5F5",
-                            color: "#666",
-                            borderRadius: 4,
-                            fontSize: 11,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            border: "1px solid #E0E0E0"
-                        }}>
+                        <div className="px-2.5 py-1.25 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded text-[11px] font-medium cursor-pointer border border-gray-300 transition-colors">
                             REPL Mode
                         </div>
-                        <div title="Stop" style={{ cursor: "pointer", padding: "4px 6px", color: "#F44336", borderRadius: 4 }}>
+                        <div title="Stop" className="cursor-pointer p-1 text-[#F44336] rounded hover:bg-red-50 transition-colors">
                             <Square size={14} fill="#F44336" />
                         </div>
-                        <div title="Clear" style={{ cursor: "pointer", padding: "4px 6px", color: "#666", borderRadius: 4 }}>
+                        <div title="Clear" className="cursor-pointer p-1 text-gray-600 rounded hover:bg-gray-100 transition-colors">
                             <Trash2 size={14} />
                         </div>
                     </div>
                 </div>
             ) : workflowMode === "upload" ? (
-                <div style={{
-                    position: "sticky",
-                    top: 44,
-                    height: 48,
-                    background: "#fff",
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "0 12px",
-                    justifyContent: "space-between",
-                    borderBottom: `1px solid ${C.BORDER}`,
-                    zIndex: 90,
-                    flexShrink: 0,
-                    gap: 16,
-                }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ display: "flex", borderRadius: 8, overflow: "hidden", background: "#ECE7F8", border: `1px solid ${C.BORDER}` }}>
+                <div className="sticky top-[44px] h-[48px] bg-white flex items-center px-3 justify-between border-b border-gray-200 z-[90] shrink-0 gap-4">
+                    <div className="flex items-center gap-2">
+                        <div className="flex rounded-lg overflow-hidden bg-[#ECE7F8] border border-gray-200">
                             <button
                                 onClick={() => handleUploadViewChange("project")}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                    padding: "7px 14px",
-                                    border: "none",
-                                    background: uploadView === "project" ? C.PURPLE : "transparent",
-                                    color: uploadView === "project" ? "#fff" : C.TEXT,
-                                    fontSize: 12,
-                                    fontWeight: 700,
-                                    cursor: "pointer",
-                                }}
+                                className={`flex items-center gap-1.5 px-3.5 py-1.75 border-none text-xs font-bold cursor-pointer transition-colors ${
+                                    uploadView === "project" ? 'bg-[#8B5CF6] text-white' : 'bg-transparent text-gray-800 hover:bg-purple-100'
+                                }`}
                             >
                                 <FileText size={14} />
                                 MicroPython
                             </button>
                             <button
                                 onClick={() => handleUploadViewChange("board")}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                    padding: "7px 14px",
-                                    border: "none",
-                                    background: uploadView === "board" ? C.PURPLE : "transparent",
-                                    color: uploadView === "board" ? "#fff" : C.TEXT,
-                                    fontSize: 12,
-                                    fontWeight: 700,
-                                    cursor: "pointer",
-                                }}
+                                className={`flex items-center gap-1.5 px-3.5 py-1.75 border-none text-xs font-bold cursor-pointer transition-colors ${
+                                    uploadView === "board" ? 'bg-[#8B5CF6] text-white' : 'bg-transparent text-gray-800 hover:bg-purple-100'
+                                }`}
                             >
                                 <FileCode2 size={14} />
                                 Board C++
                             </button>
                         </div>
-                        <div style={{ width: 1, height: 22, background: C.BORDER }} />
+                        <div className="w-px h-[22px] bg-gray-200" />
                         <button
                             onClick={() => setIsBoardModalOpen(true)}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                                border: `1px solid ${C.BORDER}`,
-                                background: "#fff",
-                                borderRadius: 8,
-                                padding: "7px 12px",
-                                fontSize: 12,
-                                fontWeight: 600,
-                                color: C.TEXT,
-                                cursor: "pointer",
-                            }}
+                            className="flex items-center gap-1.5 border border-gray-200 bg-white hover:bg-gray-50 rounded-lg px-3 py-1.75 text-xs font-semibold text-gray-800 cursor-pointer transition-colors"
                         >
                             <Cpu size={14} color={C.PURPLE} />
                             {selectedBoardName}
                         </button>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div className="flex items-center gap-2">
                         <select
                             value={selectedPort}
                             onChange={(e) => setSelectedPort(e.target.value)}
-                            style={{
-                                border: `1px solid ${C.BORDER}`,
-                                borderRadius: 8,
-                                padding: "7px 10px",
-                                fontSize: 12,
-                                color: C.TEXT,
-                                minWidth: 180,
-                                outline: "none",
-                                background: "#fff",
-                            }}
+                            className="border border-gray-200 rounded-lg px-2.5 py-1.75 text-xs text-gray-800 min-w-[180px] outline-none bg-white focus:border-purple-500 transition-colors"
                         >
                             <option value="">{ports.length ? "Select Port" : "No Ports Found"}</option>
                             {ports.map((port) => (
@@ -3597,51 +3162,30 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         <button
                             onClick={refreshPorts}
                             title="Refresh Ports"
-                            style={{
-                                width: 34,
-                                height: 34,
-                                borderRadius: 8,
-                                border: `1px solid ${C.BORDER}`,
-                                background: "#fff",
-                                color: C.TEXT,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                cursor: "pointer",
-                            }}
+                            className="w-[34px] h-[34px] rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 flex items-center justify-center cursor-pointer transition-colors"
                         >
                             <RefreshCw size={15} />
                         </button>
                         <button
                             onClick={handleConnectToBoard}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                                border: "none",
-                                background: isConnected ? C.GREEN : "#EEF2FF",
-                                color: isConnected ? "#fff" : C.TEXT,
-                                borderRadius: 8,
-                                padding: "8px 12px",
-                                fontSize: 12,
-                                fontWeight: 700,
-                                cursor: "pointer",
-                            }}
+                            className={`flex items-center gap-1.5 border-none rounded-lg px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
+                                isConnected ? 'bg-[#10B981] hover:bg-emerald-600 text-white' : 'bg-[#EEF2FF] hover:bg-indigo-100 text-gray-800'
+                            }`}
                         >
                             <Plug size={14} />
                             {isConnected ? "Disconnect" : "Connect"}
                         </button>
-                        <div style={{ width: 1, height: 22, background: C.BORDER }} />
-                        <button onClick={handleUndoEditor} title="Undo" style={{ border: `1px solid ${C.BORDER}`, background: "#fff", borderRadius: 8, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: C.TEXT }}>
+                        <div className="w-px h-[22px] bg-gray-200" />
+                        <button onClick={handleUndoEditor} title="Undo" className="border border-gray-200 bg-white hover:bg-gray-50 rounded-lg w-[34px] h-[34px] flex items-center justify-center cursor-pointer text-gray-800 transition-colors">
                             <Undo size={15} />
                         </button>
-                        <button onClick={handleRedoEditor} title="Redo" style={{ border: `1px solid ${C.BORDER}`, background: "#fff", borderRadius: 8, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: C.TEXT }}>
+                        <button onClick={handleRedoEditor} title="Redo" className="border border-gray-200 bg-white hover:bg-gray-50 rounded-lg w-[34px] h-[34px] flex items-center justify-center cursor-pointer text-gray-800 transition-colors">
                             <Redo size={15} />
                         </button>
-                        <div style={{ width: 1, height: 22, background: C.BORDER }} />
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: uploadProgressMessage ? C.TEXT : C.MUTED }}>
+                        <div className="w-px h-[22px] bg-gray-200" />
+                        <div className={`flex items-center gap-2 text-xs ${uploadProgressMessage ? 'text-gray-800' : 'text-gray-500'}`}>
                             {uploadProgressMessage ? (
-                                isUploadingFirmware ? <Loader size={15} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle size={15} color={C.GREEN} />
+                                isUploadingFirmware ? <Loader size={15} className="animate-spin" /> : <CheckCircle size={15} color={C.GREEN} />
                             ) : (
                                 <AlertCircle size={15} color={C.MUTED} />
                             )}
@@ -3651,89 +3195,46 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 </div>
             ) : (
                 /* IDE Mode Toolbar — VS Code inspired dark theme */
-                <div style={{
-                    position: "relative",
-                    height: 42,
-                    background: "#1e1e2e",
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "0 12px",
-                    justifyContent: "space-between",
-                    borderBottom: "1px solid #313244",
-                    zIndex: 90,
-                    flexShrink: 0,
-                }}>
+                <div className="relative h-[42px] bg-[#1e1e2e] flex items-center px-3 justify-between border-b border-[#313244] z-[90] shrink-0">
                     {/* Left: File tabs */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 0, overflow: "hidden" }}>
+                    <div className="flex items-center gap-0 overflow-hidden">
                         {Object.keys(projectFiles).map((fname) => (
                             <div
                                 key={fname}
                                 onClick={() => setActiveFile(fname)}
-                                style={{
-                                    padding: "6px 14px",
-                                    background: activeFile === fname ? "#2d2d3f" : "transparent",
-                                    color: activeFile === fname ? "#cdd6f4" : "#6c7086",
-                                    fontSize: 12,
-                                    fontWeight: activeFile === fname ? 600 : 400,
-                                    cursor: "pointer",
-                                    borderRight: "1px solid #313244",
-                                    borderBottom: activeFile === fname ? "2px solid #7C3AED" : "2px solid transparent",
-                                    transition: "all 0.15s",
-                                    whiteSpace: "nowrap",
-                                    fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace",
-                                }}
+                                className={`px-3.5 py-[6px] text-xs transition-all whitespace-nowrap font-mono cursor-pointer border-r border-[#313244] ${
+                                    activeFile === fname
+                                        ? 'bg-[#2d2d3f] text-[#cdd6f4] font-semibold border-b-2 border-[#7C3AED]'
+                                        : 'bg-transparent text-[#6c7086] hover:text-gray-300 font-normal border-b-2 border-transparent'
+                                }`}
                             >
                                 {fname}
                             </div>
                         ))}
                     </div>
                     {/* Right: Editing tools + Run/Stop */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <div style={{ display: "flex", gap: 2 }}>
-                            <button title="Undo" onClick={() => { if (editorRef.current) editorRef.current.trigger('keyboard', 'undo', null); }} style={{ cursor: "pointer", padding: "4px 6px", color: "#6c7086", borderRadius: 4, background: "transparent", border: "none", display: "flex", alignItems: "center" }}>
+                    <div className="flex items-center gap-1.5">
+                        <div className="flex gap-0.5">
+                            <button title="Undo" onClick={() => { if (editorRef.current) editorRef.current.trigger('keyboard', 'undo', null); }} className="cursor-pointer px-1.5 py-1 text-[#6c7086] hover:text-gray-200 hover:bg-[#313244] rounded bg-transparent border-none flex items-center transition-colors">
                                 <Undo size={15} />
                             </button>
-                            <button title="Redo" onClick={() => { if (editorRef.current) editorRef.current.trigger('keyboard', 'redo', null); }} style={{ cursor: "pointer", padding: "4px 6px", color: "#6c7086", borderRadius: 4, background: "transparent", border: "none", display: "flex", alignItems: "center" }}>
+                            <button title="Redo" onClick={() => { if (editorRef.current) editorRef.current.trigger('keyboard', 'redo', null); }} className="cursor-pointer px-1.5 py-1 text-[#6c7086] hover:text-gray-200 hover:bg-[#313244] rounded bg-transparent border-none flex items-center transition-colors">
                                 <Redo size={15} />
                             </button>
                         </div>
-                        <div style={{ width: 1, height: 20, background: "#313244" }} />
+                        <div className="w-px h-5 bg-[#313244]" />
                         <button onClick={() => handleRun()} title="Run (Ctrl+Enter)" disabled={isRunning}
-                            style={{
-                                cursor: isRunning ? "not-allowed" : "pointer",
-                                padding: "5px 12px",
-                                background: isRunning ? "#45475a" : "#4CAF50",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: 4,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                                fontSize: 12,
-                                fontWeight: 600,
-                                transition: "all 0.2s",
-                            }}>
+                            className={`cursor-pointer px-3 py-[5px] text-xs font-semibold rounded flex items-center gap-1 transition-all border-none text-white ${
+                                isRunning ? 'bg-[#45475a] cursor-not-allowed' : 'bg-[#4CAF50] hover:bg-[#43a047]'
+                            }`}>
                             {isRunning ? (
-                                <><span style={{ animation: "spin 1s linear infinite" }}>&#x2699;</span> Running...</>
+                                <><span className="animate-spin">&#x2699;</span> Running...</>
                             ) : (
                                 <><Play size={12} fill="#fff" /> Run</>
                             )}
                         </button>
                         <button onClick={() => handleStop()} title="Stop (Escape)"
-                            style={{
-                                cursor: "pointer",
-                                padding: "5px 10px",
-                                background: "#45475a",
-                                color: "#f38ba8",
-                                border: "none",
-                                borderRadius: 4,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                                fontSize: 12,
-                                fontWeight: 600,
-                                transition: "all 0.2s",
-                            }}>
+                            className="cursor-pointer px-2.5 py-[5px] bg-[#45475a] hover:bg-[#EF4444] text-[#f38ba8] hover:text-white border-none rounded flex items-center gap-1 text-xs font-semibold transition-all">
                             <Square size={10} fill="#f38ba8" /> Stop
                         </button>
                     </div>
@@ -3840,7 +3341,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 renderUploadWorkspace()
             ) : (
                 /* IDE Mode Workspace — SidePanel + Editor (left) + Terminal (right) */
-                <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0, background: "#1e1e2e" }}>
+                <div className="flex-1 flex overflow-hidden min-h-0 bg-[#1e1e2e]">
 
                     {/* ── LEFT SIDEBAR (File Explorer) ── */}
                     <SidePanel
@@ -3874,40 +3375,15 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     />
 
                     {/* ── CENTER: Code Editor ── */}
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", borderRight: "1px solid #313244" }}>
+                    <div className="flex-1 flex flex-col overflow-hidden border-r border-[#313244]">
                         {Object.keys(projectFiles).length === 0 ? (
-                            <div style={{
-                                flex: 1,
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "#6c7086",
-                                gap: 16,
-                                fontFamily: "'Cascadia Code', 'Fira Code', Consolas, monospace",
-                            }}>
-                                <FileCode2 size={48} strokeWidth={1.2} style={{ opacity: 0.4 }} />
-                                <div style={{ fontSize: 16, fontWeight: 500, color: "#8b8fa3" }}>No files yet</div>
-                                <div style={{ fontSize: 13, color: "#585b70" }}>Create a new file from the sidebar to get started</div>
+                            <div className="flex-1 flex flex-col items-center justify-center text-[#6c7086] gap-4 font-mono">
+                                <FileCode2 size={48} strokeWidth={1.2} className="opacity-40" />
+                                <div className="text-base font-medium text-[#8b8fa3]">No files yet</div>
+                                <div className="text-xs text-[#585b70]">Create a new file from the sidebar to get started</div>
                                 <button
                                     onClick={() => handleCreateNewFile()}
-                                    style={{
-                                        marginTop: 8,
-                                        padding: "8px 20px",
-                                        background: "#7C3AED",
-                                        color: "#fff",
-                                        border: "none",
-                                        borderRadius: 6,
-                                        fontSize: 13,
-                                        fontWeight: 600,
-                                        cursor: "pointer",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                        transition: "background 0.2s",
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.background = "#6D28D9"}
-                                    onMouseLeave={e => e.currentTarget.style.background = "#7C3AED"}
+                                    className="mt-2 px-5 py-2 bg-[#7C3AED] hover:bg-[#6D28D9] text-white border-none rounded-md text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors"
                                 >
                                     <Plus size={14} /> New File
                                 </button>
@@ -3936,9 +3412,9 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                     </div>
 
                     {/* ── RIGHT: Terminal / REPL (full height) ── */}
-                    <div style={{ width: 380, display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0 }}>
+                    <div className="w-[380px] flex flex-col overflow-hidden shrink-0">
                         <style>{`.ide-terminal-full > div:first-child { height: 100% !important; flex: 1 !important; }`}</style>
-                        <div className="ide-terminal-full" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                        <div className="ide-terminal-full flex-1 flex flex-col overflow-hidden">
                             <TerminalPanel
                                 activePanel={activePanel}
                                 setActivePanel={setActivePanel}
@@ -3976,144 +3452,21 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                 </div>
             )}
 
-            {/* Custom Prompt Modal */}
-            {modalState.isOpen && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999,
-                }}>
-                    <div style={{
-                        backgroundColor: 'white',
-                        borderRadius: '12px',
-                        width: '400px',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                        overflow: 'hidden',
-                    }}>
-                        <div style={{
-                            backgroundColor: C.PURPLE,
-                            color: 'white',
-                            padding: '12px 16px',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                        }}>
-                            {modalState.title}
-                            <div
-                                onClick={handleModalCancel}
-                                style={{ cursor: 'pointer', fontSize: '20px', fontWeight: 'bold' }}
-                            >×</div>
-                        </div>
-                        <div style={{ padding: '20px' }}>
-                            <div style={{ marginBottom: '10px', fontSize: '14px', color: '#575E75' }}>
-                                {modalState.message}
-                            </div>
-                            <input
-                                autoFocus
-                                type="text"
-                                value={modalInput}
-                                onChange={(e) => setModalInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleModalSubmit();
-                                    if (e.key === 'Escape') handleModalCancel();
-                                }}
-                                style={{
-                                    padding: '12px',
-                                    fontSize: '16px',
-                                    borderRadius: '8px',
-                                    border: '1px solid #ddd',
-                                    width: '100%',
-                                    fontFamily: 'inherit',
-                                    outline: 'none',
-                                    boxSizing: 'border-box',
-                                }}
-                            />
-                        </div>
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            gap: '12px',
-                            padding: '0 20px 20px',
-                        }}>
-                            <button onClick={handleModalCancel} style={{
-                                padding: '8px 16px',
-                                borderRadius: '6px',
-                                border: '1px solid #ddd',
-                                backgroundColor: 'white',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                color: '#666',
-                            }}>Cancel</button>
-                            <button onClick={handleModalSubmit} style={{
-                                padding: '8px 16px',
-                                borderRadius: '6px',
-                                border: 'none',
-                                backgroundColor: C.PURPLE,
-                                color: 'white',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: 'bold',
-                            }}>OK</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <BoardSelectionModal
-                isOpen={isBoardModalOpen}
-                onClose={() => setIsBoardModalOpen(false)}
-                onSelect={(boardId, boardName) => {
-                    setSelectedBoard(boardId);
-                    setIsBoardModalOpen(false);
-                    setUploadView("board");
-                    setUploadActiveFile(getBoardConfig(boardId).fileName);
-                    addUploadMessage(`Selected board: ${boardName}`, "success");
-                }}
-                currentBoard={selectedBoard}
-            />
-
-            {/* Sprite Library Modal */}
             {showSpriteLibrary && (
                 <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999,
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center', zIndex: 9999,
                 }}>
                     <div style={{
-                        backgroundColor: 'white',
-                        borderRadius: '12px',
-                        width: '600px',
-                        maxHeight: '80vh',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        flexDirection: 'column',
+                        backgroundColor: 'white', borderRadius: '12px', width: '600px',
+                        maxHeight: '80vh', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                        overflow: 'hidden', display: 'flex', flexDirection: 'column',
                     }}>
                         <div style={{
-                            backgroundColor: C.PURPLE,
-                            color: 'white',
-                            padding: '12px 16px',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
+                            backgroundColor: C.PURPLE, color: 'white', padding: '12px 16px',
+                            fontSize: '16px', fontWeight: 'bold', display: 'flex',
+                            justifyContent: 'space-between', alignItems: 'center',
                         }}>
                             {libraryMode === "costume" ? "Choose a Costume" : "Choose a Sprite"}
                             <div

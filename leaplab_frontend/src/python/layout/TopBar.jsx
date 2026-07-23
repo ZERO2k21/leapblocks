@@ -48,78 +48,37 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
         return () => document.removeEventListener('mousedown', handleClickOutside, true);
     }, [mobileMenuOpen]);
 
-
-
     return (
         <>
-        <header style={{
-            height: 68,
-            background: 'linear-gradient(135deg, #0a0a1f 0%, #0a015a 55%, #080a25 100%)',
-            display: "flex",
-            alignItems: "center", padding: "0 28px",
-            justifyContent: "space-between", color: "#fff", zIndex: 100,
-            flexShrink: 0,
-            boxShadow: '0 4px 20px rgba(8,10,37,0.5), inset 0 -1px 0 rgba(255,255,255,0.06)',
-            borderBottom: '1px solid rgba(100,180,255,0.08)',
-        }}>
+        <header className="h-[68px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] flex items-center px-7 justify-between text-white z-[100] shrink-0 shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] border-b border-sky-400/10">
             {/* Left Side: LeapLab Logo + App Name + Blocks/Python Tabs */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="flex items-center gap-3">
                 {/* Home Button */}
                 <button
                     onClick={onBack}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 40,
-                        height: 40,
-                        background: 'rgba(255,255,255,0.1)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 12,
-                        color: '#fff',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        flexShrink: 0,
-                        marginRight: 4
-                    }}
-                    onMouseEnter={e => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-                        e.currentTarget.style.transform = 'scale(1.05)';
-                    }}
-                    onMouseLeave={e => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                        e.currentTarget.style.transform = 'scale(1)';
-                    }}
+                    className="flex items-center justify-center w-10 h-10 bg-white/10 border border-white/10 rounded-xl text-white cursor-pointer transition-all duration-200 shrink-0 mr-1 hover:bg-white/20 hover:scale-105"
                     title="Back to Home"
                 >
                     <Home size={20} strokeWidth={2.2} />
                 </button>
 
-                <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', marginRight: 4 }} />
+                <div className="h-7 w-px bg-white/15 mr-1" />
 
                 {/* Logo + App Name */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 8, flexShrink: 0 }}>
+                <div className="flex items-center gap-2 mr-2 shrink-0">
                     <Logo height={48} />
-                    <span style={{
-                        color: '#fff',
-                        fontSize: 22,
-                        fontWeight: 900,
-                        letterSpacing: '0.08em',
-                        lineHeight: 1.2,
-                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                        textShadow: '0 0 20px rgba(255,255,255,0.3)',
-                        borderLeft: '1px solid rgba(255,255,255,0.15)',
-                        paddingLeft: 8,
-                    }}>Logix </span>
+                    <span className="text-white text-22px font-black tracking-wider leading-snug font-sans drop-shadow-[0_0_20px_rgba(255,255,255,0.3)] border-l border-white/15 pl-2">
+                        Logix{" "}
+                    </span>
                 </div>
 
                 {showDesktopMode && (
                     <>
-                        <div style={{ height: 32, width: 1, background: 'rgba(255,255,255,0.15)', marginRight: 4 }} />
+                        <div className="h-8 w-px bg-white/15 mr-1" />
                         <ModeSwitcher
                             modes={[
-                                { id: 'blocks', label: 'Blocks', icon: <span style={{ fontSize: 14 }}>🧩</span> },
-                                { id: 'python', label: 'Python', icon: <span style={{ fontSize: 14 }}>🐍</span> },
+                                { id: 'blocks', label: 'Blocks', icon: <span className="text-sm">🧩</span> },
+                                { id: 'python', label: 'Python', icon: <span className="text-sm">🐍</span> },
                             ]}
                             activeMode={mode}
                             onChange={(id) => setMode && setMode(id)}
@@ -129,7 +88,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
             </div>
 
             {/* Center: Project Name */}
-            <div style={{ display: "flex", alignItems: "center", flex: 1, justifyContent: "center" }}>
+            <div className="flex items-center flex-1 justify-center">
                 {onProjectNameChange && onSave ? (
                     <ProjectNameInput
                         value={projectName}
@@ -140,25 +99,25 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
             </div>
 
             {/* Right Side: Run/Stop + Upload Firmware + CREOLEAP Logo */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div className="flex items-center gap-2">
                 {showDesktopMode ? (
                     <>
                         <ActionButton
                             variant="success"
-                            icon={<span style={{ fontSize: 14 }}>▶</span>}
+                            icon={<span className="text-sm">▶</span>}
                             label="Run"
                             onClick={() => {}}
                             title="Run Code"
                         />
                         <ActionButton
                             variant="danger"
-                            icon={<span style={{ fontSize: 14 }}>●</span>}
+                            icon={<span className="text-sm">●</span>}
                             label="Stop"
                             onClick={() => {}}
                             title="Stop"
                         />
 
-                        <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.3)", margin: "0 4px" }} />
+                        <div className="w-px h-4.5 bg-white/30 mx-1" />
 
                         <ActionButton
                             variant="primary"
@@ -168,52 +127,31 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                         />
 
                         {/* Camera, Window, Fullscreen icons */}
-                        <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
-                            <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
-                                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        <div className="flex gap-1 ml-2">
+                            <div className="p-1.5 px-2 cursor-pointer rounded text-white/80 transition-colors hover:bg-white/10">
                                 📷
                             </div>
-                            <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
-                                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                            <div className="p-1.5 px-2 cursor-pointer rounded text-white/80 transition-colors hover:bg-white/10">
                                 ⬜
                             </div>
-                            <div style={{ padding: "6px 8px", cursor: "pointer", borderRadius: 4, color: "rgba(255,255,255,0.8)" }}
-                                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                            <div className="p-1.5 px-2 cursor-pointer rounded text-white/80 transition-colors hover:bg-white/10">
                                 ⛶
                             </div>
                         </div>
 
                         <TopbarShareButton
-                            style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
+                            className="bg-transparent border-none text-white/70 cursor-pointer p-1.5 px-2 rounded flex items-center transition-colors hover:text-white"
                             size={18}
                         />
 
-                        <LeapLabAuthButton variant="dark" size="sm" style={{ height: '32px', borderRadius: '4px', boxSizing: 'border-box' }} />
+                        <LeapLabAuthButton variant="dark" size="sm" className="h-8 rounded box-border" />
 
                         {showCreoleap && (
-                            <div style={{
-                                marginLeft: 12,
-                                display: 'flex',
-                                alignItems: 'center',
-                                flexShrink: 0,
-                                height: '40px',
-                                overflow: 'hidden',
-                                filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.15)) drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
-                            }}>
+                            <div className="ml-3 flex items-center shrink-0 h-[40px] overflow-hidden drop-shadow-[0_0_10px_rgba(255,255,255,0.15)]">
                                 <img
                                     src="assets/logo-creoleap.png"
                                     alt="CREOLEAP"
-                                    style={{
-                                        width: '145px',
-                                        height: 'auto',
-                                        objectFit: 'contain',
-                                        display: 'block',
-                                        flexShrink: 0,
-                                        filter: 'brightness(1.2) contrast(1.06)',
-                                    }}
+                                    className="w-[145px] h-auto object-contain block shrink-0 brightness-120 contrast-105"
                                 />
                             </div>
                         )}
@@ -221,12 +159,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                 ) : (
                     <button
                         onClick={() => setMobileMenuOpen(true)}
-                        style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            width: 40, height: 40, borderRadius: 10,
-                            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
-                            color: '#fff', cursor: 'pointer', flexShrink: 0,
-                        }}
+                        className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 border border-white/15 text-white cursor-pointer shrink-0 hover:bg-white/20"
                     >
                         <MenuIcon size={20} strokeWidth={2.2} />
                     </button>
@@ -239,82 +172,61 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
             onClose={() => setMobileMenuOpen(false)}
             theme="dark"
         >
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Mode</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Mode</div>
             {[
                 { id: 'blocks', label: 'Blocks', icon: '🧩' },
                 { id: 'python', label: 'Python', icon: '🐍' },
             ].map(({ id, label, icon }) => (
-                <button key={id} onClick={() => { setMode?.(id); setMobileMenuOpen(false); }}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                        padding: '10px 12px', border: 'none', borderRadius: 8,
-                        background: mode === id ? 'rgba(167,139,250,0.2)' : 'transparent',
-                        color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
-                        transition: 'all 0.15s ease',
-                    }}
+                <button
+                    key={id}
+                    onClick={() => { setMode?.(id); setMobileMenuOpen(false); }}
+                    className={`flex items-center gap-2.5 w-full p-2.5 px-3 border-none rounded-lg text-white text-sm font-semibold cursor-pointer text-left transition-all ${
+                        mode === id ? 'bg-purple-400/20' : 'bg-transparent'
+                    }`}
                 >
                     <span>{icon}</span>
                     <span>{label}</span>
-                    {mode === id && <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.6 }}>Active</span>}
+                    {mode === id && <span className="ml-auto text-[11px] opacity-60">Active</span>}
                 </button>
             ))}
 
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+            <div className="h-px bg-white/10 my-1" />
 
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Actions</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Actions</div>
             {[
                 { label: '▶ Run', onClick: () => {} },
                 { label: '● Stop', onClick: () => {} },
                 { label: 'Upload Firmware', onClick: () => {} },
             ].map(({ label, onClick }) => (
-                <button key={label} onClick={() => { onClick?.(); setMobileMenuOpen(false); }}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                        padding: '10px 12px', border: 'none', borderRadius: 8,
-                        background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                        fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                        transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                <button
+                    key={label}
+                    onClick={() => { onClick?.(); setMobileMenuOpen(false); }}
+                    className="flex items-center gap-2.5 w-full p-2.5 px-3 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-400/25 hover:text-white"
                 >
                     {label}
                 </button>
             ))}
 
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+            <div className="h-px bg-white/10 my-1" />
 
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Utilities</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Utilities</div>
             {['📷', '⬜', '⛶'].map((emoji, i) => (
-                <button key={i}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                        padding: '10px 12px', border: 'none', borderRadius: 8,
-                        background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                        fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                        transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                <button
+                    key={i}
+                    className="flex items-center gap-2.5 w-full p-2.5 px-3 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-400/25 hover:text-white"
                 >
                     <span>{emoji}</span>
                 </button>
             ))}
 
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+            <div className="h-px bg-white/10 my-1" />
 
             <TopbarShareButton size={20}>
                 {({ onClick, loading }) => (
-                    <button onClick={onClick} disabled={loading}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                            padding: '10px 12px', border: 'none', borderRadius: 8,
-                            background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                            fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                            transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    <button
+                        onClick={onClick}
+                        disabled={loading}
+                        className="flex items-center gap-2.5 w-full p-2.5 px-3 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-400/25 hover:text-white"
                     >
                         <Share size={15} color="#a78bfa" strokeWidth={2} />
                         Share
@@ -322,8 +234,8 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                 )}
             </TopbarShareButton>
 
-            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <LeapLabAuthButton variant="dark" size="sm" style={{ width: '100%', height: '34px', borderRadius: '20px', boxSizing: 'border-box' }} />
+            <div className="mt-auto flex flex-col gap-2">
+                <LeapLabAuthButton variant="dark" size="sm" className="w-full h-[34px] rounded-full box-border" />
             </div>
         </MobileDrawer>
         </>

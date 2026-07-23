@@ -536,7 +536,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     {/* Header + Workflow - centered */}
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
@@ -561,12 +561,10 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                         </div>
                     )}
 
-
-
                     {/* Horizontal split */}
-                    <div className="w-full flex flex-col lg:flex-row gap-4 flex-1 min-h-0" style={{ marginTop: '16px' }}>
+                    <div className="w-full flex flex-col lg:flex-row gap-4 flex-1 min-h-0 mt-4">
                         {/* Left half - Camera feed */}
-                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                        <div className="flex-1 min-w-0 flex flex-col">
                             {/* Camera feed */}
                             <div className={`relative rounded-2xl overflow-hidden bg-[#1e1b4b] w-full shadow-lg aspect-[4/3] transition-all duration-300 ${cameraOn ? '' : 'hidden'}`}>
                                 <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain rounded-2xl -scale-x-100" />
@@ -583,7 +581,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                 )}
                                 {/* Center capture button */}
                                 {cameraOn && (
-                                    <div style={{ position: 'absolute', bottom: '16px', left: '50%', transform: 'translateX(-50%)', zIndex: 20 }}>
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
                                         <CaptureButton
                                             onClick={handleCapture}
                                             disabled={!canAddSamples || isCapturing}
@@ -617,37 +615,26 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                             await handleUpload(e.dataTransfer.files)
                                         }
                                     }}
-                                    style={{ 
-                                        flex: 1, 
-                                        borderRadius: '16px', 
-                                        overflow: 'hidden', 
-                                        background: isDragging ? '#ede9fe' : '#f5f3ff', 
-                                        border: isDragging ? '2px dashed #630ed4' : '2px dashed rgba(99,14,212,0.2)', 
-                                        position: 'relative', 
-                                        minHeight: '300px', 
-                                        display: 'flex', 
-                                        flexDirection: 'column', 
-                                        alignItems: 'center', 
-                                        justifyContent: 'center',
-                                        transition: 'all 0.2s ease',
-                                    }}
+                                    className={`flex-1 rounded-2xl overflow-hidden relative min-h-[300px] flex flex-col items-center justify-center transition-all duration-200 ${
+                                        isDragging ? 'bg-purple-100 border-2 border-dashed border-purple-600' : 'bg-purple-50/50 border-2 border-dashed border-purple-600/20'
+                                    }`}
                                 >
-                                    <div style={{ pointerEvents: isDragging ? 'none' : 'auto', display: 'contents' }}>
-                                        <span style={{ fontSize: '3.5rem', marginBottom: '12px', transform: isDragging ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease' }}>
+                                    <div className={isDragging ? 'pointer-events-none contents' : 'pointer-events-auto contents'}>
+                                        <span className={`text-6xl mb-3 transition-transform duration-200 ${isDragging ? 'scale-125' : 'scale-100'}`}>
                                             {isDragging ? '📥' : '🤸'}
                                         </span>
-                                        <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#131b2e', marginBottom: '6px' }}>
+                                        <h3 className="text-lg font-extrabold text-[#131b2e] mb-1.5">
                                             {isDragging ? 'Drop Image Here! 📥' : 'Camera is off'}
                                         </h3>
-                                        <p style={{ fontSize: '12px', color: '#4a4455', marginBottom: '16px' }}>
+                                        <p className="text-xs text-[#4a4455] mb-4">
                                             {isDragging ? 'Drop files to upload instantly' : 'Start the camera to capture poses!'}
                                         </p>
-                                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', opacity: isDragging ? 0.3 : 1, transition: 'opacity 0.2s ease' }}>
-                                            <button onClick={startCamera} style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', boxShadow: '0 4px 14px rgba(99,14,212,0.35)' }}>
+                                        <div className={`flex gap-2.5 items-center transition-opacity duration-200 ${isDragging ? 'opacity-30' : 'opacity-100'}`}>
+                                            <button onClick={startCamera} className="px-5 py-2.5 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg hover:shadow-purple-500/25 transition-all">
                                                 📷 Turn On Camera
                                             </button>
-                                            <span style={{ color: '#9ca3af', fontSize: '11px', fontWeight: 600 }}>or</span>
-                                            <button onClick={() => fileInputRef.current?.click()} style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer', background: '#fff', color: '#630ed4' }}>
+                                            <span className="text-gray-400 text-[11px] font-semibold">or</span>
+                                            <button onClick={() => fileInputRef.current?.click()} className="px-5 py-2.5 rounded-xl text-xs font-bold border-2 border-purple-600 cursor-pointer bg-white text-purple-600 hover:bg-purple-50 transition-colors">
                                                 📂 Upload
                                             </button>
                                         </div>
@@ -658,15 +645,15 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                         </div>
 
                         {/* Right half - Controls, Stats, Samples */}
-                        <div style={{ width: isMobile ? '100%' : '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div className={`${isMobile ? 'w-full' : 'w-70'} shrink-0 flex flex-col gap-2.5`}>
                             {/* Tips */}
-                            <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '10px', padding: '8px 12px', border: '1px solid rgba(99,14,212,0.1)' }}>
-                                <div className="flex items-center" style={{ gap: '6px' }}>
-                                    <div style={{ width: '20px', height: '20px', borderRadius: '5px', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', flexShrink: 0 }}>💡</div>
-                                    <div className="flex flex-wrap" style={{ gap: '2px 10px' }}>
+                            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-2 px-3 border border-purple-600/10">
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-5 h-5 rounded bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-[10px] shrink-0">💡</div>
+                                    <div className="flex flex-wrap gap-x-2.5 gap-y-0.5">
                                         {['Full body visible', 'Good lighting', 'Clear background', 'Try different poses'].map((tip) => (
-                                            <span key={tip} className="flex items-center" style={{ gap: '4px', fontSize: '9px', color: '#4b5563' }}>
-                                                <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#630ed4', flexShrink: 0 }} />
+                                            <span key={tip} className="flex items-center gap-1 text-[9px] text-gray-600">
+                                                <span className="w-1 h-1 rounded-full bg-purple-600 shrink-0" />
                                                 {tip}
                                             </span>
                                         ))}
@@ -676,46 +663,41 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
 
                             {/* Controls */}
                             <div className="flex items-center gap-2">
-                                <button onClick={toggleCamera} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 16px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: cameraOn ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #630ed4, #8b5cf6)', color: '#fff', boxShadow: cameraOn ? '0 4px 14px rgba(239,68,68,0.35)' : '0 4px 14px rgba(99,14,212,0.35)' }}>
+                                <button onClick={toggleCamera} className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border-none cursor-pointer text-white transition-all ${
+                                    cameraOn ? 'bg-gradient-to-r from-red-500 to-red-600 shadow-lg shadow-red-500/25' : 'bg-gradient-to-r from-purple-600 to-purple-700 shadow-lg shadow-purple-500/25'
+                                }`}>
                                     {cameraOn ? '⏹️ Stop' : '📷 Start'}
                                 </button>
-                                <button onClick={() => fileInputRef.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 16px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #630ed4, #8b5cf6)', color: '#fff', boxShadow: '0 4px 14px rgba(99,14,212,0.35)' }}>
+                                <button onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-500/25">
                                     📂 Upload
                                 </button>
                             </div>
 
                             {/* Stats */}
-                            <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
-                                <div className="flex justify-between" style={{ marginBottom: '6px' }}>
-                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📊 Total Samples</span>
-                                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#630ed4' }}>{mode.getTotalSamples()}</span>
+                            <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-200 shadow-sm">
+                                <div className="flex justify-between mb-1.5">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">📊 Total Samples</span>
+                                    <span className="text-sm font-extrabold text-purple-600">{mode.getTotalSamples()}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎯 Classes</span>
-                                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#630ed4' }}>{mode.project?.classes.length || 0}</span>
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">🎯 Classes</span>
+                                    <span className="text-sm font-extrabold text-purple-600">{mode.project?.classes.length || 0}</span>
                                 </div>
                             </div>
 
                             {/* Samples */}
                             {selectedClass && selectedClass.samples.length > 0 && (
-                                <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                                    <div className="flex items-center justify-between" style={{ marginBottom: '8px', flexShrink: 0 }}>
-                                        <div className="flex items-center" style={{ gap: '6px' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: selectedClass.color }} />
-                                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e' }}>{selectedClass.name}</span>
+                                <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-200 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
+                                    <div className="flex items-center justify-between mb-2 shrink-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full" style={{ background: selectedClass.color }} />
+                                            <span className="text-xs font-bold text-[#131b2e]">{selectedClass.name}</span>
                                         </div>
-                                        <span style={{
-                                            fontSize: '10px',
-                                            fontWeight: 700,
-                                            padding: '2px 6px',
-                                            borderRadius: '5px',
-                                            background: atSampleLimit ? '#fef3c7' : '#f5f3ff',
-                                            color: atSampleLimit ? '#c32c00' : '#630ed4',
-                                        }}>
+                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${atSampleLimit ? 'bg-amber-100 text-amber-800' : 'bg-purple-50 text-purple-600'}`}>
                                             {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}
                                         </span>
                                     </div>
-                                    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }} className="neura-scrollbar">
+                                    <div className="flex-1 min-h-0 overflow-y-auto neura-scrollbar">
                                         <SampleGrid samples={selectedClass.samples} type="keypoints" onRemove={(id) => mode.removeSample(selectedClass.id, id)} />
                                     </div>
                                 </div>
@@ -727,8 +709,8 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
 
             {/* TRAIN MODE */}
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
-                    <div className="w-full" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
+                    <div className="w-full flex-1 min-h-0 flex flex-col">
                         <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} sampleType="poses" mode={mode.mode} onModeChange={mode.setMode} workflowType="pose" />
                     </div>
                 </div>
@@ -736,7 +718,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     {/* Header + Workflow - centered */}
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
@@ -752,13 +734,17 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                 <span className="text-[10px] font-bold text-gray-700">🎚️ Confidence Threshold</span>
                                 <span className="text-xs font-extrabold text-[#630ed4] bg-[#f5f3ff] px-2 py-0.5 rounded-md">{Math.round(confidenceThreshold * 100)}%</span>
                             </div>
-                            <input type="range" min="0" max="100" value={Math.round(confidenceThreshold * 100)}
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={Math.round(confidenceThreshold * 100)}
                                 onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
-                                className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                                style={{ background: `linear-gradient(to right, #630ed4 ${Math.round(confidenceThreshold * 100)}%, #e5e7eb ${Math.round(confidenceThreshold * 100)}%)` }} />
+                                className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-purple-600 bg-slate-200"
+                            />
                         </div>
                     </div>
-                    <div className="w-full" style={{ marginTop: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                    <div className="w-full mt-4 flex-1 min-h-0 flex flex-col">
                         <TestPanel
                             prediction={prediction}
                             isProcessing={isProcessing}

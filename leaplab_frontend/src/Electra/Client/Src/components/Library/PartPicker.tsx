@@ -139,165 +139,66 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
   );
 
   return (
-    <div className="component-sidebar" style={{
-      width: '100%',
-      height: '100%',
-      background: 'var(--lp-dark-bg)',
-      display: 'flex',
-      flexDirection: 'column',
-      borderRight: '1px solid var(--lp-border)',
-      fontFamily: "'Outfit', sans-serif"
-    }}>
+    <div className="component-sidebar w-full h-full bg-slate-900 flex flex-col border-r border-slate-800 font-sans">
       {/* Header */}
-      <div style={{
-        padding: '16px',
-        borderBottom: '1px solid var(--lp-border)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: 'var(--lp-dark-surface)'
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{
-            color: 'var(--lp-accent-primary)',
-            fontSize: '13px',
-            fontWeight: 800,
-            letterSpacing: '0.5px',
-            textTransform: 'uppercase'
-          }}>Component Library</span>
-          <span style={{ color: 'var(--lp-zinc-400)', fontSize: '9px', fontWeight: 600 }}>v1.1.0-STABLE</span>
+      <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+        <div className="flex flex-col">
+          <span className="text-cyan-400 text-xs font-extrabold tracking-wider uppercase">Component Library</span>
+          <span className="text-slate-400 text-[9px] font-semibold">v1.1.0-STABLE</span>
         </div>
-        <button onClick={onClose} style={{
-          background: 'none',
-          border: 'none',
-          color: 'var(--lp-zinc-400)',
-          cursor: 'pointer',
-          padding: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'color 0.2s'
-        }}
-          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--lp-accent-primary)'}
-          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--lp-zinc-400)'}
+        <button
+          onClick={onClose}
+          className="bg-transparent border-none text-slate-400 hover:text-cyan-400 cursor-pointer p-1 flex items-center justify-center transition-colors"
         >
           <X size={16} />
         </button>
       </div>
 
       {/* Search Bar - outside scrollable area */}
-      <div style={{
-        padding: '12px 16px',
-        background: 'var(--lp-dark-bg)',
-        borderBottom: '1px solid var(--lp-border)',
-        flexShrink: 0
-      }}>
-        <div style={{
-          background: 'var(--lp-zinc-800)',
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 10px',
-          border: '1px solid var(--lp-border)',
-          borderRadius: '8px',
-          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
-        }}>
-          <Search size={14} color="var(--lp-zinc-600)" style={{ marginRight: '6px' }} />
+      <div className="p-3 px-4 bg-slate-900 border-b border-slate-800 shrink-0">
+        <div className="bg-slate-800/80 flex items-center px-2.5 border border-slate-700/60 rounded-lg shadow-inner">
+          <Search size={14} className="text-slate-500 mr-1.5" />
           <input
             type="text"
             placeholder="Search components..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              padding: '8px 0',
-              color: 'var(--lp-text-color)',
-              fontSize: '12px',
-              outline: 'none',
-              width: '100%',
-              fontFamily: 'inherit'
-            }}
+            className="bg-transparent border-none py-2 text-slate-200 text-xs outline-none w-full font-sans"
           />
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-
+      <div className="flex-1 overflow-y-auto flex flex-col gap-1">
         {/* Accordion 1: COMPONENT LIBRARY */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="flex flex-col">
           <button
             onClick={() => setLibraryOpen(!libraryOpen)}
-            style={{
-              padding: '14px 16px',
-              background: 'transparent',
-              border: 'none',
-              borderBottom: '1px solid var(--lp-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              color: 'var(--lp-text-color)',
-              fontWeight: 700,
-              fontSize: '11px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.8px',
-              cursor: 'pointer',
-              width: '100%',
-              textAlign: 'left'
-            }}
+            className="p-3.5 px-4 bg-transparent border-none border-b border-slate-800 flex items-center justify-between text-slate-200 font-bold text-[11px] uppercase tracking-wider cursor-pointer w-full text-left"
           >
             <span>COMPONENT LIBRARY</span>
             <ChevronDown
               size={14}
-              style={{
-                transform: libraryOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
-                transition: 'transform 0.2s'
-              }}
+              className={`transition-transform duration-200 ${libraryOpen ? 'rotate-0' : '-rotate-90'}`}
             />
           </button>
 
           {libraryOpen && (
-            <div style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.02)' }}>
+            <div className="flex flex-col bg-black/5">
               {/* 2-Column Grid */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '12px',
-                padding: '12px 16px 16px 16px'
-              }}>
+              <div className="grid grid-cols-2 gap-3 p-3 px-4 pb-4">
                 {filteredComponents.map(comp => (
-                  <div key={comp.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', minWidth: 0 }}>
+                  <div key={comp.id} className="flex flex-col gap-1.5 items-center min-w-0">
                     <div
                       onClick={() => onSelect(comp.id)}
                       draggable={true}
                       onDragStart={(e) => handleDragStart(e, comp.id)}
-                      className="component-card"
+                      className="component-card bg-slate-800/90 border border-slate-700/60 w-full aspect-square cursor-grab flex items-center justify-center rounded-2xl shadow-sm relative overflow-hidden transition-all duration-200 hover:border-cyan-500/50 hover:shadow-md"
                       title={comp.name}
-                      style={{
-                        background: 'var(--lp-dark-surface)',
-                        border: '1px solid var(--lp-border)',
-                        width: '100%',
-                        aspectRatio: '1/1',
-                        cursor: 'grab',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '16px',
-                        boxShadow: 'var(--lp-shadow)',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-                      }}
                     >
-                      <div style={{
-                        transform: `scale(${getComponentScale(comp.id, 0.7)})`,
-                        transformOrigin: 'center center',
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        opacity: 0.95
-                      }}>
+                      <div
+                        style={{ transform: `scale(${getComponentScale(comp.id, 0.7)})` }}
+                        className="origin-center w-full h-full flex items-center justify-center opacity-95"
+                      >
                         {React.createElement(`leap-${comp.id}` as any, {
                           color: comp.id === 'led' ? 'red' : undefined,
                           ...(comp.id === 'rgb-led' ? { ledRed: 0.2, ledGreen: 0.8, ledBlue: 0.8 } : {}),
@@ -306,17 +207,7 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
                         })}
                       </div>
                     </div>
-                    <span style={{
-                      fontSize: '9px',
-                      fontWeight: 700,
-                      color: 'var(--lp-text-color)',
-                      textAlign: 'center',
-                      width: '100%',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      opacity: 0.9
-                    }}>
+                    <span className="text-[9px] font-bold text-slate-300 text-center w-full whitespace-nowrap overflow-hidden text-ellipsis opacity-90">
                       {comp.name}
                     </span>
                   </div>
@@ -325,20 +216,10 @@ export const PartPicker: React.FC<PartPickerProps> = ({ onSelect, onClose, curre
             </div>
           )}
         </div>
-
       </div>
 
       {/* Status Bar */}
-      <div style={{
-        padding: '8px 16px',
-        borderTop: '1px solid var(--lp-border)',
-        fontSize: '9px',
-        fontWeight: 600,
-        color: 'var(--lp-zinc-600)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        background: 'var(--lp-dark-surface)'
-      }}>
+      <div className="p-2 px-4 border-t border-slate-800 text-[9px] font-semibold text-slate-500 flex justify-between bg-slate-900/90">
         <span>READY</span>
         <span>{filteredComponents.length} ELEMENTS</span>
       </div>

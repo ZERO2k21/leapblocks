@@ -217,59 +217,62 @@ export default function PulseApp({ onBack }: PulseAppProps) {
   // ──────────────────────────────────────────────────────────────
   if (view === 'list') {
     return (
-      <div style={styles.container}>
+      <div className="h-full overflow-y-auto bg-slate-50 font-sans text-slate-900">
         {/* Header */}
-        <div style={styles.header}>
-          <button onClick={onBack} style={styles.backBtn}>← Back</button>
-          <h1 style={styles.title}>Quizzes</h1>
-          <p style={styles.subtitle}>Test your knowledge</p>
+        <div className="p-6 pb-4 bg-gradient-to-br from-indigo-600 to-indigo-500 text-white">
+          <button onClick={onBack} className="bg-white/15 hover:bg-white/25 border-none text-white py-1.5 px-3 rounded-lg cursor-pointer text-xs font-semibold mb-3 transition-colors">
+            ← Back
+          </button>
+          <h1 className="text-2xl font-extrabold m-0">Quizzes</h1>
+          <p className="text-sm opacity-80 mt-1 mb-0">Test your knowledge</p>
         </div>
 
         {loading && (
-          <div style={styles.center}>
-            <div style={styles.spinner} />
-            <p style={{ color: '#94a3b8', marginTop: 12 }}>Loading quizzes...</p>
+          <div className="flex flex-col items-center justify-center py-15 px-6">
+            <div className="w-8 h-8 border-3 border-slate-200 border-t-indigo-600 rounded-full animate-spin" />
+            <p className="text-slate-400 text-sm mt-3">Loading quizzes...</p>
           </div>
         )}
 
         {error && (
-          <div style={styles.errorBox}>
-            <p>{error}</p>
-            <button onClick={fetchQuizzes} style={styles.retryBtn}>Retry</button>
+          <div className="m-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-center">
+            <p className="m-0 text-sm font-medium">{error}</p>
+            <button onClick={fetchQuizzes} className="mt-2 py-1.5 px-4 bg-red-600 hover:bg-red-700 text-white border-none rounded-lg cursor-pointer text-xs font-semibold transition-colors">
+              Retry
+            </button>
           </div>
         )}
 
         {!loading && !error && quizzes.length === 0 && (
-          <div style={styles.center}>
-            <p style={{ color: '#94a3b8', fontSize: 16 }}>No quizzes available yet</p>
+          <div className="flex flex-col items-center justify-center py-15 px-6">
+            <p className="text-slate-400 text-base">No quizzes available yet</p>
           </div>
         )}
 
-        <div style={styles.quizGrid}>
+        <div className="p-4 px-6 pb-6 flex flex-col gap-3">
           {quizzes.map((quiz) => (
-            <div key={quiz.id} style={styles.quizCard}>
-              <div style={styles.quizCardBody}>
-                <h3 style={styles.quizTitle}>{quiz.title}</h3>
+            <div key={quiz.id} className="bg-white border-2 border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="p-4 pb-3">
+                <h3 className="text-base font-bold m-0 text-slate-900">{quiz.title}</h3>
                 {quiz.description && (
-                  <p style={styles.quizDesc}>{quiz.description}</p>
+                  <p className="text-xs text-slate-500 mt-1 mb-0 leading-snug">{quiz.description}</p>
                 )}
-                <div style={styles.quizMeta}>
+                <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-400 font-medium">
                   <span>{quiz.questionCount} questions</span>
                   <span>{quiz.totalPoints} pts</span>
                   {quiz.timeLimitMinutes && <span>{quiz.timeLimitMinutes}m</span>}
-                  {quiz.retakeAllowed === 1 && <span style={{ color: '#4F46E5' }}>Retake</span>}
+                  {quiz.retakeAllowed === 1 && <span className="text-indigo-600">Retake</span>}
                 </div>
                 {quiz.hasAttempted && quiz.lastScore !== null && (
-                  <div style={styles.attemptBadge}>
+                  <div className="mt-2 inline-block py-0.5 px-2 bg-slate-100 rounded-md text-xs font-semibold text-slate-600">
                     Last: {quiz.lastScore}/{quiz.lastMaxScore}
                   </div>
                 )}
               </div>
               <button
-                style={{
-                  ...styles.startBtn,
-                  opacity: !quiz.canRetake && quiz.hasAttempted ? 0.5 : 1,
-                }}
+                className={`w-full py-3 bg-gradient-to-br from-indigo-600 to-indigo-500 text-white border-none text-sm font-bold cursor-pointer transition-opacity ${
+                  !quiz.canRetake && quiz.hasAttempted ? 'opacity-50 cursor-not-allowed' : 'opacity-100 hover:opacity-95'
+                }`}
                 onClick={() => startQuiz(quiz.id)}
                 disabled={!quiz.canRetake && quiz.hasAttempted}
               >
@@ -290,58 +293,54 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     const totalQuestions = activeQuiz.questions.length;
 
     return (
-      <div style={styles.container}>
+      <div className="h-full overflow-y-auto bg-slate-50 font-sans text-slate-900">
         {/* Top bar */}
-        <div style={styles.topBar}>
-          <button onClick={() => { setView('list'); setTimeLeft(null); }} style={styles.backBtn}>
+        <div className="sticky top-0 z-[100] flex items-center justify-between p-3 px-4 bg-white border-b-2 border-slate-200">
+          <button onClick={() => { setView('list'); setTimeLeft(null); }} className="bg-slate-100 hover:bg-slate-200 text-slate-700 border-none py-1.5 px-3 rounded-lg cursor-pointer text-xs font-semibold transition-colors">
             ← Exit
           </button>
-          <h2 style={{ ...styles.title, fontSize: 18 }}>{activeQuiz.title}</h2>
-          <div style={styles.timerArea}>
+          <h2 className="text-lg font-extrabold m-0 text-slate-900">{activeQuiz.title}</h2>
+          <div className="flex items-center gap-3">
             {timeLeft !== null && (
-              <span style={{
-                ...styles.timer,
-                color: timeLeft < 60 ? '#ef4444' : '#0f172a',
-              }}>
+              <span className={`text-lg font-extrabold tabular-nums ${timeLeft < 60 ? 'text-red-500' : 'text-slate-900'}`}>
                 {formatTime(timeLeft)}
               </span>
             )}
-            <span style={styles.answerCount}>{answeredCount}/{totalQuestions}</span>
+            <span className="text-xs text-slate-400 font-semibold">{answeredCount}/{totalQuestions}</span>
           </div>
         </div>
 
         {/* Questions */}
-        <div style={styles.questionsArea}>
+        <div className="p-4 flex flex-col gap-4 pb-28">
           {activeQuiz.questions.map((q, idx) => (
-            <div key={q.id} style={styles.questionCard}>
-              <div style={styles.questionHeader}>
-                <span style={styles.questionNumber}>Q{idx + 1}</span>
-                <span style={styles.questionPoints}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+            <div key={q.id} className="bg-white border-2 border-slate-200 rounded-2xl p-5 shadow-sm">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-extrabold text-indigo-600 bg-indigo-50 py-0.5 px-2 rounded-md">Q{idx + 1}</span>
+                <span className="text-xs text-slate-400 font-semibold">{q.points} pt{q.points !== 1 ? 's' : ''}</span>
               </div>
-              <p style={styles.questionText}>{q.questionText}</p>
+              <p className="text-sm font-semibold leading-relaxed mb-3 text-slate-900">{q.questionText}</p>
               {q.questionMediaUrl && getImageUrl(q.questionMediaUrl) && (
                 <img
                   src={getImageUrl(q.questionMediaUrl)!}
                   alt="Question"
-                  style={styles.questionImage}
+                  className="max-w-full rounded-xl mb-3"
                 />
               )}
-              <div style={styles.optionsList}>
+              <div className="flex flex-col gap-2">
                 {q.options.map((opt, optIdx) => {
                   const isSelected = answers[q.id] === opt.text;
                   return (
                     <button
                       key={opt.id}
-                      style={{
-                        ...styles.optionBtn,
-                        ...(isSelected ? styles.optionBtnSelected : {}),
-                      }}
+                      className={`flex items-center gap-3 p-3 px-3.5 border-2 rounded-xl cursor-pointer text-left transition-all text-sm ${
+                        isSelected ? 'bg-indigo-50 border-indigo-600 text-indigo-600 font-medium' : 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-white'
+                      }`}
                       onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: opt.text || '' }))}
                     >
-                      <span style={styles.optionLabel}>{String.fromCharCode(65 + optIdx)}</span>
-                      <span style={styles.optionText}>{opt.text}</span>
+                      <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-200 font-bold text-xs shrink-0 text-slate-700">{String.fromCharCode(65 + optIdx)}</span>
+                      <span className="flex-1 font-medium">{opt.text}</span>
                       {opt.mediaUrl && getImageUrl(opt.mediaUrl) && (
-                        <img src={getImageUrl(opt.mediaUrl)!} alt="" style={styles.optionImage} />
+                        <img src={getImageUrl(opt.mediaUrl)!} alt="" className="w-12 h-12 object-cover rounded-lg" />
                       )}
                     </button>
                   );
@@ -352,12 +351,11 @@ export default function PulseApp({ onBack }: PulseAppProps) {
         </div>
 
         {/* Submit */}
-        <div style={styles.submitArea}>
+        <div className="fixed bottom-0 left-0 right-0 p-4 px-6 bg-white border-t-2 border-slate-200 flex justify-center z-50">
           <button
-            style={{
-              ...styles.submitBtn,
-              opacity: submitting || answeredCount === 0 ? 0.5 : 1,
-            }}
+            className={`py-3.5 px-12 bg-gradient-to-br from-green-600 to-emerald-500 text-white border-none rounded-xl text-base font-bold cursor-pointer transition-opacity ${
+              submitting || answeredCount === 0 ? 'opacity-50 cursor-not-allowed' : 'opacity-100 hover:opacity-95'
+            }`}
             onClick={handleSubmit}
             disabled={submitting || answeredCount === 0}
           >
@@ -376,37 +374,33 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     const passed = activeQuiz ? result.score >= activeQuiz.passingPoints : true;
 
     return (
-      <div style={styles.container}>
-        <div style={styles.resultCard}>
-          <div style={{
-            ...styles.resultIcon,
-            background: passed ? '#dcfce7' : '#fef2f2',
-            color: passed ? '#16a34a' : '#dc2626',
-          }}>
+      <div className="h-full overflow-y-auto bg-slate-50 font-sans text-slate-900">
+        <div className="max-w-[400px] my-15 mx-auto p-10 bg-white rounded-3xl border-2 border-slate-200 text-center shadow-lg">
+          <div className={`w-18 h-18 rounded-full flex items-center justify-center text-4xl font-extrabold mx-auto mb-4 ${passed ? 'bg-green-100 text-green-600' : 'bg-red-50 text-red-600'}`}>
             {passed ? '✓' : '✗'}
           </div>
-          <h2 style={styles.resultTitle}>
+          <h2 className="text-2xl font-extrabold m-0 text-slate-900">
             {passed ? 'Congratulations!' : 'Keep Practicing!'}
           </h2>
-          <p style={styles.resultSubtitle}>
+          <p className="text-sm text-slate-500 mt-1 mb-0">
             {passed ? 'You passed the quiz.' : 'You did not pass this time.'}
           </p>
 
-          <div style={styles.scoreDisplay}>
-            <span style={styles.scoreValue}>{result.score}</span>
-            <span style={styles.scoreSeparator}>/</span>
-            <span style={styles.scoreMax}>{result.maxScore}</span>
+          <div className="mt-6 flex items-baseline justify-center gap-1">
+            <span className="text-5xl font-extrabold text-indigo-600">{result.score}</span>
+            <span className="text-2xl text-slate-400">/</span>
+            <span className="text-2xl text-slate-400 font-semibold">{result.maxScore}</span>
           </div>
-          <p style={styles.percentage}>{percentage}%</p>
+          <p className="text-base text-slate-500 font-semibold mt-1 mb-0">{percentage}%</p>
 
           {result.timeTakenSeconds && (
-            <p style={styles.timeTaken}>
+            <p className="text-xs text-slate-400 mt-2 mb-0">
               Time taken: {formatTime(result.timeTakenSeconds)}
             </p>
           )}
 
-          <div style={styles.resultActions}>
-            <button onClick={() => { setView('list'); setResult(null); setActiveQuiz(null); }} style={styles.resultBtn}>
+          <div className="mt-6">
+            <button onClick={() => { setView('list'); setResult(null); setActiveQuiz(null); }} className="py-3 px-8 bg-indigo-600 hover:bg-indigo-700 text-white border-none rounded-xl text-sm font-bold cursor-pointer transition-colors shadow-sm">
               Back to Quizzes
             </button>
           </div>
@@ -417,345 +411,3 @@ export default function PulseApp({ onBack }: PulseAppProps) {
 
   return null;
 }
-
-// ─── Styles ────────────────────────────────────────────────────
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    height: '100%',
-    overflowY: 'auto',
-    background: '#f8fafc',
-    fontFamily: '"Plus Jakarta Sans", system-ui, -apple-system, sans-serif',
-    color: '#0f172a',
-  },
-  header: {
-    padding: '24px 24px 16px',
-    background: 'linear-gradient(135deg, #4F46E5, #6366f1)',
-    color: '#fff',
-  },
-  backBtn: {
-    background: 'rgba(255,255,255,0.15)',
-    border: 'none',
-    color: '#fff',
-    padding: '6px 12px',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: 13,
-    fontWeight: 600,
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 800,
-    margin: 0,
-  },
-  subtitle: {
-    fontSize: 14,
-    opacity: 0.8,
-    margin: '4px 0 0',
-  },
-  center: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '60px 24px',
-  },
-  spinner: {
-    width: 32,
-    height: 32,
-    border: '3px solid #e2e8f0',
-    borderTopColor: '#4F46E5',
-    borderRadius: '50%',
-    animation: 'spin 0.8s linear infinite',
-  },
-  errorBox: {
-    margin: '24px',
-    padding: 16,
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: 12,
-    color: '#dc2626',
-    textAlign: 'center' as const,
-  },
-  retryBtn: {
-    marginTop: 8,
-    padding: '6px 16px',
-    background: '#dc2626',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontWeight: 600,
-  },
-  quizGrid: {
-    padding: '16px 24px 24px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-  },
-  quizCard: {
-    background: '#fff',
-    border: '2px solid #e2e8f0',
-    borderRadius: 16,
-    overflow: 'hidden',
-    transition: 'box-shadow 0.2s',
-  },
-  quizCardBody: {
-    padding: '16px 16px 12px',
-  },
-  quizTitle: {
-    fontSize: 16,
-    fontWeight: 700,
-    margin: 0,
-  },
-  quizDesc: {
-    fontSize: 13,
-    color: '#64748b',
-    margin: '4px 0 0',
-    lineHeight: 1.4,
-  },
-  quizMeta: {
-    display: 'flex',
-    flexWrap: 'wrap' as const,
-    gap: 12,
-    marginTop: 8,
-    fontSize: 12,
-    color: '#94a3b8',
-    fontWeight: 500,
-  },
-  attemptBadge: {
-    marginTop: 8,
-    display: 'inline-block',
-    padding: '2px 8px',
-    background: '#f1f5f9',
-    borderRadius: 6,
-    fontSize: 12,
-    fontWeight: 600,
-    color: '#475569',
-  },
-  startBtn: {
-    width: '100%',
-    padding: '12px',
-    background: 'linear-gradient(135deg, #4F46E5, #6366f1)',
-    color: '#fff',
-    border: 'none',
-    fontSize: 14,
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-
-  // Taking quiz
-  topBar: {
-    position: 'sticky' as const,
-    top: 0,
-    zIndex: 100,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '12px 16px',
-    background: '#fff',
-    borderBottom: '2px solid #e2e8f0',
-  },
-  timerArea: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-  },
-  timer: {
-    fontSize: 18,
-    fontWeight: 800,
-    fontVariantNumeric: 'tabular-nums',
-  },
-  answerCount: {
-    fontSize: 13,
-    color: '#94a3b8',
-    fontWeight: 600,
-  },
-  questionsArea: {
-    padding: '16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 16,
-    paddingBottom: 100,
-  },
-  questionCard: {
-    background: '#fff',
-    border: '2px solid #e2e8f0',
-    borderRadius: 16,
-    padding: 20,
-  },
-  questionHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  questionNumber: {
-    fontSize: 13,
-    fontWeight: 800,
-    color: '#4F46E5',
-    background: '#eef2ff',
-    padding: '2px 8px',
-    borderRadius: 6,
-  },
-  questionPoints: {
-    fontSize: 12,
-    color: '#94a3b8',
-    fontWeight: 600,
-  },
-  questionText: {
-    fontSize: 15,
-    fontWeight: 600,
-    lineHeight: 1.5,
-    margin: '0 0 12px',
-  },
-  questionImage: {
-    maxWidth: '100%',
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  optionsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-  },
-  optionBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    padding: '12px 14px',
-    background: '#f8fafc',
-    border: '2px solid #e2e8f0',
-    borderRadius: 12,
-    cursor: 'pointer',
-    textAlign: 'left' as const,
-    transition: 'all 0.15s',
-    fontSize: 14,
-  },
-  optionBtnSelected: {
-    background: '#eef2ff',
-    borderColor: '#4F46E5',
-    color: '#4F46E5',
-  },
-  optionLabel: {
-    width: 28,
-    height: 28,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-    background: '#e2e8f0',
-    fontWeight: 700,
-    fontSize: 13,
-    flexShrink: 0,
-  },
-  optionText: {
-    flex: 1,
-    fontWeight: 500,
-  },
-  optionImage: {
-    width: 48,
-    height: 48,
-    objectFit: 'cover',
-    borderRadius: 8,
-  },
-  submitArea: {
-    position: 'fixed' as const,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: '16px 24px',
-    background: '#fff',
-    borderTop: '2px solid #e2e8f0',
-    display: 'flex',
-    justifyContent: 'center',
-  },
-  submitBtn: {
-    padding: '14px 48px',
-    background: 'linear-gradient(135deg, #16a34a, #22c55e)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 12,
-    fontSize: 16,
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-
-  // Result
-  resultCard: {
-    maxWidth: 400,
-    margin: '60px auto',
-    padding: 40,
-    background: '#fff',
-    borderRadius: 24,
-    border: '2px solid #e2e8f0',
-    textAlign: 'center' as const,
-  },
-  resultIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 36,
-    fontWeight: 800,
-    margin: '0 auto 16px',
-  },
-  resultTitle: {
-    fontSize: 22,
-    fontWeight: 800,
-    margin: 0,
-  },
-  resultSubtitle: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 4,
-  },
-  scoreDisplay: {
-    marginTop: 24,
-    display: 'flex',
-    alignItems: 'baseline',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  scoreValue: {
-    fontSize: 48,
-    fontWeight: 800,
-    color: '#4F46E5',
-  },
-  scoreSeparator: {
-    fontSize: 24,
-    color: '#94a3b8',
-  },
-  scoreMax: {
-    fontSize: 24,
-    color: '#94a3b8',
-    fontWeight: 600,
-  },
-  percentage: {
-    fontSize: 16,
-    color: '#64748b',
-    fontWeight: 600,
-    marginTop: 4,
-  },
-  timeTaken: {
-    fontSize: 13,
-    color: '#94a3b8',
-    marginTop: 8,
-  },
-  resultActions: {
-    marginTop: 24,
-  },
-  resultBtn: {
-    padding: '12px 32px',
-    background: '#4F46E5',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 12,
-    fontSize: 14,
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-};

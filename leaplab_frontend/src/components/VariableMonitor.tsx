@@ -180,13 +180,15 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
     return (
         <div style={{ position: 'absolute', left: x, top: y, zIndex: zIndex }}>
             <div
-                style={{
-                    ...styles.container,
-                    ...(mode === 'large' ? styles.largeContainer : {}),
-                    ...(mode === 'slider' ? styles.sliderContainer : {}),
-                    cursor: isDragging ? 'grabbing' : 'grab',
-                }}
-                className={`variable-monitor mode-${mode}`}
+                className={`variable-monitor mode-${mode} select-none touch-manipulation inline-flex items-center gap-1 min-h-5.5 font-sans text-xs text-black ${
+                    isDragging ? 'cursor-grabbing' : 'cursor-grab'
+                } ${
+                    mode === 'large'
+                        ? 'bg-transparent border-none shadow-none p-0'
+                        : mode === 'slider'
+                        ? 'bg-[#edeff2] border border-[#bcc5ce] rounded-md p-1 px-1.5 flex-col'
+                        : 'bg-[#edeff2] border border-[#bcc5ce] rounded-md p-0.75 px-1 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]'
+                }`}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
@@ -194,21 +196,21 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
                 onContextMenu={handleContextMenu}
             >
                 {mode === 'normal' && (
-                    <div style={styles.normalContent}>
-                        <span style={styles.name}>{name}</span>
-                        <span style={styles.value}>{displayValue}</span>
+                    <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                        <span className="font-bold text-[#575E75] mx-0.5">{name}</span>
+                        <span className="bg-[#FF8C1A] p-0.25 px-2 rounded-xs text-white font-bold font-sans text-center border border-black/10 min-w-7.5">{displayValue}</span>
                     </div>
                 )}
                 {mode === 'large' && (
-                    <div style={styles.largeContent}>
-                        <span style={styles.largeValue}>{displayValue}</span>
+                    <div className="flex items-center justify-center">
+                        <span className="bg-[#FF8C1A] p-1.5 px-4 text-white text-sm font-bold text-center rounded-md border border-black/10 min-w-10 shadow-md">{displayValue}</span>
                     </div>
                 )}
                 {mode === 'slider' && (
-                    <div style={styles.sliderContentLayout}>
-                        <div style={styles.normalContent}>
-                            <span style={styles.name}>{name}</span>
-                            <span style={styles.value}>{displayValue}</span>
+                    <div className="flex flex-col items-center gap-2 w-full min-w-[120px]">
+                        <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                            <span className="font-bold text-[#575E75] mx-0.5">{name}</span>
+                            <span className="bg-[#FF8C1A] p-0.25 px-2 rounded-xs text-white font-bold font-sans text-center border border-black/10 min-w-7.5">{displayValue}</span>
                         </div>
                         {isNumber ? (
                             <input
@@ -217,10 +219,10 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
                                 max={sliderMax}
                                 value={Number(value) || 0}
                                 onChange={(e) => onValueChange?.(Number(e.target.value))}
-                                style={styles.rangeInput}
+                                className="w-full mx-0.5"
                             />
                         ) : (
-                            <div style={styles.sliderError}>Not a number</div>
+                            <div className="text-slate-400 text-[10px]">Not a number</div>
                         )}
                     </div>
                 )}
@@ -228,23 +230,24 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
 
             {/* Context Menu Portal / Overlay */}
             {contextMenu && (
-                <div style={{
-                    ...styles.contextMenu,
-                    position: 'fixed',
-                    left: contextMenu.x,
-                    top: contextMenu.y,
-                }}>
-                    <div style={styles.menuItem} onClick={() => handleMenuClick('normal')}>
-                        {mode === 'normal' && <span style={styles.check}>✓</span>} normal readout
+                <div 
+                    className="fixed bg-white border border-slate-300 shadow-[2px_2px_5px_rgba(0,0,0,0.2)] rounded-md py-1 font-sans text-xs z-[9999] min-w-[140px]"
+                    style={{
+                        left: contextMenu.x,
+                        top: contextMenu.y,
+                    }}
+                >
+                    <div className="py-1.5 pl-6 pr-4 cursor-pointer relative text-slate-800 hover:bg-slate-100" onClick={() => handleMenuClick('normal')}>
+                        {mode === 'normal' && <span className="absolute left-2 font-bold">✓</span>} normal readout
                     </div>
-                    <div style={styles.menuItem} onClick={() => handleMenuClick('large')}>
-                        {mode === 'large' && <span style={styles.check}>✓</span>} large readout
+                    <div className="py-1.5 pl-6 pr-4 cursor-pointer relative text-slate-800 hover:bg-slate-100" onClick={() => handleMenuClick('large')}>
+                        {mode === 'large' && <span className="absolute left-2 font-bold">✓</span>} large readout
                     </div>
-                    <div style={styles.menuItem} onClick={() => handleMenuClick('slider')}>
-                        {mode === 'slider' && <span style={styles.check}>✓</span>} slider
+                    <div className="py-1.5 pl-6 pr-4 cursor-pointer relative text-slate-800 hover:bg-slate-100" onClick={() => handleMenuClick('slider')}>
+                        {mode === 'slider' && <span className="absolute left-2 font-bold">✓</span>} slider
                     </div>
                     {mode === 'slider' && (
-                        <div style={styles.menuItem} onClick={() => {
+                        <div className="py-1.5 pl-6 pr-4 cursor-pointer relative text-slate-800 hover:bg-slate-100" onClick={() => {
                             const min = window.prompt("Slider minimum:", sliderMin.toString()) || sliderMin.toString();
                             const max = window.prompt("Slider maximum:", sliderMax.toString()) || sliderMax.toString();
                             const parsedMin = Number(min);
@@ -259,117 +262,6 @@ export const VariableMonitor: React.FC<VariableMonitorProps> = ({
             )}
         </div>
     );
-};
-
-const styles: { [key: string]: React.CSSProperties } = {
-    container: {
-        backgroundColor: '#edeff2', // Light gray standard base
-        borderRadius: '6px',
-        padding: '3px 4px',
-        boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3)',
-        border: '1px solid #bcc5ce',
-        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-        fontSize: '11px',
-        color: 'black',
-        userSelect: 'none',
-        touchAction: 'manipulation',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '4px',
-        minHeight: '22px'
-    },
-    largeContainer: {
-        backgroundColor: 'transparent',
-        border: 'none',
-        boxShadow: 'none',
-        padding: 0
-    },
-    sliderContainer: {
-        backgroundColor: '#edeff2',
-        border: '1px solid #bcc5ce',
-        padding: '4px 6px',
-        display: 'inline-flex',
-        flexDirection: 'column',
-    },
-    normalContent: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '6px',
-        whiteSpace: 'nowrap',
-    },
-    largeContent: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    sliderContentLayout: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '8px',
-        width: '100%',
-        minWidth: '120px'
-    },
-    name: {
-        fontWeight: 'bold',
-        color: '#575E75', // Darker gray for label
-        marginLeft: '2px',
-        marginRight: '2px'
-    },
-    value: {
-        backgroundColor: '#FF8C1A', // LeapBlox orange
-        padding: '1px 8px',
-        borderRadius: '4px',
-        color: 'white',
-        fontWeight: 'bold',
-        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-        textAlign: 'center',
-        border: '1px solid rgba(0,0,0,0.1)',
-        minWidth: '30px'
-    },
-    largeValue: {
-        backgroundColor: '#FF8C1A',
-        padding: '6px 16px',
-        color: 'white',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        borderRadius: '6px',
-        border: '1px solid rgba(0,0,0,0.1)',
-        minWidth: '40px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-    },
-    rangeInput: {
-        width: '100%',
-        margin: '0 2px'
-    },
-    sliderError: {
-        color: '#999',
-        fontSize: '10px'
-    },
-    contextMenu: {
-        backgroundColor: 'white',
-        border: '1px solid #ccc',
-        boxShadow: '2px 2px 5px rgba(0,0,0,0.2)',
-        borderRadius: '4px',
-        padding: '4px 0',
-        fontFamily: 'sans-serif',
-        fontSize: '12px',
-        zIndex: 9999,
-        minWidth: '140px'
-    },
-    menuItem: {
-        padding: '6px 16px 6px 24px',
-        cursor: 'pointer',
-        position: 'relative',
-        color: '#333'
-    },
-    check: {
-        position: 'absolute',
-        left: '8px',
-        fontWeight: 'bold'
-    }
 };
 
 export default VariableMonitor;

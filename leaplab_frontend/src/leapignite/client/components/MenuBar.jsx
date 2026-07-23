@@ -109,28 +109,10 @@ export default function MenuBar({
 
     return (
         <>
-        <div style={{
-            display: 'grid',
-            /*
-             * 3-column grid — identical pattern to IGNITE JuniorMenuBar:
-             *   LEFT   → auto             never shrinks, always shows logo + menus
-             *   CENTER → minmax(0,1fr)    stretches, clips gracefully
-             *   RIGHT  → auto             never shrinks, CREOLEAP logo always visible
-             */
-            gridTemplateColumns: 'auto minmax(0,1fr) auto',
-            alignItems: 'center',
-            height: 56,
-            padding: '0 16px',
-            gap: 8,
-            background: 'linear-gradient(135deg, #0a0a1f 0%, #0a015a 55%, #080a25 100%)',
-            boxShadow: '0 4px 20px rgba(8,10,37,0.5), inset 0 -1px 0 rgba(255,255,255,0.06)',
-            borderBottom: '1px solid rgba(100,180,255,0.08)',
-            zIndex: 100,
-            flexShrink: 0,
-        }}>
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center h-[56px] px-4 gap-2 bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] border-b border-sky-400/10 z-[100] shrink-0">
 
             {/* ══ LEFT: Home · Logo · "EMBED" · Menus ══════════════════════════ */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div className="flex items-center gap-2.5">
 
                 {/* Home button */}
                 <button
@@ -140,51 +122,28 @@ export default function MenuBar({
                         onBack?.();
                     }}
                     title="Back to Home"
-                    style={{
-                        width: 34, height: 34,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: 'rgba(255,255,255,0.1)',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        borderRadius: 10,
-                        color: '#fff',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        flexShrink: 0,
-                    }}
-                    onMouseEnter={e => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-                        e.currentTarget.style.transform = 'scale(1.06)';
-                    }}
-                    onMouseLeave={e => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                        e.currentTarget.style.transform = 'scale(1)';
-                    }}
+                    className="w-8.5 h-8.5 flex items-center justify-center bg-white/10 border border-white/12 rounded-xl text-white cursor-pointer transition-all duration-200 shrink-0 hover:bg-white/20 hover:scale-105"
                 >
                     <Home size={17} strokeWidth={2.2} />
                 </button>
 
                 {/* Divider */}
-                <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+                <div className="w-px h-7 bg-white/10 shrink-0" />
 
                 {/* Logo + brand label */}
-                <div style={{
-                    display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
-                    filter: 'drop-shadow(0 0 12px rgba(80,180,255,0.25)) drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                }}>
+                <div className="flex items-center gap-2 shrink-0 drop-shadow-[0_0_12px_rgba(80,180,255,0.25)]">
                     <Logo height={48} />
-                    <div style={{
-                        color: '#fff', fontSize: 22, fontWeight: 900,
-                        letterSpacing: '-0.3px',
-                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    }}>EMBED</div>
+                    <div className="text-white text-22px font-black tracking-tighter font-sans">
+                        EMBED
+                    </div>
                 </div>
 
                 {/* Divider */}
-                <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+                <div className="w-px h-7 bg-white/10 shrink-0" />
 
                 {/* Menus */}
                 {showDesktopMenus && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <div className="flex items-center gap-0.5">
                         <DropdownMenu
                             label="File"
                             items={fileMenuItems}
@@ -212,10 +171,7 @@ export default function MenuBar({
             </div>
 
             {/* ══ CENTER: Project name pill ════════════════════════════════════ */}
-            <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: '0 12px', overflow: 'hidden',
-            }}>
+            <div className="flex items-center justify-center px-3 overflow-hidden">
                 <ProjectNameInput
                     value={projectName}
                     onChange={(val) => onProjectNameChange?.(val)}
@@ -224,10 +180,7 @@ export default function MenuBar({
             </div>
 
             {/* ══ RIGHT: Ports · Toggle · Upload · CREOLEAP SVG ════════════════ */}
-            <div ref={rightSideRef} style={{
-                display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
-                overflow: 'hidden', maxWidth: '100%',
-            }}>
+            <div ref={rightSideRef} className="flex items-center gap-2.5 shrink-0 overflow-hidden max-w-full">
 
                 {showDesktopMenus ? (
                     <>
@@ -260,10 +213,10 @@ export default function MenuBar({
 
 
                         {/* Divider */}
-                        <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+                        <div className="w-px h-7 bg-white/10 shrink-0" />
 
                         <TopbarShareButton
-                            style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
+                            className="bg-transparent border-none text-white/70 cursor-pointer p-1.5 px-2 rounded flex items-center transition-colors hover:text-white"
                             size={18}
                             onSave={onSave}
                             projectName={projectName}
@@ -272,31 +225,11 @@ export default function MenuBar({
                         <LeapLabAuthButton variant="dark" size="sm" />
 
                         {showCreoleap && (
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                flexShrink: 0,
-                                paddingLeft: 4,
-                                height: '60px',
-                                overflow: 'hidden',
-                            }}>
+                            <div className="flex items-center shrink-0 pl-1 h-[60px] overflow-hidden">
                                 <img
                                     src="assets/logo-creoleap.png"
                                     alt="CREOLEAP"
-                                    style={{
-                                        width: '145px',
-                                        height: 'auto',
-                                        objectFit: 'contain',
-                                        display: 'block',
-                                        flexShrink: 0,
-                                        filter: [
-                                            'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
-                                            'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
-                                            'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
-                                            'brightness(1.2)',
-                                            'contrast(1.06)',
-                                        ].join(' '),
-                                    }}
+                                    className="w-[145px] h-auto object-contain block shrink-0 drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)] brightness-120 contrast-105"
                                 />
                             </div>
                         )}
@@ -304,12 +237,7 @@ export default function MenuBar({
                 ) : (
                     <button
                         onClick={() => setMobileMenuOpen(true)}
-                        style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            width: 34, height: 34, borderRadius: 10,
-                            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
-                            color: '#fff', cursor: 'pointer', flexShrink: 0,
-                        }}
+                        className="flex items-center justify-center w-8.5 h-8.5 rounded-xl bg-white/10 border border-white/15 text-white cursor-pointer shrink-0 hover:bg-white/20"
                     >
                         <MenuIcon size={18} strokeWidth={2.2} />
                     </button>
@@ -323,21 +251,15 @@ export default function MenuBar({
             onClose={() => setMobileMenuOpen(false)}
             theme="dark"
         >
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>File Operations</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">File Operations</div>
             {fileMenuItems.map((item, idx) =>
                 item.divider ? (
-                    <div key={idx} style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                    <div key={idx} className="h-px bg-white/10 my-1" />
                 ) : (
-                    <button key={idx} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                            padding: '8px 10px', border: 'none', borderRadius: 8,
-                            background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                            fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                            transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    <button
+                        key={idx}
+                        onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                        className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
                     >
                         {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
                         {item.label}
@@ -345,43 +267,32 @@ export default function MenuBar({
                 )
             )}
 
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+            <div className="h-px bg-white/10 my-1" />
 
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Edit Operations</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Edit Operations</div>
             {editMenuItems.map((item, idx) => (
-                <button key={idx} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                        padding: '8px 10px', border: 'none', borderRadius: 8,
-                        background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                        fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                        transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                <button
+                    key={idx}
+                    onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                    className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
                 >
                     {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
                     {item.label}
                 </button>
             ))}
 
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+            <div className="h-px bg-white/10 my-1" />
 
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Board</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Board</div>
             {boardMenuItems.map((item, idx) =>
                 item.divider ? (
-                    <div key={idx} style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                    <div key={idx} className="h-px bg-white/10 my-1" />
                 ) : (
-                    <button key={idx} onClick={() => { !item.disabled && item.onClick?.(); setMobileMenuOpen(false); }}
+                    <button
+                        key={idx}
+                        onClick={() => { !item.disabled && item.onClick?.(); setMobileMenuOpen(false); }}
                         disabled={item.disabled}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                            padding: '8px 10px', border: 'none', borderRadius: 8,
-                            background: 'transparent',
-                            color: item.disabled ? '#666' : '#e0e0e0', fontSize: 13,
-                            fontWeight: 500, cursor: item.disabled ? 'not-allowed' : 'pointer', textAlign: 'left',
-                            transition: 'all 0.15s ease',
-                        }}
+                        className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white disabled:cursor-not-allowed disabled:text-gray-600"
                     >
                         {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
                         {item.label}
@@ -389,19 +300,12 @@ export default function MenuBar({
                 )
             )}
 
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+            <div className="h-px bg-white/10 my-1" />
 
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Controls</div>
-            <button onClick={() => { onModeChange?.(mode === 'upload' ? 'stage' : 'upload'); setMobileMenuOpen(false); }}
-                style={{
-                    display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                    padding: '8px 10px', border: 'none', borderRadius: 8,
-                    background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                    fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                    transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Controls</div>
+            <button
+                onClick={() => { onModeChange?.(mode === 'upload' ? 'stage' : 'upload'); setMobileMenuOpen(false); }}
+                className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
             >
                 Switch to {mode === 'upload' ? 'Stage' : 'Upload'} Mode
             </button>
@@ -413,24 +317,18 @@ export default function MenuBar({
                     onClick={() => { onUpload?.(); setMobileMenuOpen(false); }}
                     disabled={isUploading}
                     loading={isUploading}
-                    style={{ width: '100%' }}
+                    className="w-full"
                 />
             )}
 
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+            <div className="h-px bg-white/10 my-1" />
 
             <TopbarShareButton size={20} onSave={onSave} projectName={projectName}>
                 {({ onClick, loading }) => (
-                    <button onClick={() => { onClick?.(); setMobileMenuOpen(false); }} disabled={loading}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                            padding: '8px 10px', border: 'none', borderRadius: 8,
-                            background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                            fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                            transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    <button
+                        onClick={() => { onClick?.(); setMobileMenuOpen(false); }}
+                        disabled={loading}
+                        className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
                     >
                         <Share size={15} color="#a78bfa" strokeWidth={2} />
                         Share
@@ -438,8 +336,8 @@ export default function MenuBar({
                 )}
             </TopbarShareButton>
 
-            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <LeapLabAuthButton variant="dark" size="sm" style={{ width: '100%', height: '34px', borderRadius: '20px', boxSizing: 'border-box' }} />
+            <div className="mt-auto flex flex-col gap-2">
+                <LeapLabAuthButton variant="dark" size="sm" className="w-full h-[34px] rounded-full box-border" />
             </div>
         </MobileDrawer>
         </>

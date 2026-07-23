@@ -67,111 +67,129 @@ export default function UploadWorkspace() {
             : ctx.uploadTerminalOutput;
 
         return (
-            <div style={{ flex: 1, overflowY: "auto", background: "#fff", padding: "12px 14px", fontFamily: "'Cascadia Code', Consolas, monospace", fontSize: 12, lineHeight: 1.55 }}>
+            <div className="flex-1 overflow-y-auto bg-white p-3 px-3.5 font-mono text-xs leading-relaxed">
                 {lines.map((entry, index) => {
                     const type = entry.type || "info";
-                    const color = type === "error" ? "#D14343" : type === "success" ? "#2E7D32" : type === "warning" ? "#A56A00" : "#4B5563";
-                    return <div key={`${entry.text}-${index}`} style={{ color, marginBottom: 6 }}>{entry.text}</div>;
+                    const colorClass = type === "error" ? "text-red-600" : type === "success" ? "text-green-700" : type === "warning" ? "text-amber-700" : "text-gray-600";
+                    return <div key={`${entry.text}-${index}`} className={`${colorClass} mb-1.5`}>{entry.text}</div>;
                 })}
             </div>
         );
     };
 
     return (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Upload Toolbar */}
-            <div style={{
-                height: 48, background: "#fff", display: "flex", alignItems: "center",
-                padding: "0 12px", justifyContent: "space-between", borderBottom: `1px solid ${C.BORDER}`, gap: 16,
-            }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ display: "flex", borderRadius: 8, overflow: "hidden", background: "#ECE7F8", border: `1px solid ${C.BORDER}` }}>
+            <div className="h-12 bg-white flex items-center px-3 justify-between border-b border-gray-200 gap-4 shrink-0">
+                <div className="flex items-center gap-2">
+                    <div className="flex rounded-lg overflow-hidden bg-[#ECE7F8] border border-gray-200">
                         {["project", "board"].map(view => (
-                            <button key={view} onClick={() => ctx.setUploadView(view)} style={{
-                                display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", border: "none",
-                                background: ctx.uploadView === view ? C.PURPLE : "transparent",
-                                color: ctx.uploadView === view ? "#fff" : C.TEXT, fontSize: 12, fontWeight: 700, cursor: "pointer",
-                            }}>
+                            <button
+                                key={view}
+                                onClick={() => ctx.setUploadView(view)}
+                                className={`flex items-center gap-1.5 px-3.5 py-1.75 border-none text-xs font-bold cursor-pointer transition-colors ${
+                                    ctx.uploadView === view ? "bg-purple-600 text-white" : "bg-transparent text-gray-800"
+                                }`}
+                            >
                                 {view === "project" ? <><FileText size={14} /> MicroPython</> : <><FileCode2 size={14} /> Board C++</>}
                             </button>
                         ))}
                     </div>
-                    <button onClick={() => ctx.setIsBoardModalOpen(true)} style={{
-                        display: "flex", alignItems: "center", gap: 6, border: `1px solid ${C.BORDER}`,
-                        background: "#fff", borderRadius: 8, padding: "7px 12px", fontSize: 12, fontWeight: 600, color: C.TEXT, cursor: "pointer",
-                    }}>
-                        <Cpu size={14} color={C.PURPLE} /> {ctx.selectedBoardName}
+                    <button
+                        onClick={() => ctx.setIsBoardModalOpen(true)}
+                        className="flex items-center gap-1.5 border border-gray-200 bg-white rounded-lg px-3 py-1.75 text-xs font-semibold text-gray-800 cursor-pointer hover:bg-gray-50"
+                    >
+                        <Cpu size={14} className="text-purple-600" /> {ctx.selectedBoardName}
                     </button>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <select value={ctx.selectedPort} onChange={(e) => ctx.setSelectedPort(e.target.value)}
-                        style={{ border: `1px solid ${C.BORDER}`, borderRadius: 8, padding: "7px 10px", fontSize: 12, color: C.TEXT, minWidth: 180, outline: "none", background: "#fff" }}>
+                <div className="flex items-center gap-2">
+                    <select
+                        value={ctx.selectedPort}
+                        onChange={(e) => ctx.setSelectedPort(e.target.value)}
+                        className="border border-gray-200 rounded-lg px-2.5 py-1.75 text-xs text-gray-800 min-w-[180px] outline-none bg-white"
+                    >
                         <option value="">{ctx.ports.length ? "Select Port" : "No Ports Found"}</option>
                         {ctx.ports.map((port) => <option key={port.path} value={port.path}>{formatPortLabel(port)}</option>)}
                     </select>
-                    <button onClick={ctx.refreshPorts} title="Refresh Ports" style={{
-                        width: 34, height: 34, borderRadius: 8, border: `1px solid ${C.BORDER}`, background: "#fff",
-                        color: C.TEXT, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                    }}><RefreshCw size={15} /></button>
-                    <button onClick={ctx.handleConnectToBoard} style={{
-                        display: "flex", alignItems: "center", gap: 6, border: "none",
-                        background: ctx.isConnected ? C.GREEN : "#EEF2FF", color: ctx.isConnected ? "#fff" : C.TEXT,
-                        borderRadius: 8, padding: "8px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer",
-                    }}>
+                    <button
+                        onClick={ctx.refreshPorts}
+                        title="Refresh Ports"
+                        className="w-8.5 h-8.5 rounded-lg border border-gray-200 bg-white text-gray-800 flex items-center justify-center cursor-pointer hover:bg-gray-50"
+                    >
+                        <RefreshCw size={15} />
+                    </button>
+                    <button
+                        onClick={ctx.handleConnectToBoard}
+                        className={`flex items-center gap-1.5 border-none rounded-lg px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
+                            ctx.isConnected ? "bg-green-600 text-white" : "bg-indigo-50 text-gray-800 hover:bg-indigo-100"
+                        }`}
+                    >
                         <Plug size={14} /> {ctx.isConnected ? "Disconnect" : "Connect"}
                     </button>
-                    <div style={{ width: 1, height: 22, background: C.BORDER }} />
-                    <button onClick={() => ctx.editorRef.current?.trigger('keyboard', 'undo', null)} style={{ border: `1px solid ${C.BORDER}`, background: "#fff", borderRadius: 8, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: C.TEXT }}>
+                    <div className="w-px h-5.5 bg-gray-200" />
+                    <button
+                        onClick={() => ctx.editorRef.current?.trigger('keyboard', 'undo', null)}
+                        className="border border-gray-200 bg-white rounded-lg w-8.5 h-8.5 flex items-center justify-center cursor-pointer text-gray-800 hover:bg-gray-50"
+                    >
                         <Undo size={15} />
                     </button>
-                    <button onClick={() => ctx.editorRef.current?.trigger('keyboard', 'redo', null)} style={{ border: `1px solid ${C.BORDER}`, background: "#fff", borderRadius: 8, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: C.TEXT }}>
+                    <button
+                        onClick={() => ctx.editorRef.current?.trigger('keyboard', 'redo', null)}
+                        className="border border-gray-200 bg-white rounded-lg w-8.5 h-8.5 flex items-center justify-center cursor-pointer text-gray-800 hover:bg-gray-50"
+                    >
                         <Redo size={15} />
                     </button>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: ctx.uploadProgressMessage ? C.TEXT : C.MUTED }}>
+                    <div className={`flex items-center gap-2 text-xs ${ctx.uploadProgressMessage ? "text-gray-800" : "text-gray-400"}`}>
                         {ctx.uploadProgressMessage ? (
-                            ctx.isUploadingFirmware ? <Loader size={15} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle size={15} color={C.GREEN} />
-                        ) : <AlertCircle size={15} color={C.MUTED} />}
+                            ctx.isUploadingFirmware ? <Loader size={15} className="animate-spin" /> : <CheckCircle size={15} className="text-green-600" />
+                        ) : <AlertCircle size={15} className="text-gray-400" />}
                         <span>{ctx.uploadProgressMessage || "Board ready"}</span>
                     </div>
                 </div>
             </div>
 
-            <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+            <div className="flex-1 flex min-h-0">
                 {/* Left sidebar - file list */}
-                <aside style={{ width: 278, borderRight: `1px solid ${C.BORDER}`, background: "#F7F7FB", display: "flex", flexDirection: "column", minWidth: 0, position: "relative" }}>
-                    <div style={{ padding: "10px 12px", borderBottom: `1px solid ${C.BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <aside className="w-[278px] border-r border-gray-200 bg-[#F7F7FB] flex flex-col min-w-0 relative">
+                    <div className="p-3 border-b border-gray-200 flex items-center justify-between gap-2">
                         <div>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: C.TEXT }}>Project Files</div>
-                            <div style={{ fontSize: 10, color: C.MUTED, marginTop: 2 }}>
+                            <div className="text-xs font-bold text-gray-800">Project Files</div>
+                            <div className="text-[10px] text-gray-400 mt-0.5">
                                 {ctx.uploadView === "board" ? "Main sketch, library headers, and C++ source files." : "Click a file, then type in the center editor."}
                             </div>
                         </div>
                     </div>
-                    <div style={{ flex: 1, overflowY: "auto", padding: ctx.uploadView === "board" ? "8px 0 132px" : "8px 0" }}>
+                    <div className={`flex-1 overflow-y-auto ${ctx.uploadView === "board" ? "py-2 pb-33" : "py-2"}`}>
                         {ctx.visibleUploadFiles.map((file) => {
                             const isBoardSource = file === ctx.activeBoardFile;
                             const isSelected = ctx.uploadActiveFile === file;
                             const fileExtension = getFileExtension(file);
                             const fileCategoryLabel = isBoardSource ? ctx.selectedBoardName : BOARD_HEADER_EXTENSIONS.has(fileExtension) ? "Header library" : BOARD_SOURCE_EXTENSIONS.has(fileExtension) ? "C++ source" : "MicroPython project";
                             return (
-                                <div key={file} onClick={() => ctx.setUploadActiveFile(file)} style={{
-                                    padding: "10px 12px", cursor: "pointer", display: "flex", alignItems: "center",
-                                    justifyContent: "space-between", gap: 8,
-                                    borderLeft: isSelected ? `3px solid ${C.PURPLE}` : "3px solid transparent",
-                                    background: isSelected ? "#EFE8FF" : "transparent",
-                                }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                                        <div style={{ width: 24, height: 24, borderRadius: 6, background: isBoardSource ? "#E3F2FD" : "#E8F5E9", color: isBoardSource ? "#1D4ED8" : "#2E7D32", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <div
+                                    key={file}
+                                    onClick={() => ctx.setUploadActiveFile(file)}
+                                    className={`px-3 py-2.5 cursor-pointer flex items-center justify-between gap-2 border-l-3 transition-colors ${
+                                        isSelected ? "border-purple-600 bg-[#EFE8FF]" : "border-transparent hover:bg-gray-100/50"
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+                                            isBoardSource ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
+                                        }`}>
                                             {isBoardSource ? <FileCode2 size={13} /> : <FileText size={13} />}
                                         </div>
-                                        <div style={{ minWidth: 0 }}>
-                                            <div style={{ fontSize: 12, fontWeight: 600, color: C.TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{file}</div>
-                                            <div style={{ fontSize: 10, color: C.MUTED }}>{fileCategoryLabel}</div>
+                                        <div className="min-w-0">
+                                            <div className="text-xs font-semibold text-gray-800 truncate">{file}</div>
+                                            <div className="text-[10px] text-gray-400">{fileCategoryLabel}</div>
                                         </div>
                                     </div>
                                     {!ctx.protectedUploadFiles.has(file) && (
-                                        <button onClick={(e) => { e.stopPropagation(); ctx.setUploadProjectFiles(prev => { const n = { ...prev }; delete n[file]; return n; }); ctx.setUploadActiveFile("main.py"); ctx.addUploadMessage(`Deleted ${file}`, "warning"); }}
-                                            style={{ border: "none", background: "transparent", color: C.MUTED, cursor: "pointer", padding: 2 }} title="Delete file">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); ctx.setUploadProjectFiles(prev => { const n = { ...prev }; delete n[file]; return n; }); ctx.setUploadActiveFile("main.py"); ctx.addUploadMessage(`Deleted ${file}`, "warning"); }}
+                                            className="border-none bg-transparent text-gray-400 cursor-pointer p-0.5 hover:text-red-500 transition-colors"
+                                            title="Delete file"
+                                        >
                                             <Trash2 size={13} />
                                         </button>
                                     )}
@@ -182,18 +200,20 @@ export default function UploadWorkspace() {
                 </aside>
 
                 {/* Center: Editor + Output */}
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0 }}>
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                        <div style={{ height: 34, borderBottom: `1px solid ${C.BORDER}`, background: ctx.uploadView === "board" ? "#FFFFFF" : "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 12px", fontSize: 12, color: C.TEXT, gap: 12 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                <div className="flex-1 flex flex-col min-w-0 min-h-0">
+                    <div className="flex-1 flex flex-col min-h-0">
+                        <div className={`h-8.5 border-b border-gray-200 flex items-center justify-between px-3 text-xs text-gray-800 gap-3 ${
+                            ctx.uploadView === "board" ? "bg-white" : "bg-gray-100"
+                        }`}>
+                            <div className="flex items-center gap-2 min-w-0">
                                 {ctx.uploadActiveFile === ctx.activeBoardFile ? <FileCode2 size={14} /> : <FileText size={14} />}
-                                <span style={{ fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ctx.uploadActiveFile}</span>
+                                <span className="font-semibold truncate">{ctx.uploadActiveFile}</span>
                             </div>
-                            <div style={{ fontSize: 11, color: C.MUTED }}>
+                            <div className="text-[11px] text-gray-400">
                                 {ctx.uploadActiveFile === ctx.activeBoardFile ? `${ctx.selectedBoardName} firmware` : "MicroPython project file"}
                             </div>
                         </div>
-                        <div style={{ flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }}>
+                        <div className="flex-1 min-h-0 flex overflow-hidden">
                             <MonacoEditor projectFiles={ctx.uploadProjectFiles} activeFile={ctx.uploadActiveFile}
                                 setProjectFiles={ctx.setUploadProjectFiles} editorRef={ctx.editorRef} monacoRef={ctx.monacoRef}
                                 editorCursor={ctx.editorCursor} isRunning={ctx.isUploadingFirmware}
@@ -202,34 +222,38 @@ export default function UploadWorkspace() {
                         </div>
                     </div>
 
-                    <div style={{ height: 244, borderTop: `1px solid ${C.BORDER}`, background: "#F8F9FB", display: "flex", flexDirection: "column", flexShrink: 0 }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px 0", gap: 10 }}>
-                            <div style={{ display: "flex", gap: 8 }}>
+                    <div className="h-61 border-t border-gray-200 bg-[#F8F9FB] flex flex-col shrink-0">
+                        <div className="flex items-center justify-between pt-2.5 px-3 gap-2.5">
+                            <div className="flex gap-2">
                                 {[{ id: "terminal", label: "Terminal", icon: TerminalSquare }, { id: "log", label: "Log", icon: ClipboardList }, { id: "serial", label: "Serial Monitor", icon: Plug }].map((tab) => {
                                     const Icon = tab.icon;
                                     const active = ctx.uploadPanelTab === tab.id;
                                     return (
-                                        <button key={tab.id} onClick={() => ctx.setUploadPanelTab(tab.id)} style={{
-                                            display: "flex", alignItems: "center", gap: 6,
-                                            border: active ? `1px solid ${C.PURPLE}` : `1px solid ${C.BORDER}`,
-                                            background: active ? "#F3EEFF" : "#fff", color: active ? C.PURPLE : C.TEXT,
-                                            borderRadius: 8, padding: "7px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                                        }}><Icon size={14} />{tab.label}</button>
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => ctx.setUploadPanelTab(tab.id)}
+                                            className={`flex items-center gap-1.5 border rounded-lg px-3 py-1.75 text-xs font-semibold cursor-pointer transition-colors ${
+                                                active ? "border-purple-600 bg-[#F3EEFF] text-purple-600" : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            <Icon size={14} />{tab.label}
+                                        </button>
                                     );
                                 })}
                             </div>
-                            <button onClick={ctx.handleUploadFirmware} disabled={ctx.isUploadingFirmware} style={{
-                                display: "flex", alignItems: "center", gap: 8, border: "none",
-                                background: ctx.isUploadingFirmware ? "#C4B5FD" : C.PURPLE, color: "#fff",
-                                borderRadius: 8, padding: "9px 14px", fontSize: 12, fontWeight: 700,
-                                cursor: ctx.isUploadingFirmware ? "not-allowed" : "pointer",
-                            }}>
-                                {ctx.isUploadingFirmware ? <Loader size={15} style={{ animation: "spin 1s linear infinite" }} /> : <Upload size={15} />}
+                            <button
+                                onClick={ctx.handleUploadFirmware}
+                                disabled={ctx.isUploadingFirmware}
+                                className={`flex items-center gap-2 border-none rounded-lg px-3.5 py-2 text-xs font-bold text-white transition-colors ${
+                                    ctx.isUploadingFirmware ? "bg-purple-300 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700 cursor-pointer"
+                                }`}
+                            >
+                                {ctx.isUploadingFirmware ? <Loader size={15} className="animate-spin" /> : <Upload size={15} />}
                                 {ctx.isUploadingFirmware ? "Uploading..." : "Upload Code"}
                             </button>
                         </div>
-                        <div style={{ flex: 1, minHeight: 0, padding: "10px 12px 12px" }}>
-                            <div style={{ height: "100%", border: `1px solid ${C.BORDER}`, borderRadius: 10, overflow: "hidden", background: "#fff" }}>
+                        <div className="flex-1 min-h-0 p-3 pt-2.5">
+                            <div className="h-full border border-gray-200 rounded-xl overflow-hidden bg-white">
                                 {renderUploadOutput()}
                             </div>
                         </div>

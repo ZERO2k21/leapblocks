@@ -1137,12 +1137,12 @@ export default function PhoneCanvasEnhanced({ appState }) {
     return (
         <div className="flex flex-col h-full w-full relative overflow-hidden" onClick={() => setSelectedId(currentScreen.id)}>
             {/* Professional Top Bar - Fixed at top of canvas pane */}
-            <div className="w-full bg-white border-b border-slate-200 py-3 flex items-center justify-between gap-2 xl:gap-6 z-30 shadow-sm" style={{ height: '64px', paddingLeft: '24px', paddingRight: '24px' }}>
-                <div className="flex items-center gap-2 xl:gap-6" style={{ paddingLeft: '16px' }}>
+            <div className="w-full bg-white border-b border-slate-200 py-3 flex items-center justify-between gap-2 xl:gap-6 z-30 shadow-sm h-16 px-6">
+                <div className="flex items-center gap-2 xl:gap-6 pl-4">
                     {/* Screen Selector - Tab Style */}
                     <div className="flex items-center gap-2 xl:gap-4">
                         <span className="text-[15px] font-extrabold text-slate-900 uppercase tracking-wider select-none hidden xl:inline">Screens</span>
-                        <div style={{ height: '38px' }} className="flex bg-slate-200/50 p-1 rounded-xl gap-1.5 xl:gap-2 items-center">
+                        <div className="flex bg-slate-200/50 p-1 rounded-xl gap-1.5 xl:gap-2 items-center h-[38px]">
                             {screens.map(screen => (
                                 <div key={screen.id} className="relative group/screen flex items-center">
                                     <button
@@ -1150,14 +1150,13 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                             setActiveScreen(screen.id);
                                             setSelectedId(screen.id);
                                         }}
-                                        style={{
-                                            height: '30px',
-                                            paddingLeft: '16px',
-                                            paddingRight: screen.id === 'Screen1' ? '16px' : '32px'
-                                        }}
-                                        className={`rounded-lg text-[14px] font-bold flex items-center justify-center transition-all ${activeScreen === screen.id
-                                            ? 'bg-white text-blue-600 shadow-sm'
-                                            : 'text-slate-900 hover:text-slate-950 hover:bg-white/40'}`}
+                                        className={`rounded-lg text-[14px] font-bold flex items-center justify-center transition-all h-[30px] pl-4 ${
+                                            screen.id === 'Screen1' ? 'pr-4' : 'pr-8'
+                                        } ${
+                                            activeScreen === screen.id
+                                                ? 'bg-white text-blue-600 shadow-sm'
+                                                : 'text-slate-900 hover:text-slate-950 hover:bg-white/40'
+                                        }`}
                                     >
                                         {screen.id}
                                     </button>
@@ -1167,8 +1166,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                                 e.stopPropagation();
                                                 setDeleteScreenTarget(screen.id);
                                             }}
-                                            style={{ width: '16px', height: '16px' }}
-                                            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-slate-100/50 transition-all opacity-0 group-hover/screen:opacity-100"
+                                            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-slate-100/50 transition-all opacity-0 group-hover/screen:opacity-100 w-4 h-4"
                                             title="Delete Screen"
                                         >
                                             <XIcon className="w-3.5 h-3.5" />
@@ -1177,13 +1175,12 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                 </div>
                             ))}
                             {isAddingScreen ? (
-                                <div style={{ height: '30px' }} className="flex items-center gap-1.5 bg-white rounded-lg px-2 shadow-sm border border-blue-200">
+                                <div className="flex items-center gap-1.5 bg-white rounded-lg px-2 shadow-sm border border-blue-200 h-[30px]">
                                     <input
                                         type="text"
                                         autoFocus
                                         placeholder="Name"
-                                        style={{ fontSize: '13px', fontWeight: '700' }}
-                                        className="w-16 outline-none text-slate-900"
+                                        className="w-16 outline-none text-slate-900 text-xs font-bold"
                                         value={newScreenName}
                                         onChange={(e) => setNewScreenName(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleAddScreen()}
@@ -1198,8 +1195,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             ) : (
                                 <button
                                     onClick={() => setIsAddingScreen(true)}
-                                    style={{ height: '30px', width: '30px' }}
-                                    className="text-slate-900 hover:text-blue-600 hover:bg-white/40 rounded-lg flex items-center justify-center transition-all"
+                                    className="text-slate-900 hover:text-blue-600 hover:bg-white/40 rounded-lg flex items-center justify-center transition-all h-[30px] w-[30px]"
                                     title="Add Screen"
                                 >
                                     <Plus className="h-[18px] w-[18px]" />
@@ -1214,8 +1210,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     {/* Orientation Toggle */}
                     <button
                         onClick={toggleOrientation}
-                        style={{ height: '34px', width: '34px', borderRadius: '10px' }}
-                        className="flex items-center justify-center bg-slate-100 hover:bg-slate-200/60 text-slate-800 border border-slate-200/80 transition-all active:scale-95 cursor-pointer shrink-0"
+                        className="flex items-center justify-center bg-slate-100 hover:bg-slate-200/60 text-slate-800 border border-slate-200/80 transition-all active:scale-95 cursor-pointer shrink-0 h-[34px] w-[34px] rounded-xl"
                         title={`Switch to ${orientation === 'portrait' ? 'Landscape' : 'Portrait'}`}
                     >
                         <RotateCw className="w-4 h-4" />
@@ -1223,12 +1218,11 @@ export default function PhoneCanvasEnhanced({ appState }) {
  
                     {/* Dimensions / Inline Editor */}
                     {isEditingDimensions ? (
-                        <div style={{ height: '34px', borderRadius: '10px' }} className="flex items-center gap-1 bg-white border border-blue-400 px-2 shadow-sm shrink-0">
+                        <div className="flex items-center gap-1 bg-white border border-blue-400 px-2 shadow-sm shrink-0 h-[34px] rounded-xl">
                             <input
                                 type="number"
                                 placeholder="W"
-                                style={{ width: '46px', fontSize: '12px' }}
-                                className="text-center outline-none text-slate-800 font-mono font-bold bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                className="text-center outline-none text-slate-800 font-mono font-bold bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-[46px] text-xs"
                                 value={editWidth}
                                 onChange={(e) => setEditWidth(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSaveDimensions()}
@@ -1239,8 +1233,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             <input
                                 type="number"
                                 placeholder="H"
-                                style={{ width: '46px', fontSize: '12px' }}
-                                className="text-center outline-none text-slate-800 font-mono font-bold bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                className="text-center outline-none text-slate-800 font-mono font-bold bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-[46px] text-xs"
                                 value={editHeight}
                                 onChange={(e) => setEditHeight(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSaveDimensions()}
@@ -1271,8 +1264,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                 setEditHeight(String(displayHeight));
                                 setIsEditingDimensions(true);
                             }}
-                            style={{ height: '34px', borderRadius: '10px', paddingLeft: '8px', paddingRight: '8px' }}
-                            className="bg-slate-100 hover:bg-slate-200/60 hover:text-blue-600 hover:border-blue-200 text-slate-800 border border-slate-200/80 font-mono font-bold text-xs flex items-center gap-1 transition-all cursor-pointer active:scale-98 shrink-0"
+                            className="bg-slate-100 hover:bg-slate-200/60 hover:text-blue-600 hover:border-blue-200 text-slate-800 border border-slate-200/80 font-mono font-bold text-xs flex items-center gap-1 transition-all cursor-pointer active:scale-98 shrink-0 h-[34px] rounded-xl px-2"
                             title="Edit Canvas Dimensions"
                         >
                             <span>&nbsp;{displayWidth}×{displayHeight}<span className="hidden xl:inline"> px</span>&nbsp;</span>
@@ -1329,15 +1321,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         {/* Status Bar */}
                         {currentScreen.showStatusBar !== false && (
                             deviceType === 'phone' ? (
-                                <div 
-                                    style={{ paddingLeft: '48px', paddingRight: '48px', paddingTop: '16px' }}
-                                    className="h-12 bg-white text-slate-900 flex items-center justify-between text-[11px] font-semibold font-sans pointer-events-none select-none relative border-b border-black/[0.015]"
-                                >
+                                <div className="h-12 bg-white text-slate-900 flex items-center justify-between text-[11px] font-semibold font-sans pointer-events-none select-none relative border-b border-black/[0.015] px-12 pt-4">
                                     <span className="font-bold w-[50px] tracking-[-0.01em]">{currentTime}</span>
-                                    <div 
-                                        style={{ top: '11px' }}
-                                        className="absolute left-1/2 -translate-x-1/2 w-[95px] h-[24px] bg-black rounded-[12px] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[inset_0_0_4px_rgba(255,255,255,0.12)] after:absolute after:right-[18px] after:top-1/2 after:-translate-y-1/2 after:w-[5px] after:h-[5px] after:bg-slate-900 after:rounded-full after:shadow-[inset_0_0_1px_1px_#1e293b] after:opacity-80" 
-                                    />
+                                    <div className="absolute left-1/2 -translate-x-1/2 top-[11px] w-[95px] h-[24px] bg-black rounded-[12px] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[inset_0_0_4px_rgba(255,255,255,0.12)] after:absolute after:right-[18px] after:top-1/2 after:-translate-y-1/2 after:w-[5px] after:h-[5px] after:bg-slate-900 after:rounded-full after:shadow-[inset_0_0_1px_1px_#1e293b] after:opacity-80" />
                                     <div className="flex items-center gap-1.5 w-[50px] justify-end">
                                         <Signal className="h-3.5 w-3.5 text-slate-900" strokeWidth={2.2} />
                                         <Wifi className="h-3.5 w-3.5 text-slate-900" strokeWidth={2.2} />
@@ -1473,183 +1459,53 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
             {deleteScreenTarget && createPortal(
                 <div
-                    className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-                    style={{ backgroundColor: 'rgba(15, 23, 42, 0.7)' }}
+                    className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/70"
                     onClick={() => setDeleteScreenTarget(null)}
                 >
                     <div
-                        style={{
-                            backgroundColor: '#ffffff',
-                            borderRadius: '20px',
-                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                            width: '420px',
-                            maxWidth: '90vw',
-                            margin: 'auto',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            overflow: 'hidden',
-                            border: '1px solid #f1f5f9'
-                        }}
+                        className="bg-white rounded-2xl shadow-2xl w-[420px] max-w-[90vw] m-auto flex flex-col overflow-hidden border border-slate-100"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div style={{
-                            padding: '24px 24px 12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            backgroundColor: '#ffffff',
-                            flexShrink: 0
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                                <div style={{
-                                    width: '44px',
-                                    height: '44px',
-                                    borderRadius: '12px',
-                                    backgroundColor: '#fff1f2',
-                                    color: '#f43f5e',
-                                    border: '1px solid #fecdd3',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <Trash2 style={{ width: '22px', height: '22px' }} />
+                        <div className="p-6 pb-3 flex items-center justify-between bg-white shrink-0">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-11 h-11 rounded-xl bg-rose-50 text-rose-500 border border-rose-200 flex items-center justify-center shrink-0">
+                                    <Trash2 className="w-5.5 h-5.5" />
                                 </div>
-                                <span style={{
-                                    fontSize: '18px',
-                                    fontWeight: 900,
-                                    color: '#1e293b',
-                                    letterSpacing: '-0.02em'
-                                }}>Delete Screen</span>
+                                <span className="text-lg font-black text-slate-800 tracking-tight">Delete Screen</span>
                             </div>
                             <button
                                 onClick={() => setDeleteScreenTarget(null)}
-                                style={{
-                                    width: '36px',
-                                    height: '36px',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: '#94a3b8',
-                                    border: '1px solid #e2e8f0',
-                                    backgroundColor: 'transparent',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    flexShrink: 0,
-                                    marginLeft: '12px'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#f1f5f9';
-                                    e.currentTarget.style.color = '#1e293b';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'transparent';
-                                    e.currentTarget.style.color = '#94a3b8';
-                                }}
+                                className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-800 border border-slate-200 bg-transparent hover:bg-slate-100 cursor-pointer transition-colors shrink-0 ml-3"
                                 title="Close"
                             >
-                                <XIcon style={{ width: '16px', height: '16px' }} />
+                                <XIcon className="w-4 h-4" />
                             </button>
                         </div>
 
                         {/* Body */}
-                        <div style={{ padding: '8px 24px 20px' }}>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '14px',
-                                padding: '14px',
-                                borderRadius: '14px',
-                                backgroundColor: '#f8fafc',
-                                border: '1px solid #f1f5f9',
-                                marginBottom: '14px'
-                            }}>
-                                <div style={{
-                                    width: '48px',
-                                    height: '48px',
-                                    borderRadius: '12px',
-                                    backgroundColor: '#ffffff',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    border: '1px solid #e2e8f0',
-                                    flexShrink: 0,
-                                    color: '#4f46e5'
-                                }}>
+                        <div className="px-6 pt-2 pb-5">
+                            <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 mb-3.5">
+                                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-slate-200 shrink-0 text-indigo-600">
                                     <ComponentIcon type="Screen" size={24} />
                                 </div>
-                                <div style={{ minWidth: 0 }}>
-                                    <div style={{
-                                        fontSize: '14px',
-                                        fontWeight: 800,
-                                        color: '#1e293b',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                        maxWidth: '240px',
-                                        lineHeight: 1.2
-                                    }}>{deleteScreenTarget}</div>
-                                    <div style={{
-                                        fontSize: '10px',
-                                        fontWeight: 800,
-                                        color: '#94a3b8',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.1em',
-                                        marginTop: '4px'
-                                    }}>
+                                <div className="min-w-0">
+                                    <div className="text-sm font-extrabold text-slate-800 truncate max-w-[240px] leading-snug">{deleteScreenTarget}</div>
+                                    <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">
                                         Screen Component
                                     </div>
                                 </div>
                             </div>
-                            <p style={{
-                                fontSize: '13px',
-                                color: '#64748b',
-                                fontWeight: 500,
-                                lineHeight: 1.7,
-                                margin: 0
-                            }}>
-                                Deleting <span style={{ fontWeight: 800, color: '#1e293b' }}>{deleteScreenTarget}</span> will permanently remove all components on this screen.
+                            <p className="text-xs text-slate-500 font-medium leading-relaxed m-0">
+                                Deleting <span className="font-extrabold text-slate-800">{deleteScreenTarget}</span> will permanently remove all components on this screen.
                             </p>
                         </div>
 
                         {/* Footer */}
-                        <div style={{
-                            padding: '28px 24px',
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            gap: '12px',
-                            alignItems: 'center',
-                            backgroundColor: '#f8fafc',
-                            borderTop: '1px solid #e2e8f0',
-                            flexShrink: 0
-                        }}>
+                        <div className="p-7 px-6 flex justify-end gap-3 items-center bg-slate-50 border-t border-slate-200 shrink-0">
                             <button
                                 onClick={() => setDeleteScreenTarget(null)}
-                                style={{
-                                    minWidth: '120px',
-                                    padding: '14px 28px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: '14px',
-                                    fontWeight: 800,
-                                    fontSize: '15px',
-                                    transition: 'all 0.2s',
-                                    border: '1px solid #cbd5e1',
-                                    backgroundColor: '#f8fafc',
-                                    color: '#334155',
-                                    cursor: 'pointer'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#f1f5f9';
-                                    e.currentTarget.style.color = '#0f172a';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#f8fafc';
-                                    e.currentTarget.style.color = '#334155';
-                                }}
+                                className="min-w-[120px] py-3.5 px-7 inline-flex items-center justify-center rounded-2xl font-extrabold text-sm border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 cursor-pointer transition-colors"
                             >
                                 Cancel
                             </button>
@@ -1658,33 +1514,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
                                     deleteScreen(deleteScreenTarget);
                                     setDeleteScreenTarget(null);
                                 }}
-                                style={{
-                                    minWidth: '130px',
-                                    padding: '14px 28px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '10px',
-                                    borderRadius: '14px',
-                                    fontWeight: 800,
-                                    fontSize: '15px',
-                                    transition: 'all 0.2s',
-                                    border: 'none',
-                                    backgroundColor: '#e11d48',
-                                    color: '#ffffff',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 4px 12px rgba(225, 29, 72, 0.25)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#be123c';
-                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(225, 29, 72, 0.3)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#e11d48';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(225, 29, 72, 0.25)';
-                                }}
+                                className="min-w-[130px] py-3.5 px-7 inline-flex items-center justify-center gap-2.5 rounded-2xl font-extrabold text-sm border-none bg-rose-600 hover:bg-rose-700 text-white cursor-pointer transition-all shadow-md shadow-rose-600/25 hover:shadow-lg hover:shadow-rose-600/30"
                             >
-                                <Trash2 style={{ width: '18px', height: '18px' }} />
+                                <Trash2 className="w-4.5 h-4.5" />
                                 <span>Delete</span>
                             </button>
                         </div>

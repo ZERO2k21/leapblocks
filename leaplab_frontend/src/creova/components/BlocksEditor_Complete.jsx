@@ -1161,85 +1161,25 @@ export default function BlocksEditorComplete({ appState }) {
     return (
         <div className="flex flex-col w-full h-full bg-[#f8fafc] overflow-hidden">
             {/* Toolbar - Responsive */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 24px',
-                background: 'linear-gradient(to bottom, #ffffff, #f8fafc)',
-                borderBottom: '1px solid #e2e8f0',
-                flexShrink: 0,
-                gap: '16px'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            <div className="flex items-center justify-between p-3 px-6 bg-gradient-to-b from-white to-slate-50 border-b border-slate-200 shrink-0 gap-4">
+                <div className="flex items-center gap-3.5 flex-wrap">
                     {/* Search */}
-                    <div style={{ position: 'relative', width: '220px', display: 'flex', alignItems: 'center' }}>
-                        <Search 
-                            style={{ 
-                                position: 'absolute', 
-                                left: '12px', 
-                                top: '50%', 
-                                transform: 'translateY(-50%)', 
-                                width: '16px', 
-                                height: '16px',
-                                color: '#94a3b8'
-                            }} 
-                            className="pointer-events-none" 
-                        />
+                    <div className="relative w-[220px] flex items-center">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                             type="text"
                             placeholder="Search blocks..."
-                            style={{
-                                width: '100%',
-                                padding: '8px 12px 8px 36px',
-                                fontSize: '13px',
-                                border: '1px solid #e2e8f0',
-                                borderRadius: '10px',
-                                outline: 'none',
-                                backgroundColor: '#f8fafc',
-                                color: '#1e293b',
-                                fontWeight: 500,
-                                boxSizing: 'border-box'
-                            }}
-                            onFocus={(e) => {
-                                e.currentTarget.style.borderColor = '#818cf8';
-                                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(129, 140, 248, 0.15)';
-                            }}
-                            onBlur={(e) => {
-                                e.currentTarget.style.borderColor = '#e2e8f0';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }}
+                            className="w-full p-2 px-3 pl-9 text-xs border border-slate-200 rounded-xl outline-none bg-slate-50 text-slate-800 font-medium box-border transition-all focus:border-indigo-400 focus:ring-3 focus:ring-indigo-400/15"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
  
                     {/* Zoom controls */}
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                    <div className="flex gap-1.5">
                         <button
                             onClick={handleZoomIn}
-                            style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#64748b',
-                                border: '1px solid #e2e8f0',
-                                backgroundColor: '#ffffff',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                flexShrink: 0
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#f1f5f9';
-                                e.currentTarget.style.color = '#1e293b';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = '#ffffff';
-                                e.currentTarget.style.color = '#64748b';
-                            }}
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 border border-slate-200 bg-white cursor-pointer transition-all shrink-0 hover:bg-slate-100 hover:text-slate-800"
                             title="Zoom In"
                             aria-label="Zoom In"
                         >
@@ -1247,28 +1187,7 @@ export default function BlocksEditorComplete({ appState }) {
                         </button>
                         <button
                             onClick={handleZoomOut}
-                            style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#64748b',
-                                border: '1px solid #e2e8f0',
-                                backgroundColor: '#ffffff',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                flexShrink: 0
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#f1f5f9';
-                                e.currentTarget.style.color = '#1e293b';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = '#ffffff';
-                                e.currentTarget.style.color = '#64748b';
-                            }}
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 border border-slate-200 bg-white cursor-pointer transition-all shrink-0 hover:bg-slate-100 hover:text-slate-800"
                             title="Zoom Out"
                             aria-label="Zoom Out"
                         >
@@ -1277,38 +1196,18 @@ export default function BlocksEditorComplete({ appState }) {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', itemsCenter: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <div className="flex items-center gap-2.5 flex-wrap">
                     {/* Error & Warning Counters */}
                     {(errorCount > 0 || warningCount > 0) && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '8px' }}>
+                        <div className="flex items-center gap-2 mr-2">
                             {errorCount > 0 && (
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    color: '#e11d48',
-                                    backgroundColor: '#fff1f2',
-                                    border: '1px solid #ffe4e6',
-                                    padding: '6px 12px',
-                                    borderRadius: '8px',
-                                    fontSize: '12px',
-                                    fontWeight: 800
-                                }} title={`${errorCount} empty sockets or errors`}>
+                                <div className="flex items-center text-rose-600 bg-rose-50 border border-rose-100 p-1.5 px-3 rounded-lg text-xs font-extrabold" title={`${errorCount} empty sockets or errors`}>
                                     <XCircle className="w-3.5 h-3.5 mr-1.5" />
                                     <span>{errorCount}</span>
                                 </div>
                             )}
                             {warningCount > 0 && (
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    color: '#d97706',
-                                    backgroundColor: '#fef3c7',
-                                    border: '1px solid #fde68a',
-                                    padding: '6px 12px',
-                                    borderRadius: '8px',
-                                    fontSize: '12px',
-                                    fontWeight: 800
-                                }} title={`${warningCount} orphan blocks`}>
+                                <div className="flex items-center text-amber-600 bg-amber-50 border border-amber-200 p-1.5 px-3 rounded-lg text-xs font-extrabold" title={`${warningCount} orphan blocks`}>
                                     <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
                                     <span>{warningCount}</span>
                                 </div>
@@ -1322,11 +1221,7 @@ export default function BlocksEditorComplete({ appState }) {
             {/* Blockly Workspace - leap app inventor style (Fixed for Dragging) */}
             <div
                 ref={blocklyDiv}
-                className="flex-1 w-full h-full blockly-injection-container leap-blockly-workspace"
-                style={{
-                    position: 'relative',
-                    overflow: 'visible' // Ensure drag surface is not clipped
-                }}
+                className="flex-1 w-full h-full blockly-injection-container leap-blockly-workspace relative overflow-visible"
             />
 
             {/* CRITICAL CSS FIXES FOR BLOCKLY DRAG SURFACE */}
@@ -1455,158 +1350,47 @@ export default function BlocksEditorComplete({ appState }) {
             {/* Code Preview Modal - Responsive */}
             {showCode && (
                 <div
-                    className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-                    style={{ backgroundColor: 'rgba(15, 23, 42, 0.7)' }}
+                    className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/70"
                     onClick={() => setShowCode(false)}
                 >
                     <div
-                        style={{
-                            backgroundColor: '#ffffff',
-                            borderRadius: '20px',
-                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                            width: '800px',
-                            maxWidth: '90vw',
-                            maxHeight: '85vh',
-                            margin: 'auto',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            overflow: 'hidden',
-                            border: '1px solid #f1f5f9'
-                        }}
+                        className="bg-white rounded-2xl shadow-2xl w-[800px] max-w-[90vw] max-h-[85vh] m-auto flex flex-col overflow-hidden border border-slate-100"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div style={{
-                            padding: '24px 24px 16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            borderBottom: '1px solid #e2e8f0',
-                            flexShrink: 0
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                                <div style={{
-                                    width: '44px',
-                                    height: '44px',
-                                    borderRadius: '12px',
-                                    backgroundColor: '#eef2ff',
-                                    color: '#4f46e5',
-                                    border: '1px solid #e0e7ff',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <Code style={{ width: '22px', height: '22px' }} />
+                        <div className="p-6 pb-4 flex items-center justify-between border-b border-slate-200 shrink-0">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center shrink-0">
+                                    <Code className="w-5.5 h-5.5" />
                                 </div>
                                 <div>
-                                    <h3 style={{
-                                        fontSize: '18px',
-                                        fontWeight: 900,
-                                        color: '#1e293b',
-                                        letterSpacing: '-0.02em',
-                                        margin: 0
-                                    }}>Generated Code</h3>
-                                    <p style={{
-                                        fontSize: '13px',
-                                        color: '#94a3b8',
-                                        fontWeight: 500,
-                                        marginTop: '4px',
-                                        margin: '4px 0 0'
-                                    }}>Translate visual blocks to Javascript</p>
+                                    <h3 className="text-lg font-black text-slate-800 tracking-tight m-0">Generated Code</h3>
+                                    <p className="text-xs text-slate-400 font-medium mt-1 mb-0">Translate visual blocks to Javascript</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setShowCode(false)}
-                                style={{
-                                    width: '36px',
-                                    height: '36px',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: '#94a3b8',
-                                    border: '1px solid #e2e8f0',
-                                    backgroundColor: 'transparent',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    flexShrink: 0
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#f1f5f9';
-                                    e.currentTarget.style.color = '#1e293b';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'transparent';
-                                    e.currentTarget.style.color = '#94a3b8';
-                                }}
+                                className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 border border-slate-200 bg-transparent cursor-pointer transition-all shrink-0 hover:bg-slate-100 hover:text-slate-800"
                                 title="Close"
                             >
-                                <XCircle style={{ width: '18px', height: '18px' }} />
+                                <XCircle className="w-4.5 h-4.5" />
                             </button>
                         </div>
 
                         {/* Body */}
-                        <div style={{ padding: '20px 24px', flex: 1, overflowY: 'auto', minHeight: 0 }}>
-                            <div style={{
-                                position: 'relative',
-                                borderRadius: '14px',
-                                overflow: 'hidden',
-                                border: '1px solid #1e293b',
-                                backgroundColor: '#0f172a'
-                            }}>
-                                <pre style={{
-                                    margin: 0,
-                                    padding: '20px',
-                                    fontSize: '13px',
-                                    fontFamily: "'Fira Code', 'Courier New', Courier, monospace",
-                                    color: '#38bdf8',
-                                    overflowX: 'auto',
-                                    lineHeight: 1.6,
-                                    whiteSpace: 'pre-wrap',
-                                    wordBreak: 'break-all'
-                                }}>
+                        <div className="p-5 px-6 flex-1 overflow-y-auto min-h-0">
+                            <div className="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900">
+                                <pre className="m-0 p-5 text-xs font-mono text-sky-400 overflow-x-auto leading-relaxed whitespace-pre-wrap break-all">
                                     {generatedCode || '// No code generated'}
                                 </pre>
                             </div>
                         </div>
 
                         {/* Footer */}
-                        <div style={{
-                            padding: '28px 24px',
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            gap: '12px',
-                            alignItems: 'center',
-                            backgroundColor: '#f8fafc',
-                            borderTop: '1px solid #e2e8f0',
-                            flexShrink: 0
-                        }}>
+                        <div className="p-7 px-6 flex justify-end gap-3 items-center bg-slate-50 border-t border-slate-200 shrink-0">
                             <button
                                 onClick={() => setShowCode(false)}
-                                style={{
-                                    minWidth: '120px',
-                                    padding: '14px 28px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: '14px',
-                                    fontWeight: 800,
-                                    fontSize: '15px',
-                                    transition: 'all 0.2s',
-                                    border: '1px solid #cbd5e1',
-                                    backgroundColor: '#f8fafc',
-                                    color: '#334155',
-                                    cursor: 'pointer'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#f1f5f9';
-                                    e.currentTarget.style.color = '#0f172a';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#f8fafc';
-                                    e.currentTarget.style.color = '#334155';
-                                }}
+                                className="min-w-[120px] p-3.5 px-7 inline-flex items-center justify-center rounded-xl font-extrabold text-sm transition-all border border-slate-300 bg-slate-50 text-slate-700 cursor-pointer hover:bg-slate-100 hover:text-slate-900"
                             >
                                 Close
                             </button>
@@ -1620,33 +1404,9 @@ export default function BlocksEditorComplete({ appState }) {
                                         alert('Failed to copy code. Please select and copy manually.'); 
                                     }
                                 }}
-                                style={{
-                                    minWidth: '150px',
-                                    padding: '14px 28px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '10px',
-                                    borderRadius: '14px',
-                                    fontWeight: 800,
-                                    fontSize: '15px',
-                                    transition: 'all 0.2s',
-                                    border: 'none',
-                                    backgroundColor: '#4f46e5',
-                                    color: '#ffffff',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#4338ca';
-                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(79, 70, 229, 0.3)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#4f46e5';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.25)';
-                                }}
+                                className="min-w-[150px] p-3.5 px-7 inline-flex items-center justify-center gap-2.5 rounded-xl font-extrabold text-sm transition-all border-none bg-indigo-600 text-white cursor-pointer shadow-md shadow-indigo-600/25 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-600/30"
                             >
-                                <Code style={{ width: '18px', height: '18px' }} />
+                                <Code className="w-4.5 h-4.5" />
                                 <span>Copy Code</span>
                             </button>
                         </div>

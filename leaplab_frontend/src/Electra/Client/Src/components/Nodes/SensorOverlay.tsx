@@ -112,8 +112,8 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', userSelect: 'none' }}>
-      <span style={{ fontSize: '9px', color: labelColor, fontWeight: 700, width: '45px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+    <div className="flex items-center gap-2 w-full select-none">
+      <span className={`text-[9px] font-bold w-[45px] overflow-hidden text-ellipsis whitespace-nowrap ${isLightTheme ? 'text-slate-600' : 'text-slate-400'}`}>
         {label}
       </span>
       <input
@@ -123,28 +123,19 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
         step={step}
         value={parseFloat(inputVal) || 0}
         onChange={handleChange}
-        style={{ flex: 1, accentColor: color, height: '4px', cursor: 'pointer', borderRadius: '2px', outline: 'none' }}
+        className="flex-1 h-1 cursor-pointer rounded-xs outline-none"
+        style={{ accentColor: color }}
       />
       <input
         type="text"
         value={inputVal}
         onChange={handleTextChange}
         onBlur={handleBlur}
-        style={{
-          width: '65px',
-          background: isLightTheme ? '#f1f5f9' : '#1e293b',
-          border: `1px solid ${isLightTheme ? '#cbd5e1' : '#334155'}`,
-          borderRadius: '4px',
-          padding: '2px 4px',
-          fontSize: '10px',
-          color: displayColor,
-          fontWeight: 800,
-          fontFamily: 'monospace',
-          textAlign: 'right',
-          outline: 'none',
-        }}
+        className={`w-[65px] border rounded-md px-1 py-0.5 text-[10px] font-extrabold font-mono text-right outline-none ${
+          isLightTheme ? 'bg-slate-100 border-slate-300 text-slate-900' : 'bg-slate-800 border-slate-700 text-slate-50'
+        }`}
       />
-      {unit && <span style={{ fontSize: '10px', color: displayColor, fontWeight: 800, fontFamily: 'monospace' }}>{unit}</span>}
+      {unit && <span className={`text-[10px] font-extrabold font-mono ${isLightTheme ? 'text-slate-900' : 'text-slate-50'}`}>{unit}</span>}
     </div>
   );
 };
@@ -232,23 +223,12 @@ const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children }) => {
       onPointerUp={e => e.stopPropagation()}
       onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
-      className="nodrag nopan"
+      className={`nodrag nopan w-[250px] backdrop-blur-md rounded-lg py-1.5 px-3.5 z-[9999] flex flex-col gap-1 select-none ${
+        isLightTheme ? 'bg-white/92 shadow-sm' : 'bg-slate-900/92 shadow-xl'
+      }`}
       style={{
         ...positionStyle,
-        width: '250px',
-        background: isLightTheme ? 'rgba(255, 255, 255, 0.92)' : 'rgba(15, 23, 42, 0.92)',
-        backdropFilter: 'blur(8px)',
         border: `1px solid ${defaultBorder}`,
-        borderRadius: '8px',
-        padding: '6px 14px',
-        boxShadow: isLightTheme
-          ? '0 4px 6px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02)'
-          : '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '4px',
-        userSelect: 'none',
       }}
     >
       {children}
@@ -333,22 +313,11 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
         <CompactCard borderColor={motionDetected ? 'rgba(74,222,128,0.4)' : 'rgba(186,242,100,0.2)'}>
           <button
             onClick={toggle}
-            style={{
-              width: '100%',
-              padding: '4px 0',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: 800,
-              fontSize: '9px',
-              fontFamily: 'monospace',
-              letterSpacing: '0.05em',
-              background: motionDetected
-                ? 'rgba(74, 222, 128, 0.9)'
-                : (isLightTheme ? '#e2e8f0' : 'rgba(51, 65, 85, 0.9)'),
-              color: motionDetected ? '#0f172a' : (isLightTheme ? '#334155' : '#94a3b8'),
-              boxShadow: motionDetected ? '0 0 6px rgba(74,222,128,0.3)' : 'none',
-            }}
+            className={`w-full py-1 rounded-md border-none cursor-pointer font-extrabold text-[9px] font-mono tracking-wider transition-all ${
+              motionDetected
+                ? 'bg-emerald-400/90 text-slate-900 shadow-[0_0_6px_rgba(74,222,128,0.3)]'
+                : (isLightTheme ? 'bg-slate-200 text-slate-700' : 'bg-slate-700/90 text-slate-400')
+            }`}
           >
             {motionDetected ? '● MOTION DETECTED' : '○ TRIGGER MOTION'}
           </button>
@@ -413,11 +382,11 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
             color="#f97316"
             onChange={handleChange}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
-            <span style={{ color: isLightTheme ? '#64748b' : '#64748b' }}>Vout</span>
-            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
-            <span style={{ color: isLightTheme ? '#64748b' : '#64748b' }}>ADC</span>
-            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{adcRaw}</span>
+          <div className="flex justify-between text-[9px] font-mono font-bold px-0.5">
+            <span className="text-slate-500">Vout</span>
+            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{voltage.toFixed(2)}V</span>
+            <span className="text-slate-500">ADC</span>
+            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{adcRaw}</span>
           </div>
         </CompactCard>
       );
@@ -456,13 +425,13 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
             color="#fbbf24"
             onChange={v => handleChange('value', v)}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
-            <span style={{ color: '#64748b' }}>Vout</span>
-            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(1)}V</span>
-            <span style={{ color: '#64748b' }}>ADC</span>
-            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{adcRaw}</span>
-            <span style={{ color: '#64748b' }}>DO</span>
-            <span style={{ color: doLow ? '#ef4444' : '#4ade80', fontWeight: 900 }}>
+          <div className="flex justify-between text-[9px] font-mono font-bold px-0.5">
+            <span className="text-slate-500">Vout</span>
+            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{voltage.toFixed(1)}V</span>
+            <span className="text-slate-500">ADC</span>
+            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{adcRaw}</span>
+            <span className="text-slate-500">DO</span>
+            <span className={`font-black ${doLow ? 'text-red-500' : 'text-emerald-400'}`}>
               {doLow ? 'LOW' : 'HIGH'}
             </span>
           </div>
@@ -499,13 +468,13 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
             color="#f97316"
             onChange={v => handleChange('value', v)}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
-            <span style={{ color: '#64748b' }}>State</span>
-            <span style={{ color: flameOn ? '#ef4444' : '#4ade80', fontWeight: 900 }}>
+          <div className="flex justify-between text-[9px] font-mono font-bold px-0.5">
+            <span className="text-slate-500">State</span>
+            <span className={`font-black ${flameOn ? 'text-red-500' : 'text-emerald-400'}`}>
               {flameOn ? 'ACTIVE' : 'SAFE'}
             </span>
-            <span style={{ color: '#64748b' }}>Vout</span>
-            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
+            <span className="text-slate-500">Vout</span>
+            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{voltage.toFixed(2)}V</span>
           </div>
         </CompactCard>
       );
@@ -540,13 +509,13 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
             color="#fb923c"
             onChange={v => handleChange('value', v)}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
-            <span style={{ color: '#64748b' }}>Air</span>
-            <span style={{ color: gasDetected ? '#ef4444' : '#4ade80', fontWeight: 900 }}>
+          <div className="flex justify-between text-[9px] font-mono font-bold px-0.5">
+            <span className="text-slate-500">Air</span>
+            <span className={`font-black ${gasDetected ? 'text-red-500' : 'text-emerald-400'}`}>
               {gasDetected ? 'SMOKE' : 'CLEAN'}
             </span>
-            <span style={{ color: '#64748b' }}>Vout</span>
-            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
+            <span className="text-slate-500">Vout</span>
+            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{voltage.toFixed(2)}V</span>
           </div>
         </CompactCard>
       );
@@ -605,13 +574,13 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
             color="#fb923c"
             onChange={v => handleChange('value', v)}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
-            <span style={{ color: '#64748b' }}>Mic</span>
-            <span style={{ color: soundOn ? '#fb923c' : '#64748b', fontWeight: 900 }}>
+          <div className="flex justify-between text-[9px] font-mono font-bold px-0.5">
+            <span className="text-slate-500">Mic</span>
+            <span className={`font-black ${soundOn ? 'text-orange-400' : 'text-slate-500'}`}>
               {soundOn ? 'LOUD' : 'QUIET'}
             </span>
-            <span style={{ color: '#64748b' }}>Vout</span>
-            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{voltage.toFixed(2)}V</span>
+            <span className="text-slate-500">Vout</span>
+            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{voltage.toFixed(2)}V</span>
           </div>
         </CompactCard>
       );
@@ -639,11 +608,11 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
             color="#bef264"
             onChange={handleWeightChange}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontFamily: 'monospace', fontWeight: 700, padding: '0 2px' }}>
-            <span style={{ color: '#64748b' }}>Mass</span>
-            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{weightKg} kg</span>
-            <span style={{ color: '#64748b' }}>Max</span>
-            <span style={{ color: isLightTheme ? '#0284c7' : '#bef264' }}>{maxWeight}g</span>
+          <div className="flex justify-between text-[9px] font-mono font-bold px-0.5">
+            <span className="text-slate-500">Mass</span>
+            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{weightKg} kg</span>
+            <span className="text-slate-500">Max</span>
+            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{maxWeight}g</span>
           </div>
         </CompactCard>
       );

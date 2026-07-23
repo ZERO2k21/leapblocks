@@ -448,30 +448,30 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
     return (
         <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
             {savedMessage && (
-                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg animate-fade-in" style={{ background: ACCENT, color: '#fff' }}>
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg animate-fade-in bg-amber-500 color-white text-white">
                     {savedMessage}
                 </div>
             )}
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0" style={{ color: ACCENT }}>Squat Rep Counter!</h2>
-                            <p className="text-xs" style={{ color: '#4a4455' }}>Collect poses for each exercise phase</p>
+                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0 text-amber-500">Squat Rep Counter!</h2>
+                            <p className="text-xs text-[#4a4455]">Collect poses for each exercise phase</p>
                         </div>
                         <div className="w-full max-w-[720px]">
                             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
-                        <div className="flex-1 flex flex-col gap-2" style={{ minWidth: 0 }}>
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 mt-3">
+                        <div className="flex-1 flex flex-col gap-2 min-w-0">
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -488,25 +488,27 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                                         <span className="text-5xl mb-3">🏋️</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to collect exercise poses</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg" style={{ background: ACCENT }}>Turn On Camera</button>
+                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg bg-amber-500 hover:bg-amber-600 transition-colors">Turn On Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border" style={{ borderColor: ACCENT, color: ACCENT, background: '#fff' }}>
+                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-amber-500 text-amber-500 bg-white hover:bg-amber-50 transition-colors">
                                     {cameraOn ? 'Stop' : 'Start'}
                                 </button>
-                                <button onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass}
-                                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40"
-                                    style={{ background: isCapturing ? '#94a3b8' : ACCENT }}>
+                                <button
+                                    onClick={handleCapture}
+                                    disabled={!cameraOn || isCapturing || !selectedClass}
+                                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white transition-colors disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-amber-500 hover:bg-amber-600'}`}
+                                >
                                     {isCapturing ? '...' : 'Capture Pose'}
                                 </button>
                             </div>
                         </div>
 
                         <div className="w-full lg:w-72 flex flex-col gap-2 overflow-y-auto">
-                            <div className="rounded-xl p-3 border" style={{ background: '#fffbeb', borderColor: `${ACCENT}20` }}>
-                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: ACCENT_DARK }}>Exercise Phases</p>
+                            <div className="rounded-xl p-3 border bg-amber-50 border-amber-500/20">
+                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5 text-amber-700">Exercise Phases</p>
                                 <div className="flex flex-col gap-1">
                                     {EXERCISE_CLASSES.map(pose => (
                                         <span key={pose} className="text-[9px] text-gray-600">• {pose}</span>
@@ -514,8 +516,8 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                                 </div>
                             </div>
 
-                            <div className="rounded-xl p-3 border" style={{ background: '#fffbeb', borderColor: `${ACCENT}20` }}>
-                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: ACCENT_DARK }}>Tips</p>
+                            <div className="rounded-xl p-3 border bg-amber-50 border-amber-500/20">
+                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5 text-amber-700">Tips</p>
                                 <div className="flex flex-col gap-1">
                                     {['Full body visible in frame', 'Good lighting for accuracy', 'Clear background helps', 'Try different angles'].map(tip => (
                                         <span key={tip} className="text-[9px] text-gray-600">• {tip}</span>
@@ -536,13 +538,13 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                             )}
 
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="rounded-xl p-2.5 border" style={{ background: '#fffbeb', borderColor: `${ACCENT}20` }}>
+                                <div className="rounded-xl p-2.5 border bg-amber-50 border-amber-500/20">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Total</p>
-                                    <p className="text-lg font-extrabold" style={{ color: ACCENT }}>{mode.getTotalSamples()}</p>
+                                    <p className="text-lg font-extrabold text-amber-500">{mode.getTotalSamples()}</p>
                                 </div>
-                                <div className="rounded-xl p-2.5 border" style={{ background: '#fffbeb', borderColor: `${ACCENT}20` }}>
+                                <div className="rounded-xl p-2.5 border bg-amber-50 border-amber-500/20">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Classes</p>
-                                    <p className="text-lg font-extrabold" style={{ color: ACCENT }}>{mode.project?.classes.length || 0}</p>
+                                    <p className="text-lg font-extrabold text-amber-500">{mode.project?.classes.length || 0}</p>
                                 </div>
                             </div>
                         </div>
@@ -554,19 +556,19 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col items-center justify-center p-8">
                     <div className="text-center mb-6">
-                        <h2 className="text-2xl font-extrabold mb-2" style={{ color: ACCENT }}>Training Rep Counter AI!</h2>
+                        <h2 className="text-2xl font-extrabold mb-2 text-amber-500">Training Rep Counter AI!</h2>
                         <p className="text-sm text-gray-500">Teaching the AI to recognize exercise phases...</p>
                     </div>
                     {modelLoading ? (
                         <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 border-4 rounded-full animate-spin" style={{ borderColor: ACCENT, borderTopColor: 'transparent' }} />
-                            <p className="text-sm font-bold" style={{ color: ACCENT }}>Loading model...</p>
+                            <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm font-bold text-amber-500">Loading model...</p>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-4">
                             <span className="text-6xl">✓</span>
                             <p className="text-sm font-bold text-green-600">Model Ready!</p>
-                            <button onClick={() => mode.setMode('test')} className="px-6 py-3 text-white rounded-xl text-sm font-bold shadow-lg" style={{ background: ACCENT }}>
+                            <button onClick={() => mode.setMode('test')} className="px-6 py-3 text-white rounded-xl text-sm font-bold shadow-lg bg-amber-500 hover:bg-amber-600 transition-colors">
                                 Start Testing
                             </button>
                         </div>
@@ -576,23 +578,23 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0" style={{ color: ACCENT }}>Rep Counter Active!</h2>
-                            <p className="text-xs" style={{ color: '#4a4455' }}>Start the exercise to count reps</p>
+                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0 text-amber-500">Rep Counter Active!</h2>
+                            <p className="text-xs text-[#4a4455]">Start the exercise to count reps</p>
                         </div>
                         <div className="w-full max-w-[720px]">
                             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
-                        <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 mt-3">
+                        <div className="flex-1 flex flex-col min-w-0">
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -604,12 +606,12 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                                         <span className="text-5xl mb-3">📷</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to test rep counter</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg" style={{ background: ACCENT }}>Start Camera</button>
+                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg bg-amber-500 hover:bg-amber-600 transition-colors">Start Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2 mt-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border" style={{ borderColor: ACCENT, color: ACCENT, background: '#fff' }}>
+                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-amber-500 text-amber-500 bg-white hover:bg-amber-50 transition-colors">
                                     {cameraOn ? 'Stop Camera' : 'Start Camera'}
                                 </button>
                             </div>
@@ -618,8 +620,8 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                         <div className="w-full lg:w-72 flex flex-col gap-2 overflow-y-auto">
                             {/* Rep Counter Display */}
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-4 border border-gray-100 text-center">
-                                <p className="text-[9px] font-bold uppercase tracking-wider mb-2" style={{ color: ACCENT }}>Rep Count</p>
-                                <div className="text-6xl font-black" style={{ color: ACCENT, transition: 'transform 0.2s ease', transform: repCount > 0 ? 'scale(1.05)' : 'scale(1)' }}>
+                                <p className="text-[9px] font-bold uppercase tracking-wider mb-2 text-amber-500">Rep Count</p>
+                                <div className={`text-6xl font-black text-amber-500 transition-transform duration-200 ${repCount > 0 ? 'scale-105' : 'scale-100'}`}>
                                     {repCount}
                                 </div>
                                 <p className="text-[10px] font-bold text-gray-400 mt-1">reps completed</p>
@@ -629,18 +631,15 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                             <div className="flex gap-2">
                                 <button
                                     onClick={exerciseActive ? stopExercise : startExercise}
-                                    className="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all"
-                                    style={{
-                                        background: exerciseActive ? '#ef4444' : ACCENT,
-                                        boxShadow: exerciseActive ? '0 4px 14px rgba(239,68,68,0.35)' : `0 4px 14px ${ACCENT}50`
-                                    }}
+                                    className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all ${
+                                        exerciseActive ? 'bg-red-500 shadow-[0_4px_14px_rgba(239,68,68,0.35)]' : 'bg-amber-500 shadow-[0_4px_14px_rgba(245,158,11,0.35)]'
+                                    }`}
                                 >
                                     {exerciseActive ? '⏹️ Stop' : '▶️ Start Exercise'}
                                 </button>
                                 <button
                                     onClick={resetRepCount}
-                                    className="px-4 py-2.5 rounded-xl text-xs font-bold border transition-all"
-                                    style={{ borderColor: ACCENT, color: ACCENT, background: '#fff' }}
+                                    className="px-4 py-2.5 rounded-xl text-xs font-bold border border-amber-500 text-amber-500 bg-white hover:bg-amber-50 transition-colors"
                                 >
                                     🔄 Reset
                                 </button>
@@ -648,9 +647,9 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
 
                             {/* Exercise State */}
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
-                                <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: ACCENT }}>Current Phase</p>
+                                <p className="text-[10px] font-bold uppercase tracking-wide mb-2 text-amber-500">Current Phase</p>
                                 <div className="flex items-center justify-center gap-2 py-2">
-                                    <div className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ background: '#d97706' }}>
+                                    <div className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-amber-600">
                                         {currentState}
                                     </div>
                                 </div>
@@ -661,12 +660,11 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
 
                             {/* State Transition Visual */}
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
-                                <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: ACCENT }}>State Machine</p>
+                                <p className="text-[10px] font-bold uppercase tracking-wide mb-2 text-amber-500">State Machine</p>
                                 <div className="flex items-center justify-center gap-1 text-[9px]">
                                     {EXERCISE_CLASSES.map((cls, idx) => (
                                         <React.Fragment key={cls}>
-                                            <span className={`px-2 py-1 rounded-md font-bold ${currentState === cls ? 'text-white' : 'bg-gray-100 text-gray-500'}`}
-                                                style={currentState === cls ? { background: ACCENT } : {}}>
+                                            <span className={`px-2 py-1 rounded-md font-bold ${currentState === cls ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
                                                 {cls.split(' ').pop()}
                                             </span>
                                             {idx < EXERCISE_CLASSES.length - 1 && (
@@ -679,8 +677,8 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
 
                             {/* Exercise Timer */}
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100 text-center">
-                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: ACCENT }}>Exercise Timer</p>
-                                <div className="text-2xl font-mono font-bold" style={{ color: exerciseActive ? ACCENT : '#94a3b8' }}>
+                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1 text-amber-500">Exercise Timer</p>
+                                <div className={`text-2xl font-mono font-bold ${exerciseActive ? 'text-amber-500' : 'text-slate-400'}`}>
                                     {formatTime(elapsedTime)}
                                 </div>
                             </div>
@@ -689,23 +687,27 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] font-bold text-gray-700">Confidence</span>
-                                    <span className="text-xs font-extrabold bg-white px-2 py-0.5 rounded-md" style={{ color: ACCENT }}>{Math.round(confidenceThreshold * 100)}%</span>
+                                    <span className="text-xs font-extrabold bg-white px-2 py-0.5 rounded-md text-amber-500">{Math.round(confidenceThreshold * 100)}%</span>
                                 </div>
-                                <input type="range" min="0" max="100" value={Math.round(confidenceThreshold * 100)}
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={Math.round(confidenceThreshold * 100)}
                                     onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
-                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                                    style={{ background: `linear-gradient(to right, ${ACCENT} ${Math.round(confidenceThreshold * 100)}%, #e5e7eb ${Math.round(confidenceThreshold * 100)}%)` }} />
+                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-amber-500 bg-slate-200"
+                                />
                             </div>
 
                             {/* Speed and Pose Stats */}
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="rounded-xl p-2.5 border" style={{ background: '#fffbeb', borderColor: `${ACCENT}20` }}>
+                                <div className="rounded-xl p-2.5 border bg-amber-50 border-amber-500/20">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Speed</p>
                                     <p className="text-lg font-extrabold text-gray-800">{inferenceTime}ms</p>
                                 </div>
-                                <div className="rounded-xl p-2.5 border" style={{ background: '#fffbeb', borderColor: `${ACCENT}20` }}>
+                                <div className="rounded-xl p-2.5 border bg-amber-50 border-amber-500/20">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Pose</p>
-                                    <p className="text-lg font-extrabold" style={{ color: poseDetected ? '#10b981' : '#94a3b8' }}>
+                                    <p className={`text-lg font-extrabold ${poseDetected ? 'text-emerald-500' : 'text-slate-400'}`}>
                                         {poseDetected ? 'Found' : 'None'}
                                     </p>
                                 </div>
@@ -715,16 +717,16 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] font-bold text-gray-700">Detection Stats</span>
-                                    <span className="text-[9px] font-bold" style={{ color: ACCENT }}>{detectionCount} detected</span>
+                                    <span className="text-[9px] font-bold text-amber-500">{detectionCount} detected</span>
                                 </div>
                                 {prediction && (
                                     <div className="flex flex-col gap-1.5">
                                         <div className="flex items-center gap-2">
                                             <span className="text-[9px] font-bold text-gray-600 w-16 truncate">{prediction.label}</span>
                                             <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                                <div className="h-full rounded-full transition-all" style={{ width: `${prediction.confidences[prediction.label] * 100}%`, background: ACCENT }} />
+                                                <div className="h-full rounded-full transition-all bg-amber-500" style={{ width: `${prediction.confidences[prediction.label] * 100}%` }} />
                                             </div>
-                                            <span className="text-[9px] font-bold" style={{ color: ACCENT }}>{Math.round(prediction.confidences[prediction.label] * 100)}%</span>
+                                            <span className="text-[9px] font-bold text-amber-500">{Math.round(prediction.confidences[prediction.label] * 100)}%</span>
                                         </div>
                                     </div>
                                 )}

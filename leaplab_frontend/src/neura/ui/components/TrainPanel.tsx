@@ -82,9 +82,9 @@ export default function TrainPanel({
     const epochPresets = [10, 25, 50, 100]
 
     return (
-        <div className="animate-fade-in flex flex-col items-center overflow-y-auto neura-scrollbar w-full" style={{ height: '100%', paddingLeft: '20px', paddingRight: '20px', padding: '20px' }}>
+        <div className="animate-fade-in flex flex-col items-center overflow-y-auto neura-scrollbar w-full h-full p-5">
             {/* Header - centered */}
-            <div className="w-full flex flex-col items-center" style={{ marginBottom: '16px' }}>
+            <div className="w-full flex flex-col items-center mb-4">
                 <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">
                     {isTraining ? '🧠 Teaching Time!' : accuracy !== null ? '🎉 Training Complete!' : '🤖 Ready to Train!'}
                 </h2>
@@ -99,78 +99,39 @@ export default function TrainPanel({
 
             {/* Workflow Indicator */}
             {onModeChange && (
-                <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto 12px' }}>
+                <div className="max-w-[800px] w-full mx-auto mb-3">
                     <WorkflowIndicator mode={mode} onModeChange={onModeChange} canTrain={canTrain} type={workflowType as any} />
                 </div>
             )}
 
             {/* Horizontal split */}
-            <div className="w-full flex flex-col md:flex-row gap-4" style={{ flex: 1, minHeight: 0 }}>
+            <div className="w-full flex flex-col md:flex-row gap-4 flex-1 min-h-0">
                 {/* Left half - Training visualization */}
-                <div
-                    className="flex-1 min-w-0"
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'rgba(255,255,255,0.85)',
-                        backdropFilter: 'blur(12px)',
-                        borderRadius: '20px',
-                        padding: '24px 20px',
-                        border: '1px solid #e5e7eb',
-                        boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-                        position: 'relative',
-                        overflow: 'hidden',
-                    }}
-                >
+                <div className="flex-1 min-w-0 flex flex-col items-center justify-center bg-white/85 backdrop-blur-xl rounded-2xl p-6 px-5 border border-slate-200 shadow-[0_2px_12px_rgba(0,0,0,0.04)] relative overflow-hidden">
                     {/* AI Brain */}
                     <div className="relative flex flex-col items-center z-10">
                         {/* Icon with animated gradient ring */}
-                        <div className="relative" style={{ marginBottom: '20px' }}>
+                        <div className="relative mb-5">
                             {/* Spinning gradient ring */}
                             <div
+                                className={`absolute -inset-2 rounded-full transition-opacity ${isTraining ? 'animate-spin opacity-85' : accuracy !== null ? 'opacity-85' : 'opacity-35'}`}
                                 style={{
-                                    position: 'absolute',
-                                    inset: '-8px',
-                                    borderRadius: '50%',
                                     background: isTraining
                                         ? 'conic-gradient(from 0deg, #630ed4, #c084fc, #818cf8, #630ed4)'
                                         : accuracy !== null
                                             ? 'conic-gradient(from 0deg, #059669, #34d399, #10b981, #059669)'
                                             : 'conic-gradient(from 0deg, #e5e7eb, #f3f4f6, #e5e7eb, #f3f4f6, #e5e7eb)',
-                                    animation: isTraining ? 'spin 3s linear infinite' : 'none',
-                                    opacity: isTraining || accuracy !== null ? 0.85 : 0.35,
                                 }}
                             />
                             {/* White spacer ring */}
-                            <div
-                                style={{
-                                    position: 'absolute',
-                                    inset: '-3px',
-                                    borderRadius: '50%',
-                                    background: '#fff',
-                                }}
-                            />
+                            <div className="absolute -inset-0.75 rounded-full bg-white" />
                             {/* Icon circle */}
-                            <div
-                                className={`relative flex items-center justify-center transition-transform duration-300 ${isTraining ? 'animate-pulse' : ''}`}
-                                style={{
-                                    width: '100px',
-                                    height: '100px',
-                                    borderRadius: '50%',
-                                    background: isTraining
-                                        ? 'linear-gradient(135deg, #f5f3ff, #ede9fe)'
-                                        : accuracy !== null
-                                            ? 'linear-gradient(135deg, #ecfdf5, #d1fae5)'
-                                            : 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
-                                }}
-                            >
-                                <span style={{ fontSize: '2.8rem' }}>{isTraining ? '🧠' : accuracy !== null ? '🎉' : '🤖'}</span>
+                            <div className={`relative flex items-center justify-center w-25 h-25 rounded-full transition-transform duration-300 ${isTraining ? 'animate-pulse' : ''} ${accuracy !== null ? 'bg-gradient-to-br from-emerald-50 to-emerald-100' : 'bg-gradient-to-br from-violet-50 to-violet-100'}`}>
+                                <span className="text-[2.8rem]">{isTraining ? '🧠' : accuracy !== null ? '🎉' : '🤖'}</span>
                             </div>
                             {/* SVG progress ring overlay */}
                             {(isTraining || accuracy !== null) && (
-                                <svg className="absolute inset-0 w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
+                                <svg className="absolute inset-0 w-full h-full -rotate-90">
                                     <circle
                                         cx="50" cy="50" r="47"
                                         fill="transparent"
@@ -179,8 +140,7 @@ export default function TrainPanel({
                                         strokeDasharray={2 * Math.PI * 47}
                                         strokeDashoffset={2 * Math.PI * 47 - (progress / 100) * 2 * Math.PI * 47}
                                         strokeLinecap="round"
-                                        className="transition-[stroke-dashoffset] duration-[350ms] ease-out"
-                                        style={{ opacity: 0.9 }}
+                                        className="transition-[stroke-dashoffset] duration-[350ms] ease-out opacity-90"
                                     />
                                 </svg>
                             )}
@@ -190,51 +150,27 @@ export default function TrainPanel({
                         <button
                             onClick={() => onTrain(epochs)}
                             disabled={!canTrain || isTraining}
-                            className="flex items-center gap-2 transition-all duration-200"
-                            style={{
-                                padding: '12px 32px',
-                                borderRadius: '14px',
-                                fontSize: '14px',
-                                fontWeight: 700,
-                                border: 'none',
-                                cursor: canTrain && !isTraining ? 'pointer' : 'not-allowed',
-                                background: canTrain && !isTraining
-                                    ? 'linear-gradient(135deg, #630ed4, #7c3aed)'
+                            className={`flex items-center gap-2 py-3 px-8 rounded-xl text-sm font-bold border-none tracking-wide transition-all duration-200 ${
+                                canTrain && !isTraining
+                                    ? 'cursor-pointer bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_6px_24px_rgba(99,14,212,0.3)] hover:opacity-95'
                                     : isTraining
-                                        ? 'linear-gradient(135deg, #630ed4, #7c3aed)'
-                                        : '#e5e7eb',
-                                color: canTrain && !isTraining ? '#fff' : isTraining ? 'rgba(255,255,255,0.9)' : '#9ca3af',
-                                boxShadow: canTrain && !isTraining
-                                    ? '0 6px 24px rgba(99,14,212,0.3)'
-                                    : isTraining
-                                        ? '0 4px 16px rgba(99,14,212,0.2)'
-                                        : 'none',
-                                opacity: !canTrain && !isTraining ? 0.5 : 1,
-                                letterSpacing: '0.02em',
-                            }}
+                                        ? 'cursor-not-allowed bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white/90 shadow-[0_4px_16px_rgba(99,14,212,0.2)]'
+                                        : 'cursor-not-allowed bg-slate-200 text-slate-400 opacity-50'
+                            }`}
                         >
                             {isTraining ? (
                                 <>
-                                    <div
-                                        style={{
-                                            width: '14px',
-                                            height: '14px',
-                                            border: '2px solid rgba(255,255,255,0.4)',
-                                            borderTopColor: '#fff',
-                                            borderRadius: '50%',
-                                            animation: 'spin 1s linear infinite',
-                                        }}
-                                    />
+                                    <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                                     <span>Teaching... ({currentEpoch}/{epochs})</span>
                                 </>
                             ) : accuracy !== null ? (
                                 <>
-                                    <span style={{ fontSize: '16px' }}>🧪</span>
+                                    <span className="text-base">🧪</span>
                                     <span>Test Your AI!</span>
                                 </>
                             ) : (
                                 <>
-                                    <span style={{ fontSize: '16px' }}>🚀</span>
+                                    <span className="text-base">🚀</span>
                                     <span>Start Teaching!</span>
                                 </>
                             )}
@@ -243,21 +179,12 @@ export default function TrainPanel({
                 </div>
 
                 {/* Right half - Settings */}
-                <div className="flex-1 min-w-0" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className="flex-1 min-w-0 flex flex-col gap-2.5">
                     {/* Epochs */}
-                    <div
-                        style={{
-                            background: 'rgba(255,255,255,0.85)',
-                            backdropFilter: 'blur(12px)',
-                            borderRadius: '14px',
-                            padding: '12px',
-                            border: '1px solid #e5e7eb',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-                        }}
-                    >
-                        <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#4a4455', letterSpacing: '0.05em', textTransform: 'uppercase' }}>🔄 Training Rounds</span>
-                            <span style={{ fontSize: '18px', fontWeight: 800, color: '#630ed4' }}>{epochs}</span>
+                    <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-slate-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-[#4a4455] tracking-widest uppercase">🔄 Training Rounds</span>
+                            <span className="text-lg font-extrabold text-[#630ed4]">{epochs}</span>
                         </div>
                         <input
                             type="range"
@@ -266,71 +193,44 @@ export default function TrainPanel({
                             value={epochs}
                             onChange={(e) => setEpochs(parseInt(e.target.value))}
                             disabled={isTraining}
-                            style={{
-                                width: '100%',
-                                height: '6px',
-                                borderRadius: '3px',
-                                accentColor: '#630ed4',
-                                opacity: isTraining ? 0.5 : 1,
-                            }}
+                            className={`w-full h-1.5 rounded-full accent-[#630ed4] ${isTraining ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                         />
-                        <div className="flex flex-wrap" style={{ gap: '5px', marginTop: '8px' }}>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
                             {epochPresets.map((preset) => (
                                 <button
                                     key={preset}
                                     onClick={() => setEpochs(preset)}
                                     disabled={isTraining}
-                                    style={{
-                                        padding: '4px 10px',
-                                        borderRadius: '8px',
-                                        fontSize: '10px',
-                                        fontWeight: 700,
-                                        border: 'none',
-                                        cursor: isTraining ? 'not-allowed' : 'pointer',
-                                        background: epochs === preset ? '#630ed4' : '#ede9fe',
-                                        color: epochs === preset ? '#fff' : '#4a4455',
-                                        transition: 'all 0.15s ease',
-                                        opacity: isTraining ? 0.5 : 1,
-                                    }}
+                                    className={`py-1 px-2.5 rounded-lg text-[10px] font-bold border-none transition-all duration-150 ${
+                                        epochs === preset ? 'bg-[#630ed4] text-white' : 'bg-violet-100 text-[#4a4455] hover:bg-violet-200'
+                                    } ${isTraining ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                 >
                                     {preset}
                                 </button>
                             ))}
                         </div>
-                        <p style={{ fontSize: '9px', color: '#7b7487', marginTop: '6px' }}>More rounds = smarter AI but takes longer ⏱️</p>
+                        <p className="text-[9px] text-[#7b7487] mt-1.5">More rounds = smarter AI but takes longer ⏱️</p>
                     </div>
 
                     {/* Progress */}
-                    <div
-                        style={{
-                            background: 'rgba(255,255,255,0.85)',
-                            backdropFilter: 'blur(12px)',
-                            borderRadius: '14px',
-                            padding: '12px',
-                            border: '1px solid #e5e7eb',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-                        }}
-                    >
-                        <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#4a4455', letterSpacing: '0.05em', textTransform: 'uppercase' }}>📊 Progress</span>
-                            <span style={{ fontSize: '18px', fontWeight: 800, color: '#630ed4' }}>{isTraining || accuracy !== null ? Math.round(progress) : 0}%</span>
+                    <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-slate-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-[#4a4455] tracking-widest uppercase">📊 Progress</span>
+                            <span className="text-lg font-extrabold text-[#630ed4]">{isTraining || accuracy !== null ? Math.round(progress) : 0}%</span>
                         </div>
-                        <div style={{ width: '100%', background: '#ede9fe', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div className="w-full bg-violet-100 h-2 rounded-full overflow-hidden">
                             <div
-                                style={{
-                                    height: '100%',
-                                    borderRadius: '4px',
-                                    background: accuracy !== null ? 'linear-gradient(90deg, #059669, #10b981)' : 'linear-gradient(90deg, #630ed4, #7c3aed)',
-                                    width: `${isTraining || accuracy !== null ? progress : 0}%`,
-                                    transition: 'width 0.3s ease',
-                                }}
+                                className={`h-full rounded-full transition-all duration-300 ${
+                                    accuracy !== null ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : 'bg-gradient-to-r from-[#630ed4] to-[#7c3aed]'
+                                }`}
+                                style={{ width: `${isTraining || accuracy !== null ? progress : 0}%` }}
                             />
                         </div>
-                        <p style={{ fontSize: '11px', color: '#4a4455', marginTop: '6px', fontStyle: 'italic' }}>
+                        <p className="text-[11px] text-[#4a4455] mt-1.5 italic">
                             {isTraining ? (
-                                <>Round <span style={{ fontWeight: 700, color: '#131b2e' }}>{currentEpoch}</span> of <span style={{ fontWeight: 700, color: '#131b2e' }}>{epochs}</span></>
+                                <>Round <span className="font-bold text-slate-900">{currentEpoch}</span> of <span className="font-bold text-slate-900">{epochs}</span></>
                             ) : accuracy !== null ? (
-                                <span style={{ fontWeight: 700, color: '#059669' }}>✅ Complete!</span>
+                                <span className="font-bold text-emerald-600">✅ Complete!</span>
                             ) : (
                                 <>Est. ~{Math.round(epochs * 0.9)} seconds</>
                             )}
@@ -338,69 +238,38 @@ export default function TrainPanel({
                     </div>
 
                     {/* Accuracy */}
-                    <div
-                        style={{
-                            background: 'rgba(255,255,255,0.85)',
-                            backdropFilter: 'blur(12px)',
-                            borderRadius: '14px',
-                            padding: '12px',
-                            border: '1px solid #e5e7eb',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-                        }}
-                    >
-                        <div className="flex items-center gap-2" style={{ marginBottom: '6px' }}>
-                            <span style={{ fontSize: '18px' }}>🎯</span>
+                    <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-slate-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-lg">🎯</span>
                             <div>
-                                <span style={{ fontSize: '10px', fontWeight: 700, color: '#4a4455', textTransform: 'uppercase', display: 'block' }}>Accuracy</span>
-                                <span style={{ fontSize: '16px', fontWeight: 800, color: accuracy !== null ? '#059669' : '#9ca3af' }}>
+                                <span className="text-[10px] font-bold text-[#4a4455] uppercase block">Accuracy</span>
+                                <span className={`text-base font-extrabold ${accuracy !== null ? 'text-emerald-600' : 'text-slate-400'}`}>
                                     {accuracy !== null ? `${displayAccuracy || Math.round(accuracy * 100)}%` : '—'}
                                 </span>
                             </div>
                         </div>
-                        <p style={{ fontSize: '10px', color: '#6b7280' }}>How smart your AI is! 🧠</p>
+                        <p className="text-[10px] text-slate-500">How smart your AI is! 🧠</p>
                     </div>
                 </div>
             </div>
 
             {/* Warning */}
             {!canTrain && warningTitle && (
-                <div
-                    className="flex items-center animate-fade-in shadow-sm"
-                    style={{
-                        gap: '10px',
-                        padding: '12px 16px',
-                        background: '#fffbeb',
-                        borderRadius: '16px',
-                        border: '1px solid #fde68a',
-                        width: '100%',
-                        margin: '16px auto 0',
-                    }}
-                >
-                    <span style={{ fontSize: '18px' }}>⚠️</span>
-                    <div style={{ textAlign: 'left' }}>
-                        <p style={{ fontSize: '12px', fontWeight: 800, color: '#b45309', margin: 0 }}>{warningTitle}</p>
-                        <p style={{ fontSize: '11px', color: '#d97706', margin: 0 }}>{warningDesc}</p>
+                <div className="flex items-center gap-2.5 p-3 px-4 bg-amber-50 rounded-2xl border border-amber-200 w-full mt-4 mx-auto animate-fade-in shadow-sm">
+                    <span className="text-lg">⚠️</span>
+                    <div className="text-left">
+                        <p className="text-xs font-extrabold text-amber-700 m-0">{warningTitle}</p>
+                        <p className="text-[11px] text-amber-600 m-0">{warningDesc}</p>
                     </div>
                 </div>
             )}
 
             {/* Error */}
             {trainingError && (
-                <div
-                    className="flex items-center animate-fade-in shadow-sm"
-                    style={{
-                        gap: '10px',
-                        padding: '12px 16px',
-                        background: '#fef2f2',
-                        borderRadius: '16px',
-                        border: '1px solid #fecaca',
-                        width: '100%',
-                        margin: '16px auto 0',
-                    }}
-                >
-                    <span style={{ fontSize: '18px' }}>❌</span>
-                    <div style={{ textAlign: 'left' }}>
-                        <p style={{ fontSize: '12px', fontWeight: 800, color: '#991b1b', margin: 0 }}>{trainingError}</p>
+                <div className="flex items-center gap-2.5 p-3 px-4 bg-red-50 rounded-2xl border border-red-200 w-full mt-4 mx-auto animate-fade-in shadow-sm">
+                    <span className="text-lg">❌</span>
+                    <div className="text-left">
+                        <p className="text-xs font-extrabold text-red-800 m-0">{trainingError}</p>
                     </div>
                 </div>
             )}

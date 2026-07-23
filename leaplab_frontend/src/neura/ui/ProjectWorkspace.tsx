@@ -32,38 +32,18 @@ function ModeSwitcher({ mode, onModeChange, canTrain, projectType }: { mode: Cla
         : [{ id: 'collect' as const, label: 'Collect', emoji: '📸' }, { id: 'train' as const, label: 'Train', emoji: '🏋️' }, { id: 'test' as const, label: 'Test', emoji: '🧪' }]
 
     return (
-        <div
-            className="flex items-center"
-            style={{
-                background: 'rgba(255,255,255,0.15)',
-                borderRadius: '14px',
-                padding: '4px',
-                gap: '3px',
-            }}
-        >
+        <div className="flex items-center bg-white/15 rounded-[14px] p-1 gap-[3px]">
             {modes.map((m) => {
                 const isActive = mode === m.id
                 return (
                     <button
                         key={m.id}
                         onClick={() => onModeChange(m.id)}
-                        className="flex items-center"
-                        style={{
-                            gap: '6px',
-                            padding: '7px 14px',
-                            borderRadius: '11px',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            background: isActive ? '#fff' : 'transparent',
-                            color: isActive ? '#630ed4' : 'rgba(255, 255, 255, 0.8)',
-                            boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-                            opacity: 1,
-                        }}
+                        className={`flex items-center gap-1.5 px-3.5 py-1.75 rounded-[11px] text-xs font-bold border-none cursor-pointer transition-all duration-200 ${
+                            isActive ? 'bg-white text-[#630ed4] shadow-sm' : 'bg-transparent text-white/80'
+                        }`}
                     >
-                        <span style={{ fontSize: '14px' }}>{m.emoji}</span>
+                        <span className="text-sm">{m.emoji}</span>
                         <span className="hidden sm:inline">{m.label}</span>
                     </button>
                 )
@@ -251,37 +231,15 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
 
     const sidebarContent = (
         <>
-            <div style={{ padding: '16px 14px 12px' }}>
-                <div className="flex items-center justify-between" style={{ marginBottom: '14px' }}>
-                    <h2
-                        className="flex items-center"
-                        style={{
-                            fontSize: '14px',
-                            fontWeight: 800,
-                            color: '#131b2e',
-                            gap: '8px',
-                        }}
-                    >
-                        <span style={{ fontSize: '18px' }}>{isObjectDetection ? '🏷️' : '📁'}</span>
+            <div className="p-3.5 pb-3">
+                <div className="flex items-center justify-between mb-3.5">
+                    <h2 className="flex items-center text-sm font-extrabold text-[#131b2e] gap-2">
+                        <span className="text-lg">{isObjectDetection ? '🏷️' : '📁'}</span>
                         {isObjectDetection ? 'Objects' : 'Classes'}
                     </h2>
                     <button
                         onClick={() => setShowAddClass(true)}
-                        style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                            color: '#fff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '16px',
-                            border: 'none',
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(99,14,212,0.3)',
-                            transition: 'all 0.2s ease',
-                        }}
+                        className="w-8 h-8 rounded-xl bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white flex items-center justify-center text-base border-none cursor-pointer shadow-md shadow-purple-600/30 transition-all hover:scale-105"
                         title={isObjectDetection ? 'Add New Label' : 'Add Class'}
                     >
                         +
@@ -289,7 +247,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 </div>
 
                 {showAddClass && (
-                    <div className="flex animate-fade-in" style={{ gap: '8px', marginBottom: '12px' }}>
+                    <div className="flex gap-2 mb-3 animate-fade-in">
                         <input
                             autoFocus
                             value={newClassName}
@@ -299,33 +257,11 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                                 if (e.key === 'Escape') setShowAddClass(false)
                             }}
                             placeholder={isObjectDetection ? 'Label name...' : 'Class name...'}
-                            style={{
-                                flex: 1,
-                                padding: '8px 12px',
-                                fontSize: '12px',
-                                fontWeight: 600,
-                                border: '1.5px solid #e5e7eb',
-                                borderRadius: '10px',
-                                outline: 'none',
-                                background: '#fff',
-                                color: '#131b2e',
-                                transition: 'border-color 0.2s ease',
-                            }}
-                            onFocus={(e) => e.currentTarget.style.borderColor = '#630ed4'}
-                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                            className="flex-1 px-3 py-2 text-xs font-semibold border-1.5 border-gray-200 rounded-xl outline-none bg-white text-[#131b2e] transition-colors focus:border-[#630ed4]"
                         />
                         <button
                             onClick={handleAddClass}
-                            style={{
-                                padding: '8px 14px',
-                                background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                color: '#fff',
-                                borderRadius: '10px',
-                                fontSize: '12px',
-                                fontWeight: 700,
-                                border: 'none',
-                                cursor: 'pointer',
-                            }}
+                            className="px-3.5 py-2 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold border-none cursor-pointer hover:opacity-90"
                         >
                             ✓
                         </button>
@@ -334,7 +270,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
             </div>
 
             {/* Class list */}
-            <div className="flex-1 overflow-y-auto neura-scrollbar" style={{ padding: '0 10px' }}>
+            <div className="flex-1 overflow-y-auto neura-scrollbar px-2.5">
                 {mode.project?.classes.map((classData, index) => (
                     <ClassCard
                         key={classData.id}
@@ -351,30 +287,14 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 ))}
 
                 {mode.project && mode.project.classes.length === 0 && !showAddClass && (
-                    <div
-                        className="flex flex-col items-center text-center"
-                        style={{ padding: '40px 16px' }}
-                    >
-                        <div
-                            style={{
-                                width: '56px',
-                                height: '56px',
-                                borderRadius: '16px',
-                                background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '28px',
-                                marginBottom: '14px',
-                                boxShadow: '0 4px 12px rgba(245,158,11,0.15)',
-                            }}
-                        >
+                    <div className="flex flex-col items-center text-center py-10 px-4">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-3xl mb-3.5 shadow-md shadow-amber-500/15">
                             📂
                         </div>
-                        <p style={{ fontSize: '13px', fontWeight: 700, color: '#131b2e', marginBottom: '4px' }}>
+                        <p className="text-xs font-bold text-[#131b2e] mb-1">
                             No classes yet
                         </p>
-                        <p style={{ fontSize: '11px', color: '#9ca3af' }}>
+                        <p className="text-[11px] text-gray-400">
                             Click + to add some! 👆
                         </p>
                     </div>
@@ -382,7 +302,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
             </div>
 
             {/* Workflow Stepper */}
-            <div style={{ padding: '12px 14px', borderTop: '1.5px solid #e5e7eb' }}>
+            <div className="p-3.5 border-t-1.5 border-gray-200">
                 {isObjectDetection ? (
                     <div className="flex items-center justify-between">
                         {['Collect', 'Label', 'Train', 'Eval', 'Test'].map((step, idx) => {
@@ -394,27 +314,14 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                                 <button
                                     key={step}
                                     onClick={() => mode.setMode(modeId)}
-                                    className="flex flex-col items-center"
-                                    style={{ gap: '4px', cursor: 'pointer', background: 'none', border: 'none' }}
+                                    className="flex flex-col items-center gap-1 cursor-pointer bg-transparent border-none"
                                 >
-                                    <div
-                                        style={{
-                                            width: '28px',
-                                            height: '28px',
-                                            borderRadius: '8px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '12px',
-                                            background: isCurrent ? 'linear-gradient(135deg, #630ed4, #7c3aed)' : isCompleted ? '#d1fae5' : '#f3f4f6',
-                                            color: isCurrent || isCompleted ? '#fff' : '#9ca3af',
-                                            boxShadow: isCurrent ? '0 2px 8px rgba(99,14,212,0.3)' : 'none',
-                                            transition: 'all 0.2s ease',
-                                        }}
-                                    >
+                                    <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs transition-all ${
+                                        isCurrent ? 'bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white shadow-md shadow-purple-600/30' : isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'
+                                    }`}>
                                         {isCompleted ? '✓' : stepEmojis[idx]}
                                     </div>
-                                    <span style={{ fontSize: '9px', fontWeight: 700, color: isCurrent ? '#630ed4' : '#9ca3af' }}>
+                                    <span className={`text-[9px] font-bold ${isCurrent ? 'text-[#630ed4]' : 'text-gray-400'}`}>
                                         {step}
                                     </span>
                                 </button>
@@ -422,7 +329,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                         })}
                     </div>
                 ) : (
-                    <div className="flex" style={{ gap: '6px' }}>
+                    <div className="flex gap-1.5">
                         {[
                             { id: 'collect' as const, label: 'Collect', emoji: '📸' },
                             { id: 'train' as const, label: 'Train', emoji: '🏋️' },
@@ -431,25 +338,11 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                             <button
                                 key={m.id}
                                 onClick={() => mode.setMode(m.id)}
-                                style={{
-                                    flex: 1,
-                                    padding: '8px 0',
-                                    fontSize: '10px',
-                                    fontWeight: 700,
-                                    borderRadius: '10px',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '4px',
-                                    transition: 'all 0.2s ease',
-                                    background: mode.mode === m.id ? 'linear-gradient(135deg, #630ed4, #7c3aed)' : '#f3f0ff',
-                                    color: mode.mode === m.id ? '#fff' : '#6b7280',
-                                    boxShadow: mode.mode === m.id ? '0 2px 8px rgba(99,14,212,0.3)' : 'none',
-                                }}
+                                className={`flex-1 py-2 text-[10px] font-bold rounded-xl border-none cursor-pointer flex items-center justify-center gap-1 transition-all ${
+                                    mode.mode === m.id ? 'bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white shadow-md shadow-purple-600/30' : 'bg-purple-50 text-gray-500'
+                                }`}
                             >
-                                <span style={{ fontSize: '12px' }}>{m.emoji}</span>
+                                <span className="text-xs">{m.emoji}</span>
                                 {m.label}
                             </button>
                         ))}
@@ -493,15 +386,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
 
             <div className="flex-1 flex overflow-hidden relative">
                 {/* Desktop sidebar */}
-                <aside
-                    className="hidden md:flex flex-col z-40 animate-fade-in shrink-0"
-                    style={{
-                        width: '224px',
-                        background: 'rgba(255,255,255,0.95)',
-                        backdropFilter: 'blur(12px)',
-                        borderRight: '1.5px solid #e5e7eb',
-                    }}
-                >
+                <aside className="hidden md:flex flex-col z-40 animate-fade-in shrink-0 w-56 bg-white/95 backdrop-blur-md border-r-1.5 border-gray-200">
                     {sidebarContent}
                 </aside>
 
@@ -509,32 +394,11 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 {isMobile && sidebarOpen && (
                     <div className="fixed inset-0 z-50 flex">
                         <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-                        <div
-                            className="relative flex flex-col animate-slide-in-left"
-                            style={{
-                                width: 'min(256px, 80vw)',
-                                maxWidth: '80vw',
-                                background: 'rgba(255,255,255,0.98)',
-                                backdropFilter: 'blur(12px)',
-                                boxShadow: '8px 0 32px rgba(0,0,0,0.12)',
-                            }}
-                        >
-                            <div className="flex items-center justify-end" style={{ padding: '12px 14px 0' }}>
+                        <div className="relative flex flex-col animate-slide-in-left w-[min(256px,80vw)] max-w-[80vw] bg-white/98 backdrop-blur-md shadow-2xl">
+                            <div className="flex items-center justify-end pt-3 px-3.5">
                                 <button
                                     onClick={() => setSidebarOpen(false)}
-                                    style={{
-                                        width: '28px',
-                                        height: '28px',
-                                        borderRadius: '8px',
-                                        background: '#fee2e2',
-                                        color: '#991b1b',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '12px',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                    }}
+                                    className="w-7 h-7 rounded-lg bg-red-100 text-red-800 flex items-center justify-center text-xs border-none cursor-pointer hover:bg-red-200"
                                 >
                                     ✕
                                 </button>
@@ -553,66 +417,25 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
             </div>
 
             {/* Status Bar */}
-            <footer
-                className="flex items-center justify-between"
-                style={{
-                    background: 'rgba(255,255,255,0.9)',
-                    backdropFilter: 'blur(12px)',
-                    borderTop: '1.5px solid #e5e7eb',
-                    padding: '10px 16px',
-                }}
-            >
-                <div className="flex items-center" style={{ gap: '12px' }}>
+            <footer className="flex items-center justify-between bg-white/90 backdrop-blur-md border-t-1.5 border-gray-200 px-4 py-2.5">
+                <div className="flex items-center gap-3">
                     {/* Pics */}
-                    <div
-                        className="flex items-center"
-                        style={{
-                            gap: '6px',
-                            padding: '5px 12px',
-                            borderRadius: '10px',
-                            background: '#f3f0ff',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            color: '#630ed4',
-                        }}
-                    >
-                        <span style={{ fontSize: '14px' }}>🖼️</span>
+                    <div className="flex items-center gap-1.5 px-3 py-1.25 rounded-xl bg-purple-50 text-xs font-semibold text-[#630ed4]">
+                        <span className="text-sm">🖼️</span>
                         <span>{mode.getTotalSamples()} pics</span>
                     </div>
                     {/* Types */}
-                    <div
-                        className="flex items-center"
-                        style={{
-                            gap: '6px',
-                            padding: '5px 12px',
-                            borderRadius: '10px',
-                            background: '#f0fdf4',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            color: '#006c44',
-                        }}
-                    >
-                        <span style={{ fontSize: '14px' }}>📁</span>
+                    <div className="flex items-center gap-1.5 px-3 py-1.25 rounded-xl bg-emerald-50 text-xs font-semibold text-emerald-800">
+                        <span className="text-sm">📁</span>
                         <span>{mode.project?.classes.length || 0} types</span>
                     </div>
                     {/* Auto-saved */}
-                    <div
-                        className="hidden sm:flex items-center"
-                        style={{
-                            gap: '6px',
-                            padding: '5px 12px',
-                            borderRadius: '10px',
-                            background: '#ecfdf5',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            color: '#059669',
-                        }}
-                    >
-                        <span style={{ fontSize: '14px' }}>💾</span>
+                    <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.25 rounded-xl bg-emerald-50 text-xs font-semibold text-emerald-600">
+                        <span className="text-sm">💾</span>
                         <span>Auto-saved</span>
                     </div>
                 </div>
-                <div className="flex items-center" style={{ gap: '8px' }}>
+                <div className="flex items-center gap-2">
                     <button
                         onClick={() => {
                             if (document.fullscreenElement) {
@@ -622,33 +445,13 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                             }
                         }}
                         title="Toggle fullscreen"
-                        style={{
-                            padding: '4px 8px',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            background: '#f3f4f6',
-                            color: '#374151',
-                            border: '1px solid #e5e7eb',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                        }}
+                        className="px-2 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200 cursor-pointer flex items-center gap-1 hover:bg-gray-200"
                     >
-                        <span style={{ fontSize: '12px' }}>⛶</span>
+                        <span className="text-xs">⛶</span>
                         <span className="hidden sm:inline">Fullscreen</span>
                     </button>
-                    <div
-                        style={{
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            background: mode.project?.modelTrained ? '#059669' : '#d1d5db',
-                            boxShadow: mode.project?.modelTrained ? '0 0 8px rgba(5,150,105,0.5)' : 'none',
-                        }}
-                    />
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280' }}>
+                    <div className={`w-2 h-2 rounded-full ${mode.project?.modelTrained ? 'bg-emerald-600 shadow-[0_0_8px_rgba(5,150,105,0.5)]' : 'bg-gray-300'}`} />
+                    <span className="text-xs font-semibold text-gray-500">
                         {mode.project?.modelTrained ? '✅ Ready' : '⏳ No model'}
                     </span>
                 </div>

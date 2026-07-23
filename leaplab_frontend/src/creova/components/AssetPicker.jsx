@@ -132,16 +132,7 @@ export default function AssetPicker({
     return createPortal(
         <div
             onClick={onClose}
-            style={{
-                position: 'fixed',
-                inset: 0,
-                backgroundColor: 'rgba(15, 23, 42, 0.7)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 50,
-                padding: '16px'
-            }}
+            className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-50 p-4"
         >
             <div
                 onClick={(e) => e.stopPropagation()}
@@ -149,19 +140,9 @@ export default function AssetPicker({
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
-                style={{
-                    backgroundColor: '#ffffff',
-                    borderRadius: '20px',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                    maxWidth: '640px',
-                    width: '100%',
-                    maxHeight: '80vh',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                    border: isDragging ? '2px dashed #4f46e5' : '1px solid #f1f5f9',
-                    transition: 'border 0.2s ease'
-                }}
+                className={`bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden transition-colors duration-200 ${
+                    isDragging ? 'border-2 border-dashed border-indigo-600' : 'border border-slate-100'
+                }`}
             >
                 {/* Hidden file input */}
                 <input
@@ -170,128 +151,51 @@ export default function AssetPicker({
                     multiple
                     accept="image/*,audio/*,video/*"
                     onChange={handleFileInputChange}
-                    style={{ display: 'none' }}
+                    className="hidden"
                 />
 
                 {/* Header */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '24px 24px 16px',
-                    borderBottom: '1px solid #e2e8f0',
-                    flexShrink: 0
-                }}>
+                <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-200 shrink-0">
                     <div>
-                        <h3 style={{
-                            fontSize: '18px',
-                            fontWeight: 900,
-                            color: '#1e293b',
-                            letterSpacing: '-0.02em',
-                            margin: 0
-                        }}>
+                        <h3 className="text-lg font-black text-slate-800 tracking-tight m-0">
                             Select {filterType === 'all' ? 'Asset' : filterType.charAt(0).toUpperCase() + filterType.slice(1)}
                         </h3>
-                        <p style={{
-                            fontSize: '13px',
-                            color: '#94a3b8',
-                            fontWeight: 500,
-                            marginTop: '4px',
-                            margin: '4px 0 0'
-                        }}>
+                        <p className="text-xs text-slate-400 font-medium mt-1 mb-0">
                             Choose from uploaded media files
                         </p>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className="flex items-center gap-3">
                         {currentValue && (
                             <button
                                 onClick={handleClear}
-                                style={{
-                                    padding: '8px 16px',
-                                    fontSize: '13px',
-                                    fontWeight: 800,
-                                    borderRadius: '10px',
-                                    border: '1px solid #fecaca',
-                                    backgroundColor: '#fff1f2',
-                                    color: '#e11d48',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#ffe4e6';
-                                    e.currentTarget.style.borderColor = '#fca5a5';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#fff1f2';
-                                    e.currentTarget.style.borderColor = '#fecaca';
-                                }}
+                                className="px-4 py-2 text-xs font-extrabold rounded-xl border border-red-200 bg-rose-50 text-rose-600 cursor-pointer transition-all hover:bg-rose-100 hover:border-red-300"
                             >
                                 Clear Selection
                             </button>
                         )}
                         <button
                             onClick={onClose}
-                            style={{
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#94a3b8',
-                                border: '1px solid #e2e8f0',
-                                backgroundColor: 'transparent',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                flexShrink: 0
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#f1f5f9';
-                                e.currentTarget.style.color = '#1e293b';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'transparent';
-                                e.currentTarget.style.color = '#94a3b8';
-                            }}
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 border border-slate-200 bg-transparent cursor-pointer transition-all shrink-0 hover:bg-slate-100 hover:text-slate-800"
                         >
-                            <X style={{ width: '16px', height: '16px' }} />
+                            <X className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
 
                 {/* Search */}
-                <div style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
+                <div className="p-6 py-4 border-b border-slate-200 shrink-0">
                     <input
                         type="text"
                         placeholder="Search files..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{
-                            width: '100%',
-                            padding: '12px 16px',
-                            fontSize: '14px',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '12px',
-                            outline: 'none',
-                            backgroundColor: '#f8fafc',
-                            color: '#1e293b',
-                            fontWeight: 500,
-                            boxSizing: 'border-box'
-                        }}
-                        onFocus={(e) => {
-                            e.currentTarget.style.borderColor = '#818cf8';
-                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(129, 140, 248, 0.15)';
-                        }}
-                        onBlur={(e) => {
-                            e.currentTarget.style.borderColor = '#e2e8f0';
-                            e.currentTarget.style.boxShadow = 'none';
-                        }}
+                        className="w-full p-3 px-4 text-sm border border-slate-200 rounded-xl outline-none bg-slate-50 text-slate-800 font-medium box-border transition-all focus:border-indigo-400 focus:ring-3 focus:ring-indigo-400/15"
                         autoFocus
                     />
                 </div>
 
                 {/* Media Grid */}
-                <div className="neura-scrollbar" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '16px 24px 16px 24px', minHeight: 0 }}>
+                <div className="neura-scrollbar flex-1 overflow-y-auto overflow-x-hidden p-6 min-h-0">
                     {filteredMedia.length === 0 ? (
                         <div
                             onDragEnter={handleDragEnter}
@@ -299,88 +203,33 @@ export default function AssetPicker({
                             onDragOver={handleDragOver}
                             onDrop={handleDrop}
                             onClick={() => fileInputRef.current?.click()}
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                height: '100%',
-                                minHeight: '280px',
-                                color: '#94a3b8',
-                                padding: '40px 20px',
-                                border: isDragging
-                                    ? '2px dashed #4f46e5'
-                                    : '2px dashed #e2e8f0',
-                                borderRadius: '16px',
-                                backgroundColor: isDragging ? '#eef2ff' : '#f8fafc',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                                if (!isDragging) {
-                                    e.currentTarget.style.borderColor = '#c7d2fe';
-                                    e.currentTarget.style.backgroundColor = '#f5f3ff';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (!isDragging) {
-                                    e.currentTarget.style.borderColor = '#e2e8f0';
-                                    e.currentTarget.style.backgroundColor = '#f8fafc';
-                                }
-                            }}
+                            className={`flex flex-col items-center justify-center h-full min-h-[280px] p-10 px-5 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-200 ${
+                                isDragging
+                                    ? 'border-indigo-600 bg-indigo-50 text-indigo-600'
+                                    : 'border-slate-200 bg-slate-50 text-slate-400 hover:border-indigo-200 hover:bg-purple-50/50'
+                            }`}
                         >
-                            <div style={{
-                                width: '64px',
-                                height: '64px',
-                                borderRadius: '16px',
-                                backgroundColor: isDragging ? '#c7d2fe' : '#e2e8f0',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginBottom: '16px',
-                                transition: 'all 0.2s ease'
-                            }}>
-                                <Upload style={{
-                                    width: '28px',
-                                    height: '28px',
-                                    color: isDragging ? '#4f46e5' : '#94a3b8',
-                                    transition: 'color 0.2s ease'
-                                }} />
+                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all duration-200 ${
+                                isDragging ? 'bg-indigo-200' : 'bg-slate-200'
+                            }`}>
+                                <Upload className={`w-7 h-7 transition-colors duration-200 ${
+                                    isDragging ? 'text-indigo-600' : 'text-slate-400'
+                                }`} />
                             </div>
-                            <p style={{
-                                fontSize: '15px',
-                                fontWeight: 700,
-                                margin: 0,
-                                color: isDragging ? '#4f46e5' : '#64748b',
-                                transition: 'color 0.2s ease'
-                            }}>
+                            <p className={`text-sm font-bold m-0 transition-colors duration-200 ${
+                                isDragging ? 'text-indigo-600' : 'text-slate-600'
+                            }`}>
                                 {isDragging ? 'Drop files here' : 'Drag & drop files here'}
                             </p>
-                            <p style={{
-                                fontSize: '13px',
-                                marginTop: '8px',
-                                margin: '8px 0 0',
-                                color: '#94a3b8'
-                            }}>
-                                or <span style={{ color: '#4f46e5', fontWeight: 700 }}>browse files</span>
+                            <p className="text-xs mt-2 m-0 text-slate-400">
+                                or <span className="text-indigo-600 font-bold">browse files</span>
                             </p>
-                            <p style={{
-                                fontSize: '11px',
-                                marginTop: '12px',
-                                margin: '12px 0 0',
-                                color: '#cbd5e1',
-                                fontWeight: 600
-                            }}>
+                            <p className="text-[11px] mt-3 m-0 text-slate-300 font-semibold">
                                 {searchTerm ? 'Try a different search' : 'Supports images, audio, and video'}
                             </p>
                         </div>
                     ) : (
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                            gap: '12px',
-                            padding: '4px 8px 8px 4px'
-                        }}>
+                        <div className="grid grid-cols-2 gap-3 p-1">
                             {filteredMedia.map((item, index) => (
                                 <div
                                     key={index}
@@ -388,74 +237,24 @@ export default function AssetPicker({
                                     tabIndex={0}
                                     onClick={() => handleSelect(item)}
                                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(item); } }}
-                                    style={{
-                                        position: 'relative',
-                                        borderRadius: '14px',
-                                        border: currentValue === item.filename
-                                            ? '2px solid #4f46e5'
-                                            : '2px solid #e2e8f0',
-                                        overflow: 'hidden',
-                                        cursor: 'pointer',
-                                        textAlign: 'left',
-                                        transition: 'all 0.2s',
-                                        backgroundColor: '#ffffff',
-                                        padding: 0,
-                                        boxShadow: currentValue === item.filename
-                                            ? '0 4px 12px rgba(79, 70, 229, 0.15)'
-                                            : 'none',
-                                        outline: 'none'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        if (currentValue !== item.filename) {
-                                            e.currentTarget.style.borderColor = '#818cf8';
-                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.1)';
-                                        }
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        if (currentValue !== item.filename) {
-                                            e.currentTarget.style.borderColor = '#e2e8f0';
-                                            e.currentTarget.style.boxShadow = 'none';
-                                        }
-                                    }}
-                                    onFocus={(e) => {
-                                        if (currentValue !== item.filename) {
-                                            e.currentTarget.style.borderColor = '#818cf8';
-                                        }
-                                    }}
-                                    onBlur={(e) => {
-                                        if (currentValue !== item.filename) {
-                                            e.currentTarget.style.borderColor = '#e2e8f0';
-                                        }
-                                    }}
+                                    className={`relative rounded-xl border-2 overflow-hidden cursor-pointer text-left transition-all bg-white p-0 outline-none ${
+                                        currentValue === item.filename
+                                            ? 'border-indigo-600 shadow-md shadow-indigo-600/15'
+                                            : 'border-slate-200 hover:border-indigo-400 hover:shadow-md hover:shadow-indigo-600/10 focus:border-indigo-400'
+                                    }`}
                                 >
                                     {/* Thumbnail */}
-                                    <div style={{
-                                        aspectRatio: '1',
-                                        backgroundColor: '#f8fafc',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}>
+                                    <div className="aspect-square bg-slate-50 flex items-center justify-center">
                                         {getFileCategory(item.type) === 'image' ? (
                                             <img
                                                 src={item.data}
                                                 alt={item.filename}
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                className="w-full h-full object-cover"
                                             />
                                         ) : (
-                                            <div style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                gap: '8px'
-                                            }}>
+                                            <div className="flex flex-col items-center gap-2">
                                                 {getFileIcon(item.type)}
-                                                <span style={{
-                                                    fontSize: '11px',
-                                                    fontWeight: 700,
-                                                    color: '#64748b',
-                                                    textTransform: 'uppercase'
-                                                }}>
+                                                <span className="text-[11px] font-bold text-slate-500 uppercase">
                                                     {item.filename.split('.').pop().toUpperCase()}
                                                 </span>
                                             </div>
@@ -463,44 +262,19 @@ export default function AssetPicker({
                                     </div>
 
                                     {/* File Info */}
-                                    <div style={{ padding: '10px 12px', backgroundColor: '#ffffff' }}>
-                                        <div style={{
-                                            fontSize: '12px',
-                                            fontWeight: 700,
-                                            color: '#1e293b',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap'
-                                        }} title={item.filename}>
+                                    <div className="p-2.5 px-3 bg-white">
+                                        <div className="text-xs font-bold text-slate-800 overflow-hidden text-ellipsis whitespace-nowrap" title={item.filename}>
                                             {item.filename}
                                         </div>
-                                        <div style={{
-                                            fontSize: '11px',
-                                            color: '#94a3b8',
-                                            fontWeight: 600,
-                                            marginTop: '2px'
-                                        }}>
+                                        <div className="text-[11px] text-slate-400 font-semibold mt-0.5">
                                             {formatFileSize(item.size)}
                                         </div>
                                     </div>
 
                                     {/* Selected Indicator */}
                                     {currentValue === item.filename && (
-                                        <div style={{
-                                            position: 'absolute',
-                                            top: '8px',
-                                            right: '8px',
-                                            backgroundColor: '#4f46e5',
-                                            color: '#ffffff',
-                                            borderRadius: '50%',
-                                            width: '24px',
-                                            height: '24px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)'
-                                        }}>
-                                            <svg style={{ width: '14px', height: '14px' }} fill="currentColor" viewBox="0 0 20 20">
+                                        <div className="absolute top-2 right-2 bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md shadow-indigo-600/30">
+                                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                             </svg>
                                         </div>
@@ -514,40 +288,10 @@ export default function AssetPicker({
                                 tabIndex={0}
                                 onClick={() => fileInputRef.current?.click()}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
-                                style={{
-                                    borderRadius: '14px',
-                                    border: '2px dashed #e2e8f0',
-                                    overflow: 'hidden',
-                                    cursor: 'pointer',
-                                    textAlign: 'center',
-                                    transition: 'all 0.2s',
-                                    backgroundColor: '#f8fafc',
-                                    padding: '24px 12px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px',
-                                    minHeight: '180px',
-                                    outline: 'none'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.borderColor = '#c7d2fe';
-                                    e.currentTarget.style.backgroundColor = '#f5f3ff';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.borderColor = '#e2e8f0';
-                                    e.currentTarget.style.backgroundColor = '#f8fafc';
-                                }}
-                                onFocus={(e) => {
-                                    e.currentTarget.style.borderColor = '#c7d2fe';
-                                }}
-                                onBlur={(e) => {
-                                    e.currentTarget.style.borderColor = '#e2e8f0';
-                                }}
+                                className="rounded-xl border-2 border-dashed border-slate-200 overflow-hidden cursor-pointer text-center transition-all bg-slate-50 p-6 px-3 flex flex-col items-center justify-center gap-2 min-h-[180px] outline-none hover:border-indigo-200 hover:bg-purple-50/50 focus:border-indigo-200"
                             >
-                                <Upload style={{ width: '24px', height: '24px', color: '#94a3b8' }} />
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>
+                                <Upload className="w-6 h-6 text-slate-400" />
+                                <span className="text-xs font-bold text-slate-600">
                                     Upload more
                                 </span>
                             </div>

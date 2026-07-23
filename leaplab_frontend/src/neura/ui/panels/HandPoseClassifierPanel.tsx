@@ -622,23 +622,15 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     const CameraToggle = ({ size = 'md' }: { size?: 'sm' | 'md' }) => (
         <button
             onClick={toggleCamera}
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: size === 'sm' ? '8px 12px' : '10px 16px',
-                borderRadius: '12px',
-                fontSize: '12px',
-                fontWeight: 700,
-                border: 'none',
-                cursor: 'pointer',
-                background: cameraOn ? 'linear-gradient(135deg, #ecfdf5, #d1fae5)' : 'linear-gradient(135deg, #fef2f2, #fee2e2)',
-                color: cameraOn ? '#059669' : '#dc2626',
-                boxShadow: cameraOn ? '0 2px 8px rgba(5,150,105,0.15)' : '0 2px 8px rgba(220,38,38,0.12)',
-                transition: 'all 0.2s ease',
-            }}
+            className={`flex items-center gap-1.5 rounded-xl text-xs font-bold border-none cursor-pointer transition-all duration-200 ${
+                size === 'sm' ? 'py-2 px-3' : 'py-2.5 px-4'
+            } ${
+                cameraOn
+                    ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600 shadow-[0_2px_8px_rgba(5,150,105,0.15)]'
+                    : 'bg-gradient-to-br from-red-50 to-red-100 text-red-600 shadow-[0_2px_8px_rgba(220,38,38,0.12)]'
+            }`}
         >
-            <span style={{ fontSize: '14px' }}>{cameraOn ? '📷' : '🚫'}</span>
+            <span className="text-sm">{cameraOn ? '📷' : '🚫'}</span>
             {cameraOn ? 'Camera On' : 'Camera Off'}
         </button>
     )
@@ -680,49 +672,49 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
             )}
             {/* Onboarding */}
             {showOnboarding && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center p-4" style={{ animation: 'onbFadeIn 0.3s ease-out' }}>
+                <div className="absolute inset-0 z-50 flex items-center justify-center p-4 animate-[onbFadeIn_0.3s_ease-out]">
                     <div className="absolute inset-0 bg-[#0a0128]/70 backdrop-blur-lg" />
-                    <div className="relative w-full max-w-[440px] overflow-hidden" style={{ animation: 'onbSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                    <div className="relative w-full max-w-[440px] overflow-hidden animate-[onbSlideIn_0.35s_cubic-bezier(0.16,1,0.3,1)]">
                         <div className="absolute -inset-[2px] rounded-[34px] bg-gradient-to-br from-[#c084fc]/50 via-[#a855f7]/30 to-[#630ed4]/50 blur-md" />
                         <div className="relative bg-white rounded-[32px] shadow-[0_30px_70px_-15px_rgba(99,14,212,0.3)] overflow-hidden">
                             <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#c084fc] via-[#630ed4] to-[#a855f7]" />
-                            <div style={{ padding: '40px 40px 24px' }}>
-                                <div style={{ position: 'relative', width: '80px', height: '80px', margin: '0 auto 24px' }}>
-                                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '20px', transform: 'rotate(6deg)', boxShadow: '0 8px 24px rgba(99,14,212,0.15)' }} />
-                                    <div style={{ position: 'relative', width: '100%', height: '100%', background: '#fff', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.06)', border: '1px solid rgba(245,243,255,0.5)' }}>
-                                        <span style={{ fontSize: '40px' }}>✋</span>
+                            <div className="pt-10 px-10 pb-6">
+                                <div className="relative w-20 h-20 mx-auto mb-6">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-2xl rotate-6 shadow-[0_8px_24px_rgba(99,14,212,0.15)]" />
+                                    <div className="relative w-full h-full bg-white rounded-2xl flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-[#f5f3ff]/50">
+                                        <span className="text-[40px]">✋</span>
                                     </div>
                                 </div>
-                                <h3 style={{ fontSize: '22px', fontWeight: 800, color: '#131b2e', marginBottom: '10px', textAlign: 'center', letterSpacing: '-0.02em', lineHeight: 1.3 }}>Welcome to Hand Pose Classifier!</h3>
-                                <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: 1.6, textAlign: 'center', maxWidth: '300px', margin: '0 auto' }}>Teach AI to recognize your hand gestures using the camera! 🚀</p>
+                                <h3 className="text-[22px] font-extrabold text-[#131b2e] mb-2.5 text-center tracking-tight leading-snug">Welcome to Hand Pose Classifier!</h3>
+                                <p className="text-sm text-gray-500 leading-relaxed text-center max-w-[300px] mx-auto">Teach AI to recognize your hand gestures using the camera! 🚀</p>
                             </div>
-                            <div style={{ margin: '0 40px', height: '1px', background: 'linear-gradient(to right, transparent, #ede9fe, transparent)' }} />
-                            <div style={{ padding: '24px 40px 32px' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '14px 16px', borderRadius: '14px', background: '#faf9ff', border: '1px solid #ede9fe' }}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '14px', fontWeight: 700, color: '#630ed4', boxShadow: '0 2px 8px rgba(99,14,212,0.1)' }}>1</div>
-                                        <div style={{ paddingTop: '2px' }}>
-                                            <p style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e', marginBottom: '2px' }}>Create Classes</p>
-                                            <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.5 }}>Click "+" in the sidebar to add gesture categories!</p>
+                            <div className="mx-10 h-[1px] bg-gradient-to-r from-transparent via-[#ede9fe] to-transparent" />
+                            <div className="pt-6 px-10 pb-8">
+                                <div className="flex flex-col gap-3 mb-6">
+                                    <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#faf9ff] border border-[#ede9fe]">
+                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] flex items-center justify-center shrink-0 text-sm font-bold text-[#630ed4] shadow-[0_2px_8px_rgba(99,14,212,0.1)]">1</div>
+                                        <div className="pt-0.5">
+                                            <p className="text-sm font-bold text-[#131b2e] mb-0.5">Create Classes</p>
+                                            <p className="text-xs text-gray-500 leading-relaxed">Click "+" in the sidebar to add gesture categories!</p>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '14px 16px', borderRadius: '14px', background: '#faf9ff', border: '1px solid #ede9fe' }}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '14px', fontWeight: 700, color: '#630ed4', boxShadow: '0 2px 8px rgba(99,14,212,0.1)' }}>2</div>
-                                        <div style={{ paddingTop: '2px' }}>
-                                            <p style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e', marginBottom: '2px' }}>Capture Gestures</p>
-                                            <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.5 }}>Show your hand to the camera and capture samples!</p>
+                                    <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#faf9ff] border border-[#ede9fe]">
+                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] flex items-center justify-center shrink-0 text-sm font-bold text-[#630ed4] shadow-[0_2px_8px_rgba(99,14,212,0.1)]">2</div>
+                                        <div className="pt-0.5">
+                                            <p className="text-sm font-bold text-[#131b2e] mb-0.5">Capture Gestures</p>
+                                            <p className="text-xs text-gray-500 leading-relaxed">Show your hand to the camera and capture samples!</p>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '14px 16px', borderRadius: '14px', background: '#f0fdf4', border: '1px solid #d1fae5' }}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '14px', fontWeight: 700, color: '#006c44', boxShadow: '0 2px 8px rgba(0,108,68,0.1)' }}>3</div>
-                                        <div style={{ paddingTop: '2px' }}>
-                                            <p style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e', marginBottom: '2px' }}>Train & Test</p>
-                                            <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.5 }}>Teach your AI, then test how well it recognizes gestures!</p>
+                                    <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#f0fdf4] border border-[#d1fae5]">
+                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#d1fae5] to-[#a7f3d0] flex items-center justify-center shrink-0 text-sm font-bold text-[#006c44] shadow-[0_2px_8px_rgba(0,108,68,0.1)]">3</div>
+                                        <div className="pt-0.5">
+                                            <p className="text-sm font-bold text-[#131b2e] mb-0.5">Train & Test</p>
+                                            <p className="text-xs text-gray-500 leading-relaxed">Teach your AI, then test how well it recognizes gestures!</p>
                                         </div>
                                     </div>
                                 </div>
-                                <button onClick={() => { setShowOnboarding(false); localStorage.setItem('neura-handpose-onboarding-seen', 'true') }} style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '14px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', boxShadow: '0 8px 24px rgba(99,14,212,0.3)', position: 'relative', overflow: 'hidden', transition: 'all 0.2s' }}>
-                                    <span style={{ position: 'relative', zIndex: 10 }}>Let's Go! 🚀</span>
+                                <button onClick={() => { setShowOnboarding(false); localStorage.setItem('neura-handpose-onboarding-seen', 'true') }} className="w-full p-4 rounded-2xl text-sm font-bold border-none cursor-pointer bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_8px_24px_rgba(99,14,212,0.3)] relative overflow-hidden transition-all">
+                                    <span className="relative z-10">Let's Go! 🚀</span>
                                 </button>
                             </div>
                         </div>
@@ -733,7 +725,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar py-3 px-5">
                     {/* Header + Workflow - centered */}
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
@@ -747,7 +739,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
 
                     {/* Camera error */}
                     {cameraError && !cameraOn && (
-                        <div className="w-full max-w-[520px] bg-white rounded-2xl p-6 shadow-md border border-[#dae2fd] text-center animate-scale-in mx-auto" style={{ marginTop: '10px' }}>
+                        <div className="w-full max-w-[520px] bg-white rounded-2xl p-6 shadow-md border border-[#dae2fd] text-center animate-scale-in mx-auto mt-2.5">
                             <span className="text-4xl mb-3 block">🚫</span>
                             <h3 className="text-sm font-bold text-[#131b2e] mb-2">Camera Access Needed</h3>
                             <p className="text-xs text-[#4a4455] mb-4">{cameraError}</p>
@@ -756,27 +748,27 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                     )}
 
                     {/* Horizontal split */}
-                    <div className="w-full" style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', flex: 1, minHeight: 0, marginTop: '16px' }}>
+                    <div className="w-full flex flex-col lg:flex-row gap-4 flex-1 min-h-[35vh] lg:min-h-0 mt-4">
                         {/* Left half - Camera feed */}
-                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: isMobile ? '35vh' : 0 }}>
+                        <div className="flex-1 min-w-0 flex flex-col">
                             {/* Camera feed */}
-                            <div style={{ flex: 1, position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', minHeight: '350px' }}>
+                            <div className="flex-1 relative rounded-2xl overflow-hidden bg-[#0f0e26] border border-[#3b2f63] shadow-[0_4px_20px_rgba(0,0,0,0.15)] min-h-[350px]">
                                 {cameraOn ? (
                                     <>
-                                        <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)' }} />
-                                        <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scaleX(-1)' }} />
-                                        <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 10px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', borderRadius: '6px', zIndex: 10 }}>
-                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
-                                            <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>✋ LIVE</span>
+                                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
+                                        <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full -scale-x-100" />
+                                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.25 py-1 px-2.5 bg-black/50 backdrop-blur-md rounded-md z-10">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]" />
+                                            <span className="text-white text-[10px] font-bold">✋ LIVE</span>
                                         </div>
                                         {stream && (
-                                            <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 8px', background: handDetected ? 'rgba(0,108,68,0.9)' : 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', borderRadius: '6px', zIndex: 10 }}>
-                                                <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#fff', opacity: handDetected ? 1 : 0.5, animation: handDetected ? 'pulse 1s infinite' : 'none' }} />
-                                                <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>{handDetected ? '✋ HAND DETECTED' : '👀 SCANNING'}</span>
+                                            <div className={`absolute top-2.5 right-2.5 flex items-center gap-1 py-0.75 px-2 backdrop-blur-md rounded-md z-10 ${handDetected ? 'bg-emerald-800/90' : 'bg-black/50'}`}>
+                                                <div className={`w-1.25 h-1.25 rounded-full bg-white ${handDetected ? 'opacity-100 animate-pulse' : 'opacity-50'}`} />
+                                                <span className="text-white text-[9px] font-bold">{handDetected ? '✋ HAND DETECTED' : '👀 SCANNING'}</span>
                                             </div>
                                         )}
                                         {selectedClass && (
-                                            <div style={{ position: 'absolute', bottom: '10px', left: '10px', padding: '4px 10px', borderRadius: '6px', background: selectedClass.color, color: '#fff', fontSize: '10px', fontWeight: 700, zIndex: 10 }}>
+                                            <div className="absolute bottom-2.5 left-2.5 py-1 px-2.5 rounded-md text-white text-[10px] font-bold z-10" style={{ background: selectedClass.color }}>
                                                 {selectedClass.name}
                                             </div>
                                         )}
@@ -794,17 +786,17 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                                             }
                                             if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files)
                                         }}
-                                        style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isDragging ? 'rgba(14,165,233,0.05)' : 'transparent' }}
+                                        className={`absolute inset-0 flex flex-col items-center justify-center ${isDragging ? 'bg-[#0ea5e9]/5' : 'bg-transparent'}`}
                                     >
-                                        <div style={{ pointerEvents: isDragging ? 'none' : 'auto', display: 'contents' }}>
-                                            <span style={{ fontSize: '3.5rem', marginBottom: '12px', transform: isDragging ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease' }}>{isDragging ? '📥' : '✋'}</span>
-                                            <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '12px' }}>{isDragging ? 'Drop Gesture Images Here!' : 'Camera is off'}</p>
-                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', opacity: isDragging ? 0.3 : 1, transition: 'opacity 0.2s ease' }}>
-                                                <button onClick={startCamera} style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #0ea5e9, #0284c7)', color: '#fff', boxShadow: '0 4px 14px rgba(14,165,233,0.35)' }}>
+                                        <div className={`contents ${isDragging ? 'pointer-events-none' : 'pointer-events-auto'}`}>
+                                            <span className={`text-[3.5rem] mb-3 transition-transform duration-200 ${isDragging ? 'scale-115' : 'scale-100'}`}>{isDragging ? '📥' : '✋'}</span>
+                                            <p className="text-sm font-bold text-white mb-3">{isDragging ? 'Drop Gesture Images Here!' : 'Camera is off'}</p>
+                                            <div className={`flex gap-2 items-center transition-opacity duration-200 ${isDragging ? 'opacity-30' : 'opacity-100'}`}>
+                                                <button onClick={startCamera} className="py-2.5 px-5 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)]">
                                                     📷 Turn On Camera
                                                 </button>
-                                                <span style={{ color: '#9ca3af', fontSize: '11px', fontWeight: 600 }}>or</span>
-                                                <button onClick={() => fileInputRef.current?.click()} style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: '2px solid #0ea5e9', cursor: 'pointer', background: '#fff', color: '#0ea5e9' }}>
+                                                <span className="text-gray-400 text-[11px] font-semibold">or</span>
+                                                <button onClick={() => fileInputRef.current?.click()} className="py-2.5 px-5 rounded-xl text-xs font-bold border-2 border-[#0ea5e9] cursor-pointer bg-white text-[#0ea5e9]">
                                                     📂 Upload
                                                 </button>
                                             </div>
@@ -816,17 +808,17 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         </div>
 
                         {/* Right half - Controls, Stats, Samples */}
-                        <div style={{ width: isMobile ? '100%' : '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '100%' }} className="neura-scrollbar">
+                        <div className="w-full lg:w-[280px] shrink-0 flex flex-col gap-2.5 overflow-y-auto max-h-full neura-scrollbar">
                             {/* Tips */}
-                            <div style={{ background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)', borderRadius: '12px', padding: '10px 14px', border: '1px solid rgba(14,165,233,0.1)' }}>
-                                <div className="flex items-center" style={{ gap: '6px', marginBottom: '6px' }}>
-                                    <div style={{ width: '20px', height: '20px', borderRadius: '5px', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', flexShrink: 0 }}>💡</div>
-                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tips for Hand Tracking</span>
+                            <div className="bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe] rounded-xl py-2.5 px-3.5 border border-[#0ea5e9]/10">
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                    <div className="w-5 h-5 rounded bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-[10px] shrink-0">💡</div>
+                                    <span className="text-[10px] font-bold text-[#0ea5e9] uppercase tracking-wider">Tips for Hand Tracking</span>
                                 </div>
-                                <div className="flex flex-wrap" style={{ gap: '4px 12px' }}>
+                                <div className="flex flex-wrap gap-1 gap-x-3">
                                     {['Keep hand in center', 'Spread fingers apart', 'Good lighting helps'].map((tip) => (
-                                        <span key={tip} className="flex items-center" style={{ gap: '4px', fontSize: '10px', color: '#4a4455' }}>
-                                            <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#0ea5e9', flexShrink: 0 }} />
+                                        <span key={tip} className="flex items-center gap-1 text-[10px] text-[#4a4455]">
+                                            <span className="w-0.75 h-0.75 rounded-full bg-[#0ea5e9] shrink-0" />
                                             {tip}
                                         </span>
                                     ))}
@@ -835,20 +827,16 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
 
                             {/* Controls */}
                             <div className="flex items-center gap-2">
-                                <button onClick={toggleCamera} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 16px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: cameraOn ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #0ea5e9, #0284c7)', color: '#fff', boxShadow: cameraOn ? '0 4px 14px rgba(239,68,68,0.35)' : '0 4px 14px rgba(14,165,233,0.35)' }}>
-                                    {cameraOn ? '⏹️ Stop' : '📷 Start'}
-                                </button>
-                                <button onClick={() => fileInputRef.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 16px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #0ea5e9, #0284c7)', color: '#fff', boxShadow: '0 4px 14px rgba(14,165,233,0.35)' }}>
-                                    📂 Upload
-                                </button>
+                                <button onClick={toggleCamera} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none cursor-pointer text-white ${cameraOn ? 'bg-gradient-to-br from-red-500 to-red-600 shadow-[0_4px_14px_rgba(239,68,68,0.35)]' : 'bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] shadow-[0_4px_14px_rgba(14,165,233,0.35)]'}`}>{cameraOn ? '⏹️ Stop' : '📷 Start'}</button>
+                                <button onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)]">📂 Upload</button>
                             </div>
 
                             {/* Augment toggle */}
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '12px', background: augmentMode ? 'linear-gradient(135deg, #d1fae5, #a7f3d0)' : 'rgba(255,255,255,0.85)', border: augmentMode ? '2px solid #006c44' : '1px solid #e5e7eb', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: augmentMode ? '#006c44' : '#4a4455', backdropFilter: 'blur(12px)', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
-                                <input type="checkbox" checked={augmentMode} onChange={(e) => setAugmentMode(e.target.checked)} style={{ accentColor: '#0ea5e9' }} />
+                            <label className={`flex items-center gap-2 py-2.5 px-3.5 rounded-xl border cursor-pointer text-[11px] font-bold backdrop-blur-md shadow-[0_1px_4px_rgba(0,0,0,0.03)] ${augmentMode ? 'bg-gradient-to-br from-emerald-100 to-emerald-200 border-2 border-[#006c44] text-[#006c44]' : 'bg-white/85 border-gray-200 text-[#4a4455]'}`}>
+                                <input type="checkbox" checked={augmentMode} onChange={(e) => setAugmentMode(e.target.checked)} className="accent-[#0ea5e9]" />
                                 <div>
-                                    <div style={{ fontWeight: 700, fontSize: '11px' }}>Augment (5x)</div>
-                                    <div style={{ fontSize: '9px', opacity: 0.7 }}>More varied training data</div>
+                                    <div className="font-bold text-[11px]">Augment (5x)</div>
+                                    <div className="text-[9px] opacity-70">More varied training data</div>
                                 </div>
                             </label>
 
@@ -858,46 +846,15 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                                     <button
                                         onClick={handleCapture}
                                         disabled={getCaptureDisabled()}
-                                        style={{
-                                            flex: 1,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '6px',
-                                            padding: '10px 16px',
-                                            borderRadius: '12px',
-                                            fontSize: '12px',
-                                            fontWeight: 700,
-                                            border: 'none',
-                                            cursor: getCaptureDisabled() ? 'not-allowed' : 'pointer',
-                                            background: 'linear-gradient(135deg, #0ea5e9, #0284c7)',
-                                            color: '#fff',
-                                            boxShadow: '0 4px 14px rgba(14,165,233,0.35)',
-                                            opacity: getCaptureDisabled() ? 0.5 : 1,
-                                        }}
+                                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)] ${getCaptureDisabled() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'}`}
                                     >
-                                        <span style={{ fontSize: '14px' }}>📸</span>
+                                        <span className="text-sm">📸</span>
                                         {getCaptureLabel()}
                                     </button>
                                     <button
                                         onClick={handleBatchCapture}
                                         disabled={batchCapturing || getCaptureDisabled()}
-                                        style={{
-                                            flex: 1,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '6px',
-                                            padding: '10px 16px',
-                                            borderRadius: '12px',
-                                            fontSize: '12px',
-                                            fontWeight: 700,
-                                            border: batchCapturing ? '2px solid #0ea5e9' : '2px solid rgba(14,165,233,0.3)',
-                                            cursor: batchCapturing || getCaptureDisabled() ? 'not-allowed' : 'pointer',
-                                            background: batchCapturing ? 'linear-gradient(135deg, #e0f2fe, #bae6fd)' : '#fff',
-                                            color: '#0ea5e9',
-                                            opacity: batchCapturing || getCaptureDisabled() ? 0.5 : 1,
-                                        }}
+                                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-2 ${batchCapturing ? 'border-[#0ea5e9] bg-gradient-to-br from-sky-100 to-sky-200 text-[#0ea5e9]' : 'border-[#0ea5e9]/30 bg-white text-[#0ea5e9]'} ${batchCapturing || getCaptureDisabled() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'}`}
                                     >
                                         {batchCapturing ? `⏳ ${batchCountdown}` : '📸 Batch (5)'}
                                     </button>
@@ -905,30 +862,30 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                             )}
 
                             {/* Stats */}
-                            <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
-                                <div className="flex justify-between" style={{ marginBottom: '6px' }}>
-                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📊 Total Samples</span>
-                                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#0ea5e9' }}>{mode.getTotalSamples()}</span>
+                            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+                                <div className="flex justify-between mb-1.5">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">📊 Total Samples</span>
+                                    <span className="text-sm font-extrabold text-[#0ea5e9]">{mode.getTotalSamples()}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎯 Classes</span>
-                                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#0ea5e9' }}>{mode.project?.classes.length || 0}</span>
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">🎯 Classes</span>
+                                    <span className="text-sm font-extrabold text-[#0ea5e9]">{mode.project?.classes.length || 0}</span>
                                 </div>
                             </div>
 
                             {/* Samples */}
                             {selectedClass && selectedClass.samples.length > 0 && (
-                                <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', maxHeight: '200px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                                    <div className="flex items-center justify-between" style={{ marginBottom: '8px', flexShrink: 0 }}>
-                                        <div className="flex items-center" style={{ gap: '6px' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: selectedClass.color }} />
-                                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e' }}>{selectedClass.name}</span>
+                                <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)] max-h-[200px] flex flex-col overflow-hidden">
+                                    <div className="flex items-center justify-between mb-2 shrink-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full" style={{ background: selectedClass.color }} />
+                                            <span className="text-[11px] font-bold text-[#131b2e]">{selectedClass.name}</span>
                                         </div>
-                                        <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '5px', background: atSampleLimit ? '#fef3c7' : '#f0f9ff', color: atSampleLimit ? '#c32c00' : '#0ea5e9' }}>
+                                        <span className={`text-[10px] font-bold py-0.5 px-1.5 rounded-md ${atSampleLimit ? 'bg-amber-100 text-[#c32c00]' : 'bg-sky-50 text-[#0ea5e9]'}`}>
                                             {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}
                                         </span>
                                     </div>
-                                    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }} className="neura-scrollbar">
+                                    <div className="flex-1 min-h-0 overflow-y-auto neura-scrollbar">
                                         <SampleGrid samples={selectedClass.samples} type="keypoints" onRemove={(id) => handleRemoveSample(selectedClass.id, id)} />
                                     </div>
                                 </div>
@@ -940,8 +897,8 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
 
             {/* TRAIN MODE */}
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
-                    <div className="w-full" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar py-3 px-5">
+                    <div className="w-full flex-1 min-h-0 flex flex-col">
                         <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} sampleType="poses" mode={mode.mode} onModeChange={mode.setMode} workflowType="pose" />
                     </div>
                 </div>
@@ -949,7 +906,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar py-3 px-5">
                     {/* Header + Workflow - centered */}
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
@@ -960,7 +917,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                             <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
                         </div>
                         {mode.project && mode.project.classes.some(c => c.samples.length < 2) && (
-                            <div className="w-full max-w-[720px] mt-2 px-4 py-3 rounded-xl text-xs font-bold text-center" style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)', color: '#92400e', border: '1px solid #fbbf24' }}>
+                            <div className="w-full max-w-[720px] mt-2 px-4 py-3 rounded-xl text-xs font-bold text-center bg-gradient-to-br from-amber-100 to-amber-200 text-amber-900 border border-amber-400">
                                 ⚠️ Some classes have fewer than 2 samples — predictions may be unreliable. Go back to Collect and add more samples.
                             </div>
                         )}
@@ -972,11 +929,10 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                             </div>
                             <input type="range" min="0" max="100" value={Math.round(confidenceThreshold * 100)}
                                 onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
-                                className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                                style={{ background: `linear-gradient(to right, #0ea5e9 ${Math.round(confidenceThreshold * 100)}%, #e5e7eb ${Math.round(confidenceThreshold * 100)}%)` }} />
+                                className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-[#0ea5e9]" />
                         </div>
                     </div>
-                    <div className="w-full" style={{ marginTop: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                    <div className="w-full mt-4 flex-1 min-h-0 flex flex-col">
                         <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} testImage={testImage} videoRef={videoRef} canvasRef={canvasRef} onToggleCamera={toggleCamera} onUpload={() => testFileInputRef.current?.click()} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={handleExportTestReport} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
                     </div>
                     <input ref={testFileInputRef} type="file" accept="image/*" onChange={handleTestUpload} className="hidden" />

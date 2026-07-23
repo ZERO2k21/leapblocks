@@ -41,73 +41,6 @@ const SOLID_COLORS = [
     { name: 'Pink', color: '#F48FB1' },
 ];
 
-const OVERLAY_STYLE = {
-    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-    background: 'rgba(0,0,0,0.55)', zIndex: 3000,
-    display: 'flex', justifyContent: 'center', alignItems: 'center',
-    backdropFilter: 'blur(4px)',
-};
-
-const MODAL_STYLE = {
-    background: 'white', width: '100vw', height: '100vh',
-    display: 'flex', flexDirection: 'column', overflow: 'hidden',
-};
-
-const HEADER_STYLE = {
-    background: 'linear-gradient(135deg, #7B4FC4 0%, #9B6FE4 100%)',
-    padding: '16px 24px',
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-};
-
-const CLOSE_BTN_STYLE = {
-    background: 'rgba(255,255,255,0.2)', border: 'none',
-    borderRadius: '50%', width: '32px', height: '32px',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    cursor: 'pointer', transition: 'all 0.15s',
-};
-
-const TAB_BAR_STYLE = { display: 'flex', borderBottom: '1px solid #eee', background: '#fafafa' };
-
-const CONTENT_STYLE = { padding: '20px', overflowY: 'auto', flex: 1 };
-
-const PAINT_CARD_STYLE = {
-    display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px',
-    marginBottom: '16px', background: 'linear-gradient(135deg, #7B4FC4 0%, #9B6FE4 100%)',
-    borderRadius: '12px', cursor: 'pointer', transition: 'all 0.15s', color: 'white',
-};
-
-const GRID_3_COL = { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' };
-
-const GRID_4_COL = { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' };
-
-const PREVIEW_BOX_STYLE = { width: '100%', paddingTop: '75%', position: 'relative' };
-
-const IMG_STYLE = {
-    position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover',
-};
-
-const CARD_LABEL_STYLE = { padding: '8px 10px', fontSize: '12px', fontWeight: 700, color: '#444', textAlign: 'center', background: 'white' };
-
-const COLOR_SWATCH_STYLE = { width: '100%', paddingTop: '75%', borderRadius: '10px 10px 0 0' };
-
-const COLOR_LABEL_STYLE = { padding: '8px', fontSize: '11px', fontWeight: 700, color: '#555', textAlign: 'center', background: 'white' };
-
-const getBackdropCardStyle = (isHovered) => ({
-    cursor: 'pointer', borderRadius: '12px', overflow: 'hidden',
-    border: isHovered ? '3px solid #7B4FC4' : '2px solid #e0e0e0',
-    transition: 'all 0.2s',
-    transform: isHovered ? 'scale(1.03)' : 'scale(1)',
-    boxShadow: isHovered ? '0 6px 20px rgba(123,79,196,0.25)' : '0 2px 6px rgba(0,0,0,0.06)',
-});
-
-const getTabButtonStyle = (isActive) => ({
-    flex: 1, padding: '12px 16px',
-    background: isActive ? 'white' : 'transparent', border: 'none',
-    borderBottom: isActive ? '3px solid #7B4FC4' : '3px solid transparent',
-    color: isActive ? '#7B4FC4' : '#999',
-    fontWeight: 700, fontSize: '14px', cursor: 'pointer', transition: 'all 0.15s',
-});
-
 const TABS = [
     { id: 'backdrops', label: '🖼️ Backdrops' },
     { id: 'colors', label: '🎨 Solid Colors' },
@@ -117,35 +50,36 @@ function ColorSwatch({ color, name, onSelect }) {
     return (
         <div
             onClick={onSelect}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            style={{
-                cursor: 'pointer', borderRadius: '12px', overflow: 'hidden',
-                border: '2px solid #e0e0e0', transition: 'all 0.2s',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
-            }}
+            className="cursor-pointer rounded-xl overflow-hidden border-2 border-slate-200 transition-all duration-200 shadow-[0_2px_6px_rgba(0,0,0,0.06)] hover:scale-105"
         >
-            <div style={{ ...COLOR_SWATCH_STYLE, background: color, border: color === '#FFFFFF' ? '1px solid #eee' : 'none' }} />
-            <div style={COLOR_LABEL_STYLE}>{name}</div>
+            <div className={`w-full pt-[75%] rounded-t-xl ${color === '#FFFFFF' ? 'border border-slate-100' : ''}`} style={{ background: color }} />
+            <div className="p-2 text-[11px] font-bold text-slate-600 text-center bg-white">{name}</div>
         </div>
     );
 }
 
 function BackdropCard({ bg, hoveredId, onSelect, onHover }) {
+    const isHovered = hoveredId === bg.id;
     return (
         <div
             onClick={() => onSelect(bg.name, bg.src)}
             onMouseEnter={() => onHover(bg.id)}
             onMouseLeave={() => onHover(null)}
-            style={getBackdropCardStyle(hoveredId === bg.id)}
+            className={`cursor-pointer rounded-xl overflow-hidden transition-all duration-200 ${
+                isHovered
+                    ? 'border-[3px] border-[#7B4FC4] scale-[1.03] shadow-[0_6px_20px_rgba(123,79,196,0.25)]'
+                    : 'border-2 border-slate-200 scale-100 shadow-[0_2px_6px_rgba(0,0,0,0.06)]'
+            }`}
         >
-            <div style={{ ...PREVIEW_BOX_STYLE, background: bg.color }}>
+            <div className="w-full pt-[75%] relative" style={{ background: bg.color }}>
                 <img
-                    src={bg.src} alt={bg.name} style={IMG_STYLE}
+                    src={bg.src}
+                    alt={bg.name}
+                    className="absolute inset-0 w-full h-full object-cover"
                     onError={e => { e.currentTarget.style.display = 'none'; }}
                 />
             </div>
-            <div style={CARD_LABEL_STYLE}>{bg.name}</div>
+            <div className="p-2 px-2.5 text-xs font-bold text-slate-700 text-center bg-white">{bg.name}</div>
         </div>
     );
 }
@@ -155,54 +89,54 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }) {
     const [hoveredId, setHoveredId] = useState(null);
 
     return (
-        <div style={OVERLAY_STYLE}>
-            <div style={MODAL_STYLE}>
-                <div style={HEADER_STYLE}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="fixed inset-0 w-full h-full bg-black/55 z-[3000] flex justify-center items-center backdrop-blur-xs">
+            <div className="bg-white w-screen h-screen flex flex-col overflow-hidden">
+                <div className="bg-gradient-to-br from-[#7B4FC4] to-[#9B6FE4] p-4 px-6 flex justify-between items-center">
+                    <div className="flex items-center gap-2.5">
                         <Image size={22} color="white" />
-                        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'white' }}>
+                        <h2 className="m-0 text-lg font-bold text-white">
                             Choose a Backdrop
                         </h2>
                     </div>
                     <button
                         onClick={onClose}
-                        style={CLOSE_BTN_STYLE}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                        className="bg-white/20 hover:bg-white/30 border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer transition-all duration-150"
                     >
                         <X size={18} color="white" />
                     </button>
                 </div>
 
-                <div style={TAB_BAR_STYLE}>
+                <div className="flex border-b border-slate-100 bg-slate-50">
                     {TABS.map(t => (
                         <button
                             key={t.id}
                             onClick={() => setTab(t.id)}
-                            style={getTabButtonStyle(tab === t.id)}
+                            className={`flex-1 p-3 px-4 border-none border-b-[3px] font-bold text-sm cursor-pointer transition-all duration-150 ${
+                                tab === t.id
+                                    ? 'bg-white border-[#7B4FC4] text-[#7B4FC4]'
+                                    : 'bg-transparent border-transparent text-slate-400'
+                            }`}
                         >
                             {t.label}
                         </button>
                     ))}
                 </div>
 
-                <div style={CONTENT_STYLE}>
+                <div className="p-5 overflow-y-auto flex-1">
                     {tab === 'backdrops' && (
                         <>
                             <div
                                 onClick={onPaint}
-                                style={PAINT_CARD_STYLE}
-                                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-                                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                className="flex items-center gap-2.5 p-3 px-4 mb-4 bg-gradient-to-br from-[#7B4FC4] to-[#9B6FE4] rounded-xl cursor-pointer transition-all duration-150 text-white hover:scale-[1.02]"
                             >
                                 <Paintbrush size={20} />
                                 <div>
-                                    <div style={{ fontWeight: 700, fontSize: '14px' }}>Paint Custom Backdrop</div>
-                                    <div style={{ fontSize: '11px', opacity: 0.8 }}>Draw your own scene</div>
+                                    <div className="font-bold text-sm">Paint Custom Backdrop</div>
+                                    <div className="text-xs opacity-80">Draw your own scene</div>
                                 </div>
                             </div>
 
-                            <div style={GRID_3_COL}>
+                            <div className="grid grid-cols-3 gap-3.5">
                                 {BACKDROP_LIBRARY.map(bg => (
                                     <BackdropCard
                                         key={bg.id}
@@ -217,7 +151,7 @@ export default function BackdropChooser({ onSelect, onPaint, onClose }) {
                     )}
 
                     {tab === 'colors' && (
-                        <div style={GRID_4_COL}>
+                        <div className="grid grid-cols-4 gap-3.5">
                             {SOLID_COLORS.map(c => (
                                 <ColorSwatch
                                     key={c.name}

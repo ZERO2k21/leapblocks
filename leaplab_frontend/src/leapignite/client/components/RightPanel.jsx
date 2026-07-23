@@ -11,166 +11,6 @@ import Logo from '../../../components/Logo';
 import { showToast } from './Toast';
 import ActionIcon from './ActionIcon';
 
-const styles = {
-    panel: {
-        width: "40%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        borderLeft: "1px solid #e4e7ed",
-        overflow: "hidden",
-        position: "relative",
-        background: "#f8f9fc",
-    },
-    gridOverlay: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        backgroundImage: "linear-gradient(to right, #d5d5d5 1px, transparent 1px), linear-gradient(to bottom, #d5d5d5 1px, transparent 1px)",
-        backgroundSize: "calc(100% / 20) calc(100% / 20)",
-        pointerEvents: "none",
-        zIndex: 2,
-    },
-    fullscreenTopbar: {
-        position: 'absolute', top: 0, left: 0, width: '100%', height: '64px',
-        background: 'linear-gradient(135deg, #0a015a 0%, #080a25 100%)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 16px', zIndex: 100,
-    },
-    spritesPanel: {
-        background: "#ffffff",
-        borderTop: "1px solid #e8ecf2",
-        display: "flex",
-        alignItems: "center",
-        padding: "12px 16px",
-        gap: "10px",
-        overflowX: "auto",
-        minHeight: "106px",
-    },
-    scenesPanel: {
-        background: "#ffffff",
-        borderTop: "1px solid #e8ecf2",
-        display: "flex",
-        alignItems: "center",
-        padding: "12px 16px",
-        gap: "10px",
-        overflowX: "auto",
-        minHeight: "106px",
-    },
-    actionBar: {
-        background: "#ffffff",
-        borderTop: "1px solid #e8ecf2",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "12px 16px",
-        gap: "14px",
-        boxShadow: "0 -1px 4px rgba(0,0,0,0.02)",
-    },
-    addSprite: {
-        width: "52px",
-        height: "52px",
-        background: "#f8f9fc",
-        border: "2px dashed #d0d5dd",
-        borderRadius: "12px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        flexShrink: 0,
-        position: "relative",
-        transition: "border-color 0.2s, background 0.2s",
-    },
-    addSpriteBadge: {
-        position: "absolute", top: "-4px", right: "-4px",
-        width: "18px", height: "18px", borderRadius: "50%",
-        background: "#7B4FC4", color: "white",
-        fontSize: "12px", fontWeight: "bold",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        lineHeight: 1, boxShadow: "0 1px 4px rgba(123,79,196,0.3)",
-    },
-    addScene: {
-        width: "56px",
-        height: "84px",
-        background: "#f8f9fc",
-        border: "2px dashed #d0d5dd",
-        borderRadius: "12px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        flexShrink: 0,
-        position: "relative",
-        transition: "border-color 0.2s, background 0.2s, box-shadow 0.2s",
-        gap: "4px",
-    },
-    addSceneBadge: {
-        position: "absolute", top: "-5px", right: "-5px",
-        width: "20px", height: "20px", borderRadius: "50%",
-        background: "#7B4FC4", color: "white",
-        fontSize: "13px", fontWeight: "bold",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        lineHeight: 1, boxShadow: "0 1px 4px rgba(123,79,196,0.3)",
-    },
-    crosshairV: {
-        position: "absolute",
-        width: "1px",
-        height: "100%",
-        background: "rgba(123,79,196,0.35)",
-        pointerEvents: "none",
-        zIndex: 40,
-    },
-    crosshairH: {
-        position: "absolute",
-        width: "100%",
-        height: "1px",
-        background: "rgba(123,79,196,0.35)",
-        pointerEvents: "none",
-        zIndex: 40,
-    },
-    coordLabel: {
-        position: "absolute",
-        transform: "translate(8px, -28px)",
-        background: "linear-gradient(135deg, #7B4FC4, #6B3FAF)",
-        color: "white",
-        fontSize: "10px",
-        fontWeight: "700",
-        padding: "3px 8px",
-        borderRadius: "6px",
-        pointerEvents: "none",
-        zIndex: 45,
-        whiteSpace: "nowrap",
-        boxShadow: "0 2px 8px rgba(123,79,196,0.3)",
-    },
-    yAxis: {
-        width: "24px",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "6px 0",
-        fontSize: "9px",
-        color: "#999",
-        background: "#f0f2f8",
-        borderRight: "1px solid #e4e7ed",
-    },
-    xAxis: {
-        height: "20px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "0 6px",
-        fontSize: "9px",
-        color: "#999",
-        background: "#f0f2f8",
-        borderTop: "1px solid #e4e7ed",
-    },
-};
-
 export default function RightPanel({
     children,
     sprites = [],
@@ -204,65 +44,69 @@ export default function RightPanel({
 }) {
 
     const renderYAxisLabels = () => (
-        <div style={styles.yAxis}>
+        <div className="w-6 flex flex-col justify-between items-center py-1.5 text-[9px] text-gray-400 bg-[#f0f2f8] border-r border-[#e4e7ed]">
             {Array.from({ length: 23 }, (_, i) => 23 - i).map(n => {
                 const isHighlighted = isDraggingSprite && spriteGridY !== null && Math.round(spriteGridY) === n;
                 return (
-                    <span key={n} style={{
-                        color: isHighlighted ? "#fff" : (n % 5 === 0 ? "#7B4FC4" : "#bbb"),
-                        fontWeight: isHighlighted ? "800" : "normal",
-                        fontSize: isHighlighted ? "11px" : "9px",
-                        background: isHighlighted ? "#7B4FC4" : "transparent",
-                        borderRadius: "4px",
-                        padding: isHighlighted ? "1px 4px" : "0",
-                        transition: "all 0.12s",
-                    }}>{n}</span>
+                    <span
+                        key={n}
+                        style={{ background: isHighlighted ? "#7B4FC4" : "transparent" }}
+                        className={`transition-all rounded px-1 ${
+                            isHighlighted
+                                ? "text-white font-extrabold text-[11px] py-0.5"
+                                : (n % 5 === 0 ? "text-[#7B4FC4] font-normal text-[9px]" : "text-gray-400 font-normal text-[9px]")
+                        }`}
+                    >
+                        {n}
+                    </span>
                 );
             })}
         </div>
     );
 
     const renderXAxisLabels = () => (
-        <div style={styles.xAxis}>
+        <div className="h-5 flex justify-between items-center px-1.5 text-[9px] text-gray-400 bg-[#f0f2f8] border-t border-[#e4e7ed]">
             {Array.from({ length: 21 }, (_, i) => i).map(n => {
                 const isHighlighted = isDraggingSprite && spriteGridX !== null && Math.round(spriteGridX) === n;
                 return (
-                    <span key={n} style={{
-                        color: isHighlighted ? "#fff" : (n % 5 === 0 ? "#7B4FC4" : "#bbb"),
-                        fontWeight: isHighlighted ? "800" : "normal",
-                        fontSize: isHighlighted ? "11px" : "9px",
-                        minWidth: "14px",
-                        textAlign: "center",
-                        background: isHighlighted ? "#7B4FC4" : "transparent",
-                        borderRadius: "4px",
-                        padding: isHighlighted ? "1px 4px" : "0",
-                        transition: "all 0.12s",
-                    }}>{n}</span>
+                    <span
+                        key={n}
+                        style={{ background: isHighlighted ? "#7B4FC4" : "transparent" }}
+                        className={`min-w-[14px] text-center transition-all rounded px-1 ${
+                            isHighlighted
+                                ? "text-white font-extrabold text-[11px] py-0.5"
+                                : (n % 5 === 0 ? "text-[#7B4FC4] font-normal text-[9px]" : "text-gray-400 font-normal text-[9px]")
+                        }`}
+                    >
+                        {n}
+                    </span>
                 );
             })}
         </div>
     );
 
-    const renderGridLines = () => showGrid && <div style={styles.gridOverlay} />;
+    const renderGridLines = () => showGrid && (
+        <div className="absolute inset-0 w-full h-full bg-[linear-gradient(to_right,#d5d5d5_1px,transparent_1px),linear-gradient(to_bottom,#d5d5d5_1px,transparent_1px)] bg-[length:calc(100%/20)_calc(100%/20)] pointer-events-none z-[2]" />
+    );
 
     const renderFullscreenOverlay = () => isFullscreen && (
-        <div style={styles.fullscreenTopbar}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                <button onClick={onFullscreen} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    <div style={{ width: '42px', height: '42px', background: 'white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div className="absolute top-0 left-0 w-full h-[64px] bg-gradient-to-r from-[#0a015a] to-[#080a25] border-b border-white/10 flex items-center justify-between px-4 z-[100]">
+            <div className="flex items-center gap-5">
+                <button onClick={onFullscreen} className="bg-transparent border-none cursor-pointer p-0">
+                    <div className="w-10.5 h-10.5 bg-white rounded-lg flex items-center justify-center shadow-xs">
                         <Minimize size={22} color="#313848ff" strokeWidth={2.5} />
                     </div>
                 </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="flex items-center gap-2.5">
                     <Logo height={32} />
-                    <div style={{ display: 'flex', flexDirection: 'column', borderLeft: '1.5px solid #cbd5e1', paddingLeft: '12px' }}>
-                        <span style={{ color: '#e8cd00ff', fontSize: '12px', fontWeight: 800, letterSpacing: '0.1em' }}>LEAPBLOCKS</span>
-                        <span style={{ color: '#c9c9c9ff', fontSize: '13px', fontWeight: 700, lineHeight: 1 }}>Junior</span>
+                    <div className="flex flex-col border-l border-slate-300 pl-3">
+                        <span className="text-[#e8cd00ff] text-xs font-extrabold tracking-wider">LEAPBLOCKS</span>
+                        <span className="text-[#c9c9c9ff] text-[13px] font-bold leading-none">Junior</span>
                     </div>
                 </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="flex items-center gap-2.5">
                 {isRunning ? (
                     <ActionIcon icon={<Square size={20} fill="#fff" stroke="#fff" />} label="Stop" bgColor="#ef4444" hoverBg="#dc2626" onClick={onStop} active activeBg="#ef4444" size={42} />
                 ) : (
@@ -274,12 +118,12 @@ export default function RightPanel({
                 <ActionIcon icon={<Grid3X3 size={20} color={showGrid ? "#fff" : "#e0e0e0ff"} strokeWidth={2} />} label="Grid" onClick={onToggleGrid} outlineColor="transparent" active={showGrid} activeBg="#8b5cf6" size={42} />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="flex items-center gap-2.5">
                 <ActionIcon icon={<Circle size={22} fill="#c9c9c9ff" color="#c9c9c9ff" />} label="Record" onClick={() => showToast('Record feature coming soon', 'info')} outlineColor="transparent" size={42} />
                 <ActionIcon icon={<ScanFace size={22} color="#c9c9c9ff" />} label="Face Tracking" onClick={() => showToast('Face tracking coming soon', 'info')} outlineColor="#c9c9c9ff" size={42} />
                 <ActionIcon icon={<ImageIcon size={22} color="#c9c9c9ff" />} label="Add Image/Backdrop" onClick={() => showToast('Images coming soon', 'info')} outlineColor="#c9c9c9ff" size={42} />
                 <ActionIcon icon={<MicOff size={20} color="#c9c9c9ff" strokeWidth={2.5} />} label="Mic Off" onClick={() => showToast('Mic toggle coming soon', 'info')} outlineColor="transparent" size={42} />
-                <div style={{ background: '#c9c9c9ff', color: 'white', fontWeight: 600, fontSize: '15px', padding: '6px 18px', borderRadius: '25px', letterSpacing: '1px', marginLeft: '4px' }}>
+                <div className="bg-[#c9c9c9ff] text-white font-semibold text-[15px] px-4.5 py-1.5 rounded-full tracking-wider ml-1">
                     0 : 00
                 </div>
             </div>
@@ -288,9 +132,9 @@ export default function RightPanel({
 
     const renderCrosshair = () => isDraggingSprite && spriteGridX !== null && spriteGridY !== null && showGrid && (
         <>
-            <div style={{ ...styles.crosshairV, left: `${(spriteGridX / 20) * 100}%` }} />
-            <div style={{ ...styles.crosshairH, top: `${((20 - spriteGridY) / 20) * 100}%` }} />
-            <div style={{ ...styles.coordLabel, left: `${(spriteGridX / 20) * 100}%`, top: `${((20 - spriteGridY) / 20) * 100}%` }}>
+            <div style={{ left: `${(spriteGridX / 20) * 100}%` }} className="absolute w-px h-full bg-[#7B4FC4]/35 pointer-events-none z-[40]" />
+            <div style={{ top: `${((20 - spriteGridY) / 20) * 100}%` }} className="absolute w-full h-px bg-[#7B4FC4]/35 pointer-events-none z-[40]" />
+            <div style={{ left: `${(spriteGridX / 20) * 100}%`, top: `${((20 - spriteGridY) / 20) * 100}%` }} className="absolute translate-x-2 -translate-y-7 bg-gradient-to-r from-[#7B4FC4] to-[#6B3FAF] text-white text-[10px] font-bold px-2 py-0.5 rounded-md pointer-events-none z-[45] whitespace-nowrap shadow-md shadow-purple-600/30">
                 ({Math.round(spriteGridX)}, {Math.round(spriteGridY)})
             </div>
         </>
@@ -299,31 +143,27 @@ export default function RightPanel({
     const renderAddSpriteButton = () => (
         <div
             onClick={onAddSprite}
-            style={styles.addSprite}
             title="Add Sprite"
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#7B4FC4"; e.currentTarget.style.background = "#f3effa"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#d0d5dd"; e.currentTarget.style.background = "#f8f9fc"; }}
+            className="w-[52px] h-[52px] bg-[#f8f9fc] border-2 border-dashed border-[#d0d5dd] rounded-xl flex items-center justify-center cursor-pointer shrink-0 relative transition-colors hover:border-[#7B4FC4] hover:bg-[#f3effa]"
         >
-            <span style={{ fontSize: "26px", filter: "grayscale(0.5)" }}>🤖</span>
-            <span style={styles.addSpriteBadge}>+</span>
+            <span className="text-[26px] filter grayscale-50">🤖</span>
+            <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-[#7B4FC4] text-white text-xs font-bold flex items-center justify-center leading-none shadow-md shadow-purple-600/30">+</span>
         </div>
     );
 
     const renderAddSceneButton = () => (
         <div
             onClick={onAddScene}
-            style={styles.addScene}
             title="Add Scene"
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#7B4FC4"; e.currentTarget.style.background = "#f3effa"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(123,79,196,0.15)"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#d0d5dd"; e.currentTarget.style.background = "#f8f9fc"; e.currentTarget.style.boxShadow = "none"; }}
+            className="w-[56px] h-[84px] bg-[#f8f9fc] border-2 border-dashed border-[#d0d5dd] rounded-xl flex flex-col items-center justify-center cursor-pointer shrink-0 relative transition-all gap-1 hover:border-[#7B4FC4] hover:bg-[#f3effa] hover:shadow-md hover:shadow-purple-600/15"
         >
-            <span style={{ fontSize: "24px" }}>🎬</span>
-            <span style={styles.addSceneBadge}>+</span>
+            <span className="text-2xl">🎬</span>
+            <span className="absolute -top-1.25 -right-1.25 w-5 h-5 rounded-full bg-[#7B4FC4] text-white text-[13px] font-bold flex items-center justify-center leading-none shadow-md shadow-purple-600/30">+</span>
         </div>
     );
 
     const renderSpritesPanel = () => (
-        <div style={styles.spritesPanel} className='slim-scrollbar'>
+        <div className="bg-white border-t border-[#e8ecf2] flex items-center p-3 px-4 gap-2.5 overflow-x-auto min-h-[106px] slim-scrollbar">
             {renderAddSpriteButton()}
             {sprites.map(sprite => (
                 <SpriteCard
@@ -342,7 +182,7 @@ export default function RightPanel({
     );
 
     const renderScenesPanel = () => (
-        <div style={styles.scenesPanel} className='slim-scrollbar'>
+        <div className="bg-white border-t border-[#e8ecf2] flex items-center p-3 px-4 gap-2.5 overflow-x-auto min-h-[106px] slim-scrollbar">
             {renderAddSceneButton()}
             {scenes.map(scene => (
                 <SceneCard
@@ -358,7 +198,7 @@ export default function RightPanel({
     );
 
     const renderActionBar = () => (
-        <div style={styles.actionBar}>
+        <div className="bg-white border-t border-[#e8ecf2] flex items-center justify-center p-3 px-4 gap-3.5 shadow-[0_-1px_4px_rgba(0,0,0,0.02)]">
             {isRunning ? (
                 <ActionIcon
                     icon={<Square size={22} fill="#fff" stroke="#fff" />}
@@ -413,20 +253,14 @@ export default function RightPanel({
     );
 
     return (
-        <div style={styles.panel}>
-            <div style={{ flex: 1, position: "relative", display: "flex", overflow: "hidden", background: "#f0f2f8" }}>
+        <div className="w-2/5 h-full flex flex-col border-l border-[#e4e7ed] overflow-hidden relative bg-[#f8f9fc]">
+            <div className="flex-1 relative flex overflow-hidden bg-[#f0f2f8]">
                 {showGrid && renderYAxisLabels()}
 
-                <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                    <div style={{
-                        flex: 1,
-                        position: "relative",
-                        background: "#ffffff",
-                        border: showGrid ? "1px solid #e4e7ed" : "none",
-                        borderRadius: "4px",
-                        overflow: "hidden",
-                        margin: showGrid ? "6px 6px 0 0" : "0",
-                    }}>
+                <div className="flex-1 flex flex-col">
+                    <div className={`flex-1 relative bg-white rounded-xs overflow-hidden ${
+                        showGrid ? 'border border-[#e4e7ed] m-1.5 mb-0 ml-0' : 'border-none m-0'
+                    }`}>
                         {renderGridLines()}
                         {renderFullscreenOverlay()}
                         {children}

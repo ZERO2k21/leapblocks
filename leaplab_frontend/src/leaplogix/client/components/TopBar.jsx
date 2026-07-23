@@ -19,7 +19,6 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     const menuRef = useRef(null);
     const onCloseRef = useRef(onClose);
     onCloseRef.current = onClose;
-    const [isHovered, setIsHovered] = useState(false);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -31,52 +30,35 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
     }, [isOpen]);
 
     return (
-        <div ref={menuRef} style={{ position: 'relative' }}>
+        <div ref={menuRef} className="relative">
             <button
                 onClick={onToggle}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-                style={{
-                    display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px',
-                    border: 'none', color: '#fff', fontSize: 15, fontWeight: 500,
-                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif", cursor: 'pointer',
-                    borderRadius: 6, transition: 'all 0.2s ease',
-                    background: isOpen
-                        ? 'rgba(255,255,255,0.18)'
-                        : (isHovered ? 'rgba(255,255,255,0.1)' : 'transparent'),
-                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 border-none text-white text-[15px] font-medium font-sans cursor-pointer rounded-md transition-all duration-200 ${
+                    isOpen ? 'bg-white/18' : 'bg-transparent hover:bg-white/10'
+                }`}
             >
-                {Icon && <Icon size={14} strokeWidth={2.2} style={{ opacity: 0.9 }} />}
+                {Icon && <Icon size={14} strokeWidth={2.2} className="opacity-90" />}
                 {label}
-                <ChevronDown size={12} strokeWidth={2.5} style={{ opacity: 0.5, transition: 'transform 0.2s ease', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                <ChevronDown size={12} strokeWidth={2.5} className={`opacity-50 transition-transform duration-200 ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
             </button>
             {isOpen && (
-                <div style={{
-                    position: 'absolute', top: 'calc(100% + 6px)', left: 0,
-                    background: '#1e1e2e', border: '1px solid rgba(124,58,237,0.3)',
-                    borderRadius: 10, boxShadow: '0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
-                    minWidth: 220,
-                    overflow: 'hidden', zIndex: 1000, padding: '6px 0',
-                }}>
+                <div className="absolute top-[calc(100%+6px)] left-0 bg-[#1e1e2e] border border-purple-600/30 rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.05)] min-w-[220px] overflow-hidden z-[1000] py-1.5">
                     {items.map((item, idx) => (
                         item.divider ? (
-                            <div key={idx} style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 12px' }} />
+                            <div key={idx} className="h-px bg-white/10 my-1 mx-3" />
                         ) : (
-                            <button key={idx} onClick={() => { item.onClick?.(); onClose(); }} disabled={item.disabled}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                                    padding: '8px 14px', border: 'none', background: 'transparent',
-                                    fontSize: 13, fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                                    fontWeight: 500, textAlign: 'left', cursor: item.disabled ? 'not-allowed' : 'pointer',
-                                    color: item.disabled ? '#666' : '#e0e0e0', transition: 'all 0.15s ease',
-                                }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = item.disabled ? '#666' : '#e0e0e0'; }}
+                            <button
+                                key={idx}
+                                onClick={() => { item.onClick?.(); onClose(); }}
+                                disabled={item.disabled}
+                                className={`flex items-center gap-2.5 w-full px-3.5 py-2 border-none bg-transparent text-[13px] font-sans font-medium text-left transition-all duration-150 ${
+                                    item.disabled ? 'cursor-not-allowed text-gray-500' : 'cursor-pointer text-gray-200 hover:bg-purple-600/25 hover:text-white'
+                                }`}
                             >
                                 {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
-                                <span style={{ flex: 1 }}>{item.label}</span>
+                                <span className="flex-1">{item.label}</span>
                                 {item.shortcut && (
-                                    <span style={{ fontSize: 10, color: '#888', background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace' }}>{item.shortcut}</span>
+                                    <span className="text-[10px] text-gray-400 bg-white/10 px-1.5 py-0.5 rounded font-mono">{item.shortcut}</span>
                                 )}
                             </button>
                         )
@@ -120,42 +102,27 @@ export default function TopBar() {
 
     return (
         <>
-        <header style={{
-            position: "sticky", top: 0, height: 68, background: "linear-gradient(135deg, #0a0a1f 0%, #0a015a 55%, #080a25 100%)",
-            display: "flex", alignItems: "center", padding: "0 28px",
-            justifyContent: "space-between", color: "#fff", zIndex: 1000, flexShrink: 0, flexWrap: "nowrap",
-            boxShadow: '0 4px 20px rgba(8,10,37,0.5), inset 0 -1px 0 rgba(255,255,255,0.06)',
-            borderBottom: '1px solid rgba(100,180,255,0.08)',
-        }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
+        <header className="sticky top-0 h-[68px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] flex items-center px-7 justify-between text-white z-[1000] shrink-0 flex-nowrap shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] border-b border-sky-400/10">
+            <div className="flex items-center gap-2.25 shrink-0">
                 <button onClick={() => {
                     sessionStorage.setItem('landingActiveTab', 'modules');
                     sessionStorage.removeItem('myProjectsSelectedMode');
                     ctx.onBack();
-                }} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: 40, height: 40, background: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12,
-                    color: '#fff', cursor: 'pointer', transition: 'all 0.2s ease', flexShrink: 0,
-                }} title="Back to Home">
+                }} className="flex items-center justify-center w-10 h-10 bg-white/10 border border-white/10 rounded-xl text-white cursor-pointer transition-all shrink-0 hover:bg-white/20" title="Back to Home">
                     <Home size={20} strokeWidth={2.2} />
                 </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0, cursor: 'pointer' }} onClick={() => {
+                <div className="flex items-center gap-2.25 shrink-0 cursor-pointer" onClick={() => {
                     sessionStorage.setItem('landingActiveTab', 'modules');
                     sessionStorage.removeItem('myProjectsSelectedMode');
                     ctx.onBack();
                 }}>
                     <Logo height={48} />
-                    <span style={{
-                        color: '#fff', fontSize: 22, fontWeight: 900,
-                        letterSpacing: '0.08em', lineHeight: 1.2,
-                        borderLeft: '1px solid rgba(255,255,255,0.15)', paddingLeft: 8,
-                    }}>Logix</span>
+                    <span className="text-white text-22px font-black tracking-wider leading-snug border-l border-white/15 pl-2">Logix</span>
                 </div>
 
                 {showDesktopMenus && (
                     <>
-                        <div style={{ height: 32, width: 1, background: 'rgba(255,255,255,0.15)', marginRight: 4 }} />
+                        <div className="h-8 w-px bg-white/15 mr-1" />
 
                         <DropdownMenu label="File" isOpen={openMenuId === 'file'} onToggle={() => setOpenMenuId(openMenuId === 'file' ? null : 'file')} onClose={() => setOpenMenuId(null)}
                             items={[
@@ -187,21 +154,7 @@ export default function TopBar() {
 
                         {showMenuItems && ["Board", "Connect"].map((menuLabel) => (
                             <button key={menuLabel}
-                                style={{
-                                    background: "transparent",
-                                    border: "none",
-                                    color: "#fff",
-                                    fontFamily: "inherit",
-                                    fontSize: 15,
-                                    fontWeight: 500,
-                                    cursor: "pointer",
-                                    opacity: 0.9,
-                                    padding: "6px 10px",
-                                    borderRadius: 6,
-                                    transition: "all 0.2s ease",
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)"}
-                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                                className="bg-transparent border-none text-white font-sans text-[15px] font-medium cursor-pointer opacity-90 px-2.5 py-1.5 rounded-md transition-all hover:bg-white/10"
                                 onClick={() => {
                                     if (menuLabel === "Board") ctx.setIsBoardModalOpen(true);
                                     if (menuLabel === "Connect" && ctx.workflowMode === "upload") ctx.handleConnectToBoard();
@@ -213,9 +166,9 @@ export default function TopBar() {
                 )}
             </div>
 
-            <div style={{ height: 28, width: 1, background: 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
+            <div className="h-7 w-px bg-white/15 shrink-0" />
 
-            <div style={{ display: "flex", alignItems: "center", gap: 9, flex: 1, justifyContent: "flex-end" }}>
+            <div className="flex items-center gap-2.25 flex-1 justify-end">
                 <ProjectNameInput
                     value={ctx.projectName}
                     onChange={ctx.setProjectName}
@@ -262,40 +215,22 @@ export default function TopBar() {
                 />
 
                 <TopbarShareButton
-                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '6px 10px', borderRadius: 4, display: 'flex', alignItems: 'center', transition: '0.2s' }}
+                    className="bg-transparent border-none text-white/70 cursor-pointer px-2.5 py-1.5 rounded-md flex items-center transition-all hover:text-white"
                     size={18}
                     onSave={ctx.handleSaveProject}
                     projectName={ctx.projectName}
                 />
 
-                <LeapLabAuthButton variant="dark" size="sm" style={{ height: '34px', borderRadius: '20px', boxSizing: 'border-box' }} />
+                <LeapLabAuthButton variant="dark" size="sm" className="h-8.5 rounded-full box-border" />
                 </>)}
             </div>
 
             {showCreoleap && (
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexShrink: 0,
-                    height: '100%',
-                }}>
+                <div className="flex items-center shrink-0 h-full">
                     <img
                         src="assets/logo-creoleap.png"
                         alt="CREOLEAP"
-                        style={{
-                            width: '145px',
-                            height: 'auto',
-                            objectFit: 'contain',
-                            display: 'block',
-                            flexShrink: 0,
-                            filter: [
-                                'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
-                                'drop-shadow(0 0 8px rgba(255,255,255,0.25))',
-                                'drop-shadow(0 3px 10px rgba(0,0,0,0.5))',
-                                'brightness(1.14)',
-                                'contrast(1.05)',
-                            ].join(' '),
-                        }}
+                        className="w-[145px] h-auto object-contain block shrink-0 brightness-[1.14] contrast-[1.05] drop-shadow-[0_0_20px_rgba(167,139,250,0.7)]"
                     />
                 </div>
             )}
@@ -303,12 +238,7 @@ export default function TopBar() {
             {!showDesktopMenus && (
                 <button
                     onClick={() => setMobileMenuOpen(true)}
-                    style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        width: 40, height: 40, borderRadius: 10,
-                        background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
-                        color: '#fff', cursor: 'pointer', marginLeft: 8, flexShrink: 0,
-                    }}
+                    className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 border border-white/15 text-white cursor-pointer ml-2 shrink-0 hover:bg-white/20"
                 >
                     <MenuIcon size={20} strokeWidth={2.2} />
                 </button>
@@ -319,7 +249,7 @@ export default function TopBar() {
             onClose={() => setMobileMenuOpen(false)}
             theme="dark"
         >
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>File Operations</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">File Operations</div>
             {[
                 { label: 'New Project', icon: File, onClick: ctx.handleNewProject },
                 { label: 'Open from your computer', icon: FolderOpen, onClick: ctx.handleOpenProject },
@@ -337,70 +267,46 @@ export default function TopBar() {
                 },
             ].map((item, i) => (
                 <button key={i} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                        padding: '8px 10px', border: 'none', borderRadius: 8,
-                        background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                        fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                        transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
                 >
                     {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
                     {item.label}
                 </button>
             ))}
 
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+            <div className="h-px bg-white/10 my-1" />
 
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Edit Operations</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Edit Operations</div>
             {[
                 { label: 'Undo', icon: Undo, onClick: () => ctx.editorRef.current?.trigger('keyboard', 'undo', null) },
                 { label: 'Redo', icon: Redo, onClick: () => ctx.editorRef.current?.trigger('keyboard', 'redo', null) },
             ].map((item, i) => (
                 <button key={i} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                        padding: '8px 10px', border: 'none', borderRadius: 8,
-                        background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                        fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                        transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
                 >
                     {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
                     {item.label}
                 </button>
             ))}
 
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+            <div className="h-px bg-white/10 my-1" />
 
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Controls</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Controls</div>
             {["Board", "Connect"].map((label) => (
                 <button key={label} onClick={() => {
                     if (label === "Board") ctx.setIsBoardModalOpen(true);
                     if (label === "Connect" && ctx.workflowMode === "upload") ctx.handleConnectToBoard();
                     setMobileMenuOpen(false);
                 }}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                        padding: '8px 10px', border: 'none', borderRadius: 8,
-                        background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                        fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                        transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
                 >
                     {label}
                 </button>
             ))}
 
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+            <div className="h-px bg-white/10 my-1" />
 
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Actions</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Actions</div>
             <ModeSwitcher
                 modes={[
                     { id: 'ide', label: 'IDE' },
@@ -412,24 +318,14 @@ export default function TopBar() {
             />
             {ctx.isRunning ? (
                 <button onClick={() => { ctx.handleStop(); setMobileMenuOpen(false); }}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                        padding: '8px 10px', border: 'none', borderRadius: 8,
-                        background: 'rgba(239,68,68,0.2)', color: '#ef4444', fontSize: 13,
-                        fontWeight: 600, cursor: 'pointer', textAlign: 'left',
-                        transition: 'all 0.15s ease',
-                    }}>
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-red-500/20 text-red-500 text-[13px] font-semibold cursor-pointer text-left transition-all hover:bg-red-500/30"
+                >
                     <Square size={12} fill="#ef4444" stroke="none" /> Stop
                 </button>
             ) : (
                 <button onClick={() => { ctx.handleRun(); setMobileMenuOpen(false); }}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                        padding: '8px 10px', border: 'none', borderRadius: 8,
-                        background: 'rgba(34,197,94,0.2)', color: '#22c55e', fontSize: 13,
-                        fontWeight: 600, cursor: 'pointer', textAlign: 'left',
-                        transition: 'all 0.15s ease',
-                    }}>
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-emerald-500/20 text-emerald-500 text-[13px] font-semibold cursor-pointer text-left transition-all hover:bg-emerald-500/30"
+                >
                     <Play size={12} fill="#22c55e" stroke="none" /> Run
                 </button>
             )}
@@ -438,21 +334,16 @@ export default function TopBar() {
                 else ctx.handleUploadFirmware();
                 setMobileMenuOpen(false);
             }}
-                style={{
-                    display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                    padding: '8px 10px', border: 'none', borderRadius: 8,
-                    background: 'rgba(124,58,237,0.2)', color: '#a78bfa', fontSize: 13,
-                    fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                    transition: 'all 0.15s ease',
-                }}>
+                className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-purple-600/20 text-purple-300 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/30"
+            >
                 <Upload size={13} strokeWidth={2.5} color="#a78bfa" />
                 {ctx.workflowMode === "upload" ? "Upload Code" : "Open Upload"}
             </button>
 
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+            <div className="h-px bg-white/10 my-1" />
 
-            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <LeapLabAuthButton variant="dark" size="sm" style={{ width: '100%', height: '34px', borderRadius: '20px', boxSizing: 'border-box' }} />
+            <div className="mt-auto flex flex-col gap-2">
+                <LeapLabAuthButton variant="dark" size="sm" className="w-full h-8.5 rounded-full box-border" />
             </div>
         </MobileDrawer>
         </>

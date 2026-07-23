@@ -125,20 +125,13 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, progress }) => {
     if (!isOpen) return null;
 
     return (
-        <div style={styles.overlay}>
-            <div style={styles.card}>
+        <div className="fixed inset-0 bg-[#0f0a1e]/50 backdrop-blur-xl flex items-center justify-center z-[99999] animate-[ulm-fadein_0.3s_ease-out]">
+            <div className="bg-white rounded-3xl p-11 px-12 pb-9 w-[440px] max-w-[92vw] flex flex-col items-center shadow-[0_24px_80px_rgba(124,58,237,0.12),0_8px_24px_rgba(0,0,0,0.08)] border border-purple-600/6">
                 {/* ─── Rocket Image ─── */}
-                <div style={styles.rocketArea}>
+                <div className="relative w-[120px] h-[100px] flex items-center justify-center mb-4">
                     {/* Ambient ring */}
                     {!launched && (
-                        <div style={{
-                            position: 'absolute',
-                            width: 120,
-                            height: 120,
-                            borderRadius: '50%',
-                            border: '2px solid rgba(124,58,237,0.08)',
-                            animation: 'ulm-ring 3s ease-in-out infinite',
-                        }} />
+                        <div className="absolute w-[120px] h-[120px] rounded-full border-2 border-purple-600/10 animate-[ulm-ring_3s_ease-in-out_infinite]" />
                     )}
 
                     {/* Rocket Image */}
@@ -146,21 +139,17 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, progress }) => {
                         <img
                             src="assets/ui/rocket.png"
                             alt="Uploading"
-                            style={{
-                                width: 80,
-                                height: 80,
-                                objectFit: 'contain',
-                                animation: launched
-                                    ? 'ulm-launch 0.8s cubic-bezier(0.4,0,0.2,1) forwards'
-                                    : 'ulm-float 2s ease-in-out infinite',
-                                filter: 'drop-shadow(0 4px 12px rgba(124,58,237,0.2))',
-                            }}
+                            className={`w-20 h-20 object-contain drop-shadow-[0_4px_12px_rgba(124,58,237,0.2)] ${
+                                launched
+                                    ? 'animate-[ulm-launch_0.8s_cubic-bezier(0.4,0,0.2,1)_forwards]'
+                                    : 'animate-[ulm-float_2s_ease-in-out_infinite]'
+                            }`}
                         />
                     )}
 
                     {/* Success checkmark */}
                     {launched && (
-                        <div style={{ animation: 'ulm-checkpop 0.5s ease-out 0.3s both' }}>
+                        <div className="animate-[ulm-checkpop_0.5s_ease-out_0.3s_both]">
                             <svg width="68" height="68" viewBox="0 0 56 56" fill="none">
                                 <circle cx="28" cy="28" r="26" fill="#F0FDF4" stroke="#16A34A" strokeWidth="2.5" />
                                 <circle cx="28" cy="28" r="20" fill="#DCFCE7" opacity="0.5" />
@@ -171,108 +160,62 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, progress }) => {
                 </div>
 
                 {/* ─── Title ─── */}
-                <div style={{
-                    fontSize: 22,
-                    fontWeight: 800,
-                    color: launched ? '#16A34A' : '#1F2937',
-                    marginBottom: 3,
-                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    letterSpacing: '-0.03em',
-                }}>
+                <div className={`text-[22px] font-extrabold mb-0.75 font-sans tracking-tight ${launched ? 'text-emerald-600' : 'text-slate-800'}`}>
                     {launched ? '🎉 Upload Complete!' : 'Uploading to Board'}
                 </div>
 
                 {/* Subtitle */}
-                <div style={{
-                    fontSize: 13,
-                    color: launched ? 'rgba(22,163,74,0.7)' : '#9CA3AF',
-                    marginBottom: 24,
-                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    fontWeight: 500,
-                }}>
+                <div className={`text-xs mb-6 font-sans font-medium ${launched ? 'text-emerald-600/70' : 'text-slate-400'}`}>
                     {launched ? 'Your code is now running on the device' : stageLabel}
                 </div>
 
                 {/* ─── Progress Bar ─── */}
-                <div style={styles.barOuter}>
-                    <div style={{
-                        height: '100%',
-                        borderRadius: 6,
-                        transition: 'width 0.15s linear',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        width: `${displayPct}%`,
-                        background: launched
-                            ? 'linear-gradient(90deg, #16A34A, #22C55E)'
-                            : 'linear-gradient(90deg, #7C3AED, #8B5CF6, #A78BFA)',
-                    }}>
-                        {!launched && <div style={styles.shimmer} />}
+                <div className="w-full h-1.75 bg-purple-50 rounded-full overflow-hidden mb-4">
+                    <div
+                        className={`h-full rounded-md transition-[width] duration-150 ease-linear relative overflow-hidden ${
+                            launched
+                                ? 'bg-gradient-to-r from-emerald-600 to-emerald-500'
+                                : 'bg-gradient-to-r from-purple-600 via-purple-500 to-purple-400'
+                        }`}
+                        style={{ width: `${displayPct}%` }}
+                    >
+                        {!launched && <div className="absolute top-0 -left-[60%] w-[45%] h-full bg-gradient-to-r from-transparent via-white/70 to-transparent animate-[ulm-shimmer_1.2s_linear_infinite]" />}
                     </div>
                 </div>
 
                 {/* ─── Percentage ─── */}
-                <div style={{
-                    fontSize: 40,
-                    fontWeight: 900,
-                    fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                    color: launched ? '#16A34A' : '#7C3AED',
-                    letterSpacing: '-0.04em',
-                    lineHeight: 1,
-                    marginBottom: 24,
-                }}>
-                    {roundedPct}<span style={{ fontSize: 22, fontWeight: 700, opacity: 0.5 }}>%</span>
+                <div className={`text-[40px] font-black font-sans tracking-tighter leading-none mb-6 ${launched ? 'text-emerald-600' : 'text-purple-600'}`}>
+                    {roundedPct}<span className="text-[22px] font-bold opacity-50">%</span>
                 </div>
 
                 {/* ─── Step Indicators ─── */}
-                <div style={styles.stepsRow}>
+                <div className="flex items-start w-full mb-5 px-0.5">
                     {stages.map(({ label, threshold }, i) => {
                         const done = percentage >= threshold;
                         const active = !done && percentage >= threshold - 25;
                         const isLast = i === stages.length - 1;
                         return (
                             <React.Fragment key={label}>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, zIndex: 1 }}>
-                                    <div style={{
-                                        width: 28,
-                                        height: 28,
-                                        borderRadius: '50%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: 11,
-                                        fontWeight: 800,
-                                        transition: 'all 0.35s ease',
-                                        background: done
-                                            ? 'linear-gradient(135deg, #7C3AED, #6D28D9)'
-                                            : active ? '#F5F3FF' : '#F9FAFB',
-                                        color: done ? '#fff' : active ? '#7C3AED' : '#D1D5DB',
-                                        border: done
-                                            ? '2.5px solid #7C3AED'
-                                            : active ? '2.5px solid #C4B5FD' : '2.5px solid #E5E7EB',
-                                        boxShadow: done ? '0 2px 8px rgba(124,58,237,0.3)' : 'none',
-                                    }}>
+                                <div className="flex flex-col items-center gap-1.25 z-10">
+                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-extrabold transition-all duration-350 ease-in-out ${
+                                        done
+                                            ? 'bg-gradient-to-br from-purple-600 to-purple-700 text-white border-[2.5px] border-purple-600 shadow-[0_2px_8px_rgba(124,58,237,0.3)]'
+                                            : active
+                                            ? 'bg-purple-50 text-purple-600 border-[2.5px] border-purple-300'
+                                            : 'bg-slate-50 text-slate-300 border-[2.5px] border-slate-200'
+                                    }`}>
                                         {done ? '✓' : ''}
                                     </div>
-                                    <span style={{
-                                        fontSize: 9,
-                                        fontWeight: done ? 700 : 500,
-                                        color: done ? '#7C3AED' : active ? '#8B5CF6' : '#B0B0B0',
-                                        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.06em',
-                                    }}>
+                                    <span className={`text-[9px] font-sans uppercase tracking-wider ${
+                                        done ? 'font-bold text-purple-600' : active ? 'font-semibold text-purple-500' : 'font-medium text-slate-400'
+                                    }`}>
                                         {label}
                                     </span>
                                 </div>
                                 {!isLast && (
-                                    <div style={{
-                                        flex: 1,
-                                        height: 2.5,
-                                        borderRadius: 2,
-                                        marginTop: -20,
-                                        transition: 'background 0.5s ease',
-                                        background: done ? 'linear-gradient(90deg, #7C3AED, #A78BFA)' : '#EEEFF2',
-                                    }} />
+                                    <div className={`flex-1 h-[2.5px] rounded-xs -mt-5 transition-colors duration-500 ease-in-out ${
+                                        done ? 'bg-gradient-to-r from-purple-600 to-purple-400' : 'bg-slate-100'
+                                    }`} />
                                 )}
                             </React.Fragment>
                         );
@@ -281,96 +224,14 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, progress }) => {
 
                 {/* ─── Log Message ─── */}
                 {message && (
-                    <div style={styles.logRow}>
-                        <div style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            background: launched ? '#16A34A' : '#7C3AED',
-                            flexShrink: 0,
-                            animation: launched ? 'none' : 'ulm-dot-pulse 1s ease-in-out infinite',
-                        }} />
-                        <span style={{
-                            fontSize: 11,
-                            color: '#6B7280',
-                            fontFamily: "'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
-                            fontWeight: 500,
-                        }}>{message}</span>
+                    <div className="flex items-center gap-2.5 w-full p-2.5 px-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${launched ? 'bg-emerald-600' : 'bg-purple-600 animate-[ulm-dot-pulse_1s_ease-in-out_infinite]'}`} />
+                        <span className="text-[11px] text-slate-500 font-mono font-medium">{message}</span>
                     </div>
                 )}
             </div>
         </div>
     );
-};
-
-const styles: { [key: string]: React.CSSProperties } = {
-    overlay: {
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(15, 10, 30, 0.5)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 99999,
-        animation: 'ulm-fadein 0.3s ease-out',
-    },
-    card: {
-        background: '#FFFFFF',
-        borderRadius: 28,
-        padding: '44px 48px 36px',
-        width: 440,
-        maxWidth: '92vw',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        boxShadow: '0 24px 80px rgba(124, 58, 237, 0.12), 0 8px 24px rgba(0,0,0,0.08)',
-        border: '1px solid rgba(124, 58, 237, 0.06)',
-    },
-    rocketArea: {
-        position: 'relative',
-        width: 120,
-        height: 100,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 16,
-    },
-    barOuter: {
-        width: '100%',
-        height: 7,
-        backgroundColor: '#F3F0FF',
-        borderRadius: 7,
-        overflow: 'hidden',
-        marginBottom: 16,
-    },
-    shimmer: {
-        position: 'absolute',
-        top: 0,
-        left: '-60%',
-        width: '45%',
-        height: '100%',
-        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent)',
-        animation: 'ulm-shimmer 1.2s linear infinite',
-    },
-    stepsRow: {
-        display: 'flex',
-        alignItems: 'flex-start',
-        width: '100%',
-        marginBottom: 20,
-        padding: '0 2px',
-    },
-    logRow: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        width: '100%',
-        padding: '10px 16px',
-        borderRadius: 12,
-        backgroundColor: '#FAFAFA',
-        border: '1px solid #F0F0F0',
-    },
 };
 
 export default UploadModal;

@@ -338,43 +338,43 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
     return (
         <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar">
             {savedMessage && (
-                <div style={{ position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, padding: '10px 20px', background: '#006c44', color: '#fff', borderRadius: '12px', fontSize: '12px', fontWeight: 700, boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-5 py-2.5 bg-[#006c44] text-white rounded-xl text-xs font-bold shadow-[0_4px_16px_rgba(0,0,0,0.15)] animate-fade-in">
                     {savedMessage}
                 </div>
             )}
 
             {/* Header */}
-            <div style={{ padding: '16px 20px 12px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🏷️</div>
+            <div className="pt-4 px-5 pb-3 shrink-0 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] flex items-center justify-center text-xl">🏷️</div>
                     <div>
-                        <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#131b2e', lineHeight: 1.2 }}>Label Your Objects!</h2>
-                        <p style={{ fontSize: '12px', color: '#6b7280' }}>Draw boxes around things AI should find 🔍</p>
+                        <h2 className="text-lg font-extrabold text-[#131b2e] leading-snug">Label Your Objects!</h2>
+                        <p className="text-xs text-gray-500">Draw boxes around things AI should find 🔍</p>
                     </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ padding: '6px 14px', background: progress >= 100 ? '#d1fae5' : '#f5f3ff', borderRadius: '8px', fontSize: '13px', fontWeight: 700, color: progress >= 100 ? '#006c44' : '#630ed4' }}>
+                <div className="flex items-center gap-2">
+                    <div className={`py-1.5 px-3.5 rounded-lg text-xs font-bold ${progress >= 100 ? 'bg-emerald-100 text-[#006c44]' : 'bg-[#f5f3ff] text-[#630ed4]'}`}>
                         {Math.round(progress)}%
                     </div>
                 </div>
             </div>
 
             {/* Progress bar */}
-            <div style={{ padding: '0 20px', flexShrink: 0, marginBottom: '10px' }}>
-                <div style={{ position: 'relative', height: '8px', background: '#e5e7eb', borderRadius: '4px', overflow: 'visible' }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', background: 'linear-gradient(90deg, #006c44, #10b981)', borderRadius: '4px', transition: 'width 0.5s', width: `${progress}%` }} />
+            <div className="px-5 shrink-0 mb-2.5">
+                <div className="relative h-2 bg-gray-200 rounded-full overflow-visible">
+                    <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#006c44] to-emerald-500 rounded-full transition-[width] duration-500" style={{ width: `${progress}%` }} />
                     {['Collect', 'Label', 'Train', 'Test'].map((_, idx) => (
-                        <div key={idx} style={{ position: 'absolute', top: '50%', transform: 'translate(-50%, -50%)', width: idx === currentStepIndex ? '16px' : '12px', height: idx === currentStepIndex ? '16px' : '12px', borderRadius: '50%', border: '2px solid #fff', zIndex: 10, background: idx < currentStepIndex ? '#006c44' : idx === currentStepIndex ? '#630ed4' : '#ccc3d8', left: `${(idx / 3) * 100}%`, boxShadow: idx === currentStepIndex ? '0 0 8px rgba(99,14,212,0.4)' : 'none' }} />
+                        <div key={idx} className={`absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white z-10 ${idx === currentStepIndex ? 'w-4 h-4 bg-[#630ed4] shadow-[0_0_8px_rgba(99,14,212,0.4)]' : idx < currentStepIndex ? 'w-3 h-3 bg-[#006c44]' : 'w-3 h-3 bg-[#ccc3d8]'}`} style={{ left: `${(idx / 3) * 100}%` }} />
                     ))}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                <div className="flex justify-between mt-2">
                     {[
                         { emoji: '📸', label: 'Collect', done: currentStepIndex > 0 },
                         { emoji: '🏷️', label: 'Label', done: currentStepIndex > 1 },
                         { emoji: '🏋️', label: 'Train', done: currentStepIndex > 2 },
                         { emoji: '🧪', label: 'Test', done: currentStepIndex > 3 }
                     ].map((step, idx) => (
-                        <span key={step.label} style={{ fontSize: '11px', color: idx === currentStepIndex ? '#630ed4' : step.done ? '#006c44' : '#9ca3af', fontWeight: idx === currentStepIndex ? 700 : 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span key={step.label} className={`text-[11px] flex items-center gap-1 ${idx === currentStepIndex ? 'text-[#630ed4] font-bold' : step.done ? 'text-[#006c44] font-medium' : 'text-gray-400 font-medium'}`}>
                             {step.done ? '✅' : step.emoji} {step.label}
                         </span>
                     ))}
@@ -384,52 +384,52 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
             {/* Main content - horizontal split */}
             <div className="flex flex-col lg:flex-row gap-3 flex-1 min-h-0 px-5 pb-3 overflow-auto">
                 {/* Left - Canvas */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                    <div style={{ position: 'relative', flex: 1, background: '#fff', border: '1px solid #e5e7eb', borderRadius: '14px', overflow: 'hidden', minHeight: 0 }}>
+                <div className="flex-1 flex flex-col min-w-0">
+                    <div className="relative flex-1 bg-white border border-gray-200 rounded-2xl overflow-hidden min-h-0">
                         {/* Toolbar */}
-                        <div style={{ position: 'absolute', top: '12px', left: '12px', zIndex: 20, display: 'flex', flexDirection: 'column', gap: '6px', background: 'rgba(255,255,255,0.95)', padding: '8px', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
-                            <button onClick={() => mode.setActiveTool('box')} style={{ padding: '8px 10px', borderRadius: '8px', fontSize: '14px', background: mode.activeTool === 'box' ? '#630ed4' : 'transparent', color: mode.activeTool === 'box' ? '#fff' : '#4a4455', border: 'none', cursor: 'pointer' }}>⬜</button>
-                            <button onClick={handleAutoDetect} disabled={isAutoDetecting || !annotationImage} style={{ padding: '8px 10px', borderRadius: '8px', fontSize: '14px', background: isAutoDetecting ? '#f59e0b' : 'transparent', color: isAutoDetecting ? '#fff' : '#4a4455', border: 'none', cursor: 'pointer', opacity: !annotationImage ? 0.4 : 1 }}>🤖</button>
-                            <div style={{ width: '100%', height: '1px', background: '#e5e7eb', margin: '4px 0' }} />
-                            <button onClick={() => mode.setActiveTool('delete')} style={{ padding: '8px 10px', borderRadius: '8px', fontSize: '14px', background: mode.activeTool === 'delete' ? '#ba1a1a' : 'transparent', color: mode.activeTool === 'delete' ? '#fff' : '#4a4455', border: 'none', cursor: 'pointer' }}>🗑️</button>
+                        <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 bg-white/95 p-2 rounded-xl border border-gray-200 shadow-sm">
+                            <button onClick={() => mode.setActiveTool('box')} className={`p-2 rounded-lg text-sm border-none cursor-pointer ${mode.activeTool === 'box' ? 'bg-[#630ed4] text-white' : 'bg-transparent text-[#4a4455]'}`}>⬜</button>
+                            <button onClick={handleAutoDetect} disabled={isAutoDetecting || !annotationImage} className={`p-2 rounded-lg text-sm border-none cursor-pointer ${isAutoDetecting ? 'bg-amber-500 text-white' : 'bg-transparent text-[#4a4455]'} ${!annotationImage ? 'opacity-40' : 'opacity-100'}`}>🤖</button>
+                            <div className="w-full h-px bg-gray-200 my-1" />
+                            <button onClick={() => mode.setActiveTool('delete')} className={`p-2 rounded-lg text-sm border-none cursor-pointer ${mode.activeTool === 'delete' ? 'bg-red-700 text-white' : 'bg-transparent text-[#4a4455]'}`}>🗑️</button>
                         </div>
 
                         {/* Box count / Timer */}
-                        <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 20, background: 'rgba(255,255,255,0.95)', padding: '6px 14px', borderRadius: '10px', border: '1px solid #e5e7eb', display: 'flex', gap: '14px', fontSize: '12px', fontWeight: 600 }}>
+                        <div className="absolute top-3 right-3 z-20 bg-white/95 py-1.5 px-3.5 rounded-xl border border-gray-200 flex gap-3.5 text-xs font-semibold text-gray-700 shadow-sm">
                             <span>📦 {totalBoxes}</span>
                             <span>⏱️ {formatTime(elapsed)}</span>
                         </div>
 
                         {/* Auto-detect loading */}
                         {isAutoDetecting && (
-                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 30 }}>
-                                <div style={{ textAlign: 'center' }}>
-                                    <div style={{ width: '32px', height: '32px', border: '2px solid #630ed4', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 8px' }} />
-                                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#4a4455' }}>🤖 Detecting objects...</p>
+                            <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-30">
+                                <div className="text-center">
+                                    <div className="w-8 h-8 border-2 border-[#630ed4] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                                    <p className="text-[11px] font-bold text-[#4a4455]">🤖 Detecting objects...</p>
                                 </div>
                             </div>
                         )}
 
                         {/* Canvas area */}
-                        <div ref={canvasRef} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDragging ? '#f0ebff' : '#f3f4f6', cursor: 'crosshair', userSelect: 'none', touchAction: 'none', transition: 'background 0.2s' }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleMouseUp} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+                        <div ref={canvasRef} className={`relative w-full h-full overflow-hidden flex items-center justify-center cursor-crosshair select-none touch-none transition-colors duration-200 ${isDragging ? 'bg-[#f0ebff]' : 'bg-gray-100'}`} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleMouseUp} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
                             {annotationImage ? (
-                                <img src={annotationImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
+                                <img src={annotationImage} alt="" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
                             ) : (
-                                <div style={{ textAlign: 'center' }}>
-                                    <div style={{ pointerEvents: isDragging ? 'none' : 'auto', display: 'contents' }}>
+                                <div className="text-center">
+                                    <div className={`contents ${isDragging ? 'pointer-events-none' : 'pointer-events-auto'}`}>
                                         {isDragging ? (
                                             <>
-                                                <span style={{ fontSize: '48px', display: 'block', marginBottom: '12px' }}>📥</span>
-                                                <p style={{ fontSize: '16px', fontWeight: 700, color: '#630ed4', marginBottom: '6px' }}>Drop your image here!</p>
-                                                <p style={{ fontSize: '13px', color: '#8b5cf6' }}>Release to upload</p>
+                                                <span className="text-5xl block mb-3">📥</span>
+                                                <p className="text-base font-bold text-[#630ed4] mb-1.5">Drop your image here!</p>
+                                                <p className="text-xs text-violet-500">Release to upload</p>
                                             </>
                                         ) : (
                                             <>
-                                                <span style={{ fontSize: '48px', display: 'block', marginBottom: '12px' }}>🖼️</span>
-                                                <p style={{ fontSize: '16px', fontWeight: 700, color: '#4a4455', marginBottom: '6px' }}>Upload a picture to start labeling!</p>
-                                                <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '8px' }}>or use camera from Collect step</p>
-                                                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '16px' }}>Drag & drop an image here</p>
-                                                <button onClick={() => fileInputRef.current?.click()} style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '12px', fontSize: '14px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📂 Upload Picture</button>
+                                                <span className="text-5xl block mb-3">🖼️</span>
+                                                <p className="text-base font-bold text-[#4a4455] mb-1.5">Upload a picture to start labeling!</p>
+                                                <p className="text-xs text-gray-400 mb-2">or use camera from Collect step</p>
+                                                <p className="text-xs text-gray-400 mb-4">Drag & drop an image here</p>
+                                                <button onClick={() => fileInputRef.current?.click()} className="py-3 px-6 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-sm font-bold border-none cursor-pointer">📂 Upload Picture</button>
                                             </>
                                         )}
                                     </div>
@@ -438,66 +438,66 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
 
                             {/* Bounding boxes */}
                             {mode.currentAnnotation?.boxes.map((box) => (
-                                <div key={box.id} style={{ position: 'absolute', left: `${box.x}%`, top: `${box.y}%`, width: `${box.width}%`, height: `${box.height}%`, border: `2px solid ${box.color}`, backgroundColor: `${box.color}1a`, cursor: 'move', zIndex: mode.selectedBoxId === box.id ? 10 : 1 }} onMouseDown={(e) => handleBoxMouseDown(e, box.id)} onDoubleClick={() => handleStartEditLabel(box.id, box.label)}>
+                                <div key={box.id} className="absolute border-2 cursor-move" style={{ left: `${box.x}%`, top: `${box.y}%`, width: `${box.width}%`, height: `${box.height}%`, borderColor: box.color, backgroundColor: `${box.color}1a`, zIndex: mode.selectedBoxId === box.id ? 10 : 1 }} onMouseDown={(e) => handleBoxMouseDown(e, box.id)} onDoubleClick={() => handleStartEditLabel(box.id, box.label)}>
                                     {editingBoxId === box.id ? (
-                                        <input ref={labelInputRef} value={editingLabel} onChange={(e) => setEditingLabel(e.target.value)} onBlur={handleSaveLabel} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLabel(); if (e.key === 'Escape') { setEditingBoxId(null); setEditingLabel('') } }} style={{ position: 'absolute', top: '-24px', left: 0, padding: '4px 8px', fontSize: '11px', fontWeight: 700, color: '#fff', background: box.color, border: '2px solid #fff', borderRadius: '6px', minWidth: '60px', outline: 'none', zIndex: 30 }} onClick={(e) => e.stopPropagation()} />
+                                        <input ref={labelInputRef} value={editingLabel} onChange={(e) => setEditingLabel(e.target.value)} onBlur={handleSaveLabel} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLabel(); if (e.key === 'Escape') { setEditingBoxId(null); setEditingLabel('') } }} className="absolute -top-6 left-0 py-1 px-2 text-[11px] font-bold text-white border-2 border-white rounded-md min-w-[60px] outline-none z-30" style={{ background: box.color }} onClick={(e) => e.stopPropagation()} />
                                     ) : (
-                                        <div style={{ position: 'absolute', top: '-22px', left: 0, padding: '3px 8px', fontSize: '11px', fontWeight: 700, color: '#fff', background: box.color, borderRadius: '6px 6px 0 0', whiteSpace: 'nowrap', cursor: 'text', zIndex: 20 }} onDoubleClick={(e) => { e.stopPropagation(); handleStartEditLabel(box.id, box.label) }}>{box.label}</div>
+                                        <div className="absolute -top-5.5 left-0 py-0.75 px-2 text-[11px] font-bold text-white rounded-t-md whitespace-nowrap cursor-text z-20" style={{ background: box.color }} onDoubleClick={(e) => { e.stopPropagation(); handleStartEditLabel(box.id, box.label) }}>{box.label}</div>
                                     )}
                                     {mode.selectedBoxId === box.id && (
                                         <>
-                                            <div style={{ position: 'absolute', top: '-5px', left: '-5px', width: '10px', height: '10px', background: '#fff', border: `2px solid ${box.color}`, cursor: 'nw-resize', zIndex: 30 }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'nw')} />
-                                            <div style={{ position: 'absolute', top: '-5px', right: '-5px', width: '10px', height: '10px', background: '#fff', border: `2px solid ${box.color}`, cursor: 'ne-resize', zIndex: 30 }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'ne')} />
-                                            <div style={{ position: 'absolute', bottom: '-5px', left: '-5px', width: '10px', height: '10px', background: '#fff', border: `2px solid ${box.color}`, cursor: 'sw-resize', zIndex: 30 }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'sw')} />
-                                            <div style={{ position: 'absolute', bottom: '-5px', right: '-5px', width: '10px', height: '10px', background: '#fff', border: `2px solid ${box.color}`, cursor: 'se-resize', zIndex: 30 }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'se')} />
+                                            <div className="absolute -top-1.25 -left-1.25 w-2.5 h-2.5 bg-white border-2 cursor-nw-resize z-30" style={{ borderColor: box.color }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'nw')} />
+                                            <div className="absolute -top-1.25 -right-1.25 w-2.5 h-2.5 bg-white border-2 cursor-ne-resize z-30" style={{ borderColor: box.color }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'ne')} />
+                                            <div className="absolute -bottom-1.25 -left-1.25 w-2.5 h-2.5 bg-white border-2 cursor-sw-resize z-30" style={{ borderColor: box.color }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'sw')} />
+                                            <div className="absolute -bottom-1.25 -right-1.25 w-2.5 h-2.5 bg-white border-2 cursor-se-resize z-30" style={{ borderColor: box.color }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'se')} />
                                         </>
                                     )}
                                 </div>
                             ))}
 
                             {previewBox && previewBox.width > 0.5 && previewBox.height > 0.5 && (
-                                <div style={{ position: 'absolute', left: `${previewBox.x}%`, top: `${previewBox.y}%`, width: `${previewBox.width}%`, height: `${previewBox.height}%`, border: '2px dashed #630ed4', background: 'rgba(99,14,212,0.08)', pointerEvents: 'none', zIndex: 10 }} />
+                                <div className="absolute border-2 border-dashed border-[#630ed4] bg-[#630ed4]/10 pointer-events-none z-10" style={{ left: `${previewBox.x}%`, top: `${previewBox.y}%`, width: `${previewBox.width}%`, height: `${previewBox.height}%` }} />
                             )}
                         </div>
 
                         {/* Bottom toolbar */}
-                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 16px', background: 'rgba(255,255,255,0.95)', borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 20 }}>
-                            <div style={{ display: 'flex', gap: '16px' }}>
+                        <div className="absolute bottom-0 left-0 right-0 py-2.5 px-4 bg-white/95 border-t border-gray-200 flex justify-between items-center z-20">
+                            <div className="flex gap-4">
                                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                                <button onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4a4455', fontWeight: 700, fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer' }}>📂 Upload</button>
-                                <button onClick={handleUndo} disabled={undoStack.length === 0} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4a4455', fontWeight: 700, fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', opacity: undoStack.length === 0 ? 0.3 : 1 }}>↩️ Undo</button>
-                                <button onClick={handleRedo} disabled={redoStack.length === 0} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4a4455', fontWeight: 700, fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', opacity: redoStack.length === 0 ? 0.3 : 1 }}>↪️ Redo</button>
+                                <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 text-[#4a4455] font-bold text-xs bg-transparent border-none cursor-pointer">📂 Upload</button>
+                                <button onClick={handleUndo} disabled={undoStack.length === 0} className={`flex items-center gap-1.5 text-[#4a4455] font-bold text-xs bg-transparent border-none ${undoStack.length === 0 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer opacity-100'}`}>↩️ Undo</button>
+                                <button onClick={handleRedo} disabled={redoStack.length === 0} className={`flex items-center gap-1.5 text-[#4a4455] font-bold text-xs bg-transparent border-none ${redoStack.length === 0 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer opacity-100'}`}>↪️ Redo</button>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#4a4455' }}>🔍</span>
-                                    <input type="range" min="50" max="200" value={mode.zoom} onChange={(e) => mode.setZoom(Number(e.target.value))} style={{ width: '80px', height: '4px', accentColor: '#630ed4' }} />
-                                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#4a4455' }}>{mode.zoom}%</span>
+                            <div className="flex items-center gap-3.5">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-[#4a4455]">🔍</span>
+                                    <input type="range" min="50" max="200" value={mode.zoom} onChange={(e) => mode.setZoom(Number(e.target.value))} className="w-20 h-1 rounded-full appearance-none cursor-pointer accent-[#630ed4]" />
+                                    <span className="text-xs font-bold text-[#4a4455]">{mode.zoom}%</span>
                                 </div>
-                                <button onClick={handleSave} disabled={!annotationImage || !mode.selectedClassId} style={{ padding: '8px 18px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '10px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', opacity: !annotationImage || !mode.selectedClassId ? 0.4 : 1 }}>💾 Save</button>
+                                <button onClick={handleSave} disabled={!annotationImage || !mode.selectedClassId} className={`py-2 px-4.5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold border-none ${!annotationImage || !mode.selectedClassId ? 'cursor-not-allowed opacity-40' : 'cursor-pointer opacity-100'}`}>💾 Save</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Right sidebar */}
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden', overflowY: 'auto', padding: '0 4px' }}>
+                <div className="flex-1 min-w-0 flex flex-col gap-3 overflow-hidden overflow-y-auto px-1 neura-scrollbar">
                     {/* Boxes list */}
-                    <div style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', flexShrink: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e' }}>📦 Boxes ({totalBoxes})</h3>
-                            <button onClick={() => setShowBoxList(!showBoxList)} style={{ fontSize: '12px', color: '#630ed4', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer' }}>{showBoxList ? 'Hide' : 'Show'}</button>
+                    <div className="bg-white/85 border border-gray-200 rounded-xl p-4 shrink-0">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-bold text-[#131b2e]">📦 Boxes ({totalBoxes})</h3>
+                            <button onClick={() => setShowBoxList(!showBoxList)} className="text-xs text-[#630ed4] font-bold bg-transparent border-none cursor-pointer">{showBoxList ? 'Hide' : 'Show'}</button>
                         </div>
                         {showBoxList && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
+                            <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto neura-scrollbar">
                                 {mode.currentAnnotation?.boxes.length === 0 && (
-                                    <p style={{ fontSize: '12px', color: '#9ca3af', textAlign: 'center', padding: '16px 0' }}>No boxes yet. Draw one!</p>
+                                    <p className="text-xs text-gray-400 text-center py-4">No boxes yet. Draw one!</p>
                                 )}
                                 {mode.currentAnnotation?.boxes.map((box, i) => (
-                                    <div key={box.id} onClick={() => mode.setSelectedBoxId(box.id)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', background: mode.selectedBoxId === box.id ? '#f5f3ff' : 'transparent', border: mode.selectedBoxId === box.id ? '1px solid #630ed4' : '1px solid transparent' }}>
-                                        <div style={{ width: '10px', height: '10px', borderRadius: '4px', background: box.color, flexShrink: 0 }} />
-                                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#131b2e', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{box.label}</span>
-                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>{i + 1}</span>
+                                    <div key={box.id} onClick={() => mode.setSelectedBoxId(box.id)} className={`flex items-center gap-2.5 py-2 px-3 rounded-lg cursor-pointer border ${mode.selectedBoxId === box.id ? 'bg-[#f5f3ff] border-[#630ed4]' : 'bg-transparent border-transparent'}`}>
+                                        <div className="w-2.5 h-2.5 rounded shrink-0" style={{ background: box.color }} />
+                                        <span className="text-xs font-semibold text-[#131b2e] flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{box.label}</span>
+                                        <span className="text-[11px] text-gray-400">{i + 1}</span>
                                     </div>
                                 ))}
                             </div>
@@ -506,26 +506,26 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
 
                     {/* Edit label */}
                     {mode.selectedBoxId && mode.currentAnnotation?.boxes.find(b => b.id === mode.selectedBoxId) && (
-                        <div style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', flexShrink: 0 }}>
-                            <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e', marginBottom: '10px' }}>✏️ Edit Label</h3>
-                            <input value={editingBoxId === mode.selectedBoxId ? editingLabel : (mode.currentAnnotation?.boxes.find(b => b.id === mode.selectedBoxId)?.label || '')} onChange={(e) => { if (editingBoxId === mode.selectedBoxId) setEditingLabel(e.target.value); else { setEditingBoxId(mode.selectedBoxId); setEditingLabel(e.target.value) } }} onFocus={() => { if (editingBoxId !== mode.selectedBoxId) { const box = mode.currentAnnotation?.boxes.find(b => b.id === mode.selectedBoxId); if (box) { setEditingBoxId(mode.selectedBoxId); setEditingLabel(box.label) } } }} onBlur={handleSaveLabel} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLabel(); if (e.key === 'Escape') { setEditingBoxId(null); setEditingLabel('') } }} style={{ width: '100%', padding: '10px 12px', fontSize: '13px', border: '1px solid #e5e7eb', borderRadius: '8px', outline: 'none' }} placeholder="Enter label..." />
-                            <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                                {selectedClass && <button onClick={() => { if (editingBoxId === mode.selectedBoxId) setEditingLabel(selectedClass.name); else { setEditingBoxId(mode.selectedBoxId); setEditingLabel(selectedClass.name) } }} style={{ flex: 1, padding: '8px', background: '#f5f3ff', color: '#630ed4', borderRadius: '8px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>Use Class</button>}
-                                <button onClick={() => { saveUndoState(); mode.removeBox(mode.selectedBoxId!) }} style={{ flex: 1, padding: '8px', background: '#fef2f2', color: '#991b1b', borderRadius: '8px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>🗑️ Delete</button>
+                        <div className="bg-white/85 border border-gray-200 rounded-xl p-4 shrink-0">
+                            <h3 className="text-sm font-bold text-[#131b2e] mb-2.5">✏️ Edit Label</h3>
+                            <input value={editingBoxId === mode.selectedBoxId ? editingLabel : (mode.currentAnnotation?.boxes.find(b => b.id === mode.selectedBoxId)?.label || '')} onChange={(e) => { if (editingBoxId === mode.selectedBoxId) setEditingLabel(e.target.value); else { setEditingBoxId(mode.selectedBoxId); setEditingLabel(e.target.value) } }} onFocus={() => { if (editingBoxId !== mode.selectedBoxId) { const box = mode.currentAnnotation?.boxes.find(b => b.id === mode.selectedBoxId); if (box) { setEditingBoxId(mode.selectedBoxId); setEditingLabel(box.label) } } }} onBlur={handleSaveLabel} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLabel(); if (e.key === 'Escape') { setEditingBoxId(null); setEditingLabel('') } }} className="w-full py-2.5 px-3 text-xs border border-gray-200 rounded-lg outline-none" placeholder="Enter label..." />
+                            <div className="flex gap-2 mt-2.5">
+                                {selectedClass && <button onClick={() => { if (editingBoxId === mode.selectedBoxId) setEditingLabel(selectedClass.name); else { setEditingBoxId(mode.selectedBoxId); setEditingLabel(selectedClass.name) } }} className="flex-1 p-2 bg-[#f5f3ff] text-[#630ed4] rounded-lg text-xs font-bold border-none cursor-pointer">Use Class</button>}
+                                <button onClick={() => { saveUndoState(); mode.removeBox(mode.selectedBoxId!) }} className="flex-1 p-2 bg-red-50 text-red-800 rounded-lg text-xs font-bold border-none cursor-pointer">🗑️ Delete</button>
                             </div>
                         </div>
                     )}
 
                     {/* Tips */}
-                    <div style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                        <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e', marginBottom: '10px' }}>💡 Tips</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <span style={{ fontSize: '13px', color: '#4a4455' }}>• Double-click box to rename</span>
-                            <span style={{ fontSize: '13px', color: '#4a4455' }}>• Drag boxes to move them</span>
-                            <span style={{ fontSize: '13px', color: '#4a4455' }}>• Use corners to resize</span>
-                            <span style={{ fontSize: '13px', color: '#4a4455' }}>• Press <kbd style={{ padding: '2px 6px', background: '#f5f3ff', borderRadius: '4px', fontSize: '11px' }}>B</kbd> for box tool</span>
-                            <span style={{ fontSize: '13px', color: '#4a4455' }}>• Press <kbd style={{ padding: '2px 6px', background: '#f5f3ff', borderRadius: '4px', fontSize: '11px' }}>DEL</kbd> to remove</span>
-                            <span style={{ fontSize: '13px', color: '#4a4455' }}>• Press <kbd style={{ padding: '2px 6px', background: '#f5f3ff', borderRadius: '4px', fontSize: '11px' }}>Ctrl+Z</kbd> to undo</span>
+                    <div className="bg-white/85 border border-gray-200 rounded-xl p-4 flex-1 min-h-0 overflow-hidden">
+                        <h3 className="text-sm font-bold text-[#131b2e] mb-2.5">💡 Tips</h3>
+                        <div className="flex flex-col gap-2">
+                            <span className="text-xs text-[#4a4455]">• Double-click box to rename</span>
+                            <span className="text-xs text-[#4a4455]">• Drag boxes to move them</span>
+                            <span className="text-xs text-[#4a4455]">• Use corners to resize</span>
+                            <span className="text-xs text-[#4a4455]">• Press <kbd className="py-0.5 px-1.5 bg-[#f5f3ff] rounded text-[11px]">B</kbd> for box tool</span>
+                            <span className="text-xs text-[#4a4455]">• Press <kbd className="py-0.5 px-1.5 bg-[#f5f3ff] rounded text-[11px]">DEL</kbd> to remove</span>
+                            <span className="text-xs text-[#4a4455]">• Press <kbd className="py-0.5 px-1.5 bg-[#f5f3ff] rounded text-[11px]">Ctrl+Z</kbd> to undo</span>
                         </div>
                     </div>
                 </div>

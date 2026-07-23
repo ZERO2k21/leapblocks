@@ -17,92 +17,6 @@ import { useWindowWidth } from '../../../hooks/useWindowWidth';
 import MobileDrawer from '../../../components/common/MobileDrawer';
 import DropdownMenu from './DropdownMenu';
 
-const styles = {
-    bar: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: 68,
-        padding: '0 28px',
-        background: 'linear-gradient(135deg, #0a015a 0%, #0f0b3a 50%, #080a25 100%)',
-        boxShadow: '0 4px 24px rgba(8,10,37,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
-        zIndex: 100,
-        borderBottom: '1px solid rgba(120,160,255,0.08)',
-    },
-    homeBtn: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 40,
-        height: 40,
-        background: 'rgba(255,255,255,0.08)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 12,
-        color: 'rgba(255,255,255,0.8)',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        flexShrink: 0,
-    },
-    separator: { height: 32, width: 1, background: 'rgba(255,255,255,0.08)', flexShrink: 0 },
-    logoWrapper: {
-        display: 'flex',
-        alignItems: 'center',
-        marginRight: 14,
-        flexShrink: 0,
-    },
-    logoText: {
-        color: '#fff',
-        fontSize: 22,
-        fontWeight: 900,
-        letterSpacing: '0.08em',
-        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-    },
-
-    utilityGroup: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 16,
-        paddingRight: 20,
-        borderRight: '1px solid rgba(255,255,255,0.08)',
-        height: 32,
-        flexShrink: 0,
-    },
-    utilityBtn: {
-        background: 'transparent',
-        border: 'none',
-        color: 'rgba(255,255,255,0.45)',
-        cursor: 'pointer',
-        padding: 0,
-        transition: 'all 0.2s',
-        display: 'flex',
-        alignItems: 'center',
-    },
-    creoleapWrapper: {
-        marginLeft: 16,
-        display: 'flex',
-        alignItems: 'center',
-        flexShrink: 0,
-        height: 44,
-        overflow: 'hidden',
-    },
-    menuBtn: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 5,
-        padding: '7px 14px',
-        border: 'none',
-        color: 'rgba(255,255,255,0.85)',
-        fontSize: 13,
-        fontWeight: 600,
-        fontFamily: "'Segoe UI', Inter, system-ui, sans-serif",
-        cursor: 'pointer',
-        borderRadius: 20,
-        transition: 'all 0.2s',
-        background: 'transparent',
-        letterSpacing: '0.02em',
-    },
-};
-
 export default function JuniorMenuBar({
     projectName = "My Project",
     onProjectNameChange,
@@ -171,34 +85,32 @@ export default function JuniorMenuBar({
     ];
 
     const renderLeftSection = () => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
+        <div className="flex items-center gap-3.5 flex-1 min-w-0">
             <button
                 onClick={() => {
                     sessionStorage.setItem('landingActiveTab', 'modules');
                     sessionStorage.removeItem('myProjectsSelectedMode');
                     onBack?.();
                 }}
-                style={styles.homeBtn}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = '#fff'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.8)'; }}
+                className="flex items-center justify-center w-10 h-10 bg-white/8 border border-white/8 rounded-xl text-white/80 cursor-pointer transition-all shrink-0 hover:bg-white/15 hover:text-white"
                 title="Back to Home"
             >
                 <Home size={20} strokeWidth={2.2} />
             </button>
 
-            <div style={styles.separator} />
+            <div className="h-8 w-px bg-white/8 shrink-0" />
 
-            <div style={styles.logoWrapper}>
+            <div className="flex items-center mr-3.5 shrink-0">
                 <Logo height={48} />
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', marginLeft: 12, lineHeight: 1.1 }}>
-                    <span style={styles.logoText}>IGNITE</span>
+                <div className="flex flex-col justify-center ml-3 leading-tight">
+                    <span className="text-white text-[22px] font-black tracking-widest font-sans">IGNITE</span>
                 </div>
             </div>
 
-            <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+            <div className="w-px h-7 bg-white/10 shrink-0" />
 
             {showDesktopMenus && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <div className="flex items-center gap-0.5">
                     <DropdownMenu
                         label="File"
                         items={fileMenuItems}
@@ -227,7 +139,7 @@ export default function JuniorMenuBar({
     );
 
     const renderCenterSection = () => (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px' }}>
+        <div className="flex items-center justify-center px-5">
             <ProjectNameInput
                 value={projectName}
                 onChange={(val) => onProjectNameChange?.(val)}
@@ -237,16 +149,14 @@ export default function JuniorMenuBar({
     );
 
     const renderRightSection = () => (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 20, flex: 1, minWidth: 0 }}>
+        <div className="flex items-center justify-end gap-5 flex-1 min-w-0">
             {showDesktopMenus ? (
                 <>
-                    <div style={styles.utilityGroup}>
+                    <div className="flex items-center gap-4 pr-5 border-r border-white/8 h-8 shrink-0">
                         <TopbarShareButton size={20} onSave={onSave} projectName={projectName}>
                             {({ onClick, loading }) => (
                                 <button
-                                    style={styles.utilityBtn}
-                                    onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'scale(1.15)'; }}
-                                    onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                    className="bg-transparent border-none text-white/45 cursor-pointer p-0 transition-all flex items-center hover:text-white hover:scale-115"
                                     onClick={onClick}
                                     disabled={loading}
                                     title="Share project"
@@ -257,22 +167,14 @@ export default function JuniorMenuBar({
                         </TopbarShareButton>
                     </div>
 
-                    <LeapLabAuthButton variant="dark" size="sm" style={{ height: '34px', borderRadius: '18px', boxSizing: 'border-box' }} />
+                    <LeapLabAuthButton variant="dark" size="sm" className="h-[34px] rounded-full box-border" />
 
                     {showCreoleap && (
-                        <div style={styles.creoleapWrapper}>
+                        <div className="ml-4 flex items-center shrink-0 h-11 overflow-hidden">
                             <img
                                 src="assets/logo-creoleap.png"
                                 alt="CREOLEAP"
-                                style={{
-                                    width: '150px',
-                                    height: 'auto',
-                                    objectFit: 'contain',
-                                    display: 'block',
-                                    flexShrink: 0,
-                                    opacity: 0.9,
-                                    filter: 'brightness(1.1) contrast(1.04)',
-                                }}
+                                className="w-[150px] h-auto object-contain block shrink-0 opacity-90 brightness-110 contrast-105"
                             />
                         </div>
                     )}
@@ -280,12 +182,7 @@ export default function JuniorMenuBar({
             ) : (
                 <button
                     onClick={() => setMobileMenuOpen(true)}
-                    style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        width: 40, height: 40, borderRadius: 12,
-                        background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.08)',
-                        color: 'rgba(255,255,255,0.8)', cursor: 'pointer', flexShrink: 0,
-                    }}
+                    className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/8 border border-white/8 text-white/80 cursor-pointer shrink-0 hover:bg-white/15 hover:text-white"
                 >
                     <MenuIcon size={20} strokeWidth={2.2} />
                 </button>
@@ -294,7 +191,7 @@ export default function JuniorMenuBar({
     );
 
     return (
-        <div style={styles.bar}>
+        <div className="flex items-center justify-between h-[68px] px-7 bg-gradient-to-r from-[#0a015a] via-[#0f0b3a] to-[#080a25] shadow-[0_4px_24px_rgba(8,10,37,0.5),inset_0_1px_0_rgba(255,255,255,0.08)] z-[100] border-b border-sky-400/10">
             {renderLeftSection()}
             {renderCenterSection()}
             {renderRightSection()}
@@ -304,21 +201,15 @@ export default function JuniorMenuBar({
                 onClose={() => setMobileMenuOpen(false)}
                 theme="dark"
             >
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>File Operations</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">File Operations</div>
                 {fileMenuItems.map((item, idx) =>
                     item.divider ? (
-                        <div key={idx} style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                        <div key={idx} className="h-px bg-white/10 my-1" />
                     ) : (
-                        <button key={idx} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                                padding: '8px 10px', border: 'none', borderRadius: 8,
-                                background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                                fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                                transition: 'all 0.15s ease',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                        <button
+                            key={idx}
+                            onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                            className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
                         >
                             {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
                             {item.label}
@@ -326,61 +217,43 @@ export default function JuniorMenuBar({
                     )
                 )}
 
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                <div className="h-px bg-white/10 my-1" />
 
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Edit Operations</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Edit Operations</div>
                 {editMenuItems.map((item, idx) => (
-                    <button key={idx} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                            padding: '8px 10px', border: 'none', borderRadius: 8,
-                            background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                            fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                            transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    <button
+                        key={idx}
+                        onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                        className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
                     >
                         {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
                         {item.label}
                     </button>
                 ))}
 
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                <div className="h-px bg-white/10 my-1" />
 
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Tutorials</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Tutorials</div>
                 {tutorialsMenuItems.map((item, idx) => (
-                    <button key={idx} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                            padding: '8px 10px', border: 'none', borderRadius: 8,
-                            background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                            fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                            transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                    <button
+                        key={idx}
+                        onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                        className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
                     >
                         {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
                         {item.label}
                     </button>
                 ))}
 
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                <div className="h-px bg-white/10 my-1" />
 
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.5 }}>Utilities</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Utilities</div>
                 <TopbarShareButton size={20} onSave={onSave} projectName={projectName}>
                     {({ onClick, loading }) => (
-                        <button onClick={() => { onClick?.(); setMobileMenuOpen(false); }} disabled={loading}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                                padding: '8px 10px', border: 'none', borderRadius: 8,
-                                background: 'transparent', color: '#e0e0e0', fontSize: 13,
-                                fontWeight: 500, cursor: 'pointer', textAlign: 'left',
-                                transition: 'all 0.15s ease',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#e0e0e0'; }}
+                        <button
+                            onClick={() => { onClick?.(); setMobileMenuOpen(false); }}
+                            disabled={loading}
+                            className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
                         >
                             <Share2 size={15} color="#a78bfa" strokeWidth={2} />
                             Share
@@ -388,8 +261,8 @@ export default function JuniorMenuBar({
                     )}
                 </TopbarShareButton>
 
-                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <LeapLabAuthButton variant="dark" size="sm" style={{ width: '100%', height: '34px', borderRadius: '18px', boxSizing: 'border-box' }} />
+                <div className="mt-auto flex flex-col gap-2">
+                    <LeapLabAuthButton variant="dark" size="sm" className="w-full h-[34px] rounded-full box-border" />
                 </div>
             </MobileDrawer>
         </div>

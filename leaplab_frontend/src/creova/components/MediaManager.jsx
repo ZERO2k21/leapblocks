@@ -222,22 +222,11 @@ export default function MediaManager({ appState }) {
                 </div>
             )}
             {/* Standardized Header */}
-            <div 
-                style={{ paddingTop: '10px', paddingBottom: '10px', paddingLeft: '16px', paddingRight: '16px' }}
-                className="bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between shrink-0 shadow-sm"
-            >
+            <div className="py-2.5 px-4 bg-gradient-to-b from-white to-slate-50 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between shrink-0 shadow-sm">
                 <span className="text-[16px] font-bold uppercase tracking-[0.08em] text-slate-900">Media</span>
                 <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-full border border-blue-100/50 transition-all active:scale-95 cursor-pointer"
-                    style={{
-                        width: '36px',
-                        height: '36px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 0
-                    }}
+                    className="w-9 h-9 flex items-center justify-center p-0 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-full border border-blue-100/50 transition-all active:scale-95 cursor-pointer"
                     title="Upload Media"
                 >
                     <Upload className="h-5 w-5" />
@@ -254,41 +243,26 @@ export default function MediaManager({ appState }) {
             />
 
             {/* Search and Filters Section - Refined Spacing */}
-            <div
-                style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}
-                className="bg-white border-b border-slate-100 shrink-0"
-            >
+            <div className="p-3 flex flex-col gap-2.5 bg-white border-b border-slate-100 shrink-0">
                 {/* Search Bar */}
                 <div className="relative group">
-                    <Search 
-                        style={{ width: '18px', height: '18px', left: '14px' }} 
-                        className="absolute top-1/2 -translate-y-1/2 text-slate-900 group-focus-within:text-blue-600 transition-colors" 
-                    />
+                    <Search className="w-4.5 h-4.5 absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-900 group-focus-within:text-blue-600 transition-colors" />
                     <input
                         type="text"
                         placeholder="Search assets..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ paddingLeft: '42px', fontSize: '13px', paddingTop: '10px', paddingBottom: '10px' }}
-                        className="w-full pr-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-400 bg-slate-50/30 transition-all placeholder:text-slate-900 font-bold tracking-wide"
+                        className="w-full pl-10.5 pr-3 py-2.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-400 bg-slate-50/30 transition-all placeholder:text-slate-900 font-bold tracking-wide"
                     />
                 </div>
 
                 {/* Filter Tabs - Precise Pill Style (Non-Scrollable, Wrapping) */}
-                <div style={{ gap: '8px', flexWrap: 'wrap' }} className="flex pb-0.5">
+                <div className="flex gap-2 flex-wrap pb-0.5">
                     {['all', 'image', 'audio', 'video'].map((type) => (
                         <button
                             key={type}
                             onClick={() => setFilterType(type)}
-                            style={{
-                                fontSize: '10px',
-                                fontWeight: '900',
-                                paddingLeft: '10px',
-                                paddingRight: '10px',
-                                paddingTop: '6px',
-                                paddingBottom: '6px'
-                            }}
-                            className={`flex-shrink-0 rounded-full uppercase tracking-[0.07em] transition-all duration-200 cursor-pointer ${filterType === type
+                            className={`flex-shrink-0 rounded-full uppercase tracking-[0.07em] transition-all duration-200 cursor-pointer text-[10px] font-black px-2.5 py-1.5 ${filterType === type
                                 ? 'bg-slate-900 text-white shadow-md'
                                 : 'bg-slate-50 text-slate-900 hover:bg-slate-100 hover:text-slate-950'
                                 }`}
@@ -300,17 +274,13 @@ export default function MediaManager({ appState }) {
 
                 {/* View Mode Toggle */}
                 <div className="flex justify-between items-center pt-2.5 border-t border-slate-100">
-                    <div 
-                        style={{ fontSize: '11px', fontWeight: '900', paddingLeft: '8px' }} 
-                        className="text-slate-900 uppercase tracking-[0.1em]"
-                    >
+                    <div className="text-[11px] font-black text-slate-900 uppercase tracking-[0.1em] pl-2">
                         {filteredMedia.length} {filteredMedia.length === 1 ? 'Asset' : 'Assets'}
                     </div>
                     <div className="flex gap-1 bg-slate-50 p-1 rounded-lg">
                         <button
                             onClick={() => setViewMode('grid')}
-                            style={{ fontSize: '11px', fontWeight: '800', paddingLeft: '12px', paddingRight: '12px', paddingTop: '5px', paddingBottom: '5px' }}
-                            className={`rounded-md transition-all duration-200 cursor-pointer ${viewMode === 'grid'
+                            className={`rounded-md transition-all duration-200 cursor-pointer text-[11px] font-extrabold px-3 py-1.25 ${viewMode === 'grid'
                                 ? 'bg-white text-blue-600 shadow-sm'
                                 : 'text-slate-900 hover:text-slate-950'
                                 }`}
@@ -319,8 +289,7 @@ export default function MediaManager({ appState }) {
                         </button>
                         <button
                             onClick={() => setViewMode('list')}
-                            style={{ fontSize: '11px', fontWeight: '800', paddingLeft: '12px', paddingRight: '12px', paddingTop: '5px', paddingBottom: '5px' }}
-                            className={`rounded-md transition-all duration-200 cursor-pointer ${viewMode === 'list'
+                            className={`rounded-md transition-all duration-200 cursor-pointer text-[11px] font-extrabold px-3 py-1.25 ${viewMode === 'list'
                                 ? 'bg-white text-blue-600 shadow-sm'
                                 : 'text-slate-900 hover:text-slate-950'
                                 }`}
@@ -334,10 +303,7 @@ export default function MediaManager({ appState }) {
             {/* Media Grid/List */}
             <div className={`flex-1 bg-white leap-panel-body ${filteredMedia.length === 0 ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}>
                 {filteredMedia.length === 0 ? (
-                    <div
-                        className="flex flex-col items-center justify-center h-full px-6 py-8 transition-all duration-300"
-                        style={{ height: '100%' }}
-                    >
+                    <div className="flex flex-col items-center justify-center h-full px-6 py-8 transition-all duration-300">
                         {/* Icon */}
                         <div className={`relative mb-4 transition-transform duration-300 ${isDragOver ? 'scale-110' : ''}`}>
                             <div className={`relative w-[52px] h-[52px] rounded-2xl flex items-center justify-center transition-all duration-300 ${isDragOver ? 'bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300' : 'bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200'}`}>
@@ -360,29 +326,7 @@ export default function MediaManager({ appState }) {
                                 {!searchTerm && (
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            padding: '8px 18px',
-                                            background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                            color: '#fff',
-                                            borderRadius: '10px',
-                                            fontSize: '11px',
-                                            fontWeight: 700,
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 2px 8px rgba(99,14,212,0.25)',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(-1px)'
-                                            e.currentTarget.style.boxShadow = '0 4px 14px rgba(99,14,212,0.35)'
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(0)'
-                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(99,14,212,0.25)'
-                                        }}
+                                        className="inline-flex items-center gap-2 px-4.5 py-2 bg-gradient-to-r from-purple-700 to-violet-600 text-white rounded-xl text-xs font-bold shadow-[0_2px_8px_rgba(99,14,212,0.25)] hover:shadow-[0_4px_14px_rgba(99,14,212,0.35)] hover:-translate-y-0.5 transition-all border-none cursor-pointer"
                                     >
                                         <Upload size={12} strokeWidth={2.5} />
                                         Browse Files
@@ -393,10 +337,7 @@ export default function MediaManager({ appState }) {
                     </div>
                 ) : (
                     viewMode === 'grid' ? (
-                        <div
-                            style={isDragOver ? {} : { paddingLeft: '16px', paddingRight: '16px', paddingBottom: '16px', paddingTop: '8px' }}
-                            className={`grid grid-cols-2 gap-3 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : ''}`}
-                        >
+                        <div className={`grid grid-cols-2 gap-3 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : 'px-4 pb-4 pt-2'}`}>
                             {isDragOver && (
                                 <div className="col-span-2 flex flex-col items-center justify-center py-8 text-blue-500">
                                     <Upload size={24} className="mb-2 animate-bounce" />
@@ -474,10 +415,7 @@ export default function MediaManager({ appState }) {
                             ))}
                         </div>
                     ) : (
-                        <div
-                            style={isDragOver ? {} : { paddingLeft: '16px', paddingRight: '16px', paddingBottom: '16px', paddingTop: '8px' }}
-                            className={`space-y-2.5 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : ''}`}
-                        >
+                        <div className={`space-y-2.5 transition-all duration-200 ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl p-4' : 'px-4 pb-4 pt-2'}`}>
                             {isDragOver && (
                                 <div className="flex flex-col items-center justify-center py-6 text-blue-500">
                                     <Upload size={24} className="mb-2 animate-bounce" />
@@ -499,8 +437,8 @@ export default function MediaManager({ appState }) {
                                         ) : getFileIcon(item.type, 'h-6 w-6 text-slate-900')}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div style={{ fontSize: '13px' }} className="font-extrabold text-slate-700 truncate">{item.filename}</div>
-                                        <div style={{ fontSize: '10px' }} className="font-black text-slate-900 uppercase tracking-widest mt-1">
+                                        <div className="text-xs font-extrabold text-slate-700 truncate">{item.filename}</div>
+                                        <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest mt-1">
                                             {formatFileSize(item.size)} • {getFileExtension(item.filename)}
                                         </div>
                                     </div>
@@ -512,7 +450,7 @@ export default function MediaManager({ appState }) {
                                             }}
                                             className="p-2 hover:bg-slate-100 rounded-lg text-slate-900 transition-colors"
                                         >
-                                            <Eye style={{ width: '18px', height: '18px' }} />
+                                            <Eye className="w-4.5 h-4.5" />
                                         </button>
                                         <button
                                             onClick={(e) => {
@@ -521,7 +459,7 @@ export default function MediaManager({ appState }) {
                                             }}
                                             className="p-2 hover:bg-red-50 rounded-lg text-red-400 transition-colors"
                                         >
-                                            <Trash2 style={{ width: '18px', height: '18px' }} />
+                                            <Trash2 className="w-4.5 h-4.5" />
                                         </button>
                                     </div>
                                 </div>
@@ -533,13 +471,13 @@ export default function MediaManager({ appState }) {
 
             {/* Stats Footer - Standardized Pro Style */}
             {media.length > 0 && (
-                <div style={{ padding: '8px 12px 12px' }} className="border-t border-slate-100 bg-slate-50/30 shrink-0">
+                <div className="pt-2 px-3 pb-3 border-t border-slate-100 bg-slate-50/30 shrink-0">
                     <div className="flex gap-2">
-                        <div style={{ padding: '6px 8px' }} className="flex-1 relative overflow-hidden border border-slate-200/60 rounded-xl bg-white hover:shadow-sm hover:border-slate-300/80 transition-all duration-300 text-center">
+                        <div className="flex-1 relative overflow-hidden border border-slate-200/60 rounded-xl bg-white hover:shadow-sm hover:border-slate-300/80 transition-all duration-300 text-center py-1.5 px-2">
                             <div className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5 leading-none">Total Files</div>
                             <div className="text-sm font-black text-slate-800 leading-tight">{stats.total}</div>
                         </div>
-                        <div style={{ padding: '6px 8px' }} className="flex-1 relative overflow-hidden border border-slate-200/60 rounded-xl bg-white hover:shadow-sm hover:border-slate-300/80 transition-all duration-300 text-center">
+                        <div className="flex-1 relative overflow-hidden border border-slate-200/60 rounded-xl bg-white hover:shadow-sm hover:border-slate-300/80 transition-all duration-300 text-center py-1.5 px-2">
                             <div className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5 leading-none">Total Size</div>
                             <div className="text-sm font-black text-slate-800 leading-tight">{formatFileSize(stats.totalSize)}</div>
                         </div>
@@ -547,10 +485,9 @@ export default function MediaManager({ appState }) {
                     {selectedFile && (
                         <button
                             onClick={handleDeleteSelected}
-                            style={{ fontSize: '10px', fontWeight: '900', height: '32px', marginTop: '8px' }}
-                            className="w-full px-4 bg-red-500 hover:bg-red-600 text-white uppercase tracking-[0.2em] rounded-xl transition-all duration-200 shadow-md shadow-red-500/10 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                            className="w-full h-8 mt-2 px-4 bg-red-500 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-200 shadow-md shadow-red-500/10 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
                         >
-                            <Trash2 style={{ width: '13px', height: '13px' }} />
+                            <Trash2 className="w-3.25 h-3.25" />
                             Delete Selected
                         </button>
                     )}
@@ -620,71 +557,16 @@ export default function MediaManager({ appState }) {
                             )}
                         </div>
 
-                        <div style={{
-                            padding: '28px 24px',
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            gap: '12px',
-                            alignItems: 'center',
-                            backgroundColor: '#f8fafc',
-                            borderTop: '1px solid #e2e8f0',
-                            flexShrink: 0
-                        }}>
+                        <div className="p-7 px-6 flex justify-end gap-3 items-center bg-slate-50 border-t border-slate-200 shrink-0">
                             <button
                                 onClick={() => setPreviewFile(null)}
-                                style={{
-                                    minWidth: '120px',
-                                    padding: '14px 28px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: '14px',
-                                    fontWeight: 800,
-                                    fontSize: '15px',
-                                    transition: 'all 0.2s',
-                                    border: '1px solid #cbd5e1',
-                                    backgroundColor: '#f8fafc',
-                                    color: '#334155',
-                                    cursor: 'pointer'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#f1f5f9';
-                                    e.currentTarget.style.color = '#0f172a';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#f8fafc';
-                                    e.currentTarget.style.color = '#334155';
-                                }}
+                                className="min-w-[120px] py-3.5 px-7 inline-flex items-center justify-center rounded-xl font-extrabold text-sm transition-all border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
                             >
                                 Close
                             </button>
                             <button
                                 onClick={() => handleDownload(previewFile)}
-                                style={{
-                                    minWidth: '150px',
-                                    padding: '14px 28px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '10px',
-                                    borderRadius: '14px',
-                                    fontWeight: 800,
-                                    fontSize: '15px',
-                                    transition: 'all 0.2s',
-                                    border: 'none',
-                                    backgroundColor: '#4f46e5',
-                                    color: '#ffffff',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#4338ca';
-                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(79, 70, 229, 0.3)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#4f46e5';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.25)';
-                                }}
+                                className="min-w-[150px] py-3.5 px-7 inline-flex items-center justify-center gap-2.5 rounded-xl font-extrabold text-sm transition-all border-none bg-indigo-600 text-white cursor-pointer shadow-[0_4px_12px_rgba(79,70,229,0.25)] hover:bg-indigo-700 hover:shadow-[0_6px_16px_rgba(79,70,229,0.3)]"
                             >
                                 <Download className="h-5 w-5" />
                                 <span>Download File</span>
@@ -696,220 +578,65 @@ export default function MediaManager({ appState }) {
             )}
             {deleteTarget && createPortal(
                 <div
-                    className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-                    style={{ backgroundColor: 'rgba(15, 23, 42, 0.7)' }}
+                    className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/70"
                     onClick={() => setDeleteTarget(null)}
                 >
                     <div
-                        style={{
-                            backgroundColor: '#ffffff',
-                            borderRadius: '20px',
-                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                            width: '420px',
-                            maxWidth: '90vw',
-                            margin: 'auto',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            overflow: 'hidden',
-                            border: '1px solid #f1f5f9'
-                        }}
+                        className="bg-white rounded-2xl shadow-2xl w-[420px] max-w-[90vw] m-auto flex flex-col overflow-hidden border border-slate-100"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div style={{
-                            padding: '24px 24px 12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            backgroundColor: '#ffffff',
-                            flexShrink: 0
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                                <div style={{
-                                    width: '44px',
-                                    height: '44px',
-                                    borderRadius: '12px',
-                                    backgroundColor: '#fff1f2',
-                                    color: '#f43f5e',
-                                    border: '1px solid #fecdd3',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <AlertTriangle style={{ width: '22px', height: '22px' }} />
+                        <div className="pt-6 px-6 pb-3 flex items-center justify-between bg-white shrink-0">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-11 h-11 rounded-xl bg-rose-50 text-rose-500 border border-rose-200 flex items-center justify-center shrink-0">
+                                    <AlertTriangle className="w-5.5 h-5.5" />
                                 </div>
-                                <span style={{
-                                    fontSize: '18px',
-                                    fontWeight: 900,
-                                    color: '#1e293b',
-                                    letterSpacing: '-0.02em'
-                                }}>Delete Asset</span>
+                                <span className="text-lg font-black text-slate-800 tracking-tight">Delete Asset</span>
                             </div>
                             <button
                                 onClick={() => setDeleteTarget(null)}
-                                style={{
-                                    width: '36px',
-                                    height: '36px',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: '#94a3b8',
-                                    border: '1px solid #e2e8f0',
-                                    backgroundColor: 'transparent',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    flexShrink: 0,
-                                    marginLeft: '12px'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#f1f5f9';
-                                    e.currentTarget.style.color = '#1e293b';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'transparent';
-                                    e.currentTarget.style.color = '#94a3b8';
-                                }}
+                                className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 border border-slate-200 bg-transparent hover:bg-slate-100 hover:text-slate-800 transition-all cursor-pointer shrink-0 ml-3"
                                 title="Close"
                             >
-                                <X style={{ width: '16px', height: '16px' }} />
+                                <X className="w-4 h-4" />
                             </button>
                         </div>
 
                         {/* Content */}
-                        <div style={{ padding: '8px 24px 20px' }}>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '14px',
-                                padding: '14px',
-                                borderRadius: '14px',
-                                backgroundColor: '#f8fafc',
-                                border: '1px solid #f1f5f9'
-                            }}>
-                                <div style={{
-                                    width: '48px',
-                                    height: '48px',
-                                    borderRadius: '12px',
-                                    backgroundColor: '#ffffff',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    overflow: 'hidden',
-                                    border: '1px solid #e2e8f0',
-                                    flexShrink: 0
-                                }}>
+                        <div className="py-2 px-6 pb-5">
+                            <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+                                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
                                     {(media.find(m => m.filename === deleteTarget)?.type || '').startsWith('image/') ? (
-                                        <img src={media.find(m => m.filename === deleteTarget)?.data} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <img src={media.find(m => m.filename === deleteTarget)?.data} className="w-full h-full object-cover" />
                                     ) : (
-                                        <File style={{ width: '24px', height: '24px', color: '#f43f5e' }} />
+                                        <File className="w-6 h-6 text-rose-500" />
                                     )}
                                 </div>
-                                <div style={{ minWidth: 0 }}>
-                                    <div style={{
-                                        fontSize: '14px',
-                                        fontWeight: 800,
-                                        color: '#1e293b',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                        maxWidth: '240px',
-                                        lineHeight: 1.2
-                                    }}>{deleteTarget}</div>
-                                    <div style={{
-                                        fontSize: '10px',
-                                        fontWeight: 800,
-                                        color: '#94a3b8',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.1em',
-                                        marginTop: '4px'
-                                    }}>
+                                <div className="min-w-0">
+                                    <div className="text-sm font-extrabold text-slate-800 truncate max-w-[240px] leading-tight">{deleteTarget}</div>
+                                    <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">
                                         {media.find(m => m.filename === deleteTarget)?.type || 'Unknown'}
                                     </div>
                                 </div>
                             </div>
-                            <p style={{
-                                marginTop: '14px',
-                                fontSize: '13px',
-                                color: '#64748b',
-                                fontWeight: 500,
-                                lineHeight: 1.7
-                            }}>
-                                Are you sure you want to delete this asset? This action <span style={{ fontWeight: 800, color: '#f43f5e' }}>cannot be undone</span>. All references to this file will break.
+                            <p className="mt-3.5 text-xs text-slate-500 font-medium leading-relaxed">
+                                Are you sure you want to delete this asset? This action <span className="font-extrabold text-rose-500">cannot be undone</span>. All references to this file will break.
                             </p>
                         </div>
 
                         {/* Footer */}
-                        <div style={{
-                            padding: '28px 24px',
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            gap: '12px',
-                            alignItems: 'center',
-                            backgroundColor: '#f8fafc',
-                            borderTop: '1px solid #e2e8f0',
-                            flexShrink: 0
-                        }}>
+                        <div className="p-7 px-6 flex justify-end gap-3 items-center bg-slate-50 border-t border-slate-200 shrink-0">
                             <button
                                 onClick={() => setDeleteTarget(null)}
-                                style={{
-                                    minWidth: '120px',
-                                    padding: '14px 28px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: '14px',
-                                    fontWeight: 800,
-                                    fontSize: '15px',
-                                    transition: 'all 0.2s',
-                                    border: '1px solid #cbd5e1',
-                                    backgroundColor: '#f8fafc',
-                                    color: '#334155',
-                                    cursor: 'pointer'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#f1f5f9';
-                                    e.currentTarget.style.color = '#0f172a';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#f8fafc';
-                                    e.currentTarget.style.color = '#334155';
-                                }}
+                                className="min-w-[120px] py-3.5 px-7 inline-flex items-center justify-center rounded-xl font-extrabold text-sm transition-all border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={confirmDelete}
-                                style={{
-                                    minWidth: '130px',
-                                    padding: '14px 28px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '10px',
-                                    borderRadius: '14px',
-                                    fontWeight: 800,
-                                    fontSize: '15px',
-                                    transition: 'all 0.2s',
-                                    border: 'none',
-                                    backgroundColor: '#e11d48',
-                                    color: '#ffffff',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 4px 12px rgba(225, 29, 72, 0.25)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#be123c';
-                                    e.currentTarget.style.transform = 'translateY(-1px)';
-                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(225, 29, 72, 0.3)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#e11d48';
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(225, 29, 72, 0.25)';
-                                }}
+                                className="min-w-[130px] py-3.5 px-7 inline-flex items-center justify-center gap-2.5 rounded-xl font-extrabold text-sm transition-all border-none bg-rose-600 text-white cursor-pointer shadow-[0_4px_12px_rgba(225,29,72,0.25)] hover:bg-rose-700 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(225,29,72,0.3)]"
                             >
-                                <Trash2 style={{ width: '18px', height: '18px' }} />
+                                <Trash2 className="w-4.5 h-4.5" />
                                 <span>Delete</span>
                             </button>
                         </div>

@@ -11,130 +11,78 @@ interface StatsBarProps {
 export default function StatsBar({ totalClasses, totalImages, imagesPerClass, recommended, compact }: StatsBarProps) {
     if (compact) {
         return (
-            <div style={{ width: '100%', background: '#fff', borderRadius: '12px', padding: '16px 20px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>📁</div>
+            <div className="w-full bg-white rounded-xl p-4 px-5 border border-gray-200 flex items-center gap-4 shrink-0">
+                <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center text-sm">📁</div>
                     <div>
-                        <span style={{ fontSize: '11px', color: '#6b7280', display: 'block' }}>classes</span>
-                        <span style={{ fontSize: '16px', fontWeight: 700, color: '#630ed4' }}>{totalClasses}</span>
+                        <span className="text-[11px] text-gray-500 block">classes</span>
+                        <span className="text-base font-bold text-[#630ed4]">{totalClasses}</span>
                     </div>
                 </div>
-                <div style={{ width: '1px', height: '28px', background: '#e5e7eb' }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>🖼️</div>
+                <div className="w-px h-7 bg-gray-200" />
+                <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-sm">🖼️</div>
                     <div>
-                        <span style={{ fontSize: '11px', color: '#6b7280', display: 'block' }}>pics</span>
-                        <span style={{ fontSize: '16px', fontWeight: 700, color: '#059669' }}>{totalImages}</span>
+                        <span className="text-[11px] text-gray-500 block">pics</span>
+                        <span className="text-base font-bold text-emerald-600">{totalImages}</span>
                     </div>
                 </div>
-                <div style={{ width: '1px', height: '28px', background: '#e5e7eb' }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '14px' }}>🎯</span>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#059669' }}>{recommended}/cls</span>
+                <div className="w-px h-7 bg-gray-200" />
+                <div className="flex items-center gap-1.5 p-1.5 px-3 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-lg">
+                    <span className="text-sm">🎯</span>
+                    <span className="text-sm font-bold text-emerald-600">{recommended}/cls</span>
                 </div>
-                <div style={{ width: '1px', height: '28px', background: '#e5e7eb' }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#630ed4', boxShadow: '0 0 6px rgba(99,14,212,0.5)' }} />
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#630ed4', letterSpacing: '0.08em' }}>NEURA</span>
+                <div className="w-px h-7 bg-gray-200" />
+                <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-[#630ed4] shadow-[0_0_6px_rgba(99,14,212,0.5)]" />
+                    <span className="text-[11px] font-extrabold text-[#630ed4] tracking-wider">NEURA</span>
                 </div>
             </div>
         )
     }
 
     const stats = [
-        { emoji: '📁', label: 'classes', value: totalClasses, color: '#630ed4', bg: '#f5f3ff' },
-        { emoji: '🖼️', label: 'pics', value: totalImages, color: '#059669', bg: '#ecfdf5' },
-        { emoji: '📊', label: 'Avg', value: `${imagesPerClass}/class`, color: '#d97706', bg: '#fffbeb' },
+        { emoji: '📁', label: 'classes', value: totalClasses, colorClass: 'text-[#630ed4]', bgClass: 'bg-purple-50' },
+        { emoji: '🖼️', label: 'pics', value: totalImages, colorClass: 'text-emerald-600', bgClass: 'bg-emerald-50' },
+        { emoji: '📊', label: 'Avg', value: `${imagesPerClass}/class`, colorClass: 'text-amber-600', bgClass: 'bg-amber-50' },
     ]
 
     return (
-        <div style={{ width: '100%', maxWidth: '720px' }} className="animate-fade-in">
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: '#fff',
-                    borderRadius: '16px',
-                    padding: '12px 20px',
-                    border: '1px solid #e5e7eb',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03)',
-                }}
-            >
+        <div className="w-full max-w-[720px] animate-fade-in">
+            <div className="flex items-center justify-between bg-white rounded-2xl p-3 px-5 border border-gray-200 shadow-xs">
                 {/* Stats */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div className="flex items-center gap-4">
                     {stats.map((stat) => (
-                        <div
-                            key={stat.label}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: '28px',
-                                    height: '28px',
-                                    borderRadius: '8px',
-                                    background: stat.bg,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '14px',
-                                }}
-                            >
+                        <div key={stat.label} className="flex items-center gap-2">
+                            <div className={`w-7 h-7 rounded-lg ${stat.bgClass} flex items-center justify-center text-sm`}>
                                 {stat.emoji}
                             </div>
                             <div>
-                                <span style={{ fontSize: '12px', color: '#6b7280' }}>{stat.label}: </span>
-                                <span style={{ fontSize: '13px', fontWeight: 700, color: stat.color }}>{stat.value}</span>
+                                <span className="text-xs text-gray-500">{stat.label}: </span>
+                                <span className={`text-xs font-bold ${stat.colorClass}`}>{stat.value}</span>
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {/* Divider */}
-                <div style={{ width: '1px', height: '24px', background: '#e5e7eb' }} />
+                <div className="w-px h-6 bg-gray-200" />
 
                 {/* Goal */}
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '6px 12px',
-                        background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
-                        borderRadius: '8px',
-                    }}
-                >
-                    <span style={{ fontSize: '14px' }}>🎯</span>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#059669' }}>
+                <div className="flex items-center gap-1.5 p-1.5 px-3 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-lg">
+                    <span className="text-sm">🎯</span>
+                    <span className="text-xs font-bold text-emerald-600">
                         Goal: {recommended}/class
                     </span>
                 </div>
 
                 {/* Divider */}
-                <div style={{ width: '1px', height: '24px', background: '#e5e7eb' }} />
+                <div className="w-px h-6 bg-gray-200" />
 
                 {/* Brand */}
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                    }}
-                >
-                    <div
-                        style={{
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            background: '#630ed4',
-                            boxShadow: '0 0 6px rgba(99,14,212,0.5)',
-                        }}
-                    />
-                    <span style={{ fontSize: '10px', fontWeight: 800, color: '#630ed4', letterSpacing: '0.08em' }}>
+                <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#630ed4] shadow-[0_0_6px_rgba(99,14,212,0.5)]" />
+                    <span className="text-[10px] font-extrabold text-[#630ed4] tracking-wider">
                         NEURA
                     </span>
                 </div>

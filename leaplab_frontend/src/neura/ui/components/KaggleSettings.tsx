@@ -89,21 +89,7 @@ export default function KaggleSettings({ onCredentialsSaved, compact = false }: 
                 ) : (
                     <button
                         onClick={() => setShowForm(true)}
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            padding: '12px 28px',
-                            background: 'rgb(99, 14, 212)',
-                            color: 'white',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            borderRadius: '10px',
-                            border: 'none',
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(99, 14, 212, 0.3)',
-                            transition: 'all 0.2s ease'
-                        }}
+                        className="inline-flex items-center gap-2.5 px-7 py-3 bg-[#630ed4] hover:bg-[#7c3aed] text-white text-sm font-semibold rounded-xl border-none cursor-pointer shadow-[0_2px_8px_rgba(99,14,212,0.3)] transition-all duration-200"
                     >
                         <Link2 size={18} />
                         <span>Connect Kaggle</span>
@@ -112,31 +98,31 @@ export default function KaggleSettings({ onCredentialsSaved, compact = false }: 
 
                 {/* Modal Overlay */}
                 {showForm && (
-                    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(8px)' }}>
-                        <div style={{ position: 'relative', width: '100%', maxWidth: '440px', background: 'white', borderRadius: '20px', border: '1px solid rgba(229, 231, 235, 0.8)', boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden' }}>
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md">
+                        <div className="relative w-full max-w-[440px] bg-white rounded-2xl border border-slate-200/80 shadow-2xl overflow-hidden">
                             {/* Close button */}
                             <button
                                 onClick={() => { setShowForm(false); setError(null) }}
-                                style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10, width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.15)', border: '1px solid rgba(255, 255, 255, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', cursor: 'pointer', transition: 'all 0.2s' }}
+                                className="absolute top-4 right-4 z-10 w-8 h-8 rounded-lg bg-white/15 border border-white/20 flex items-center justify-center text-white cursor-pointer hover:bg-white/25 transition-all"
                             >
                                 <X size={16} />
                             </button>
 
                             {/* Hero header */}
-                            <div style={{ position: 'relative', padding: '32px 32px 40px', textAlign: 'center', background: 'linear-gradient(135deg, #630ed4 0%, #7c3aed 100%)' }}>
-                                <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)', filter: 'blur(40px)' }} />
-                                <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', height: '24px', background: 'white', borderRadius: '20px 20px 0 0' }} />
-                                <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255, 255, 255, 0.25)', marginBottom: '16px' }}>
+                            <div className="relative p-8 pb-10 text-center bg-gradient-to-br from-[#630ed4] to-[#7c3aed]">
+                                <div className="absolute -top-10 -right-10 w-35 h-35 rounded-full bg-white/8 blur-xl" />
+                                <div className="absolute bottom-0 left-0 right-0 h-6 bg-white rounded-t-2xl" />
+                                <div className="relative inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 mb-4 text-white">
                                     <Link2 size={26} color="white" />
                                 </div>
-                                <div style={{ position: 'relative' }}>
-                                    <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'white', letterSpacing: '-0.025em', marginBottom: '4px' }}>Connect Kaggle</h3>
-                                    <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.7)', fontWeight: 500 }}>Access free public datasets</p>
+                                <div className="relative">
+                                    <h3 className="text-xl font-bold text-white tracking-tight mb-1">Connect Kaggle</h3>
+                                    <p className="text-xs text-white/70 font-medium m-0">Access free public datasets</p>
                                 </div>
                             </div>
 
                             {/* Form body */}
-                            <div style={{ position: 'relative', padding: '8px 32px 32px' }}>
+                            <div className="relative p-8 pt-2 pb-8">
                                 <KaggleCredentialsForm
                                     username={username}
                                     apiKey={apiKey}
@@ -240,21 +226,7 @@ export default function KaggleSettings({ onCredentialsSaved, compact = false }: 
                         </div>
                         <button
                             onClick={() => setShowForm(true)}
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                padding: '12px 28px',
-                                background: 'rgb(99, 14, 212)',
-                                color: 'white',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                borderRadius: '10px',
-                                border: 'none',
-                                cursor: 'pointer',
-                                boxShadow: '0 2px 8px rgba(99, 14, 212, 0.3)',
-                                transition: 'all 0.2s ease'
-                            }}
+                            className="inline-flex items-center gap-2.5 px-7 py-3 bg-[#630ed4] hover:bg-[#7c3aed] text-white text-sm font-semibold rounded-xl border-none cursor-pointer shadow-[0_2px_8px_rgba(99,14,212,0.3)] transition-all duration-200"
                         >
                             <Link2 size={18} />
                             <span>Connect Kaggle</span>
@@ -295,83 +267,83 @@ function KaggleCredentialsForm({
     onCancel: () => void
 }) {
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>Kaggle Username</label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ position: 'absolute', left: '14px', color: '#8b5cf6', opacity: 0.6 }}><User size={16} /></span>
+        <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-500">Kaggle Username</label>
+                <div className="relative flex items-center">
+                    <span className="absolute left-3.5 text-violet-500/60"><User size={16} /></span>
                     <input
                         type="text"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         placeholder="your-username"
-                        style={{ width: '100%', padding: '12px 16px 12px 42px', fontSize: '14px', fontWeight: 500, border: '1px solid #e2e8f0', borderRadius: '12px', outline: 'none', background: '#f8fafc', color: '#1e293b', transition: 'all 0.2s' }}
+                        className="w-full py-3 px-4 pl-10.5 text-sm font-medium border border-slate-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/10 rounded-xl outline-none bg-slate-50 text-slate-800 transition-all"
                     />
                 </div>
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>API Key</label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <span style={{ position: 'absolute', left: '14px', color: '#8b5cf6', opacity: 0.6 }}><KeyRound size={16} /></span>
+            <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-500">API Key</label>
+                <div className="relative flex items-center">
+                    <span className="absolute left-3.5 text-violet-500/60"><KeyRound size={16} /></span>
                     <input
                         type="password"
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
                         placeholder="your-api-key"
-                        style={{ width: '100%', padding: '12px 16px 12px 42px', fontSize: '14px', fontWeight: 500, border: '1px solid #e2e8f0', borderRadius: '12px', outline: 'none', background: '#f8fafc', color: '#1e293b', transition: 'all 0.2s' }}
+                        className="w-full py-3 px-4 pl-10.5 text-sm font-medium border border-slate-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/10 rounded-xl outline-none bg-slate-50 text-slate-800 transition-all"
                     />
                 </div>
             </div>
 
             {/* Steps Guide */}
-            <div style={{ borderRadius: '12px', border: '1px solid rgba(139, 92, 246, 0.15)', background: 'rgba(245, 243, 255, 0.5)', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderBottom: '1px solid rgba(139, 92, 246, 0.1)' }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '8px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+            <div className="rounded-xl border border-violet-500/15 bg-violet-50/50 overflow-hidden">
+                <div className="flex items-center gap-2.5 p-3 px-4 border-b border-violet-500/10">
+                    <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center text-white">
                         <Lightbulb size={12} />
                     </div>
-                    <p style={{ fontSize: '12px', fontWeight: 600, color: '#7c3aed' }}>How to get your API key</p>
+                    <p className="text-xs font-semibold text-violet-600 m-0">How to get your API key</p>
                 </div>
-                <ul style={{ padding: '14px 16px', margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', listStyle: 'none' }}>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '12px', color: '#475569', lineHeight: 1.5 }}>
-                        <span style={{ width: '20px', height: '20px', minWidth: '20px', borderRadius: '6px', background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '10px', marginTop: '1px' }}>1</span>
-                        <span>Go to <a href="https://www.kaggle.com" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: '#7c3aed', textDecoration: 'underline' }}>kaggle.com</a> and sign in.</span>
+                <ul className="p-3.5 px-4 m-0 flex flex-col gap-2.5 list-none">
+                    <li className="flex items-start gap-2.5 text-xs text-slate-600 leading-normal">
+                        <span className="w-5 h-5 min-w-5 rounded-md bg-violet-100 text-violet-600 flex items-center justify-center font-bold text-[10px] mt-0.5">1</span>
+                        <span>Go to <a href="https://www.kaggle.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-violet-600 underline">kaggle.com</a> and sign in.</span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '12px', color: '#475569', lineHeight: 1.5 }}>
-                        <span style={{ width: '20px', height: '20px', minWidth: '20px', borderRadius: '6px', background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '10px', marginTop: '1px' }}>2</span>
-                        <span>Click your profile picture → <span style={{ fontWeight: 600, color: '#334155' }}>Settings</span>.</span>
+                    <li className="flex items-start gap-2.5 text-xs text-slate-600 leading-normal">
+                        <span className="w-5 h-5 min-w-5 rounded-md bg-violet-100 text-violet-600 flex items-center justify-center font-bold text-[10px] mt-0.5">2</span>
+                        <span>Click your profile picture → <span className="font-semibold text-slate-700">Settings</span>.</span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '12px', color: '#475569', lineHeight: 1.5 }}>
-                        <span style={{ width: '20px', height: '20px', minWidth: '20px', borderRadius: '6px', background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '10px', marginTop: '1px' }}>3</span>
-                        <span>Scroll to the <span style={{ fontWeight: 600, color: '#334155' }}>API</span> section.</span>
+                    <li className="flex items-start gap-2.5 text-xs text-slate-600 leading-normal">
+                        <span className="w-5 h-5 min-w-5 rounded-md bg-violet-100 text-violet-600 flex items-center justify-center font-bold text-[10px] mt-0.5">3</span>
+                        <span>Scroll to the <span className="font-semibold text-slate-700">API</span> section.</span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '12px', color: '#475569', lineHeight: 1.5 }}>
-                        <span style={{ width: '20px', height: '20px', minWidth: '20px', borderRadius: '6px', background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '10px', marginTop: '1px' }}>4</span>
-                        <span>Click <span style={{ fontWeight: 600, color: '#7c3aed', background: 'rgba(139, 92, 246, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>Create New Token</span>.</span>
+                    <li className="flex items-start gap-2.5 text-xs text-slate-600 leading-normal">
+                        <span className="w-5 h-5 min-w-5 rounded-md bg-violet-100 text-violet-600 flex items-center justify-center font-bold text-[10px] mt-0.5">4</span>
+                        <span>Click <span className="font-semibold text-violet-600 bg-violet-500/10 px-1.5 py-0.5 rounded">Create New Token</span>.</span>
                     </li>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '12px', color: '#475569', lineHeight: 1.5 }}>
-                        <span style={{ width: '20px', height: '20px', minWidth: '20px', borderRadius: '6px', background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '10px', marginTop: '1px' }}>5</span>
-                        <span>Open the downloaded <span style={{ fontWeight: 600, color: '#334155' }}>kaggle.json</span> and copy credentials.</span>
+                    <li className="flex items-start gap-2.5 text-xs text-slate-600 leading-normal">
+                        <span className="w-5 h-5 min-w-5 rounded-md bg-violet-100 text-violet-600 flex items-center justify-center font-bold text-[10px] mt-0.5">5</span>
+                        <span>Open the downloaded <span className="font-semibold text-slate-700">kaggle.json</span> and copy credentials.</span>
                     </li>
                 </ul>
             </div>
 
             {error && (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '14px 16px' }}>
-                    <AlertCircle style={{ color: '#ef4444', minWidth: '16px', marginTop: '2px' }} size={16} />
-                    <p style={{ fontSize: '12px', fontWeight: 500, color: '#dc2626', lineHeight: 1.5, margin: 0 }}>{error}</p>
+                <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl p-3.5 px-4">
+                    <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={16} />
+                    <p className="text-xs font-medium text-red-600 leading-normal m-0">{error}</p>
                 </div>
             )}
 
-            <div style={{ display: 'flex', gap: '10px', paddingTop: '4px' }}>
+            <div className="flex gap-2.5 pt-1">
                 <button
                     onClick={onSave}
                     disabled={isTesting}
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 24px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: 'white', borderRadius: '12px', fontSize: '14px', fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(99, 14, 212, 0.25)', transition: 'all 0.2s', opacity: isTesting ? 0.6 : 1 }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-sm font-semibold border-none cursor-pointer shadow-[0_4px_14px_rgba(99,14,212,0.25)] transition-all ${isTesting ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-95'}`}
                 >
                     {isTesting ? (
                         <>
-                            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                            <Loader2 size={16} className="animate-spin" />
                             <span>Testing...</span>
                         </>
                     ) : (
@@ -384,7 +356,7 @@ function KaggleCredentialsForm({
                 <button
                     onClick={onCancel}
                     disabled={isTesting}
-                    style={{ padding: '12px 24px', background: '#f1f5f9', color: '#475569', borderRadius: '12px', fontSize: '14px', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+                    className="py-3 px-6 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-semibold border-none cursor-pointer transition-colors"
                 >
                     Cancel
                 </button>

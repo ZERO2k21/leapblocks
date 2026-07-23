@@ -652,59 +652,59 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
     // Collect mode
     const renderCollectMode = () => (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+        <div className="flex-1 flex flex-col overflow-auto">
             {/* Header */}
-            <div style={{ textAlign: 'center', padding: '12px 20px 8px', flexShrink: 0 }} className="animate-fade-in">
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#630ed4', marginBottom: '2px' }}>🔍 Object Finder!</h2>
-                <p style={{ fontSize: '11px', color: '#6b7280' }}>Point your camera at things — AI will find and name them! 🎯</p>
+            <div className="text-center px-5 pt-3 pb-2 shrink-0 animate-fade-in">
+                <h2 className="text-[20px] font-extrabold text-[#630ed4] mb-[2px]">🔍 Object Finder!</h2>
+                <p className="text-[11px] text-gray-500">Point your camera at things — AI will find and name them! 🎯</p>
             </div>
 
-            <div style={{ padding: '0 20px', flexShrink: 0 }}>
+            <div className="px-5 shrink-0">
                 <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={totalSamples >= 4} />
             </div>
 
             {/* Horizontal Split Layout */}
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', flex: 1, minHeight: 0, padding: isMobile ? '10px 12px' : '10px 20px', overflow: 'auto' }}>
+            <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-4 flex-1 min-h-0 ${isMobile ? 'py-2.5 px-3' : 'py-2.5 px-5'} overflow-auto`}>
                 {/* Left - Camera / Canvas */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0, minHeight: isMobile ? '40vh' : 0 }}>
+                <div className={`flex-1 flex flex-col gap-2.5 min-w-0 ${isMobile ? 'min-h-[40vh]' : 'min-h-0'}`}>
                     {/* Camera tab content */}
                     {collectTab === 'camera' && (
                         <>
                             {/* Camera error */}
                             {cameraError && !cameraOn && (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '16px', padding: '20px', border: '1px solid #e5e7eb' }}>
-                                    <span style={{ fontSize: '36px', marginBottom: '8px' }}>🚫</span>
-                                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e', marginBottom: '6px' }}>Camera Access Needed</h3>
-                                    <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '12px' }}>{cameraError}</p>
-                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                        <button onClick={startCamera} style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>Try Again</button>
-                                        <button onClick={() => { setCameraError(null); fileInputRef.current?.click() }} style={{ padding: '8px 16px', background: '#f5f3ff', color: '#630ed4', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>Upload Only</button>
+                                <div className="flex flex-col items-center justify-center bg-white/85 backdrop-blur-md rounded-2xl p-5 border border-gray-200">
+                                    <span className="text-[36px] mb-2">🚫</span>
+                                    <h3 className="text-sm font-bold text-[#131b2e] mb-1.5">Camera Access Needed</h3>
+                                    <p className="text-[11px] text-gray-500 mb-3">{cameraError}</p>
+                                    <div className="flex gap-2.5">
+                                        <button onClick={startCamera} className="px-4 py-2 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer">Try Again</button>
+                                        <button onClick={() => { setCameraError(null); fileInputRef.current?.click() }} className="px-4 py-2 bg-[#f5f3ff] text-[#630ed4] rounded-xl text-[11px] font-bold border-none cursor-pointer">Upload Only</button>
                                     </div>
                                 </div>
                             )}
 
                             {/* Camera feed */}
-                            <div style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', background: '#1e1b4b', width: '100%', flex: 1, minHeight: 0, display: cameraOn ? 'flex' : 'none' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)' }} />
-                                <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
-                                {captureFlash && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.5)', animation: 'flash 0.3s ease-out' }} />}
-                                <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 8px', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', borderRadius: '6px' }}>
-                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)', animation: 'pulse 2s infinite' }} />
-                                    <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>🔍 LIVE</span>
+                            <div className={`relative rounded-2xl overflow-hidden bg-[#1e1b4b] w-full flex-1 min-h-0 ${cameraOn ? 'flex' : 'hidden'}`}>
+                                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
+                                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
+                                {captureFlash && <div className="absolute inset-0 bg-white/50 animate-fade-in" />}
+                                <div className="absolute top-2 left-2 flex items-center gap-1.25 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)] animate-pulse" />
+                                    <span className="text-white text-[9px] font-bold">🔍 LIVE</span>
                                 </div>
-                                <div style={{ position: 'absolute', top: '8px', right: '8px' }}>
-                                    <button onClick={toggleCamera} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRadius: '6px', fontSize: '9px', fontWeight: 700, background: '#d1fae5', color: '#006c44', border: 'none', cursor: 'pointer' }}>📷 On</button>
+                                <div className="absolute top-2 right-2">
+                                    <button onClick={toggleCamera} className="flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-bold bg-[#d1fae5] text-[#006c44] border-none cursor-pointer">📷 On</button>
                                 </div>
                                 {selectedClass && (
-                                    <div style={{ position: 'absolute', bottom: '60px', left: '8px', padding: '5px 10px', borderRadius: '6px', color: '#fff', fontSize: '10px', fontWeight: 700, background: `${selectedClass.color}CC` }}>{selectedClass.name}</div>
+                                    <div className="absolute bottom-[60px] left-2 px-2.5 py-1.25 rounded-md text-white text-[10px] font-bold" style={{ background: `${selectedClass.color}CC` }}>{selectedClass.name}</div>
                                 )}
                                 {currentDetections.length > 0 && (
-                                    <div style={{ position: 'absolute', bottom: '60px', right: '8px', padding: '4px 8px', background: 'rgba(0,0,0,0.5)', borderRadius: '6px' }}>
-                                        <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>🎯 {currentDetections.length} found</span>
+                                    <div className="absolute bottom-[60px] right-2 px-2 py-1 bg-black/50 rounded-md">
+                                        <span className="text-white text-[9px] font-bold">🎯 {currentDetections.length} found</span>
                                     </div>
                                 )}
                                 {/* Capture button */}
-                                <div style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', zIndex: 20 }}>
+                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
                                     <CaptureButton
                                         onClick={handleCapture}
                                         disabled={!canAddSamples || isCapturing}
@@ -731,15 +731,15 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                         }
                                         if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files)
                                     }}
-                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragging ? '#630ed4' : '#e5e7eb'}`, borderRadius: '14px', padding: '30px 20px', textAlign: 'center', background: isDragging ? 'linear-gradient(135deg, #f5f3ff, #ede9fe)' : 'rgba(255,255,255,0.7)', flex: 1, minHeight: 0, transition: 'all 0.2s ease' }}
+                                    className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl py-7 px-5 text-center flex-1 min-h-0 transition-all duration-200 ${isDragging ? 'border-[#630ed4] bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe]' : 'border-gray-200 bg-white/70'}`}
                                 >
-                                    <div style={{ pointerEvents: isDragging ? 'none' : 'auto', display: 'contents' }}>
-                                        <span style={{ fontSize: '36px', marginBottom: '8px', transition: 'transform 0.2s', transform: isDragging ? 'scale(1.2)' : 'scale(1)' }}>{isDragging ? '📥' : '🔍'}</span>
-                                        <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#131b2e', marginBottom: '4px' }}>{isDragging ? 'Drop Image Files Here!' : 'Camera is off'}</h2>
-                                        <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '12px' }}>{isDragging ? 'Release to upload as samples' : 'Start camera or drag images to collect samples'}</p>
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button onClick={startCamera} style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📷 Turn On Camera</button>
-                                            <button onClick={() => cameraOffUploadRef.current?.click()} style={{ padding: '8px 16px', background: '#fff', color: '#630ed4', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer', transition: 'all 0.2s' }}>📂 Upload</button>
+                                    <div className={`${isDragging ? 'pointer-events-none' : 'pointer-events-auto'} contents`}>
+                                        <span className={`text-[36px] mb-2 transition-transform duration-200 block ${isDragging ? 'scale-125' : 'scale-100'}`}>{isDragging ? '📥' : '🔍'}</span>
+                                        <h2 className="text-[15px] font-extrabold text-[#131b2e] mb-1">{isDragging ? 'Drop Image Files Here!' : 'Camera is off'}</h2>
+                                        <p className="text-[11px] text-gray-500 mb-3">{isDragging ? 'Release to upload as samples' : 'Start camera or drag images to collect samples'}</p>
+                                        <div className="flex gap-2">
+                                            <button onClick={startCamera} className="px-4 py-2 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer">📷 Turn On Camera</button>
+                                            <button onClick={() => cameraOffUploadRef.current?.click()} className="px-4 py-2 bg-white text-[#630ed4] rounded-xl text-[11px] font-bold border-2 border-[#630ed4] cursor-pointer transition-all duration-200">📂 Upload</button>
                                         </div>
                                     </div>
                                     <input ref={cameraOffUploadRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
@@ -747,16 +747,16 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                             )}
 
                             {/* Controls */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'center', flexShrink: 0 }}>
-                                <button onClick={toggleCamera} disabled={isLoadingModel} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: cameraOn ? '#d1fae5' : '#f5f3ff', color: cameraOn ? '#006c44' : '#4a4455', border: 'none', cursor: 'pointer' }}>
+                            <div className="flex items-center gap-1.5 flex-wrap justify-center shrink-0">
+                                <button onClick={toggleCamera} disabled={isLoadingModel} className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold border-none cursor-pointer ${cameraOn ? 'bg-[#d1fae5] text-[#006c44]' : 'bg-[#f5f3ff] text-[#4a4455]'}`}>
                                     {cameraOn ? '📷 Stop' : '📷 Start'}
                                 </button>
                                 {cameraOn && !realtimeEnabled && (
-                                    <button onClick={handleManualDetect} disabled={isLoadingModel || isDetecting} style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+                                    <button onClick={handleManualDetect} disabled={isLoadingModel || isDetecting} className="px-3 py-1.5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-lg text-[10px] font-bold border-none cursor-pointer">
                                         {isDetecting ? '⏳...' : '🔍 Scan'}
                                     </button>
                                 )}
-                                <button onClick={() => fileInputRef.current?.click()} disabled={isLoadingModel} style={{ padding: '6px 12px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '8px', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>📂 Upload</button>
+                                <button onClick={() => fileInputRef.current?.click()} disabled={isLoadingModel} className="px-3 py-1.5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-lg text-[10px] font-bold border-none cursor-pointer">📂 Upload</button>
                                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
                             </div>
                         </>
@@ -776,18 +776,18 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                 }
                                 if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files)
                             }}
-                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragging ? '#630ed4' : '#e5e7eb'}`, borderRadius: '14px', padding: '30px 20px', textAlign: 'center', background: isDragging ? 'linear-gradient(135deg, #f5f3ff, #ede9fe)' : 'rgba(255,255,255,0.7)', flex: 1, minHeight: 0, transition: 'all 0.2s ease', cursor: 'pointer' }}
+                            className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl py-7 px-5 text-center flex-1 min-h-0 transition-all duration-200 cursor-pointer ${isDragging ? 'border-[#630ed4] bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe]' : 'border-gray-200 bg-white/70'}`}
                             onClick={() => { if (!isDragging) cameraOffUploadRef.current?.click() }}
                         >
-                            <div style={{ pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <span style={{ fontSize: '36px', marginBottom: '8px', transition: 'transform 0.2s', transform: isDragging ? 'scale(1.2)' : 'scale(1)' }}>{isDragging ? '📥' : '📂'}</span>
-                                <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#131b2e', marginBottom: '4px' }}>{isDragging ? 'Drop Images Here!' : 'Upload Training Images'}</h2>
-                                <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '12px' }}>{isDragging ? 'Release to save as samples' : `Click or drag images to save as ${selectedClass?.name || 'class'} samples`}</p>
-                                <div style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '10px', fontSize: '11px', fontWeight: 700 }}>
+                            <div className="pointer-events-none flex flex-col items-center">
+                                <span className={`text-[36px] mb-2 transition-transform duration-200 block ${isDragging ? 'scale-125' : 'scale-100'}`}>{isDragging ? '📥' : '📂'}</span>
+                                <h2 className="text-[15px] font-extrabold text-[#131b2e] mb-1">{isDragging ? 'Drop Images Here!' : 'Upload Training Images'}</h2>
+                                <p className="text-[11px] text-gray-500 mb-3">{isDragging ? 'Release to save as samples' : `Click or drag images to save as ${selectedClass?.name || 'class'} samples`}</p>
+                                <div className="px-4 py-2 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold">
                                     📂 Choose Images
                                 </div>
                                 {selectedClass && (
-                                    <p style={{ fontSize: '10px', color: '#630ed4', marginTop: '10px', fontWeight: 600 }}>
+                                    <p className="text-[10px] text-[#630ed4] mt-2.5 font-semibold">
                                         Saving to: {selectedClass.name} ({selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS})
                                     </p>
                                 )}
@@ -798,23 +798,23 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
                     {/* Download tab content */}
                     {collectTab === 'download' && (
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
-                            <div style={{ display: 'flex', gap: '4px', background: '#f3f4f6', borderRadius: '12px', padding: '4px', flexShrink: 0 }}>
-                                <button onClick={() => setDownloadSource('local')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, background: downloadSource === 'local' ? 'white' : 'transparent', color: downloadSource === 'local' ? '#630ed4' : '#6b7280', border: 'none', cursor: 'pointer', boxShadow: downloadSource === 'local' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s ease' }}>📁 Local</button>
-                                <button onClick={() => setDownloadSource('kaggle')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, background: downloadSource === 'kaggle' ? 'white' : 'transparent', color: downloadSource === 'kaggle' ? '#630ed4' : '#6b7280', border: 'none', cursor: 'pointer', boxShadow: downloadSource === 'kaggle' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s ease' }}>🔍 Kaggle</button>
+                        <div className="flex-1 flex flex-col gap-2.5 min-h-0">
+                            <div className="flex gap-1 bg-gray-100 rounded-xl p-1 shrink-0">
+                                <button onClick={() => setDownloadSource('local')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg text-[13px] font-semibold border-none cursor-pointer transition-all duration-200 ${downloadSource === 'local' ? 'bg-white text-[#630ed4] shadow-sm' : 'bg-transparent text-gray-500'}`}>📁 Local</button>
+                                <button onClick={() => setDownloadSource('kaggle')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg text-[13px] font-semibold border-none cursor-pointer transition-all duration-200 ${downloadSource === 'kaggle' ? 'bg-white text-[#630ed4] shadow-sm' : 'bg-transparent text-gray-500'}`}>🔍 Kaggle</button>
                             </div>
-                            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                            <div className="flex-1 min-h-0 overflow-hidden">
                                 {downloadSource === 'local' ? (
                                     <ImageDatasetBrowser mode={mode} onImagesAdded={(count) => showSaved(`📥 Added ${count} images!`)} />
                                 ) : kaggleCredentials ? (
                                     <KaggleDatasetBrowser mode={mode} credentials={kaggleCredentials} onImagesAdded={(count) => showSaved(`📥 Added ${count} images from Kaggle!`)} />
                                 ) : (
-                                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', textAlign: 'center' }}>
-                                        <div style={{ width: '80px', height: '80px', borderRadius: '20px', background: 'linear-gradient(135deg, #f3f0ff, #ede9fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', border: '1px solid rgba(224,213,255,0.6)' }}>
-                                            <span style={{ fontSize: '36px' }}>🔍</span>
+                                    <div className="h-full flex flex-col items-center justify-center py-10 px-8 text-center">
+                                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#f3f0ff] to-[#ede9fe] flex items-center justify-center mb-6 border border-[#e0d5ff]/60">
+                                            <span className="text-[36px]">🔍</span>
                                         </div>
-                                        <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', marginBottom: '8px' }}>Connect Kaggle</h3>
-                                        <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: 1.6, maxWidth: '260px', marginBottom: '28px' }}>Search and download real images from Kaggle's free public datasets</p>
+                                        <h3 className="text-[20px] font-bold text-gray-900 mb-2">Connect Kaggle</h3>
+                                        <p className="text-sm text-gray-500 leading-relaxed max-w-[260px] mb-7">Search and download real images from Kaggle's free public datasets</p>
                                         <KaggleSettings compact onCredentialsSaved={() => setKaggleCredentials(getStoredCredentials())} />
                                     </div>
                                 )}
@@ -824,9 +824,9 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 </div>
 
                 {/* Right - Tabs, Tips, Stats, Detections, Samples */}
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden', overflowY: 'auto', padding: '0 4px' }}>
+                <div className="flex-1 min-w-0 flex flex-col gap-3 overflow-y-auto px-1">
                     {/* Collect sub-tabs */}
-                    <div style={{ display: 'flex', gap: '4px', background: '#f3f4f6', borderRadius: '12px', padding: '4px', flexShrink: 0 }}>
+                    <div className="flex gap-1 bg-gray-100 rounded-xl p-1 shrink-0">
                         {[
                             { id: 'camera' as const, label: 'Camera', emoji: '📷' },
                             { id: 'upload' as const, label: 'Upload', emoji: '📂' },
@@ -840,14 +840,9 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     if (tab.id !== 'camera' && cameraOn) stopCamera()
                                     if (tab.id === 'upload') setDetections([])
                                 }}
-                                style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '12px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, flex: 1,
-                                    background: collectTab === tab.id ? 'white' : 'transparent',
-                                    color: collectTab === tab.id ? '#630ed4' : '#6b7280',
-                                    border: 'none', cursor: 'pointer',
-                                    boxShadow: collectTab === tab.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                                    transition: 'all 0.2s ease'
-                                }}
+                                className={`flex items-center justify-center gap-1.5 py-3 px-4 rounded-lg text-[13px] font-semibold flex-1 border-none cursor-pointer transition-all duration-200 ${
+                                    collectTab === tab.id ? 'bg-white text-[#630ed4] shadow-sm' : 'bg-transparent text-gray-500'
+                                }`}
                             >
                                 <span>{tab.emoji}</span>
                                 <span>{tab.label}</span>
@@ -856,28 +851,28 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     </div>
 
                     {/* Tips */}
-                    <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(99,14,212,0.1)', flexShrink: 0 }}>
-                        <p style={{ fontSize: '12px', fontWeight: 700, color: '#630ed4', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💡 TIPS</p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <span style={{ fontSize: '13px', color: '#4a4455' }}>• Point camera at objects</span>
-                            <span style={{ fontSize: '13px', color: '#4a4455' }}>• Good lighting helps</span>
-                            <span style={{ fontSize: '13px', color: '#4a4455' }}>• Capture to save detections</span>
+                    <div className="bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl p-4 border border-[#630ed4]/10 shrink-0">
+                        <p className="text-xs font-bold text-[#630ed4] mb-2.5 uppercase tracking-wider">💡 TIPS</p>
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-[13px] text-[#4a4455]">• Point camera at objects</span>
+                            <span className="text-[13px] text-[#4a4455]">• Good lighting helps</span>
+                            <span className="text-[13px] text-[#4a4455]">• Capture to save detections</span>
                         </div>
                     </div>
 
                     {/* Detected objects */}
                     {currentDetections.length > 0 && (
-                        <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '16px', border: '1px solid #e5e7eb', flexShrink: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e' }}>🎯 Detected</h3>
-                                <span style={{ fontSize: '12px', fontWeight: 700, background: '#f5f3ff', padding: '4px 10px', borderRadius: '6px', color: '#630ed4' }}>{currentDetections.length}</span>
+                        <div className="bg-white/85 rounded-xl p-4 border border-gray-200 shrink-0">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-bold text-[#131b2e]">🎯 Detected</h3>
+                                <span className="text-xs font-bold bg-[#f5f3ff] py-1 px-2.5 rounded-md text-[#630ed4]">{currentDetections.length}</span>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
+                            <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto">
                                 {currentDetections.map((det, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', borderRadius: '8px', background: '#faf9ff' }}>
-                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: getColorForObject(det.class) }} />
-                                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#131b2e', flex: 1, textTransform: 'capitalize' }}>{det.class}</span>
-                                        <span style={{ fontSize: '12px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', color: '#fff', background: getColorForObject(det.class) }}>{Math.round(det.score * 100)}%</span>
+                                    <div key={i} className="flex items-center gap-2.5 py-2 px-3 rounded-lg bg-[#faf9ff]">
+                                        <div className="w-2 h-2 rounded-full shrink-0" style={{ background: getColorForObject(det.class) }} />
+                                        <span className="text-[13px] font-semibold text-[#131b2e] flex-1 capitalize">{det.class}</span>
+                                        <span className="text-xs font-bold py-0.5 px-2 rounded-md text-white" style={{ background: getColorForObject(det.class) }}>{Math.round(det.score * 100)}%</span>
                                     </div>
                                 ))}
                             </div>
@@ -889,15 +884,15 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
                     {/* Collected samples */}
                     {selectedClass && selectedClass.samples.length > 0 && (
-                        <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '16px', border: '1px solid #e5e7eb', flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexShrink: 0 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: selectedClass.color }} />
-                                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e' }}>{selectedClass.name}</h3>
+                        <div className="bg-white/85 rounded-xl p-4 border border-gray-200 flex-1 min-h-0 overflow-hidden flex flex-col">
+                            <div className="flex items-center justify-between mb-3 shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: selectedClass.color }} />
+                                    <h3 className="text-sm font-bold text-[#131b2e]">{selectedClass.name}</h3>
                                 </div>
-                                <span style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px', background: atSampleLimit ? '#fef3c7' : '#f5f3ff', color: atSampleLimit ? '#c32c00' : '#4a4455' }}>{selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}</span>
+                                <span className={`text-xs font-bold py-1 px-2.5 rounded-md ${atSampleLimit ? 'bg-[#fef3c7] text-[#c32c00]' : 'bg-[#f5f3ff] text-[#4a4455]'}`}>{selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}</span>
                             </div>
-                            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                            <div className="flex-1 min-h-0 overflow-hidden">
                                 <SampleGrid samples={selectedClass.samples} type="image" onRemove={(id) => handleRemoveSample(selectedClass.id, id)} />
                             </div>
                         </div>
@@ -909,48 +904,48 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
     // Test mode
     const renderTestMode = () => (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="flex-1 flex flex-col overflow-hidden">
             {/* Header */}
-            <div style={{ textAlign: 'center', padding: '12px 20px 8px', flexShrink: 0 }} className="animate-fade-in">
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#630ed4', marginBottom: '2px' }}>🧪 Test Your Finder!</h2>
-                <p style={{ fontSize: '11px', color: '#6b7280' }}>Try different objects and see what AI can find! 🕵️</p>
+            <div className="text-center px-5 pt-3 pb-2 shrink-0 animate-fade-in">
+                <h2 className="text-[20px] font-extrabold text-[#630ed4] mb-[2px]">🧪 Test Your Finder!</h2>
+                <p className="text-[11px] text-gray-500">Try different objects and see what AI can find! 🕵️</p>
             </div>
 
-            <div style={{ padding: '0 20px', flexShrink: 0 }}>
+            <div className="px-5 shrink-0">
                 <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={totalSamples >= 4} />
             </div>
 
             {/* Model status */}
             {isLoadingModel && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#f5f3ff', borderRadius: '10px', border: '1px solid rgba(99,14,212,0.15)', margin: '8px 20px 0', flexShrink: 0 }}>
-                    <div style={{ width: '14px', height: '14px', border: '2px solid #630ed4', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#630ed4' }}>Loading model... ⏳</span>
+                <div className="flex items-center gap-2 py-2 px-3 bg-[#f5f3ff] rounded-xl border border-[#630ed4]/15 mx-5 mt-2 shrink-0">
+                    <div className="w-3.5 h-3.5 border-2 border-[#630ed4] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[11px] font-bold text-[#630ed4]">Loading model... ⏳</span>
                 </div>
             )}
             {modelLoadError && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#fef2f2', borderRadius: '10px', border: '1px solid #fecaca', margin: '8px 20px 0', flexShrink: 0 }}>
-                    <span style={{ fontSize: '14px' }}>❌</span>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#991b1b' }}>{modelLoadError}</span>
+                <div className="flex items-center gap-2 py-2 px-3 bg-red-50 rounded-xl border border-red-200 mx-5 mt-2 shrink-0">
+                    <span className="text-sm">❌</span>
+                    <span className="text-[11px] font-bold text-red-900">{modelLoadError}</span>
                 </div>
             )}
 
             {/* Horizontal Split Layout */}
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', flex: 1, minHeight: 0, padding: isMobile ? '10px 12px' : '10px 20px', overflow: 'hidden' }}>
+            <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-4 flex-1 min-h-0 ${isMobile ? 'py-2.5 px-3' : 'py-2.5 px-5'} overflow-hidden`}>
                 {/* Left - Camera / Uploaded Image */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0, minHeight: isMobile ? '40vh' : 0 }}>
+                <div className={`flex-1 flex flex-col gap-2.5 min-w-0 ${isMobile ? 'min-h-[40vh]' : 'min-h-0'}`}>
                     {/* Camera / Image feed */}
-                    <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#1e1b4b', width: '100%', flex: 1, minHeight: 0 }}>
+                    <div className="relative rounded-2xl overflow-hidden bg-[#1e1b4b] w-full flex-1 min-h-0">
                         {/* Live camera feed */}
-                        <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn && !uploadedImage ? 'block' : 'none' }} />
-                        <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)', display: cameraOn && !uploadedImage ? 'block' : 'none' }} />
+                        <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn && !uploadedImage ? 'block' : 'hidden'}`} />
+                        <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full pointer-events-none -scale-x-100 ${cameraOn && !uploadedImage ? 'block' : 'hidden'}`} />
 
                         {/* Uploaded image with annotations */}
                         {uploadedImage && (
-                            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                                <img src={showOriginal ? uploadedImage.originalUrl : (uploadedImage.annotatedUrl || uploadedImage.originalUrl)} alt="Uploaded test" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            <div className="relative w-full h-full">
+                                <img src={showOriginal ? uploadedImage.originalUrl : (uploadedImage.annotatedUrl || uploadedImage.originalUrl)} alt="Uploaded test" className="w-full h-full object-contain" />
                                 {/* Toggle original/annotated */}
                                 {uploadedImage.annotatedUrl && (
-                                    <button onClick={() => setShowOriginal(!showOriginal)} style={{ position: 'absolute', top: '10px', right: '10px', padding: '5px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, background: '#fff', color: '#4a4455', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+                                    <button onClick={() => setShowOriginal(!showOriginal)} className="absolute top-2.5 right-2.5 py-1.25 px-2.5 rounded-lg text-[10px] font-bold bg-white text-[#4a4455] border-none cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.15)]">
                                         {showOriginal ? '🎯 Show Detections' : '📷 Original'}
                                     </button>
                                 )}
@@ -958,15 +953,15 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                         )}
 
                         {/* Status badge */}
-                        <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', borderRadius: '8px', visibility: cameraOn || uploadedImage ? 'visible' : 'hidden' }}>
-                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: uploadedImage ? '#10b981' : cameraOn ? '#ef4444' : '#6b7280', boxShadow: cameraOn ? '0 0 6px rgba(239,68,68,0.6)' : 'none', animation: cameraOn ? 'pulse 2s infinite' : 'none' }} />
-                            <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>{uploadedImage ? '📸 IMAGE' : cameraOn ? '🔍 LIVE' : '📷 OFF'}</span>
+                        <div className={`absolute top-2.5 left-2.5 flex items-center gap-1.5 py-1.25 px-2.5 bg-black/40 backdrop-blur-md rounded-lg ${cameraOn || uploadedImage ? 'visible' : 'invisible'}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${uploadedImage ? 'bg-emerald-500' : cameraOn ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-gray-500'}`} />
+                            <span className="text-white text-[9px] font-bold">{uploadedImage ? '📸 IMAGE' : cameraOn ? '🔍 LIVE' : '📷 OFF'}</span>
                         </div>
 
                         {/* Detection count badge */}
                         {currentDetections.length > 0 && (
-                            <div style={{ position: 'absolute', bottom: '10px', left: '50%', transform: 'translateX(-50%)', padding: '6px 12px', background: 'rgba(0,0,0,0.5)', borderRadius: '8px' }}>
-                                <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>🎯 {currentDetections.length} objects</span>
+                            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 py-1.5 px-3 bg-black/50 rounded-lg">
+                                <span className="text-white text-[10px] font-bold">🎯 {currentDetections.length} objects</span>
                             </div>
                         )}
 
@@ -980,15 +975,15 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     setIsDragging(false)
                                     if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files)
                                 }}
-                                style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${isDragging ? '#630ed4' : 'transparent'}`, borderRadius: '14px', transition: 'all 0.2s ease', background: 'rgba(30, 27, 75, 0.4)' }}
+                                className={`absolute inset-0 flex flex-col items-center justify-center border-2 border-dashed rounded-2xl transition-all duration-200 bg-[#1e1b4b]/40 ${isDragging ? 'border-[#630ed4]' : 'border-transparent'}`}
                             >
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: isDragging ? 'none' : 'auto' }} className="animate-fade-in">
-                                    <span style={{ fontSize: '36px', marginBottom: '8px', transition: 'transform 0.2s', transform: isDragging ? 'scale(1.2)' : 'scale(1)' }}>{isDragging ? '📥' : '📷'}</span>
-                                    <h3 style={{ color: '#fff', fontSize: '14px', fontWeight: 800, marginBottom: '4px' }}>Camera is off</h3>
-                                    <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px', fontWeight: 600, marginBottom: '16px', maxWidth: '240px', textAlign: 'center' }}>{isDragging ? 'Drop your image here' : 'Turn on camera or upload an image to test'}</p>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button onClick={startCamera} style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99,14,212,0.25)' }}>📷 Start Camera</button>
-                                        <button onClick={() => testFileInputRef.current?.click()} style={{ padding: '8px 16px', background: '#fff', color: '#630ed4', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>📂 Upload Image</button>
+                                <div className={`flex flex-col items-center justify-center animate-fade-in ${isDragging ? 'pointer-events-none' : 'pointer-events-auto'}`}>
+                                    <span className={`text-[36px] mb-2 transition-transform duration-200 block ${isDragging ? 'scale-125' : 'scale-100'}`}>{isDragging ? '📥' : '📷'}</span>
+                                    <h3 className="text-white text-sm font-extrabold mb-1">Camera is off</h3>
+                                    <p className="text-white/60 text-[10px] font-semibold mb-4 max-w-[240px] text-center">{isDragging ? 'Drop your image here' : 'Turn on camera or upload an image to test'}</p>
+                                    <div className="flex gap-2">
+                                        <button onClick={startCamera} className="px-4 py-2 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.25)]">📷 Start Camera</button>
+                                        <button onClick={() => testFileInputRef.current?.click()} className="px-4 py-2 bg-white text-[#630ed4] rounded-xl text-[11px] font-bold border-2 border-[#630ed4] cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.05)]">📂 Upload Image</button>
                                     </div>
                                 </div>
                             </div>
@@ -998,42 +993,42 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     <input ref={testFileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
 
                     {/* Controls */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', flexShrink: 0 }}>
+                    <div className="flex items-center gap-2 flex-wrap justify-center shrink-0">
                         {uploadedImage ? (
                             <>
-                                <button onClick={() => testFileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99,14,212,0.2)' }}>📂 Try Another</button>
-                                <button onClick={() => { setUploadedImage(null); setUploadedDetections([]); setShowOriginal(true) }} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, background: '#f5f3ff', color: '#4a4455', border: 'none', cursor: 'pointer' }}>📷 Use Camera</button>
+                                <button onClick={() => testFileInputRef.current?.click()} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.2)]">📂 Try Another</button>
+                                <button onClick={() => { setUploadedImage(null); setUploadedDetections([]); setShowOriginal(true) }} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold bg-[#f5f3ff] text-[#4a4455] border-none cursor-pointer">📷 Use Camera</button>
                             </>
                         ) : (
                             <>
-                                <button onClick={toggleCamera} disabled={isLoadingModel} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, background: cameraOn ? '#d1fae5' : '#f5f3ff', color: cameraOn ? '#006c44' : '#4a4455', border: 'none', cursor: 'pointer' }}>
+                                <button onClick={toggleCamera} disabled={isLoadingModel} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold border-none cursor-pointer ${cameraOn ? 'bg-[#d1fae5] text-[#006c44]' : 'bg-[#f5f3ff] text-[#4a4455]'}`}>
                                     {cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
                                 </button>
                                 {cameraOn && (
-                                    <button onClick={handleManualDetect} disabled={isLoadingModel || isDetecting} style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+                                    <button onClick={handleManualDetect} disabled={isLoadingModel || isDetecting} className="px-4 py-2 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer">
                                         {isDetecting ? '⏳...' : '🔍 Scan'}
                                     </button>
                                 )}
-                                <button onClick={() => testFileInputRef.current?.click()} disabled={isLoadingModel} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, background: '#fff', color: '#630ed4', border: '2px solid #630ed4', cursor: 'pointer' }}>📂 Upload Image</button>
+                                <button onClick={() => testFileInputRef.current?.click()} disabled={isLoadingModel} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold bg-white text-[#630ed4] border-2 border-[#630ed4] cursor-pointer">📂 Upload Image</button>
                             </>
                         )}
                     </div>
                 </div>
 
                 {/* Right - Status, Detections, Export */}
-                <div style={{ width: isMobile ? '100%' : '260px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden' }}>
+                <div className={`${isMobile ? 'w-full' : 'w-[260px]'} shrink-0 flex flex-col gap-2.5 overflow-hidden`}>
                     {/* Custom model status */}
                     {customModelTrained && (
-                        <div style={{ background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)', borderRadius: '10px', padding: '10px 12px', border: '1px solid rgba(0,108,68,0.15)', flexShrink: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ fontSize: '14px' }}>🧠</span>
+                        <div className="bg-gradient-to-br from-[#d1fae5] to-[#a7f3d0] rounded-xl p-2.5 border border-[#006c44]/15 shrink-0">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-sm">🧠</span>
                                     <div>
-                                        <p style={{ fontSize: '9px', fontWeight: 700, color: '#006c44' }}>Custom Model Trained!</p>
-                                        <p style={{ fontSize: '8px', color: 'rgba(0,108,68,0.7)' }}>{Object.keys(trainerRef.current.getState().classCounts).length} classes</p>
+                                        <p className="text-[9px] font-bold text-[#006c44]">Custom Model Trained!</p>
+                                        <p className="text-[8px] text-[#006c44]/70">{Object.keys(trainerRef.current.getState().classCounts).length} classes</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setUseCustomModel(!useCustomModel)} style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '8px', fontWeight: 700, background: useCustomModel ? '#006c44' : '#fff', color: useCustomModel ? '#fff' : '#006c44', border: useCustomModel ? 'none' : '1px solid rgba(0,108,68,0.3)', cursor: 'pointer' }}>
+                                <button onClick={() => setUseCustomModel(!useCustomModel)} className={`py-1 px-2 rounded-md text-[8px] font-bold cursor-pointer ${useCustomModel ? 'bg-[#006c44] text-white border-none' : 'bg-white text-[#006c44] border border-[#006c44]/30'}`}>
                                     {useCustomModel ? '🧠 Custom' : '📦 COCO'}
                                 </button>
                             </div>
@@ -1041,10 +1036,10 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     )}
 
                     {/* Confidence Threshold Control */}
-                    <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', flexShrink: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <h3 style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e' }}>🎚️ Confidence Threshold</h3>
-                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#630ed4', background: '#f5f3ff', padding: '2px 8px', borderRadius: '6px' }}>
+                    <div className="bg-white/85 rounded-xl p-3 border border-gray-200 shrink-0">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-[11px] font-bold text-[#131b2e]">🎚️ Confidence Threshold</h3>
+                            <span className="text-xs font-extrabold text-[#630ed4] bg-[#f5f3ff] py-0.5 px-2 rounded-md">
                                 {Math.round(confidenceThreshold * 100)}%
                             </span>
                         </div>
@@ -1054,21 +1049,17 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                             max="100"
                             value={Math.round(confidenceThreshold * 100)}
                             onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
+                            className="w-full h-1.5 rounded-full outline-none cursor-pointer"
                             style={{
-                                width: '100%',
-                                height: '6px',
-                                borderRadius: '3px',
                                 background: `linear-gradient(to right, #630ed4 ${Math.round(confidenceThreshold * 100)}%, #e5e7eb ${Math.round(confidenceThreshold * 100)}%)`,
-                                outline: 'none',
-                                cursor: 'pointer',
                             }}
                         />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                            <span style={{ fontSize: '8px', color: '#6b7280' }}>More detections</span>
-                            <span style={{ fontSize: '8px', color: '#6b7280' }}>Higher accuracy</span>
+                        <div className="flex justify-between mt-1">
+                            <span className="text-[8px] text-gray-500">More detections</span>
+                            <span className="text-[8px] text-gray-500">Higher accuracy</span>
                         </div>
                         {allDetections.length !== currentDetections.length && (
-                            <div style={{ marginTop: '6px', padding: '4px 8px', background: '#fef3c7', borderRadius: '6px', fontSize: '9px', color: '#92400e', fontWeight: 600 }}>
+                            <div className="mt-1.5 py-1 px-2 bg-amber-100 rounded-md text-[9px] text-amber-800 font-semibold">
                                 ⚠️ {allDetections.length - currentDetections.length} low-confidence detection(s) hidden
                             </div>
                         )}
@@ -1076,32 +1067,31 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
                     {/* Detection Quality Metrics */}
                     {allDetections.length > 0 && (
-                        <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', flexShrink: 0 }}>
-                            <h3 style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e', marginBottom: '8px' }}>📊 Detection Quality</h3>
+                        <div className="bg-white/85 rounded-xl p-3 border border-gray-200 shrink-0">
+                            <h3 className="text-[11px] font-bold text-[#131b2e] mb-2">📊 Detection Quality</h3>
                             
                             {/* Coverage bar */}
-                            <div style={{ marginBottom: '8px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                    <span style={{ fontSize: '9px', color: '#6b7280', fontWeight: 600 }}>Detection Coverage</span>
-                                    <span style={{ fontSize: '9px', fontWeight: 700, color: allDetections.length > 0 ? '#059669' : '#6b7280' }}>
+                            <div className="mb-2">
+                                <div className="flex justify-between mb-1">
+                                    <span className="text-[9px] text-gray-500 font-semibold">Detection Coverage</span>
+                                    <span className={`text-[9px] font-bold ${allDetections.length > 0 ? 'text-emerald-600' : 'text-gray-500'}`}>
                                         {allDetections.length > 0 ? Math.round((currentDetections.length / allDetections.length) * 100) : 0}%
                                     </span>
                                 </div>
-                                <div style={{ height: '4px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
-                                    <div style={{
-                                        height: '100%',
-                                        borderRadius: '2px',
-                                        background: 'linear-gradient(90deg, #10b981, #059669)',
-                                        width: `${allDetections.length > 0 ? (currentDetections.length / allDetections.length) * 100 : 0}%`,
-                                        transition: 'width 0.3s ease'
-                                    }} />
+                                <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-[width] duration-300 ease-in-out"
+                                        style={{
+                                            width: `${allDetections.length > 0 ? (currentDetections.length / allDetections.length) * 100 : 0}%`
+                                        }}
+                                    />
                                 </div>
                             </div>
 
                             {/* Average confidence */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                <span style={{ fontSize: '9px', color: '#6b7280', fontWeight: 600 }}>Avg Confidence</span>
-                                <span style={{ fontSize: '9px', fontWeight: 700, color: '#131b2e' }}>
+                            <div className="flex justify-between mb-1.5">
+                                <span className="text-[9px] text-gray-500 font-semibold">Avg Confidence</span>
+                                <span className="text-[9px] font-bold text-[#131b2e]">
                                     {currentDetections.length > 0 
                                         ? Math.round((currentDetections.reduce((sum, d) => sum + d.score, 0) / currentDetections.length) * 100)
                                         : 0}%
@@ -1109,38 +1099,30 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                             </div>
 
                             {/* Confidence breakdown */}
-                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                            <div className="flex gap-1 flex-wrap">
                                 {[
                                     { label: 'High (>70%)', count: currentDetections.filter(d => d.score > 0.7).length, color: '#10b981' },
                                     { label: 'Med (50-70%)', count: currentDetections.filter(d => d.score >= 0.5 && d.score <= 0.7).length, color: '#f59e0b' },
                                     { label: 'Low (<50%)', count: currentDetections.filter(d => d.score < 0.5).length, color: '#ef4444' }
                                 ].map(item => (
-                                    <div key={item.label} style={{ 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
-                                        gap: '4px', 
-                                        padding: '3px 6px', 
-                                        background: `${item.color}10`, 
-                                        borderRadius: '4px',
-                                        border: `1px solid ${item.color}30`
-                                    }}>
-                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: item.color }} />
-                                        <span style={{ fontSize: '8px', color: '#4b5563', fontWeight: 600 }}>{item.label}: {item.count}</span>
+                                    <div key={item.label} className="flex items-center gap-1 py-0.5 px-1.5 rounded border" style={{ background: `${item.color}10`, borderColor: `${item.color}30` }}>
+                                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: item.color }} />
+                                        <span className="text-[8px] text-gray-600 font-semibold">{item.label}: {item.count}</span>
                                     </div>
                                 ))}
                             </div>
 
                             {/* Class breakdown */}
                             {currentDetections.length > 0 && (
-                                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #e5e7eb' }}>
-                                    <span style={{ fontSize: '9px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '4px' }}>By Class</span>
+                                <div className="mt-2 pt-2 border-t border-gray-200">
+                                    <span className="text-[9px] text-gray-500 font-semibold block mb-1">By Class</span>
                                     {Object.entries(currentDetections.reduce((acc, d) => {
                                         acc[d.class] = (acc[d.class] || 0) + 1
                                         return acc
                                     }, {} as Record<string, number>)).map(([cls, count]) => (
-                                        <div key={cls} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                            <span style={{ fontSize: '9px', color: '#374151', textTransform: 'capitalize' }}>{cls}</span>
-                                            <span style={{ fontSize: '9px', fontWeight: 700, color: '#630ed4' }}>{count as number}</span>
+                                        <div key={cls} className="flex justify-between mb-0.5">
+                                            <span className="text-[9px] text-gray-700 capitalize">{cls}</span>
+                                            <span className="text-[9px] font-bold text-[#630ed4]">{count as number}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -1149,30 +1131,30 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     )}
 
                     {/* Speed & Detection stats */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', flexShrink: 0 }}>
-                        <div style={{ background: '#f5f3ff', borderRadius: '10px', padding: '10px', border: '1px solid #ede9fe' }}>
-                            <p style={{ fontSize: '8px', color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: '2px' }}>⚡ Speed</p>
-                            <p style={{ fontSize: '16px', fontWeight: 800, color: '#131b2e' }}>{inferenceTime}ms</p>
+                    <div className="grid grid-cols-2 gap-2 shrink-0">
+                        <div className="bg-[#f5f3ff] rounded-xl p-2.5 border border-[#ede9fe]">
+                            <p className="text-[8px] text-gray-500 font-bold uppercase mb-0.5">⚡ Speed</p>
+                            <p className="text-base font-extrabold text-[#131b2e]">{inferenceTime}ms</p>
                         </div>
-                        <div style={{ background: '#f5f3ff', borderRadius: '10px', padding: '10px', border: '1px solid #ede9fe' }}>
-                            <p style={{ fontSize: '8px', color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', marginBottom: '2px' }}>🎯 Found</p>
-                            <p style={{ fontSize: '16px', fontWeight: 800, color: '#131b2e' }}>{currentDetections.length}</p>
+                        <div className="bg-[#f5f3ff] rounded-xl p-2.5 border border-[#ede9fe]">
+                            <p className="text-[8px] text-gray-500 font-bold uppercase mb-0.5">🎯 Found</p>
+                            <p className="text-base font-extrabold text-[#131b2e]">{currentDetections.length}</p>
                         </div>
                     </div>
 
                     {/* Detected objects */}
                     {currentDetections.length > 0 && (
-                        <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', flexShrink: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                <h3 style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e' }}>🎯 Detected</h3>
-                                <span style={{ fontSize: '8px', fontWeight: 700, background: '#f5f3ff', padding: '2px 6px', borderRadius: '4px', color: '#630ed4' }}>{currentDetections.length}</span>
+                        <div className="bg-white/85 rounded-xl p-3 border border-gray-200 shrink-0">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-[11px] font-bold text-[#131b2e]">🎯 Detected</h3>
+                                <span className="text-[8px] font-bold bg-[#f5f3ff] py-0.5 px-1.5 rounded text-[#630ed4]">{currentDetections.length}</span>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '100px', overflowY: 'auto' }}>
+                            <div className="flex flex-col gap-1 max-h-[100px] overflow-y-auto">
                                 {currentDetections.map((det, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 6px', borderRadius: '6px', background: '#faf9ff' }}>
-                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: getColorForObject(det.class) }} />
-                                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#131b2e', flex: 1, textTransform: 'capitalize' }}>{det.class}</span>
-                                        <span style={{ fontSize: '8px', fontWeight: 700, padding: '1px 4px', borderRadius: '3px', color: '#fff', background: getColorForObject(det.class) }}>{Math.round(det.score * 100)}%</span>
+                                    <div key={i} className="flex items-center gap-1.5 py-1 px-1.5 rounded-md bg-[#faf9ff]">
+                                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: getColorForObject(det.class) }} />
+                                        <span className="text-[9px] font-bold text-[#131b2e] flex-1 capitalize">{det.class}</span>
+                                        <span className="text-[8px] font-bold py-0.5 px-1 rounded text-white" style={{ background: getColorForObject(det.class) }}>{Math.round(det.score * 100)}%</span>
                                     </div>
                                 ))}
                             </div>
@@ -1181,12 +1163,12 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
                     {/* Model Export */}
                     {customModelTrained && mode.project && (
-                        <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexShrink: 0 }}>
-                                <h3 style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e' }}>📦 Export</h3>
-                                <span style={{ fontSize: '8px', fontWeight: 700, background: '#f5f3ff', color: '#630ed4', padding: '2px 6px', borderRadius: '4px' }}>Trained</span>
+                        <div className="bg-white/85 rounded-xl p-3 border border-gray-200 flex-1 min-h-0 overflow-hidden flex flex-col">
+                            <div className="flex items-center justify-between mb-2 shrink-0">
+                                <h3 className="text-[11px] font-bold text-[#131b2e]">📦 Export</h3>
+                                <span className="text-[8px] font-bold bg-[#f5f3ff] text-[#630ed4] py-0.5 px-1.5 rounded">Trained</span>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                            <div className="grid grid-cols-2 gap-1.5">
                                 {[
                                     { label: 'JSON', emoji: '📄', format: 'json' },
                                     { label: 'TF.js', emoji: '🌐', format: 'tfjs' },
@@ -1201,11 +1183,11 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                             else if (exp.format === 'tfjs') exportTFJS(mode.project!, state)
                                             else if (exp.format === 'onnx') exportONNX(mode.project!, state)
                                             else if (exp.format === 'tflite') exportTFLite(mode.project!, state)
-                                        }} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px', borderRadius: '8px', border: '1px solid #e5e7eb', background: '#fff', cursor: 'pointer', textAlign: 'left' }}>
-                                            <span style={{ fontSize: '14px' }}>{exp.emoji}</span>
+                                        }} className="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 bg-white cursor-pointer text-left">
+                                            <span className="text-sm">{exp.emoji}</span>
                                             <div>
-                                                <p style={{ fontSize: '9px', fontWeight: 700, color: '#131b2e' }}>{exp.label}</p>
-                                                <p style={{ fontSize: '7px', color: '#6b7280' }}>{sizes[exp.label]}</p>
+                                                <p className="text-[9px] font-bold text-[#131b2e]">{exp.label}</p>
+                                                <p className="text-[7px] text-gray-500">{sizes[exp.label]}</p>
                                             </div>
                                         </button>
                                     )
@@ -1222,49 +1204,49 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
             {/* Onboarding */}
             {showOnboarding && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center p-4" style={{ animation: 'onbFadeIn 0.3s ease-out' }}>
+                <div className="absolute inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
                     <div className="absolute inset-0 bg-[#0a0128]/70 backdrop-blur-lg" />
                     <div className="relative w-full max-w-[440px] overflow-hidden" style={{ animation: 'onbSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)' }}>
                         <div className="absolute -inset-[2px] rounded-[34px] bg-gradient-to-br from-[#c084fc]/50 via-[#a855f7]/30 to-[#630ed4]/50 blur-md" />
                         <div className="relative bg-white rounded-[32px] shadow-[0_30px_70px_-15px_rgba(99,14,212,0.3)] overflow-hidden">
                             <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#c084fc] via-[#630ed4] to-[#a855f7]" />
-                            <div style={{ padding: '40px 40px 24px' }}>
-                                <div style={{ position: 'relative', width: '80px', height: '80px', margin: '0 auto 24px' }}>
-                                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '20px', transform: 'rotate(6deg)', boxShadow: '0 8px 24px rgba(99,14,212,0.15)' }} />
-                                    <div style={{ position: 'relative', width: '100%', height: '100%', background: '#fff', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.06)', border: '1px solid rgba(245,243,255,0.5)' }}>
-                                        <span style={{ fontSize: '40px' }}>🔍</span>
+                            <div className="p-10 pb-6">
+                                <div className="relative w-20 h-20 mx-auto mb-6">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-2xl rotate-6 shadow-[0_8px_24px_rgba(99,14,212,0.15)]" />
+                                    <div className="relative w-full h-full bg-white rounded-2xl flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-[#f5f3ff]/50">
+                                        <span className="text-[40px]">🔍</span>
                                     </div>
                                 </div>
-                                <h3 style={{ fontSize: '22px', fontWeight: 800, color: '#131b2e', marginBottom: '10px', textAlign: 'center', letterSpacing: '-0.02em', lineHeight: 1.3 }}>Welcome to Object Detector!</h3>
-                                <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: 1.6, textAlign: 'center', maxWidth: '300px', margin: '0 auto' }}>AI will find and identify objects in your camera! 🚀</p>
+                                <h3 className="text-[22px] font-extrabold text-[#131b2e] mb-2.5 text-center tracking-tight leading-snug">Welcome to Object Detector!</h3>
+                                <p className="text-sm text-gray-500 leading-relaxed text-center max-w-[300px] mx-auto">AI will find and identify objects in your camera! 🚀</p>
                             </div>
-                            <div style={{ margin: '0 40px', height: '1px', background: 'linear-gradient(to right, transparent, #ede9fe, transparent)' }} />
-                            <div style={{ padding: '24px 40px 32px' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '14px 16px', borderRadius: '14px', background: '#faf9ff', border: '1px solid #ede9fe' }}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '14px', fontWeight: 700, color: '#630ed4', boxShadow: '0 2px 8px rgba(99,14,212,0.1)' }}>1</div>
-                                        <div style={{ paddingTop: '2px' }}>
-                                            <p style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e', marginBottom: '2px' }}>Create Classes</p>
-                                            <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.5 }}>Click "+" in the sidebar to add object categories!</p>
+                            <div className="mx-10 h-px bg-gradient-to-r from-transparent via-[#ede9fe] to-transparent" />
+                            <div className="py-6 px-10 pb-8">
+                                <div className="flex flex-col gap-3 mb-6">
+                                    <div className="flex items-start gap-3.5 py-3.5 px-4 rounded-2xl bg-[#faf9ff] border border-[#ede9fe]">
+                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] flex items-center justify-center shrink-0 text-sm font-bold text-[#630ed4] shadow-[0_2px_8px_rgba(99,14,212,0.1)]">1</div>
+                                        <div className="pt-0.5">
+                                            <p className="text-sm font-bold text-[#131b2e] mb-0.5">Create Classes</p>
+                                            <p className="text-xs text-gray-500 leading-normal">Click "+" in the sidebar to add object categories!</p>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '14px 16px', borderRadius: '14px', background: '#faf9ff', border: '1px solid #ede9fe' }}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '14px', fontWeight: 700, color: '#630ed4', boxShadow: '0 2px 8px rgba(99,14,212,0.1)' }}>2</div>
-                                        <div style={{ paddingTop: '2px' }}>
-                                            <p style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e', marginBottom: '2px' }}>Detect & Capture</p>
-                                            <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.5 }}>AI auto-detects objects — capture to save!</p>
+                                    <div className="flex items-start gap-3.5 py-3.5 px-4 rounded-2xl bg-[#faf9ff] border border-[#ede9fe]">
+                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] flex items-center justify-center shrink-0 text-sm font-bold text-[#630ed4] shadow-[0_2px_8px_rgba(99,14,212,0.1)]">2</div>
+                                        <div className="pt-0.5">
+                                            <p className="text-sm font-bold text-[#131b2e] mb-0.5">Detect & Capture</p>
+                                            <p className="text-xs text-gray-500 leading-normal">AI auto-detects objects — capture to save!</p>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '14px 16px', borderRadius: '14px', background: '#f0fdf4', border: '1px solid #d1fae5' }}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '14px', fontWeight: 700, color: '#006c44', boxShadow: '0 2px 8px rgba(0,108,68,0.1)' }}>3</div>
-                                        <div style={{ paddingTop: '2px' }}>
-                                            <p style={{ fontSize: '14px', fontWeight: 700, color: '#131b2e', marginBottom: '2px' }}>Train & Test</p>
-                                            <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.5 }}>Label your captures, then test the detector!</p>
+                                    <div className="flex items-start gap-3.5 py-3.5 px-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/60">
+                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center shrink-0 text-sm font-bold text-[#006c44] shadow-[0_2px_8px_rgba(0,108,68,0.1)]">3</div>
+                                        <div className="pt-0.5">
+                                            <p className="text-sm font-bold text-[#131b2e] mb-0.5">Train & Test</p>
+                                            <p className="text-xs text-gray-500 leading-normal">Label your captures, then test the detector!</p>
                                         </div>
                                     </div>
                                 </div>
-                                <button onClick={() => { setShowOnboarding(false); localStorage.setItem('neura-objectdetect-onboarding-seen', 'true') }} style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '14px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', boxShadow: '0 8px 24px rgba(99,14,212,0.3)', position: 'relative', overflow: 'hidden', transition: 'all 0.2s' }}>
-                                    <span style={{ position: 'relative', zIndex: 10 }}>Let's Go! 🚀</span>
+                                <button onClick={() => { setShowOnboarding(false); localStorage.setItem('neura-objectdetect-onboarding-seen', 'true') }} className="w-full py-4 rounded-2xl text-sm font-bold border-none cursor-pointer bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_8px_24px_rgba(99,14,212,0.3)] relative overflow-hidden transition-all duration-200">
+                                    <span className="relative z-10">Let's Go! 🚀</span>
                                 </button>
                             </div>
                         </div>

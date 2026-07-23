@@ -189,41 +189,16 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
     const finalMap = mapChartData[mapChartData.length - 1] || 0
 
     return (
-        <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar w-full" style={{ padding: '12px 20px', alignItems: 'center' }}>
+        <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar w-full py-3 px-5 items-center">
             {/* Celebration Modal */}
             {showCelebration && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    zIndex: 50,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'radial-gradient(circle at center, rgba(99,14,212,0.15) 0%, rgba(0,0,0,0.3) 100%)',
-                }}>
-                    <div style={{
-                        background: '#fff',
-                        borderRadius: '20px',
-                        padding: '32px',
-                        textAlign: 'center',
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-                        maxWidth: '320px',
-                    }}>
-                        <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🎉</div>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', marginBottom: '8px' }}>Training Complete!</h3>
-                        <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '16px' }}>Your AI learned from {totalSamples} pictures</p>
-                        <div style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 14px',
-                            background: '#ecfdf5',
-                            borderRadius: '8px',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            color: '#059669',
-                        }}>
-                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#059669' }} />
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-[radial-gradient(circle_at_center,rgba(99,14,212,0.15)_0%,rgba(0,0,0,0.3)_100%)]">
+                    <div className="bg-white rounded-2xl p-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.2)] max-w-[320px]">
+                        <div className="text-[3rem] mb-3">🎉</div>
+                        <h3 className="text-xl font-extrabold text-gray-900 mb-2">Training Complete!</h3>
+                        <p className="text-[13px] text-gray-500 mb-4">Your AI learned from {totalSamples} pictures</p>
+                        <div className="inline-flex items-center gap-1.5 py-1.5 px-3.5 bg-emerald-50 rounded-lg text-xs font-bold text-emerald-600">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                             Accuracy: {Math.round(metrics.map50)}%
                         </div>
                     </div>
@@ -231,82 +206,34 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
             )}
 
             {/* Header */}
-            <div className="text-center animate-fade-in" style={{ marginBottom: '12px' }}>
-                <div
-                    style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: '10px 20px',
-                        background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
-                        borderRadius: '14px',
-                        border: '1px solid rgba(99,14,212,0.1)',
-                        boxShadow: '0 2px 8px rgba(99,14,212,0.06)',
-                    }}
-                >
-                    <div
-                        style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
-                        }}
-                    >
-                        <span style={{ fontSize: '1.1rem' }}>🏋️</span>
+            <div className="text-center animate-fade-in mb-3">
+                <div className="inline-flex items-center gap-2.5 py-2.5 px-5 bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-2xl border border-[#630ed4]/10 shadow-[0_2px_8px_rgba(99,14,212,0.06)]">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#630ed4] to-[#7c3aed] flex items-center justify-center shadow-[0_4px_12px_rgba(99,14,212,0.25)]">
+                        <span className="text-[1.1rem]">🏋️</span>
                     </div>
-                    <h2
-                        style={{
-                            fontSize: '1.3rem',
-                            fontWeight: 800,
-                            color: '#131b2e',
-                            margin: 0,
-                        }}
-                    >
+                    <h2 className="text-[1.3rem] font-extrabold text-[#131b2e] m-0">
                         Teach Your AI!
                     </h2>
                 </div>
             </div>
 
             {/* Workflow and Tips - centered */}
-            <div style={{ width: '100%', margin: '0 auto 12px' }}>
+            <div className="w-full mx-auto mb-3">
                 <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
 
                 {/* Tips */}
-                <div style={{ marginTop: '10px' }} className="animate-fade-in">
-                    <div
-                        style={{
-                            background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
-                            borderRadius: '12px',
-                            padding: '10px 14px',
-                            border: '1px solid rgba(99,14,212,0.1)',
-                        }}
-                    >
-                        <div className="flex items-start" style={{ gap: '8px' }}>
-                            <div
-                                style={{
-                                    width: '24px',
-                                    height: '24px',
-                                    borderRadius: '6px',
-                                    background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '12px',
-                                    flexShrink: 0,
-                                }}
-                            >💡</div>
+                <div className="mt-2.5 animate-fade-in">
+                    <div className="bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl py-2.5 px-3.5 border border-[#630ed4]/10">
+                        <div className="flex items-start gap-2">
+                            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-xs shrink-0">💡</div>
                             <div>
-                                <p style={{ fontSize: '9px', fontWeight: 800, color: '#630ed4', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                <p className="text-[9px] font-extrabold text-[#630ed4] tracking-widest uppercase mb-1">
                                     Training Tips
                                 </p>
-                                <div className="flex flex-wrap" style={{ gap: '3px 14px' }}>
+                                <div className="flex flex-wrap gap-x-3.5 gap-y-0.75">
                                     {['More samples = better accuracy', '2+ classes needed to train', '50 rounds is usually enough', 'Training takes 1-2 minutes'].map((tip) => (
-                                        <span key={tip} className="flex items-center" style={{ gap: '5px', fontSize: '10px', color: '#4b5563' }}>
-                                            <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#630ed4', flexShrink: 0 }} />
+                                        <span key={tip} className="flex items-center gap-1.25 text-[10px] text-gray-600">
+                                            <span className="w-0.75 h-0.75 rounded-full bg-[#630ed4] shrink-0" />
                                             {tip}
                                         </span>
                                     ))}
@@ -320,49 +247,25 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
             {/* Two-column layout */}
             <div className="flex flex-col lg:flex-row gap-4 w-full flex-1 min-h-0">
                 {/* Left column - Main training area */}
-                <div style={{ flex: '1', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="flex-1 min-w-0 flex flex-col gap-3">
                     {/* Main card */}
-                    <div
-                        style={{
-                            flex: 1,
-                            background: '#fff',
-                            borderRadius: '16px',
-                            border: '1px solid #e5e7eb',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '32px 24px',
-                            textAlign: 'center',
-                        }}
-                    >
+                    <div className="flex-1 bg-white rounded-2xl border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)] flex flex-col items-center justify-center py-8 px-6 text-center">
                         {/* Icon */}
-                        <div
-                            style={{
-                                width: '80px',
-                                height: '80px',
-                                borderRadius: '50%',
-                                background: isComplete ? '#ecfdf5' : isTraining ? '#f5f3ff' : '#f3e8ff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginBottom: '20px',
-                                border: '3px dashed ' + (isComplete ? '#a7f3d0' : isTraining ? '#c4b5fd' : '#ddd6fe'),
-                            }}
-                        >
-                            <span style={{ fontSize: '2rem' }}>
+                        <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-5 border-3 border-dashed ${
+                            isComplete ? 'bg-emerald-50 border-emerald-200' : isTraining ? 'bg-[#f5f3ff] border-purple-300' : 'bg-purple-100 border-purple-200'
+                        }`}>
+                            <span className="text-3xl">
                                 {isComplete ? '🎉' : isTraining ? '🤖' : '🚀'}
                             </span>
                         </div>
 
                         {/* Title */}
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', marginBottom: '8px' }}>
+                        <h2 className="text-xl font-extrabold text-gray-900 mb-2">
                             {isComplete ? 'Training Complete!' : isTraining ? 'Training Your AI...' : 'Ready to Train!'}
                         </h2>
 
                         {/* Description */}
-                        <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '20px', maxWidth: '320px' }}>
+                        <p className="text-[13px] text-gray-500 mb-5 max-w-[320px]">
                             {isComplete
                                 ? `Your AI learned from ${totalSamples} pictures across ${totalClasses} classes!`
                                 : isTraining
@@ -373,26 +276,23 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
 
                         {/* Progress bar */}
                         {(isTraining || isComplete) && (
-                            <div style={{ width: '100%', maxWidth: '320px', marginBottom: '20px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                    <span style={{ fontSize: '11px', color: '#6b7280' }}>{isComplete ? 'Complete!' : 'Progress'}</span>
-                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#630ed4' }}>{trainingProgress}%</span>
+                            <div className="w-full max-w-[320px] mb-5">
+                                <div className="flex justify-between mb-1.5">
+                                    <span className="text-[11px] text-gray-500">{isComplete ? 'Complete!' : 'Progress'}</span>
+                                    <span className="text-[11px] font-bold text-[#630ed4]">{trainingProgress}%</span>
                                 </div>
-                                <div style={{ height: '8px', background: '#f3f4f6', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                                     <div
-                                        style={{
-                                            height: '100%',
-                                            borderRadius: '4px',
-                                            background: isComplete ? 'linear-gradient(90deg, #059669, #10b981)' : 'linear-gradient(90deg, #630ed4, #7c3aed)',
-                                            width: `${trainingProgress}%`,
-                                            transition: 'width 0.3s ease',
-                                        }}
+                                        className={`h-full rounded-full transition-[width] duration-300 ease-in-out ${
+                                            isComplete ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : 'bg-gradient-to-r from-[#630ed4] to-[#7c3aed]'
+                                        }`}
+                                        style={{ width: `${trainingProgress}%` }}
                                     />
                                 </div>
                                 {isTraining && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
-                                        <span style={{ fontSize: '10px', color: '#9ca3af' }}>Round {currentEpoch}/{maxEpochs}</span>
-                                        <span style={{ fontSize: '10px', color: '#9ca3af' }}>~{Math.max(1, Math.floor(estimatedTime * (1 - trainingProgress / 100)))} min left</span>
+                                    <div className="flex justify-between mt-1.5">
+                                        <span className="text-[10px] text-gray-400">Round {currentEpoch}/{maxEpochs}</span>
+                                        <span className="text-[10px] text-gray-400">~{Math.max(1, Math.floor(estimatedTime * (1 - trainingProgress / 100)))} min left</span>
                                     </div>
                                 )}
                             </div>
@@ -400,49 +300,29 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
 
                         {/* Advanced Settings */}
                         {!isTraining && !isComplete && (
-                            <div style={{ width: '100%', maxWidth: '320px', marginBottom: '20px' }}>
+                            <div className="w-full max-w-[320px] mb-5">
                                 <button
                                     onClick={() => setShowAdvanced(!showAdvanced)}
-                                    style={{
-                                        fontSize: '11px',
-                                        fontWeight: 600,
-                                        color: '#630ed4',
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '4px',
-                                        margin: '0 auto',
-                                    }}
+                                    className="text-[11px] font-semibold text-[#630ed4] bg-transparent border-none cursor-pointer flex items-center gap-1 mx-auto"
                                 >
                                     ⚙️ Advanced Settings {showAdvanced ? '▲' : '▼'}
                                 </button>
                                 {showAdvanced && (
-                                    <div style={{ marginTop: '12px', padding: '12px', background: '#f9fafb', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
+                                    <div className="mt-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
                                         {/* Batch Size */}
-                                        <div style={{ marginBottom: '12px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                                <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151' }}>Batch Size</span>
-                                                <span style={{ fontSize: '10px', fontWeight: 700, color: '#630ed4', padding: '2px 6px', background: '#ede9fe', borderRadius: '4px' }}>{batchSize}</span>
+                                        <div className="mb-3">
+                                            <div className="flex justify-between mb-1.5">
+                                                <span className="text-[10px] font-bold text-gray-700">Batch Size</span>
+                                                <span className="text-[10px] font-bold text-[#630ed4] py-0.5 px-1.5 bg-purple-100 rounded">{batchSize}</span>
                                             </div>
-                                            <div style={{ display: 'flex', gap: '4px' }}>
+                                            <div className="flex gap-1">
                                                 {[4, 8, 16, 32].map(size => (
                                                     <button
                                                         key={size}
                                                         onClick={() => setBatchSize(size)}
-                                                        style={{
-                                                            flex: 1,
-                                                            padding: '6px',
-                                                            borderRadius: '6px',
-                                                            fontSize: '10px',
-                                                            fontWeight: 700,
-                                                            border: 'none',
-                                                            cursor: 'pointer',
-                                                            background: batchSize === size ? '#630ed4' : '#ede9fe',
-                                                            color: batchSize === size ? '#fff' : '#374151',
-                                                            transition: 'all 0.15s ease',
-                                                        }}
+                                                        className={`flex-1 py-1.5 rounded-md text-[10px] font-bold border-none cursor-pointer transition-all duration-150 ${
+                                                            batchSize === size ? 'bg-[#630ed4] text-white' : 'bg-purple-100 text-gray-700'
+                                                        }`}
                                                     >
                                                         {size}
                                                     </button>
@@ -452,9 +332,9 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
 
                                         {/* Model Complexity */}
                                         <div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                                <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151' }}>Model Complexity</span>
-                                                <span style={{ fontSize: '10px', fontWeight: 700, color: '#630ed4', padding: '2px 6px', background: '#ede9fe', borderRadius: '4px' }}>{numLayers} layers</span>
+                                            <div className="flex justify-between mb-1.5">
+                                                <span className="text-[10px] font-bold text-gray-700">Model Complexity</span>
+                                                <span className="text-[10px] font-bold text-[#630ed4] py-0.5 px-1.5 bg-purple-100 rounded">{numLayers} layers</span>
                                             </div>
                                             <input
                                                 type="range"
@@ -462,11 +342,11 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
                                                 max={5}
                                                 value={numLayers}
                                                 onChange={(e) => setNumLayers(parseInt(e.target.value))}
-                                                style={{ width: '100%', accentColor: '#630ed4' }}
+                                                className="w-full accent-[#630ed4]"
                                             />
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                                                <span style={{ fontSize: '9px', color: '#9ca3af' }}>Simple</span>
-                                                <span style={{ fontSize: '9px', color: '#9ca3af' }}>Complex</span>
+                                            <div className="flex justify-between mt-1">
+                                                <span className="text-[9px] text-gray-400">Simple</span>
+                                                <span className="text-[9px] text-gray-400">Complex</span>
                                             </div>
                                         </div>
                                     </div>
@@ -475,24 +355,14 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
                         )}
 
                         {/* Action buttons */}
-                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                        <div className="flex gap-2.5 flex-wrap justify-center">
                             {!isTraining && !isComplete && (
                                 <button
                                     onClick={handleStartTraining}
                                     disabled={!canTrain}
-                                    style={{
-                                        padding: '10px 24px',
-                                        background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                        color: '#fff',
-                                        borderRadius: '10px',
-                                        fontSize: '13px',
-                                        fontWeight: 700,
-                                        border: 'none',
-                                        cursor: canTrain ? 'pointer' : 'not-allowed',
-                                        opacity: canTrain ? 1 : 0.5,
-                                        boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
-                                        transition: 'all 0.2s ease',
-                                    }}
+                                    className={`py-2.5 px-6 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[13px] font-bold border-none transition-all duration-200 ${
+                                        canTrain ? 'cursor-pointer opacity-100 shadow-[0_4px_12px_rgba(99,14,212,0.25)]' : 'cursor-not-allowed opacity-50'
+                                    }`}
                                 >
                                     🚀 Start Training
                                 </button>
@@ -500,16 +370,7 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
                             {isTraining && (
                                 <button
                                     onClick={handleStopTraining}
-                                    style={{
-                                        padding: '10px 24px',
-                                        background: '#fef2f2',
-                                        color: '#dc2626',
-                                        borderRadius: '10px',
-                                        fontSize: '13px',
-                                        fontWeight: 700,
-                                        border: '1px solid #fecaca',
-                                        cursor: 'pointer',
-                                    }}
+                                    className="py-2.5 px-6 bg-red-50 text-red-600 rounded-xl text-[13px] font-bold border border-red-200 cursor-pointer"
                                 >
                                     ⏸️ Pause
                                 </button>
@@ -518,47 +379,19 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
                                 <>
                                     <button
                                         onClick={handleResetTraining}
-                                        style={{
-                                            padding: '10px 20px',
-                                            background: '#f3f4f6',
-                                            color: '#374151',
-                                            borderRadius: '10px',
-                                            fontSize: '12px',
-                                            fontWeight: 700,
-                                            border: '1px solid #e5e7eb',
-                                            cursor: 'pointer',
-                                        }}
+                                        className="py-2.5 px-5 bg-gray-100 text-gray-700 rounded-xl text-xs font-bold border border-gray-200 cursor-pointer"
                                     >
                                         🔄 Train Again
                                     </button>
                                     <button
                                         onClick={handleExportReport}
-                                        style={{
-                                            padding: '10px 20px',
-                                            background: '#ecfdf5',
-                                            color: '#059669',
-                                            borderRadius: '10px',
-                                            fontSize: '12px',
-                                            fontWeight: 700,
-                                            border: '1px solid #a7f3d0',
-                                            cursor: 'pointer',
-                                        }}
+                                        className="py-2.5 px-5 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold border border-emerald-200 cursor-pointer"
                                     >
                                         💾 Save Report
                                     </button>
                                     <button
                                         onClick={() => mode.setMode('test')}
-                                        style={{
-                                            padding: '10px 24px',
-                                            background: 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                            color: '#fff',
-                                            borderRadius: '10px',
-                                            fontSize: '12px',
-                                            fontWeight: 700,
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 4px 12px rgba(99,14,212,0.25)',
-                                        }}
+                                        className="py-2.5 px-6 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.25)]"
                                     >
                                         🔍 Test AI
                                     </button>
@@ -569,41 +402,23 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
 
                     {/* Warning banner */}
                     {totalSamples > 0 && totalClasses < 2 && (
-                        <div
-                            style={{
-                                padding: '10px 14px',
-                                background: '#fef3c7',
-                                borderRadius: '10px',
-                                border: '1px solid #fde68a',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                            }}
-                        >
-                            <span style={{ fontSize: '14px' }}>⚠️</span>
+                        <div className="py-2.5 px-3.5 bg-amber-100 rounded-xl border border-amber-200 flex items-center gap-2">
+                            <span className="text-sm">⚠️</span>
                             <div>
-                                <p style={{ fontSize: '11px', fontWeight: 700, color: '#92400e' }}>Add at least 2 classes</p>
-                                <p style={{ fontSize: '10px', color: '#a16207' }}>Create 2 or more classes to start training</p>
+                                <p className="text-[11px] font-bold text-amber-900">Add at least 2 classes</p>
+                                <p className="text-[10px] text-amber-700">Create 2 or more classes to start training</p>
                             </div>
                         </div>
                     )}
                 </div>
 
                 {/* Right column - Stats */}
-                <div style={{ width: '240px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className="w-[240px] shrink-0 flex flex-col gap-2.5">
                     {/* Training Rounds */}
-                    <div
-                        style={{
-                            background: '#fff',
-                            borderRadius: '12px',
-                            padding: '12px',
-                            border: '1px solid #e5e7eb',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-                        }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151', letterSpacing: '0.05em' }}>📅 TRAINING ROUNDS</span>
-                            <span style={{ fontSize: '16px', fontWeight: 800, color: '#630ed4' }}>{maxEpochs}</span>
+                    <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+                        <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-[10px] font-bold text-gray-700 tracking-wider">📅 TRAINING ROUNDS</span>
+                            <span className="text-base font-extrabold text-[#630ed4]">{maxEpochs}</span>
                         </div>
                         <input
                             type="range"
@@ -611,135 +426,88 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
                             max={100}
                             value={maxEpochs}
                             readOnly
-                            style={{ width: '100%', accentColor: '#630ed4' }}
+                            className="w-full accent-[#630ed4]"
                         />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                        <div className="flex justify-between mt-1">
                             {[10, 25, 50, 100].map(v => (
-                                <span key={v} style={{ fontSize: '9px', color: maxEpochs === v ? '#630ed4' : '#9ca3af', fontWeight: maxEpochs === v ? 700 : 400 }}>
+                                <span key={v} className={`text-[9px] ${maxEpochs === v ? 'text-[#630ed4] font-bold' : 'text-gray-400 font-normal'}`}>
                                     {v}
                                 </span>
                             ))}
                         </div>
-                        <p style={{ fontSize: '9px', color: '#9ca3af', marginTop: '4px' }}>More rounds = smarter AI but takes longer</p>
+                        <p className="text-[9px] text-gray-400 mt-1">More rounds = smarter AI but takes longer</p>
                     </div>
 
                     {/* Progress */}
-                    <div
-                        style={{
-                            background: '#fff',
-                            borderRadius: '12px',
-                            padding: '12px',
-                            border: '1px solid #e5e7eb',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-                        }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151', letterSpacing: '0.05em' }}>📊 PROGRESS</span>
-                            <span style={{ fontSize: '16px', fontWeight: 800, color: '#630ed4' }}>{trainingProgress}%</span>
+                    <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+                        <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-[10px] font-bold text-gray-700 tracking-wider">📊 PROGRESS</span>
+                            <span className="text-base font-extrabold text-[#630ed4]">{trainingProgress}%</span>
                         </div>
-                        <div style={{ height: '6px', background: '#f3f4f6', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div
-                                style={{
-                                    height: '100%',
-                                    borderRadius: '3px',
-                                    background: isComplete ? '#10b981' : '#630ed4',
-                                    width: `${trainingProgress}%`,
-                                    transition: 'width 0.3s ease',
-                                }}
+                                className={`h-full rounded-full transition-[width] duration-300 ease-in-out ${
+                                    isComplete ? 'bg-emerald-500' : 'bg-[#630ed4]'
+                                }`}
+                                style={{ width: `${trainingProgress}%` }}
                             />
                         </div>
                     </div>
 
                     {/* Estimated Time */}
-                    <div
-                        style={{
-                            background: '#fff',
-                            borderRadius: '12px',
-                            padding: '12px',
-                            border: '1px solid #e5e7eb',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-                        }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151' }}>⏱️ Est. Time</span>
-                            <span style={{ fontSize: '12px', fontWeight: 700, color: '#6b7280' }}>~{estimatedTime}s</span>
+                    <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+                        <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-bold text-gray-700">⏱️ Est. Time</span>
+                            <span className="text-xs font-bold text-gray-500">~{estimatedTime}s</span>
                         </div>
                     </div>
 
                     {/* Accuracy */}
-                    <div
-                        style={{
-                            background: '#fff',
-                            borderRadius: '12px',
-                            padding: '12px',
-                            border: '1px solid #e5e7eb',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-                        }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151' }}>🎯 ACCURACY</span>
-                            <span style={{ fontSize: '13px', fontWeight: 800, color: isComplete ? '#059669' : '#9ca3af' }}>
+                    <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+                        <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-bold text-gray-700">🎯 ACCURACY</span>
+                            <span className={`text-[13px] font-extrabold ${isComplete ? 'text-emerald-600' : 'text-gray-400'}`}>
                                 {isComplete ? `${Math.round(metrics.map50)}%` : '—'}
                             </span>
                         </div>
-                        <p style={{ fontSize: '9px', color: '#9ca3af', marginTop: '4px' }}>How smart your AI is!</p>
+                        <p className="text-[9px] text-gray-400 mt-1">How smart your AI is!</p>
                     </div>
 
                     {/* Loss Chart */}
-                    <div
-                        style={{
-                            background: '#fff',
-                            borderRadius: '12px',
-                            padding: '12px',
-                            border: '1px solid #e5e7eb',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-                            flex: 1,
-                            minHeight: 0,
-                        }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#374151' }}>📉 Loss</span>
-                            <span style={{
-                                fontSize: '9px',
-                                fontWeight: 700,
-                                padding: '3px 8px',
-                                borderRadius: '6px',
-                                background: isTraining ? '#fef2f2' : isComplete ? '#ecfdf5' : '#f3f4f6',
-                                color: isTraining ? '#dc2626' : isComplete ? '#059669' : '#6b7280',
-                            }}>
+                    <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)] flex-1 min-h-0 flex flex-col">
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-[10px] font-bold text-gray-700">📉 Loss</span>
+                            <span className={`text-[9px] font-bold py-0.75 px-2 rounded-md ${
+                                isTraining ? 'bg-red-50 text-red-600' : isComplete ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'
+                            }`}>
                                 {isTraining ? '🔴 LIVE' : isComplete ? '✅ DONE' : '⏳ Ready'}
                             </span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '60px' }}>
+                        <div className="flex items-end gap-0.5 h-[60px]">
                             {lossBarHeights.map((height, i) => {
                                 const ratio = i / Math.max(lossBarHeights.length - 1, 1)
-                                let color = '#e5e7eb'
-                                if (ratio > 0.3) color = '#c4b5fd'
-                                if (ratio > 0.5) color = '#630ed4'
-                                if (ratio > 0.8) color = '#059669'
+                                let colorClass = 'bg-gray-200'
+                                if (ratio > 0.3) colorClass = 'bg-purple-300'
+                                if (ratio > 0.5) colorClass = 'bg-[#630ed4]'
+                                if (ratio > 0.8) colorClass = 'bg-emerald-600'
                                 return (
                                     <div
                                         key={i}
-                                        style={{
-                                            flex: 1,
-                                            height: `${Math.max(5, height)}%`,
-                                            borderRadius: '2px 2px 0 0',
-                                            background: color,
-                                            transition: 'height 0.3s ease',
-                                        }}
+                                        className={`flex-1 rounded-t-sm transition-[height] duration-300 ease-in-out ${colorClass}`}
+                                        style={{ height: `${Math.max(5, height)}%` }}
                                     />
                                 )
                             })}
                             {lossBarHeights.length < 11 && Array.from({ length: 11 - lossBarHeights.length }).map((_, i) => (
                                 <div
                                     key={`e${i}`}
-                                    style={{ flex: 1, height: '5%', borderRadius: '2px 2px 0 0', background: '#f3f4f6' }}
+                                    className="flex-1 h-[5%] rounded-t-sm bg-gray-100"
                                 />
                             ))}
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                            <span style={{ fontSize: '8px', color: '#9ca3af' }}>Start</span>
-                            <span style={{ fontSize: '8px', color: '#9ca3af' }}>End</span>
+                        <div className="flex justify-between mt-1">
+                            <span className="text-[8px] text-gray-400">Start</span>
+                            <span className="text-[8px] text-gray-400">End</span>
                         </div>
                     </div>
                 </div>

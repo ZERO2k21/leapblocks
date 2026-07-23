@@ -95,51 +95,18 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
 
     return (
         <div 
-            className="fixed inset-0 z-[9999] bg-black/75 backdrop-blur-[6px]" 
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+            className="fixed inset-0 z-[9999] bg-black/75 backdrop-blur-md flex items-center justify-center p-4" 
             onClick={onClose}
         >
             <div 
-                style={{ 
-                    width: '100%', 
-                    maxWidth: '440px', 
-                    backgroundColor: 'rgba(9, 9, 11, 0.92)', 
-                    border: '1px solid rgba(255, 255, 255, 0.08)', 
-                    borderRadius: '24px', 
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 50px rgba(99, 102, 241, 0.02)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                    backdropFilter: 'blur(20px)',
-                    animation: 'modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
-                }} 
+                className="w-full max-w-[440px] bg-zinc-950/92 border border-white/8 rounded-3xl shadow-2xl shadow-black/60 flex flex-col overflow-hidden backdrop-blur-xl animate-modal-scale-in"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#ffffff', margin: 0, letterSpacing: '-0.01em' }}>Share Project</h3>
+                <div className="flex items-center justify-between p-5 px-6 pb-4 border-b border-white/6">
+                    <h3 className="text-lg font-black text-white m-0 tracking-tight">Share Project</h3>
                     <button 
-                        style={{ 
-                            width: '30px', 
-                            height: '30px', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            borderRadius: '8px', 
-                            backgroundColor: 'transparent', 
-                            color: 'rgba(255, 255, 255, 0.5)', 
-                            border: 'none', 
-                            cursor: 'pointer', 
-                            transition: 'all 0.2s' 
-                        }} 
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
-                            e.currentTarget.style.color = '#ffffff';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)';
-                        }}
+                        className="w-7.5 h-7.5 flex items-center justify-center rounded-lg bg-transparent text-white/50 border-none cursor-pointer transition-all hover:bg-white/6 hover:text-white"
                         onClick={onClose}
                     >
                         <X size={15} strokeWidth={2.5} />
@@ -147,13 +114,13 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
                 </div>
  
                 {/* Content */}
-                <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="p-6 flex flex-col gap-5">
                     {/* Project Name */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'rgba(255, 255, 255, 0.45)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+                    <div className="flex flex-col gap-2">
+                        <label className="block text-[11px] font-bold text-white/45 uppercase tracking-widest">
                             Project Name
                         </label>
-                        <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                        <div className="flex gap-2.5 w-full">
                             <input
                                 type="text"
                                 value={editName}
@@ -161,34 +128,13 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
                                 onBlur={handleRename}
                                 onKeyDown={(e) => { if (e.key === 'Enter') handleRename(); }}
                                 disabled={loading}
-                                style={{
-                                    flex: 1,
-                                    padding: '10px 14px',
-                                    borderRadius: '10px',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                    color: '#ffffff',
-                                    fontSize: '14px',
-                                    fontWeight: 500,
-                                    outline: 'none',
-                                    boxSizing: 'border-box'
-                                }}
+                                className="flex-1 p-2.5 px-3.5 rounded-xl border border-white/10 bg-white/5 text-white text-sm font-medium outline-none box-border"
                             />
                             {nameChanged && (
                                 <button
                                     onClick={handleRename}
                                     disabled={loading}
-                                    style={{
-                                        padding: '10px 18px',
-                                        borderRadius: '10px',
-                                        border: 'none',
-                                        backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                                        color: '#a5b4fc',
-                                        cursor: 'pointer',
-                                        fontSize: '13px',
-                                        fontWeight: 600,
-                                        transition: 'all 0.2s'
-                                    }}
+                                    className="p-2.5 px-4.5 rounded-xl border-none bg-indigo-500/15 text-indigo-300 cursor-pointer text-xs font-semibold transition-all"
                                 >
                                     {loading ? '...' : 'Rename'}
                                 </button>
@@ -197,20 +143,12 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
                     </div>
  
                     {/* Permission Radio Options */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="flex flex-col gap-3">
                         {/* Viewer Card */}
                         <label 
-                            style={{ 
-                                display: 'flex', 
-                                gap: '14px', 
-                                padding: '16px', 
-                                borderRadius: '12px', 
-                                backgroundColor: 'rgba(255, 255, 255, 0.03)', 
-                                border: permission === 'viewer' ? '1px solid #6366f1' : '1px solid rgba(255, 255, 255, 0.06)', 
-                                cursor: 'pointer', 
-                                transition: 'all 0.2s',
-                                boxSizing: 'border-box'
-                            }}
+                            className={`flex gap-3.5 p-4 rounded-xl bg-white/3 border cursor-pointer transition-all box-border ${
+                                permission === 'viewer' ? 'border-indigo-500' : 'border-white/6'
+                            }`}
                         >
                             <input
                                 type="radio"
@@ -219,34 +157,19 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
                                 checked={permission === 'viewer'}
                                 onChange={() => setPermission('viewer')}
                                 disabled={loading}
-                                style={{ 
-                                    marginTop: '3px', 
-                                    accentColor: '#6366f1', 
-                                    width: '16px', 
-                                    height: '16px', 
-                                    cursor: 'pointer', 
-                                    flexShrink: 0 
-                                }}
+                                className="mt-0.75 accent-indigo-500 w-4 h-4 cursor-pointer shrink-0"
                             />
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <span style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff' }}>Viewer</span>
-                                <span style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.45)', lineHeight: 1.4 }}>Anyone with the link can view and load the project.</span>
+                            <div className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold text-white">Viewer</span>
+                                <span className="text-xs text-white/45 leading-relaxed">Anyone with the link can view and load the project.</span>
                             </div>
                         </label>
  
                         {/* Editor Card */}
                         <label 
-                            style={{ 
-                                display: 'flex', 
-                                gap: '14px', 
-                                padding: '16px', 
-                                borderRadius: '12px', 
-                                backgroundColor: 'rgba(255, 255, 255, 0.03)', 
-                                border: permission === 'editor' ? '1px solid #6366f1' : '1px solid rgba(255, 255, 255, 0.06)', 
-                                cursor: 'pointer', 
-                                transition: 'all 0.2s',
-                                boxSizing: 'border-box'
-                            }}
+                            className={`flex gap-3.5 p-4 rounded-xl bg-white/3 border cursor-pointer transition-all box-border ${
+                                permission === 'editor' ? 'border-indigo-500' : 'border-white/6'
+                            }`}
                         >
                             <input
                                 type="radio"
@@ -255,68 +178,36 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
                                 checked={permission === 'editor'}
                                 onChange={() => setPermission('editor')}
                                 disabled={loading}
-                                style={{ 
-                                    marginTop: '3px', 
-                                    accentColor: '#6366f1', 
-                                    width: '16px', 
-                                    height: '16px', 
-                                    cursor: 'pointer', 
-                                    flexShrink: 0 
-                                }}
+                                className="mt-0.75 accent-indigo-500 w-4 h-4 cursor-pointer shrink-0"
                             />
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <span style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff' }}>Editor</span>
-                                <span style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.45)', lineHeight: 1.4 }}>Anyone with the link can load and save changes back to this project.</span>
+                            <div className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold text-white">Editor</span>
+                                <span className="text-xs text-white/45 leading-relaxed">Anyone with the link can load and save changes back to this project.</span>
                             </div>
                         </label>
                     </div>
  
                     {/* Share Link */}
                     {isShared && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'rgba(255, 255, 255, 0.45)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+                        <div className="flex flex-col gap-2">
+                            <label className="block text-[11px] font-bold text-white/45 uppercase tracking-widest">
                                 Share link
                             </label>
-                            <div style={{ position: 'relative', display: 'flex', width: '100%' }}>
+                            <div className="relative flex w-full">
                                 <input
                                     type="text"
                                     readOnly
                                     value={shareUrl}
-                                    style={{
-                                        width: '100%',
-                                        padding: '10px 48px 10px 14px',
-                                        borderRadius: '10px',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                        color: '#ffffff',
-                                        fontSize: '13px',
-                                        fontFamily: 'monospace',
-                                        outline: 'none',
-                                        boxSizing: 'border-box'
-                                    }}
+                                    className="w-full p-2.5 pr-12 pl-3.5 rounded-xl border border-white/10 bg-white/5 text-white text-xs font-mono outline-none box-border"
                                     onFocus={(e) => e.target.select()}
                                 />
                                 <button 
                                     onClick={handleCopy} 
                                     disabled={copied}
                                     title={copied ? 'Copied!' : 'Copy Link'}
-                                    style={{
-                                        position: 'absolute',
-                                        right: '8px',
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        width: '32px',
-                                        height: '32px',
-                                        borderRadius: '8px',
-                                        border: 'none',
-                                        backgroundColor: copied ? '#10b981' : 'rgba(255, 255, 255, 0.06)',
-                                        color: copied ? '#ffffff' : 'rgba(255, 255, 255, 0.8)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                    }}
+                                    className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg border-none flex items-center justify-center cursor-pointer transition-all ${
+                                        copied ? 'bg-emerald-500 text-white' : 'bg-white/6 text-white/80'
+                                    }`}
                                 >
                                     {copied ? (
                                         <Check size={14} strokeWidth={2.5} />
@@ -330,41 +221,20 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
                 </div>
  
                 {/* Footer Buttons */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'end', gap: '12px', padding: '16px 24px 24px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <div className="flex items-center justify-end gap-3 p-4 px-6 pb-6 border-t border-white/6">
                     {isShared ? (
                         <>
                             <button 
                                 onClick={handleRevoke} 
                                 disabled={loading}
-                                style={{
-                                    padding: '10px 20px',
-                                    borderRadius: '10px',
-                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                    backgroundColor: 'transparent',
-                                    color: '#f87171',
-                                    fontSize: '13px',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
+                                className="p-2.5 px-5 rounded-xl border border-red-500/30 bg-transparent text-red-400 text-xs font-semibold cursor-pointer transition-all"
                             >
                                 {loading ? '...' : 'Revoke Share'}
                             </button>
                             <button 
                                 onClick={handleShare} 
                                 disabled={loading}
-                                style={{
-                                    padding: '10px 20px',
-                                    borderRadius: '10px',
-                                    border: 'none',
-                                    backgroundColor: '#6366f1',
-                                    color: '#ffffff',
-                                    fontSize: '13px',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)'
-                                }}
+                                className="p-2.5 px-5 rounded-xl border-none bg-indigo-600 text-white text-xs font-semibold cursor-pointer transition-all shadow-md shadow-indigo-600/20"
                             >
                                 {loading ? 'Updating...' : 'Update Permission'}
                             </button>
@@ -373,18 +243,7 @@ export default function ShareProjectModal({ project, onClose, onUpdate }: ShareP
                         <button 
                             onClick={handleShare} 
                             disabled={loading}
-                            style={{
-                                padding: '10px 20px',
-                                borderRadius: '10px',
-                                border: 'none',
-                                backgroundColor: '#6366f1',
-                                color: '#ffffff',
-                                fontSize: '13px',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)'
-                            }}
+                            className="p-2.5 px-5 rounded-xl border-none bg-indigo-600 text-white text-xs font-semibold cursor-pointer transition-all shadow-md shadow-indigo-600/20"
                         >
                             {loading ? 'Generating...' : 'Generate Share Link'}
                         </button>

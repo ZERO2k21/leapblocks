@@ -337,17 +337,17 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
     return (
         <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
             {savedMessage && (
-                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-[#ec4899] text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-pink-500 text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
                     {savedMessage}
                 </div>
             )}
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0" style={{ color: ACCENT }}>Dance Pose Recognition</h2>
+                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0 text-pink-500">Dance Pose Recognition</h2>
                             <p className="text-xs text-[#4a4455]">Strike a dance pose and teach the AI!</p>
                         </div>
                         <div className="w-full max-w-[720px]">
@@ -355,12 +355,12 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
-                        <div className="flex-1 flex flex-col gap-2" style={{ minWidth: 0 }}>
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 mt-3">
+                        <div className="flex-1 flex flex-col gap-2 min-w-0">
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -377,25 +377,27 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                                         <span className="text-5xl mb-3">💃</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to collect dance pose samples</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg" style={{ background: ACCENT }}>Turn On Camera</button>
+                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg bg-pink-500 hover:bg-pink-600 transition-colors">Turn On Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border" style={{ borderColor: ACCENT, color: ACCENT, background: '#fff' }}>
+                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-pink-500 text-pink-500 bg-white hover:bg-pink-50 transition-colors">
                                     {cameraOn ? 'Stop' : 'Start'}
                                 </button>
-                                <button onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass}
-                                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40"
-                                    style={{ background: isCapturing ? '#94a3b8' : ACCENT }}>
+                                <button
+                                    onClick={handleCapture}
+                                    disabled={!cameraOn || isCapturing || !selectedClass}
+                                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white transition-colors disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-pink-500 hover:bg-pink-600'}`}
+                                >
                                     {isCapturing ? '...' : 'Capture Pose'}
                                 </button>
                             </div>
                         </div>
 
                         <div className="w-full lg:w-72 flex flex-col gap-2 overflow-y-auto">
-                            <div className="rounded-xl p-3 border" style={{ background: '#fdf2f8', borderColor: `${ACCENT}20` }}>
-                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: ACCENT }}>Dance Poses</p>
+                            <div className="rounded-xl p-3 border bg-pink-50 border-pink-500/20">
+                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5 text-pink-500">Dance Poses</p>
                                 <div className="flex flex-col gap-1">
                                     {DANCE_CLASSES.map(pose => (
                                         <div key={pose} className="flex items-center gap-2">
@@ -406,8 +408,8 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                                 </div>
                             </div>
 
-                            <div className="rounded-xl p-3 border" style={{ background: '#fdf2f8', borderColor: `${ACCENT}20` }}>
-                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: ACCENT }}>Tips</p>
+                            <div className="rounded-xl p-3 border bg-pink-50 border-pink-500/20">
+                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5 text-pink-500">Tips</p>
                                 <div className="flex flex-col gap-1">
                                     {['Full body visible in frame', 'Dynamic dance movements', 'Good lighting for accuracy', 'Hold poses for 1-2 seconds'].map(tip => (
                                         <span key={tip} className="text-[9px] text-gray-600">• {tip}</span>
@@ -428,13 +430,13 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                             )}
 
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="rounded-xl p-2.5 border" style={{ background: '#fdf2f8', borderColor: `${ACCENT}20` }}>
+                                <div className="rounded-xl p-2.5 border bg-pink-50 border-pink-500/20">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Total</p>
-                                    <p className="text-lg font-extrabold" style={{ color: ACCENT }}>{mode.getTotalSamples()}</p>
+                                    <p className="text-lg font-extrabold text-pink-500">{mode.getTotalSamples()}</p>
                                 </div>
-                                <div className="rounded-xl p-2.5 border" style={{ background: '#fdf2f8', borderColor: `${ACCENT}20` }}>
+                                <div className="rounded-xl p-2.5 border bg-pink-50 border-pink-500/20">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Classes</p>
-                                    <p className="text-lg font-extrabold" style={{ color: ACCENT }}>{mode.project?.classes.length || 0}</p>
+                                    <p className="text-lg font-extrabold text-pink-500">{mode.project?.classes.length || 0}</p>
                                 </div>
                             </div>
                         </div>
@@ -446,19 +448,19 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col items-center justify-center p-8">
                     <div className="text-center mb-6">
-                        <h2 className="text-2xl font-extrabold mb-2" style={{ color: ACCENT }}>Training Dance AI!</h2>
+                        <h2 className="text-2xl font-extrabold mb-2 text-pink-500">Training Dance AI!</h2>
                         <p className="text-sm text-gray-500">Teaching the AI to recognize dance poses...</p>
                     </div>
                     {modelLoading ? (
                         <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 border-4 rounded-full animate-spin" style={{ borderColor: ACCENT, borderTopColor: 'transparent' }} />
-                            <p className="text-sm font-bold" style={{ color: ACCENT }}>Loading model...</p>
+                            <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm font-bold text-pink-500">Loading model...</p>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-4">
                             <span className="text-6xl">✓</span>
                             <p className="text-sm font-bold text-green-600">Model Ready!</p>
-                            <button onClick={() => mode.setMode('test')} className="px-6 py-3 text-white rounded-xl text-sm font-bold shadow-lg" style={{ background: ACCENT }}>
+                            <button onClick={() => mode.setMode('test')} className="px-6 py-3 text-white rounded-xl text-sm font-bold shadow-lg bg-pink-500 hover:bg-pink-600 transition-colors">
                                 Start Testing
                             </button>
                         </div>
@@ -468,10 +470,10 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0" style={{ color: ACCENT }}>Test Your Dance AI!</h2>
+                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0 text-pink-500">Test Your Dance AI!</h2>
                             <p className="text-xs text-[#4a4455]">Strike a dance pose and see if the AI recognizes it!</p>
                         </div>
                         <div className="w-full max-w-[720px]">
@@ -479,12 +481,12 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
-                        <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 mt-3">
+                        <div className="flex-1 flex flex-col min-w-0">
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -493,7 +495,7 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                                 )}
                                 {prediction && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <div className="animate-fade-in px-8 py-4 rounded-2xl" style={{ background: `${getPoseColor(prediction.label)}CC`, backdropFilter: 'blur(8px)' }}>
+                                        <div className="animate-fade-in px-8 py-4 rounded-2xl backdrop-blur-md bg-black/60">
                                             <span className="text-5xl font-black text-white">{prediction.label}</span>
                                             <span className="block text-xl font-bold text-white/80 mt-1">
                                                 {Math.round(prediction.confidences[prediction.label] * 100)}%
@@ -506,12 +508,12 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                                         <span className="text-5xl mb-3">📷</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to test dance poses</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg" style={{ background: ACCENT }}>Start Camera</button>
+                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg bg-pink-500 hover:bg-pink-600 transition-colors">Start Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2 mt-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border" style={{ borderColor: ACCENT, color: ACCENT, background: '#fff' }}>
+                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-pink-500 text-pink-500 bg-white hover:bg-pink-50 transition-colors">
                                     {cameraOn ? 'Stop Camera' : 'Start Camera'}
                                 </button>
                             </div>
@@ -522,18 +524,22 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] font-bold text-gray-700">Confidence</span>
-                                    <span className="text-xs font-extrabold bg-white px-2 py-0.5 rounded-md" style={{ color: ACCENT }}>{Math.round(confidenceThreshold * 100)}%</span>
+                                    <span className="text-xs font-extrabold bg-white px-2 py-0.5 rounded-md text-pink-500">{Math.round(confidenceThreshold * 100)}%</span>
                                 </div>
-                                <input type="range" min="0" max="100" value={Math.round(confidenceThreshold * 100)}
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={Math.round(confidenceThreshold * 100)}
                                     onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
-                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                                    style={{ background: `linear-gradient(to right, ${ACCENT} ${Math.round(confidenceThreshold * 100)}%, #e5e7eb ${Math.round(confidenceThreshold * 100)}%)` }} />
+                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-pink-500 bg-slate-200"
+                                />
                             </div>
 
                             {/* Current Pose - Large Display */}
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-4 border border-gray-100 text-center">
                                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Current Pose</p>
-                                <div className="text-4xl font-black" style={{ color: prediction ? getPoseColor(prediction.label) : '#94a3b8' }}>
+                                <div className={`text-4xl font-black ${prediction ? 'text-pink-500' : 'text-slate-400'}`}>
                                     {prediction ? prediction.label : '—'}
                                 </div>
                                 {prediction && (
@@ -547,7 +553,7 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-4 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] font-bold text-gray-700">Accuracy Score</span>
-                                    <button onClick={handleResetSequence} className="text-[9px] font-bold px-2 py-0.5 rounded-md" style={{ color: ACCENT, background: `${ACCENT}15` }}>
+                                    <button onClick={handleResetSequence} className="text-[9px] font-bold px-2 py-0.5 rounded-md text-pink-500 bg-pink-50 hover:bg-pink-100 transition-colors">
                                         Reset
                                     </button>
                                 </div>
@@ -555,31 +561,38 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                                     <div className="relative w-14 h-14 flex-shrink-0">
                                         <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
                                             <circle cx="28" cy="28" r="24" fill="none" stroke="#e5e7eb" strokeWidth="4" />
-                                            <circle cx="28" cy="28" r="24" fill="none" stroke={ACCENT} strokeWidth="4"
+                                            <circle
+                                                cx="28"
+                                                cy="28"
+                                                r="24"
+                                                fill="none"
+                                                stroke="#ec4899"
+                                                strokeWidth="4"
                                                 strokeDasharray={`${(accuracyScore / 100) * 150.8} 150.8`}
-                                                strokeLinecap="round" />
+                                                strokeLinecap="round"
+                                            />
                                         </svg>
-                                        <span className="absolute inset-0 flex items-center justify-center text-sm font-extrabold" style={{ color: ACCENT }}>
+                                        <span className="absolute inset-0 flex items-center justify-center text-sm font-extrabold text-pink-500">
                                             {accuracyScore}%
                                         </span>
                                     </div>
                                     <div className="flex flex-col gap-0.5">
-                                        <p className="text-[9px] text-gray-500"><span className="font-bold" style={{ color: '#10b981' }}>{correctDetections}</span> correct</p>
+                                        <p className="text-[9px] text-gray-500"><span className="font-bold text-emerald-500">{correctDetections}</span> correct</p>
                                         <p className="text-[9px] text-gray-500"><span className="font-bold text-gray-700">{totalDetections}</span> total</p>
-                                        <p className="text-[9px] text-gray-500"><span className="font-bold" style={{ color: ACCENT }}>{poseHistory.length}</span> history</p>
+                                        <p className="text-[9px] text-gray-500"><span className="font-bold text-pink-500">{poseHistory.length}</span> history</p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Speed & Pose Detection */}
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="rounded-xl p-2.5 border" style={{ background: '#fdf2f8', borderColor: `${ACCENT}20` }}>
+                                <div className="rounded-xl p-2.5 border bg-pink-50 border-pink-500/20">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Speed</p>
                                     <p className="text-lg font-extrabold text-gray-800">{inferenceTime}ms</p>
                                 </div>
-                                <div className="rounded-xl p-2.5 border" style={{ background: '#fdf2f8', borderColor: `${ACCENT}20` }}>
+                                <div className="rounded-xl p-2.5 border bg-pink-50 border-pink-500/20">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Sequence</p>
-                                    <p className="text-lg font-extrabold" style={{ color: sequencePhase === 'tracking' ? '#10b981' : '#94a3b8' }}>
+                                    <p className={`text-lg font-extrabold ${sequencePhase === 'tracking' ? 'text-emerald-500' : 'text-slate-400'}`}>
                                         {sequencePhase === 'tracking' ? 'Active' : 'Idle'}
                                     </p>
                                 </div>
@@ -589,7 +602,7 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] font-bold text-gray-700">Pose Sequence</span>
-                                    <span className="text-[9px] font-bold" style={{ color: ACCENT }}>{detectionCount} detected</span>
+                                    <span className="text-[9px] font-bold text-pink-500">{detectionCount} detected</span>
                                 </div>
                                 {poseHistory.length > 0 ? (
                                     <div className="flex gap-1 flex-wrap">

@@ -93,52 +93,50 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
     return (
         <div className="flex flex-col h-full overflow-y-auto neura-scrollbar">
             {mode.mode === 'collect' && (
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+                <div className="flex-1 flex flex-col overflow-auto">
                     {/* Header */}
-                    <div style={{ textAlign: 'center', padding: '16px 20px 8px', flexShrink: 0 }} className="animate-fade-in">
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '4px' }}>
-                            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>📝</div>
-                            <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#630ed4' }}>Word Wizard!</h2>
+                    <div className="text-center py-4 px-5 pb-2 shrink-0 animate-fade-in">
+                        <div className="flex items-center justify-center gap-2.5 mb-1">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] flex items-center justify-center text-xl">📝</div>
+                            <h2 className="text-2xl font-extrabold text-[#630ed4]">Word Wizard!</h2>
                         </div>
-                        <p style={{ fontSize: '12px', color: '#6b7280' }}>Type words to teach your AI to read! 🔤</p>
+                        <p className="text-xs text-gray-500">Type words to teach your AI to read! 🔤</p>
                     </div>
 
-                    <div style={{ padding: '0 20px', flexShrink: 0 }}>
+                    <div className="px-5 shrink-0">
                         <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
                     </div>
 
                     {/* Main content */}
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '12px 20px', overflow: 'hidden' }}>
+                    <div className="flex-1 flex flex-col p-3 px-5 overflow-hidden">
                         {/* Input card */}
-                        <div style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderRadius: '16px', padding: '16px', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', flexShrink: 0 }}>
-                            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-4 border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.04)] shrink-0">
+                            <div className="flex gap-2 mb-2.5">
                                 <input
                                     value={textInput}
                                     onChange={(e) => setTextInput(e.target.value)}
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleAddText() }}
                                     placeholder="Type something..."
-                                    style={{ flex: 1, padding: '12px 16px', fontSize: '14px', fontWeight: 600, border: '2px solid #e5e7eb', borderRadius: '12px', outline: 'none', background: '#fff', color: '#131b2e' }}
-                                    onFocus={(e) => e.target.style.borderColor = '#630ed4'}
-                                    onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                                    className="flex-1 p-3 px-4 text-sm font-semibold border-2 border-gray-200 focus:border-[#630ed4] rounded-xl outline-none bg-white text-[#131b2e] transition-colors"
                                 />
-                                <button onClick={handleAddText} disabled={!textInput.trim() || atSampleLimit} style={{
-                                    padding: '12px 24px',
-                                    borderRadius: '12px',
-                                    fontSize: '14px',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: !textInput.trim() || atSampleLimit ? 'not-allowed' : 'pointer',
-                                    background: !textInput.trim() || atSampleLimit ? '#e5e7eb' : 'linear-gradient(135deg, #630ed4, #7c3aed)',
-                                    color: !textInput.trim() || atSampleLimit ? '#9ca3af' : '#fff',
-                                    transition: 'all 0.2s'
-                                }}>➕ Add</button>
+                                <button
+                                    onClick={handleAddText}
+                                    disabled={!textInput.trim() || atSampleLimit}
+                                    className={`py-3 px-6 rounded-xl text-sm font-bold border-none transition-all ${
+                                        !textInput.trim() || atSampleLimit
+                                            ? 'cursor-not-allowed bg-gray-200 text-gray-400'
+                                            : 'cursor-pointer bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white'
+                                    }`}
+                                >
+                                    ➕ Add
+                                </button>
                             </div>
 
                             {selectedClass && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: '#f5f3ff', borderRadius: '10px', border: '1px solid #ede9fe' }}>
-                                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: selectedClass.color }} />
-                                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#630ed4' }}>Adding to: {selectedClass.name}</span>
-                                    <span style={{ fontSize: '10px', fontWeight: 600, marginLeft: 'auto', padding: '2px 8px', background: selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS ? '#fef3c7' : '#fff', borderRadius: '6px', color: selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS ? '#c32c00' : '#630ed4' }}>
+                                <div className="flex items-center gap-2 py-2 px-3 bg-[#f5f3ff] rounded-lg border border-[#ede9fe]">
+                                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: selectedClass.color }} />
+                                    <span className="text-xs font-bold text-[#630ed4]">Adding to: {selectedClass.name}</span>
+                                    <span className={`text-[10px] font-semibold ml-auto py-0.5 px-2 rounded-md ${selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS ? 'bg-amber-100 text-[#c32c00]' : 'bg-white text-[#630ed4]'}`}>
                                         {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}
                                     </span>
                                 </div>
@@ -147,24 +145,24 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
 
                         {/* Samples */}
                         {selectedClass && (
-                            <div style={{ flex: 1, marginTop: '12px', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderRadius: '14px', padding: '14px', border: '1px solid #e5e7eb', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexShrink: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: selectedClass.color }} />
-                                        <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#131b2e' }}>{selectedClass.name}</h3>
+                            <div className="flex-1 mt-3 bg-white/90 backdrop-blur-md rounded-xl p-3.5 border border-gray-200 overflow-hidden flex flex-col">
+                                <div className="flex items-center justify-between mb-2.5 shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: selectedClass.color }} />
+                                        <h3 className="text-xs font-bold text-[#131b2e]">{selectedClass.name}</h3>
                                     </div>
-                                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', background: '#f5f3ff', color: '#630ed4' }}>{selectedClass.samples.length} texts</span>
+                                    <span className="text-[10px] font-bold py-0.75 px-2 rounded-md bg-[#f5f3ff] text-[#630ed4]">{selectedClass.samples.length} texts</span>
                                 </div>
-                                <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                                <div className="flex-1 min-h-0 overflow-hidden">
                                     <SampleGrid samples={selectedClass.samples} type="text" onRemove={(id) => mode.removeSample(selectedClass.id, id)} />
                                 </div>
                             </div>
                         )}
                         {selectedClass && selectedClass.samples.length === 0 && (
-                            <div style={{ flex: 1, marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <div style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: '40px', marginBottom: '8px' }}>📝</div>
-                                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#6b7280' }}>Type something above to start!</p>
+                            <div className="flex-1 mt-3 flex items-center justify-center">
+                                <div className="text-center">
+                                    <div className="text-4xl mb-2">📝</div>
+                                    <p className="text-xs font-bold text-gray-500">Type something above to start!</p>
                                 </div>
                             </div>
                         )}
@@ -173,84 +171,82 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
             )}
 
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
-                    <div className="w-full" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
+                    <div className="w-full flex-1 min-h-0 flex flex-col">
                         <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} sampleType="texts" mode={mode.mode} onModeChange={mode.setMode} />
                     </div>
                 </div>
             )}
 
             {mode.mode === 'test' && (
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+                <div className="flex-1 flex flex-col overflow-auto">
                     {/* Header */}
-                    <div style={{ textAlign: 'center', padding: '16px 20px 8px', flexShrink: 0 }} className="animate-fade-in">
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '4px' }}>
-                            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🧪</div>
-                            <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#630ed4' }}>Test Your AI!</h2>
+                    <div className="text-center py-4 px-5 pb-2 shrink-0 animate-fade-in">
+                        <div className="flex items-center justify-center gap-2.5 mb-1">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] flex items-center justify-center text-xl">🧪</div>
+                            <h2 className="text-2xl font-extrabold text-[#630ed4]">Test Your AI!</h2>
                         </div>
-                        <p style={{ fontSize: '12px', color: '#6b7280' }}>Type something and see if your AI understands! 🎯</p>
+                        <p className="text-xs text-gray-500">Type something and see if your AI understands! 🎯</p>
                     </div>
 
-                    <div style={{ padding: '0 20px', flexShrink: 0 }}>
+                    <div className="px-5 shrink-0">
                         <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
                     </div>
 
                     {/* Main content */}
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '12px 20px', gap: '12px', overflow: 'hidden' }}>
+                    <div className="flex-1 flex flex-col p-3 px-5 gap-3 overflow-hidden">
                         {/* Input card */}
-                        <div style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderRadius: '16px', padding: '16px', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', flexShrink: 0 }}>
+                        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-4 border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.04)] shrink-0">
                             <input
                                 value={textInput}
                                 onChange={(e) => setTextInput(e.target.value)}
                                 placeholder="Type a word to test..."
-                                style={{ width: '100%', padding: '12px 16px', fontSize: '14px', fontWeight: 600, border: '2px solid #e5e7eb', borderRadius: '12px', outline: 'none', background: '#fff', color: '#131b2e' }}
-                                onFocus={(e) => e.target.style.borderColor = '#630ed4'}
-                                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                                className="w-full p-3 px-4 text-sm font-semibold border-2 border-gray-200 focus:border-[#630ed4] rounded-xl outline-none bg-white text-[#131b2e] transition-colors"
                             />
                             {modelLoading && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', padding: '8px 12px', background: '#f5f3ff', borderRadius: '10px' }}>
-                                    <div style={{ width: '14px', height: '14px', border: '2px solid #630ed4', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#630ed4' }}>Loading model...</span>
+                                <div className="flex items-center gap-2 mt-2.5 py-2 px-3 bg-[#f5f3ff] rounded-lg">
+                                    <div className="w-3.5 h-3.5 border-2 border-[#630ed4] border-t-transparent rounded-full animate-spin" />
+                                    <span className="text-[11px] font-bold text-[#630ed4]">Loading model...</span>
                                 </div>
                             )}
                         </div>
 
                         {/* Results area */}
-                        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                        <div className="flex-1 min-h-0 overflow-hidden">
                             {isProcessing && (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                                    <div style={{ width: '48px', height: '48px', border: '3px solid #e5e7eb', borderTopColor: '#630ed4', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '12px' }} />
-                                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#6b7280' }}>Analyzing... 🔍</p>
+                                <div className="flex flex-col items-center justify-center h-full">
+                                    <div className="w-12 h-12 border-3 border-gray-200 border-t-[#630ed4] rounded-full animate-spin mb-3" />
+                                    <p className="text-xs font-bold text-gray-500">Analyzing... 🔍</p>
                                 </div>
                             )}
                             {!isProcessing && prediction && (
-                                <div style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderRadius: '16px', padding: '20px', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                                    <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                                        <p style={{ fontSize: '9px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.08em', marginBottom: '8px' }}>🎯 Prediction</p>
-                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '8px 16px', background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '12px' }}>
-                                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '14px' }}>
+                                <div className="bg-white/90 backdrop-blur-md rounded-2xl p-5 border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.04)] h-full flex flex-col">
+                                    <div className="text-center mb-4">
+                                        <p className="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-2">🎯 Prediction</p>
+                                        <div className="inline-flex items-center gap-2.5 py-2 px-4 bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl">
+                                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#630ed4] to-[#7c3aed] flex items-center justify-center text-white font-bold text-sm">
                                                 {prediction.label.charAt(0).toUpperCase()}
                                             </div>
-                                            <span style={{ fontSize: '16px', fontWeight: 700, color: '#131b2e' }}>{prediction.label}</span>
+                                            <span className="text-base font-bold text-[#131b2e]">{prediction.label}</span>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '8px' }}>
-                                            <span style={{ fontSize: '12px', color: '#6b7280' }}>Confidence</span>
-                                            <span style={{ fontSize: '14px', fontWeight: 800, color: (Object.values(prediction.confidences)[0] || 0) >= 0.7 ? '#059669' : (Object.values(prediction.confidences)[0] || 0) >= 0.4 ? '#d97706' : '#dc2626' }}>
+                                        <div className="flex items-center justify-center gap-1.5 mt-2">
+                                            <span className="text-xs text-gray-500">Confidence</span>
+                                            <span className={`text-sm font-extrabold ${(Object.values(prediction.confidences)[0] || 0) >= 0.7 ? 'text-emerald-600' : (Object.values(prediction.confidences)[0] || 0) >= 0.4 ? 'text-amber-600' : 'text-red-600'}`}>
                                                 {Math.round((Object.values(prediction.confidences)[0] || 0) * 100)}%
                                             </span>
                                         </div>
                                     </div>
-                                    <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <div className="flex-1 overflow-auto flex flex-col gap-2">
                                         {Object.entries(prediction.confidences).sort(([, a], [, b]) => b - a).map(([label, confidence]) => {
                                             const val = Math.round(confidence * 100)
                                             return (
                                                 <div key={label}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#374151', textTransform: 'capitalize' }}>{label}</span>
-                                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b7280' }}>{val}%</span>
+                                                    <div className="flex justify-between mb-0.5">
+                                                        <span className="text-[11px] font-bold text-gray-700 capitalize">{label}</span>
+                                                        <span className="text-[11px] font-bold text-gray-500">{val}%</span>
                                                     </div>
-                                                    <div style={{ height: '6px', background: '#f3f4f6', borderRadius: '3px', overflow: 'hidden' }}>
-                                                        <div style={{ height: '100%', borderRadius: '3px', background: confidence >= 0.7 ? 'linear-gradient(90deg, #34d399, #10b981)' : confidence >= 0.4 ? 'linear-gradient(90deg, #fbbf24, #d97706)' : 'linear-gradient(90deg, #fca5a5, #ef4444)', width: `${val}%`, transition: 'width 0.5s ease' }} />
+                                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                        <div className={`h-full rounded-full transition-[width] duration-500 ease-out ${confidence >= 0.7 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : confidence >= 0.4 ? 'bg-gradient-to-r from-amber-400 to-amber-600' : 'bg-gradient-to-r from-red-300 to-red-500'}`} style={{ width: `${val}%` }} />
                                                     </div>
                                                 </div>
                                             )
@@ -259,12 +255,12 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                 </div>
                             )}
                             {!isProcessing && !prediction && (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px', border: '2px dashed #c4b5fd' }}>
-                                        <span style={{ fontSize: '20px' }}>🤔</span>
+                                <div className="flex flex-col items-center justify-center h-full">
+                                    <div className="w-12 h-12 rounded-full bg-[#f5f3ff] flex items-center justify-center mb-2.5 border-2 border-dashed border-violet-300">
+                                        <span className="text-xl">🤔</span>
                                     </div>
-                                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#6b7280' }}>Type something above!</p>
-                                    <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>Your AI is ready to predict</p>
+                                    <p className="text-xs font-bold text-gray-500">Type something above!</p>
+                                    <p className="text-[11px] text-gray-400 mt-0.5">Your AI is ready to predict</p>
                                 </div>
                             )}
                         </div>

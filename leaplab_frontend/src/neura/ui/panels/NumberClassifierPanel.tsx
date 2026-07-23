@@ -564,7 +564,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar py-3 px-5">
                     {/* Header + Workflow - centered */}
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
@@ -578,7 +578,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
                     {/* Camera error */}
                     {cameraError && inputMode === 'camera' && (
-                        <div className="w-full max-w-[420px] bg-white rounded-2xl p-6 shadow-sm border border-[#dae2fd] text-center mx-auto" style={{ marginTop: '10px' }}>
+                        <div className="w-full max-w-[420px] bg-white rounded-2xl p-6 shadow-sm border border-[#dae2fd] text-center mx-auto mt-2.5">
                             <span className="text-4xl mb-3 block">🚫</span>
                             <h3 className="text-sm font-bold text-[#131b2e] mb-2">Camera Access Needed</h3>
                             <p className="text-xs text-[#4a4455] mb-4">{cameraError}</p>
@@ -590,17 +590,17 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     )}
 
                     {/* Horizontal split */}
-                    <div className="w-full flex flex-col lg:flex-row gap-4 flex-1 min-h-0" style={{ marginTop: '16px' }}>
+                    <div className="w-full flex flex-col lg:flex-row gap-4 flex-1 min-h-0 mt-4">
                         {/* Left half - Canvas/Camera */}
-                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                        <div className="flex-1 min-w-0 flex flex-col">
                             {/* Drawing canvas */}
                             {inputMode === 'draw' && (
-                                <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '16px', padding: '16px', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                                <div className="bg-white/85 backdrop-blur-md rounded-2xl p-4 border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
                                     <canvas
                                         ref={drawCanvasRef}
                                         width={360}
                                         height={360}
-                                        style={{ width: '100%', aspectRatio: '1/1', maxHeight: '400px', borderRadius: '12px', background: '#fff', touchAction: 'none', cursor: 'crosshair', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.06)' }}
+                                        className="w-full aspect-square max-h-[400px] rounded-xl bg-white touch-none cursor-crosshair shadow-[inset_0_2px_8px_rgba(0,0,0,0.06)]"
                                         onMouseDown={handleStart}
                                         onMouseMove={handleMove}
                                         onMouseUp={handleEnd}
@@ -609,12 +609,12 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                         onTouchMove={handleMove}
                                         onTouchEnd={handleEnd}
                                     />
-                                    <div className="flex items-center justify-between" style={{ marginTop: '10px' }}>
-                                        <button onClick={clearCanvas} style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer', background: '#fee2e2', color: '#991b1b' }}>
+                                    <div className="flex items-center justify-between mt-2.5">
+                                        <button onClick={clearCanvas} className="py-2 px-4 rounded-xl text-[11px] font-bold border-none cursor-pointer bg-red-100 text-red-800">
                                             🗑️ Clear
                                         </button>
                                         {selectedClass && (
-                                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#630ed4', background: '#eaedff', padding: '4px 10px', borderRadius: '6px' }}>
+                                            <span className="text-[10px] font-bold text-[#630ed4] bg-[#eaedff] py-1 px-2.5 rounded-md">
                                                 Adding to: {selectedClass.name}
                                             </span>
                                         )}
@@ -624,16 +624,16 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
                             {/* Camera feed */}
                             {inputMode === 'camera' && (
-                                <div style={{ flex: 1, position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', minHeight: '250px' }}>
+                                <div className="flex-1 relative rounded-2xl overflow-hidden bg-[#0f0e26] border border-[#3b2f63] shadow-[0_4px_20px_rgba(0,0,0,0.15)] min-h-[250px]">
                                     {cameraOn ? (
                                         <>
-                                            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)' }} />
-                                            <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 10px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', borderRadius: '6px', zIndex: 10 }}>
-                                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
-                                                <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>LIVE</span>
+                                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
+                                            <div className="absolute top-2.5 left-2.5 flex items-center gap-1.25 py-1 px-2.5 bg-black/50 backdrop-blur-md rounded-md z-10">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]" />
+                                                <span className="text-white text-[10px] font-bold">LIVE</span>
                                             </div>
                                             {selectedClass && (
-                                                <div style={{ position: 'absolute', bottom: '10px', left: '10px', padding: '4px 10px', borderRadius: '6px', background: selectedClass.color, color: '#fff', fontSize: '10px', fontWeight: 700, zIndex: 10 }}>
+                                                <div className="absolute bottom-2.5 left-2.5 py-1 px-2.5 rounded-md text-white text-[10px] font-bold z-10" style={{ background: selectedClass.color }}>
                                                     {selectedClass.name}
                                                 </div>
                                             )}
@@ -650,17 +650,17 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                                 }
                                                 if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files)
                                             }}
-                                            style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isDragging ? 'rgba(99,14,212,0.05)' : 'transparent' }}
+                                            className={`absolute inset-0 flex flex-col items-center justify-center ${isDragging ? 'bg-[#630ed4]/5' : 'bg-transparent'}`}
                                         >
-                                            <div style={{ pointerEvents: isDragging ? 'none' : 'auto', display: 'contents' }}>
-                                                <span style={{ fontSize: '3rem', marginBottom: '12px', transform: isDragging ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease' }}>{isDragging ? '📥' : '📷'}</span>
-                                                <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '12px' }}>{isDragging ? 'Drop Images Here!' : 'Camera is off'}</p>
-                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', opacity: isDragging ? 0.3 : 1, transition: 'opacity 0.2s ease' }}>
-                                                    <button onClick={startCamera} style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', boxShadow: '0 4px 14px rgba(99,14,212,0.35)' }}>
+                                            <div className={`contents ${isDragging ? 'pointer-events-none' : 'pointer-events-auto'}`}>
+                                                <span className={`text-[3rem] mb-3 transition-transform duration-200 ${isDragging ? 'scale-115' : 'scale-100'}`}>{isDragging ? '📥' : '📷'}</span>
+                                                <p className="text-sm font-bold text-white mb-3">{isDragging ? 'Drop Images Here!' : 'Camera is off'}</p>
+                                                <div className={`flex gap-2 items-center transition-opacity duration-200 ${isDragging ? 'opacity-30' : 'opacity-100'}`}>
+                                                    <button onClick={startCamera} className="py-2 px-4 rounded-xl text-[11px] font-bold border-none cursor-pointer bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_4px_14px_rgba(99,14,212,0.35)]">
                                                         📷 Turn On Camera
                                                     </button>
-                                                    <span style={{ color: '#9ca3af', fontSize: '10px', fontWeight: 600 }}>or</span>
-                                                    <button onClick={() => fileInputRef.current?.click()} style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: '2px solid #630ed4', cursor: 'pointer', background: '#fff', color: '#630ed4' }}>
+                                                    <span className="text-gray-400 text-[10px] font-semibold">or</span>
+                                                    <button onClick={() => fileInputRef.current?.click()} className="py-2 px-4 rounded-xl text-[11px] font-bold border-2 border-[#630ed4] cursor-pointer bg-white text-[#630ed4]">
                                                         📂 Upload
                                                     </button>
                                                 </div>
@@ -674,29 +674,29 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         </div>
 
                         {/* Right half - Controls, Stats, Samples */}
-                        <div style={{ width: isMobile ? '100%' : '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div className="w-full lg:w-[280px] shrink-0 flex flex-col gap-2.5">
                             {/* Input mode toggle */}
-                            <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '14px', padding: '5px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', display: 'flex', gap: '3px' }}>
-                                <button onClick={() => { if (cameraOn) stopCamera(); setInputMode('draw') }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: inputMode === 'draw' ? 'linear-gradient(135deg, #630ed4, #7c3aed)' : 'transparent', color: inputMode === 'draw' ? '#fff' : '#6b7280', boxShadow: inputMode === 'draw' ? '0 2px 8px rgba(99,14,212,0.25)' : 'none', transition: 'all 0.2s ease' }}>
-                                    <span style={{ fontSize: '13px' }}>✏️</span>
+                            <div className="bg-white/85 backdrop-blur-md rounded-xl p-1 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)] flex gap-0.75">
+                                <button onClick={() => { if (cameraOn) stopCamera(); setInputMode('draw') }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all duration-200 ${inputMode === 'draw' ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_2px_8px_rgba(99,14,212,0.25)]' : 'bg-transparent text-gray-500'}`}>
+                                    <span className="text-[13px]">✏️</span>
                                     Draw
                                 </button>
-                                <button onClick={() => { if (!cameraOn) startCamera(); setInputMode('camera') }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: inputMode === 'camera' ? 'linear-gradient(135deg, #630ed4, #7c3aed)' : 'transparent', color: inputMode === 'camera' ? '#fff' : '#6b7280', boxShadow: inputMode === 'camera' ? '0 2px 8px rgba(99,14,212,0.25)' : 'none', transition: 'all 0.2s ease' }}>
-                                    <span style={{ fontSize: '13px' }}>📷</span>
+                                <button onClick={() => { if (!cameraOn) startCamera(); setInputMode('camera') }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all duration-200 ${inputMode === 'camera' ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_2px_8px_rgba(99,14,212,0.25)]' : 'bg-transparent text-gray-500'}`}>
+                                    <span className="text-[13px]">📷</span>
                                     Camera
                                 </button>
-                                <button onClick={() => fileInputRef.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'transparent', color: '#6b7280', transition: 'all 0.2s ease' }}>
-                                    <span style={{ fontSize: '13px' }}>📂</span>
+                                <button onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer bg-transparent text-gray-500 transition-all duration-200">
+                                    <span className="text-[13px]">📂</span>
                                     Upload
                                 </button>
                             </div>
 
                             {/* Smart augment toggle */}
-                            <button onClick={() => setAugmentMode(!augmentMode)} disabled={!mode.selectedClassId} style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '11px', fontWeight: 700, border: augmentMode && mode.selectedClassId ? '2px solid #006c44' : '1px solid #e5e7eb', cursor: mode.selectedClassId ? 'pointer' : 'not-allowed', background: augmentMode && mode.selectedClassId ? 'linear-gradient(135deg, #d1fae5, #a7f3d0)' : 'rgba(255,255,255,0.85)', color: augmentMode && mode.selectedClassId ? '#006c44' : '#4a4455', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', backdropFilter: 'blur(12px)', opacity: mode.selectedClassId ? 1 : 0.5, textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '14px' }}>&#10024;</span>
+                            <button onClick={() => setAugmentMode(!augmentMode)} disabled={!mode.selectedClassId} className={`py-2.5 px-4 rounded-xl text-[11px] font-bold shadow-[0_1px_4px_rgba(0,0,0,0.03)] backdrop-blur-md text-left flex items-center gap-2 transition-all ${augmentMode && mode.selectedClassId ? 'border-2 border-[#006c44] bg-gradient-to-br from-emerald-100 to-emerald-200 text-[#006c44]' : 'border border-gray-200 bg-white/85 text-[#4a4455]'} ${mode.selectedClassId ? 'cursor-pointer opacity-100' : 'cursor-not-allowed opacity-50'}`}>
+                                <span className="text-sm">&#10024;</span>
                                 <div>
-                                    <div style={{ fontWeight: 700, fontSize: '11px' }}>{augmentMode ? 'Smart Augment ON' : 'Smart Augment OFF'}</div>
-                                    <div style={{ fontSize: '9px', opacity: 0.7 }}>More varied training data</div>
+                                    <div className="font-bold text-[11px]">{augmentMode ? 'Smart Augment ON' : 'Smart Augment OFF'}</div>
+                                    <div className="text-[9px] opacity-70">More varied training data</div>
                                 </div>
                             </button>
 
@@ -704,52 +704,37 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             <button
                                 onClick={inputMode === 'draw' ? handleCaptureDrawing : handleCaptureCamera}
                                 disabled={inputMode === 'camera' ? !canAddSamples || !cameraOn : !canAddSamples}
-                                style={{
-                                    padding: '12px 20px',
-                                    borderRadius: '12px',
-                                    fontSize: '12px',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: (inputMode === 'camera' ? canAddSamples && cameraOn : canAddSamples) ? 'pointer' : 'not-allowed',
-                                    background: atSampleLimit ? 'linear-gradient(135deg, #d1d5db, #9ca3af)' : 'linear-gradient(135deg, #630ed4, #8b5cf6)',
-                                    color: '#fff',
-                                    boxShadow: '0 4px 14px rgba(99,14,212,0.35)',
-                                    opacity: (inputMode === 'camera' ? canAddSamples && cameraOn : canAddSamples) ? 1 : 0.5,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '6px',
-                                }}
+                                className={`py-3 px-5 rounded-xl text-xs font-bold border-none flex items-center justify-center gap-1.5 shadow-[0_4px_14px_rgba(99,14,212,0.35)] text-white transition-all ${(inputMode === 'camera' ? canAddSamples && cameraOn : canAddSamples) ? 'cursor-pointer opacity-100' : 'cursor-not-allowed opacity-50'} ${atSampleLimit ? 'bg-gradient-to-br from-gray-300 to-gray-400' : 'bg-gradient-to-br from-[#630ed4] to-[#8b5cf6]'}`}
                             >
-                                <span style={{ fontSize: '14px' }}>{inputMode === 'draw' ? '✏️' : '📸'}</span>
+                                <span className="text-sm">{inputMode === 'draw' ? '✏️' : '📸'}</span>
                                 {atSampleLimit ? 'Max Reached' : inputMode === 'draw' ? 'Add Drawing' : 'Take Photo'}
                             </button>
 
                             {/* Stats */}
-                            <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
-                                <div className="flex justify-between" style={{ marginBottom: '6px' }}>
-                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📊 Total Samples</span>
-                                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#630ed4' }}>{mode.getTotalSamples()}</span>
+                            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+                                <div className="flex justify-between mb-1.5">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">📊 Total Samples</span>
+                                    <span className="text-sm font-extrabold text-[#630ed4]">{mode.getTotalSamples()}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎯 Classes</span>
-                                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#630ed4' }}>{mode.project?.classes.length || 0}</span>
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">🎯 Classes</span>
+                                    <span className="text-sm font-extrabold text-[#630ed4]">{mode.project?.classes.length || 0}</span>
                                 </div>
                             </div>
 
                             {/* Samples */}
                             {selectedClass && selectedClass.samples.length > 0 && (
-                                <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                                    <div className="flex items-center justify-between" style={{ marginBottom: '8px', flexShrink: 0 }}>
-                                        <div className="flex items-center" style={{ gap: '6px' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: selectedClass.color }} />
-                                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e' }}>{selectedClass.name}</span>
+                                <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)] flex-1 min-h-0 flex flex-col overflow-hidden">
+                                    <div className="flex items-center justify-between mb-2 shrink-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full" style={{ background: selectedClass.color }} />
+                                            <span className="text-[11px] font-bold text-[#131b2e]">{selectedClass.name}</span>
                                         </div>
-                                        <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '5px', background: atSampleLimit ? '#fef3c7' : '#f5f3ff', color: atSampleLimit ? '#c32c00' : '#630ed4' }}>
+                                        <span className={`text-[10px] font-bold py-0.5 px-1.5 rounded-md ${atSampleLimit ? 'bg-amber-100 text-[#c32c00]' : 'bg-purple-50 text-[#630ed4]'}`}>
                                             {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}
                                         </span>
                                     </div>
-                                    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }} className="neura-scrollbar">
+                                    <div className="flex-1 min-h-0 overflow-y-auto neura-scrollbar">
                                         <SampleGrid samples={selectedClass.samples} type="image" onRemove={(id) => mode.removeSample(selectedClass.id, id)} />
                                     </div>
                                 </div>
@@ -761,8 +746,8 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
             {/* TRAIN MODE */}
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
-                    <div className="w-full" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar py-3 px-5">
+                    <div className="w-full flex-1 min-h-0 flex flex-col">
                         <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} currentEpoch={currentEpoch} totalEpochs={totalEpochs} sampleType="numbers" mode={mode.mode} onModeChange={mode.setMode} />
                     </div>
                 </div>
@@ -770,7 +755,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar py-3 px-5">
                     {/* Header + Workflow - centered */}
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
@@ -783,24 +768,24 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     </div>
 
                     {/* Horizontal split */}
-                    <div className="w-full" style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
+                    <div className="w-full flex gap-4 mt-2.5">
                         {/* Left half - Canvas/Camera */}
-                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                        <div className="flex-1 min-w-0 flex flex-col">
                             {modelLoading && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', background: '#f5f3ff', borderRadius: '12px', border: '1px solid rgba(99,14,212,0.2)', marginBottom: '10px' }}>
-                                    <div style={{ width: '16px', height: '16px', border: '2px solid #630ed4', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#630ed4' }}>Loading model...</span>
+                                <div className="flex items-center gap-2 py-2.5 px-4 bg-[#f5f3ff] rounded-xl border border-[#630ed4]/20 mb-2.5">
+                                    <div className="w-4 h-4 border-2 border-[#630ed4] border-t-transparent rounded-full animate-spin" />
+                                    <span className="text-xs font-bold text-[#630ed4]">Loading model...</span>
                                 </div>
                             )}
 
                             {/* Draw mode test */}
                             {inputMode === 'draw' && !testImage && (
-                                <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '16px', padding: '16px', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                                <div className="bg-white/85 backdrop-blur-md rounded-2xl p-4 border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
                                     <canvas
                                         ref={drawCanvasRef}
                                         width={360}
                                         height={360}
-                                        style={{ width: '100%', aspectRatio: '1/1', maxHeight: '400px', borderRadius: '12px', background: '#fff', touchAction: 'none', cursor: 'crosshair', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.06)' }}
+                                        className="w-full aspect-square max-h-[400px] rounded-xl bg-white touch-none cursor-crosshair shadow-[inset_0_2px_8px_rgba(0,0,0,0.06)]"
                                         onMouseDown={handleStart}
                                         onMouseMove={handleMove}
                                         onMouseUp={handleEnd}
@@ -809,11 +794,11 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                         onTouchMove={handleMove}
                                         onTouchEnd={handleEnd}
                                     />
-                                    <div className="flex items-center justify-between" style={{ marginTop: '10px' }}>
-                                        <button onClick={clearCanvas} style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer', background: '#fee2e2', color: '#991b1b' }}>
+                                    <div className="flex items-center justify-between mt-2.5">
+                                        <button onClick={clearCanvas} className="py-2 px-4 rounded-xl text-[11px] font-bold border-none cursor-pointer bg-red-100 text-red-800">
                                             🗑️ Clear
                                         </button>
-                                        <button onClick={handleTestDrawCapture} disabled={isProcessing || modelLoading} style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: isProcessing || modelLoading ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, #630ed4, #7c3aed)', color: '#fff', boxShadow: '0 4px 14px rgba(99,14,212,0.35)', opacity: isProcessing || modelLoading ? 0.5 : 1 }}>
+                                        <button onClick={handleTestDrawCapture} disabled={isProcessing || modelLoading} className={`py-2.5 px-5 rounded-xl text-xs font-bold border-none bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_4px_14px_rgba(99,14,212,0.35)] ${isProcessing || modelLoading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'}`}>
                                             {isProcessing ? '🔍 Analyzing...' : '🎯 Predict Drawing'}
                                         </button>
                                     </div>
@@ -822,7 +807,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
                             {/* Camera mode test */}
                             {inputMode === 'camera' && (
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                <div className="flex-1 flex flex-col">
                                     <TestPanel
                                         prediction={prediction}
                                         isProcessing={isProcessing}
@@ -864,41 +849,41 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         </div>
 
                         {/* Right half - Controls, Toggle, Results */}
-                        <div style={{ width: isMobile ? '100%' : '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div className="w-full lg:w-[280px] shrink-0 flex flex-col gap-2.5">
                             {/* Test input mode toggle */}
-                            <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '14px', padding: '5px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', display: 'flex', gap: '3px' }}>
-                                <button onClick={() => { if (cameraOn) stopCamera(); setTestImage(null); setPrediction(null); setInputMode('draw') }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: inputMode === 'draw' ? 'linear-gradient(135deg, #630ed4, #7c3aed)' : 'transparent', color: inputMode === 'draw' ? '#fff' : '#6b7280', boxShadow: inputMode === 'draw' ? '0 2px 8px rgba(99,14,212,0.25)' : 'none', transition: 'all 0.2s ease' }}>
-                                    <span style={{ fontSize: '13px' }}>✏️</span> Draw
+                            <div className="bg-white/85 backdrop-blur-md rounded-xl p-1 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)] flex gap-0.75">
+                                <button onClick={() => { if (cameraOn) stopCamera(); setTestImage(null); setPrediction(null); setInputMode('draw') }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all duration-200 ${inputMode === 'draw' ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_2px_8px_rgba(99,14,212,0.25)]' : 'bg-transparent text-gray-500'}`}>
+                                    <span className="text-[13px]">✏️</span> Draw
                                 </button>
-                                <button onClick={() => { setTestImage(null); setPrediction(null); if (!cameraOn) startCamera(); setInputMode('camera') }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: inputMode === 'camera' ? 'linear-gradient(135deg, #630ed4, #7c3aed)' : 'transparent', color: inputMode === 'camera' ? '#fff' : '#6b7280', boxShadow: inputMode === 'camera' ? '0 2px 8px rgba(99,14,212,0.25)' : 'none', transition: 'all 0.2s ease' }}>
-                                    <span style={{ fontSize: '13px' }}>📷</span> Camera
+                                <button onClick={() => { setTestImage(null); setPrediction(null); if (!cameraOn) startCamera(); setInputMode('camera') }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all duration-200 ${inputMode === 'camera' ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_2px_8px_rgba(99,14,212,0.25)]' : 'bg-transparent text-gray-500'}`}>
+                                    <span className="text-[13px]">📷</span> Camera
                                 </button>
-                                <button onClick={() => testFileInputRef.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'transparent', color: '#6b7280', transition: 'all 0.2s ease' }}>
-                                    <span style={{ fontSize: '13px' }}>📂</span> Upload
+                                <button onClick={() => testFileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer bg-transparent text-gray-500 transition-all duration-200">
+                                    <span className="text-[13px]">📂</span> Upload
                                 </button>
                                 <input ref={testFileInputRef} type="file" accept="image/*" onChange={handleTestUpload} className="hidden" />
                             </div>
 
                             {/* Draw mode results */}
                             {inputMode === 'draw' && prediction && !isProcessing && (
-                                <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '14px', padding: '16px', border: '1px solid #006c44', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#25fea8', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(37,254,168,0.3)' }}>
-                                            <span style={{ fontSize: '20px' }}>🎯</span>
+                                <div className="bg-white/85 backdrop-blur-md rounded-xl p-4 border border-[#006c44] shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+                                    <div className="flex items-center gap-2.5 mb-3">
+                                        <div className="w-10 h-10 rounded-full bg-[#25fea8] flex items-center justify-center shadow-[0_4px_12px_rgba(37,254,168,0.3)]">
+                                            <span className="text-xl">🎯</span>
                                         </div>
                                         <div>
-                                            <span style={{ fontSize: '9px', fontWeight: 700, color: '#006c44', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Result</span>
-                                            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#131b2e' }}>It's {prediction.label}! 🎉</h3>
+                                            <span className="text-[9px] font-bold text-[#006c44] uppercase tracking-wider block">Result</span>
+                                            <h3 className="text-base font-extrabold text-[#131b2e]">It's {prediction.label}! 🎉</h3>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <div className="flex flex-col gap-1.5">
                                         {Object.entries(prediction.confidences).sort(([, a], [, b]) => b - a).map(([label, confidence]) => (
-                                            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e', width: '24px', textAlign: 'center' }}>{label}</span>
-                                                <div style={{ flex: 1, height: '8px', background: '#ede9fe', borderRadius: '4px', overflow: 'hidden' }}>
-                                                    <div style={{ height: '100%', borderRadius: '4px', background: 'linear-gradient(90deg, #630ed4, #7c3aed)', width: `${confidence * 100}%`, transition: 'width 0.5s ease' }} />
+                                            <div key={label} className="flex items-center gap-2">
+                                                <span className="text-[11px] font-bold text-[#131b2e] w-6 text-center">{label}</span>
+                                                <div className="flex-1 h-2 bg-[#ede9fe] rounded-full overflow-hidden">
+                                                    <div className="h-full rounded-full bg-gradient-to-r from-[#630ed4] to-[#7c3aed] transition-[width] duration-500 ease-out" style={{ width: `${confidence * 100}%` }} />
                                                 </div>
-                                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#630ed4', minWidth: '36px', textAlign: 'right' }}>{Math.round(confidence * 100)}%</span>
+                                                <span className="text-[11px] font-bold text-[#630ed4] min-w-[36px] text-right">{Math.round(confidence * 100)}%</span>
                                             </div>
                                         ))}
                                     </div>
@@ -906,15 +891,15 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             )}
 
                             {/* Tips */}
-                            <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '12px', padding: '10px 14px', border: '1px solid rgba(99,14,212,0.1)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                                    <div style={{ width: '20px', height: '20px', borderRadius: '5px', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', flexShrink: 0 }}>💡</div>
-                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#630ed4', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tips</span>
+                            <div className="bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl py-2.5 px-3.5 border border-[#630ed4]/10">
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                    <div className="w-5 h-5 rounded bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-[10px] shrink-0">💡</div>
+                                    <span className="text-[10px] font-bold text-[#630ed4] uppercase tracking-wider">Tips</span>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div className="flex flex-col gap-1">
                                     {['Draw clearly in the center', 'Use bold strokes', 'Try different handwriting'].map((tip) => (
-                                        <span key={tip} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', color: '#4a4455' }}>
-                                            <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#630ed4', flexShrink: 0 }} />
+                                        <span key={tip} className="flex items-center gap-1.5 text-[10px] text-gray-600">
+                                            <span className="w-0.75 h-0.75 rounded-full bg-[#630ed4] shrink-0" />
                                             {tip}
                                         </span>
                                     ))}

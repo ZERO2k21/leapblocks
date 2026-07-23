@@ -339,7 +339,7 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
                             <h2 className="text-xl sm:text-2xl font-extrabold text-[#8b5cf6] mb-0">🎹 Virtual Piano!</h2>
@@ -350,12 +350,12 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
-                        <div className="flex-1 flex flex-col gap-2" style={{ minWidth: 0 }}>
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 mt-3 min-h-0">
+                        <div className="flex-1 flex flex-col gap-2 min-w-0">
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -381,8 +381,7 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                                     {cameraOn ? '📷 Stop' : '📷 Start'}
                                 </button>
                                 <button onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass}
-                                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40"
-                                    style={{ background: isCapturing ? '#94a3b8' : '#8b5cf6' }}>
+                                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-[#8b5cf6]'}`}>
                                     {isCapturing ? '⏳...' : '📸 Capture'}
                                 </button>
                             </div>
@@ -395,9 +394,9 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                                 <div className="flex gap-1">
                                     {Object.entries(NOTE_CONFIG).map(([note, config]) => (
                                         <div key={note} className="flex-1 flex flex-col items-center">
-                                            <div className="w-full h-12 rounded-b-lg border border-gray-200 flex items-end justify-center pb-1"
-                                                style={{ background: activeNote === note ? config.color : '#fff' }}>
-                                                <span className="text-[8px] font-bold" style={{ color: activeNote === note ? '#fff' : config.color }}>
+                                            <div className={`w-full h-12 rounded-b-lg border border-gray-200 flex items-end justify-center pb-1 ${activeNote === note ? '' : 'bg-white'}`}
+                                                style={{ background: activeNote === note ? config.color : undefined }}>
+                                                <span className={`text-[8px] font-bold ${activeNote === note ? 'text-white' : ''}`} style={{ color: activeNote === note ? undefined : config.color }}>
                                                     {config.key}
                                                 </span>
                                             </div>
@@ -459,7 +458,7 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
                             <h2 className="text-xl sm:text-2xl font-extrabold text-[#8b5cf6] mb-0">🧪 Test Your Piano!</h2>
@@ -470,12 +469,12 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
-                        <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 mt-3 min-h-0">
+                        <div className="flex-1 flex flex-col min-w-0">
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -485,9 +484,8 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                                 {/* Active Note Display */}
                                 {activeNote && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <div className="animate-fade-in px-8 py-4 rounded-2xl" style={{
-                                            background: `${NOTE_CONFIG[activeNote]?.color || '#8b5cf6'}CC`,
-                                            backdropFilter: 'blur(8px)'
+                                        <div className="animate-fade-in px-8 py-4 rounded-2xl backdrop-blur-md" style={{
+                                            background: `${NOTE_CONFIG[activeNote]?.color || '#8b5cf6'}CC`
                                         }}>
                                             <span className="text-6xl font-black text-white">{activeNote}</span>
                                             <span className="block text-2xl font-bold text-white/80">{NOTE_CONFIG[activeNote]?.key}</span>
@@ -554,7 +552,7 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                                 </div>
                                 <div className="bg-[#f5f3ff] rounded-xl p-2.5 border border-[#ede9fe]">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">✋ Hand</p>
-                                    <p className="text-lg font-extrabold" style={{ color: handDetected ? '#10b981' : '#94a3b8' }}>
+                                    <p className={`text-lg font-extrabold ${handDetected ? 'text-emerald-500' : 'text-slate-400'}`}>
                                         {handDetected ? 'Found' : 'None'}
                                     </p>
                                 </div>
@@ -580,9 +578,9 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                                 <div className="flex gap-0.5">
                                     {Object.entries(NOTE_CONFIG).map(([note, config]) => (
                                         <button key={note} onMouseDown={() => playNote(note)} onMouseUp={() => stopNote(note)}
-                                            className="flex-1 h-14 rounded-b-lg border border-gray-200 flex items-end justify-center pb-1 transition-all"
-                                            style={{ background: activeNote === note ? config.color : '#fff' }}>
-                                            <span className="text-[8px] font-bold" style={{ color: activeNote === note ? '#fff' : config.color }}>
+                                            className={`flex-1 h-14 rounded-b-lg border border-gray-200 flex items-end justify-center pb-1 transition-all ${activeNote === note ? '' : 'bg-white'}`}
+                                            style={{ background: activeNote === note ? config.color : undefined }}>
+                                            <span className={`text-[8px] font-bold ${activeNote === note ? 'text-white' : ''}`} style={{ color: activeNote === note ? undefined : config.color }}>
                                                 {config.key}
                                             </span>
                                         </button>

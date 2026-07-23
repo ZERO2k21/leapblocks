@@ -29,20 +29,19 @@ const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, options, p
   }, []);
 
   const selectedOption = options.find(opt => opt.value === value) || options[0];
-  const colorAccent = primaryColor || '#3b82f6';
 
   return (
     <div ref={containerRef} className="relative select-none">
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-[8px] bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 hover:border-slate-300 rounded-[10px] p-[8px_12px] text-[12px] font-bold cursor-pointer transition-all duration-200 min-w-[90px]"
+        className="flex items-center justify-between gap-2 bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 hover:border-slate-300 rounded-xl p-2 px-3 text-xs font-bold cursor-pointer transition-all duration-200 min-w-[90px]"
       >
         <span>{selectedOption?.label}</span>
-        <ChevronDown size={12} className="text-slate-400 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'none' }} />
+        <ChevronDown size={12} className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
       {isOpen && (
-        <div className="absolute bottom-[calc(100%+8px)] left-0 bg-white border-2 border-slate-200 rounded-[12px] py-[6px] min-w-[130px] z-[2000] overflow-hidden shadow-lg animate-[slideDropdownUp_0.15s_ease-out]">
+        <div className="absolute bottom-[calc(100%+8px)] left-0 bg-white border-2 border-slate-200 rounded-xl py-1.5 min-w-[130px] z-[2000] overflow-hidden shadow-lg animate-[slideDropdownUp_0.15s_ease-out]">
           {options.map((opt) => (
             <div
               key={opt.value}
@@ -50,12 +49,11 @@ const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, options, p
                 onChange(opt.value);
                 setIsOpen(false);
               }}
-              className="px-[12px] py-[8px] text-[12px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-slate-50"
-              style={{
-                color: opt.value === value ? colorAccent : '#475569',
-                backgroundColor: opt.value === value ? `${colorAccent}12` : 'transparent',
-                fontWeight: opt.value === value ? 'bold' : 'normal'
-              }}
+              className={`px-3 py-2 text-xs cursor-pointer transition-colors duration-150 ${
+                opt.value === value
+                  ? 'font-bold bg-sky-50 text-sky-600'
+                  : 'font-normal text-slate-600 hover:bg-slate-50'
+              }`}
             >
               {opt.label}
             </div>
@@ -304,11 +302,7 @@ export const SelectionToolbar: React.FC = () => {
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
-      className="absolute bottom-[24px] left-1/2 -translate-x-1/2 z-[1000] flex items-center bg-white p-[12px] rounded-[20px] border-2 border-slate-200 transition-all duration-200 ease-out"
-      style={{
-        animation: 'slideUp 0.25s ease-out',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)'
-      }}
+      className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000] flex items-center bg-white p-3 rounded-2xl border-2 border-slate-200 transition-all duration-200 ease-out shadow-[0_8px_24px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.08)] animate-[slideUp_0.25s_ease-out]"
     >
       <style>{`
         @keyframes slideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
@@ -348,82 +342,30 @@ export const SelectionToolbar: React.FC = () => {
         .custom-slider-input::-moz-range-thumb:hover {
           transform: scale(1.15);
         }
-
-        .icon-box-plate {
-          width: 44px;
-          height: 44px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          border-radius: 12px;
-          transition: all 0.2s ease;
-        }
-        .group:hover .icon-box-plate {
-          transform: scale(1.05);
-        }
-
-        .chip-id-plate {
-          position: relative;
-          border-radius: 16px;
-          transition: all 0.2s ease;
-          cursor: default;
-        }
-        .chip-id-plate:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.07);
-        }
       `}</style>
 
       {selectedNode ? (
         <>
           <div className="flex items-center select-none">
-            <div
-              className="group chip-id-plate"
-              style={{
-                background: '#fff',
-                border: '1.5px solid #e5e7eb',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                borderRadius: '16px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 18px' }}>
+            <div className="group relative rounded-2xl bg-white border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-default">
+              <div className="flex items-center gap-3.5 p-3 px-4.5">
                 <div
-                  className="icon-box-plate"
+                  className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border-2 transition-transform duration-200 group-hover:scale-105"
                   style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '12px',
                     background: `linear-gradient(135deg, ${badgeInfo.primary}18 0%, ${badgeInfo.primary}10 100%)`,
-                    border: `2px solid ${badgeInfo.primary}35`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
+                    borderColor: `${badgeInfo.primary}35`
                   }}
                 >
                   {getCategoryIcon(badgeInfo.category, badgeInfo.primary)}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                  <span style={{
-                    fontSize: '14px',
-                    fontWeight: 800,
-                    color: '#1e293b',
-                    letterSpacing: '0.3px',
-                    lineHeight: 1.2,
-                    textTransform: 'uppercase',
-                    fontFamily: "'Nunito', 'Segoe UI', sans-serif"
-                  }}>
+                <div className="flex flex-col gap-0.75">
+                  <span className="text-sm font-extrabold text-slate-800 tracking-wide leading-tight uppercase font-sans">
                     {badgeInfo.displayName}
                   </span>
-                  <span style={{
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    letterSpacing: '0.6px',
-                    lineHeight: 1,
-                    textTransform: 'uppercase',
-                    color: badgeInfo.primary
-                  }}>
+                  <span
+                    className="text-[10px] font-bold tracking-wider leading-none uppercase"
+                    style={{ color: badgeInfo.primary }}
+                  >
                     {badgeInfo.category}
                   </span>
                 </div>
@@ -432,60 +374,33 @@ export const SelectionToolbar: React.FC = () => {
           </div>
           {hasControls && (
             <>
-              <div className="w-[2px] h-[32px] bg-slate-200 rounded-full self-center mx-[14px]" />
-              <div className="flex gap-[12px] items-center">{renderSlider()}{renderLEDColorPalette()}{renderIRReceiverInput()}{renderStepperControls()}</div>
+              <div className="w-0.5 h-8 bg-slate-200 rounded-full self-center mx-3.5" />
+              <div className="flex gap-3 items-center">{renderSlider()}{renderLEDColorPalette()}{renderIRReceiverInput()}{renderStepperControls()}</div>
             </>
           )}
         </>
       ) : (
         <>
           <div className="flex items-center select-none">
-            <div
-              className="group chip-id-plate"
-              style={{
-                background: '#fff',
-                border: '1.5px solid #e5e7eb',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                borderRadius: '16px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 18px' }}>
+            <div className="group relative rounded-2xl bg-white border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-default">
+              <div className="flex items-center gap-3.5 p-3 px-4.5">
                 <div
-                  className="icon-box-plate"
+                  className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border-2 transition-transform duration-200 group-hover:scale-105"
                   style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '12px',
                     background: `linear-gradient(135deg, ${badgeInfo.primary}18 0%, ${badgeInfo.primary}10 100%)`,
-                    border: `2px solid ${badgeInfo.primary}35`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
+                    borderColor: `${badgeInfo.primary}35`
                   }}
                 >
                   {getCategoryIcon(badgeInfo.category, badgeInfo.primary)}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                  <span style={{
-                    fontSize: '14px',
-                    fontWeight: 800,
-                    color: '#1e293b',
-                    letterSpacing: '0.3px',
-                    lineHeight: 1.2,
-                    textTransform: 'uppercase',
-                    fontFamily: "'Nunito', 'Segoe UI', sans-serif"
-                  }}>
+                <div className="flex flex-col gap-0.75">
+                  <span className="text-sm font-extrabold text-slate-800 tracking-wide leading-tight uppercase font-sans">
                     {badgeInfo.displayName}
                   </span>
-                  <span style={{
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    letterSpacing: '0.6px',
-                    lineHeight: 1,
-                    textTransform: 'uppercase',
-                    color: badgeInfo.primary
-                  }}>
+                  <span
+                    className="text-[10px] font-bold tracking-wider leading-none uppercase"
+                    style={{ color: badgeInfo.primary }}
+                  >
                     {badgeInfo.category}
                   </span>
                 </div>
@@ -494,8 +409,8 @@ export const SelectionToolbar: React.FC = () => {
           </div>
           {hasControls && (
             <>
-              <div className="w-[2px] h-[32px] bg-slate-200 rounded-full self-center mx-[14px]" />
-              <div className="flex gap-[12px] items-center">{renderColorPalette()}</div>
+              <div className="w-0.5 h-8 bg-slate-200 rounded-full self-center mx-3.5" />
+              <div className="flex gap-3 items-center">{renderColorPalette()}</div>
             </>
           )}
         </>
@@ -503,12 +418,12 @@ export const SelectionToolbar: React.FC = () => {
 
       {!(selectedNode && ['esp32-c3', 'esp32', 'arduino-uno'].includes(nodeType)) && (
         <>
-          <div className="w-[2px] h-[32px] bg-slate-200 rounded-full self-center mx-[14px]" />
+          <div className="w-0.5 h-8 bg-slate-200 rounded-full self-center mx-3.5" />
           <div className="flex items-center">
             <button
               onClick={handleDelete}
               title="Remove"
-              className="group relative flex items-center justify-center w-[40px] h-[40px] rounded-[12px] cursor-pointer border-2 border-red-200 bg-red-50 transition-all duration-200 hover:bg-red-100 hover:border-red-300 hover:scale-105 active:scale-95"
+              className="group relative flex items-center justify-center w-10 h-10 rounded-xl cursor-pointer border-2 border-red-200 bg-red-50 transition-all duration-200 hover:bg-red-100 hover:border-red-300 hover:scale-105 active:scale-95"
             >
               <Trash2 size={18} className="text-red-500 transition-transform duration-200 group-hover:scale-110" />
             </button>

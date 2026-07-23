@@ -87,16 +87,16 @@ export const MakeListDialog: React.FC<MakeListDialogProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div style={styles.overlay}>
-            <div style={styles.dialog}>
-                <div style={styles.header}>
-                    <span style={styles.headerText}>New List</span>
-                    <button style={styles.closeBtn} onClick={handleCancel}>×</button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10000]">
+            <div className="bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] w-[420px] max-w-[90vw] font-sans overflow-hidden">
+                <div className="bg-[#CF63CF] p-4 px-5 flex justify-between items-center rounded-t-xl">
+                    <span className="text-white text-lg font-semibold">New List</span>
+                    <button className="bg-transparent border-none text-white text-2xl cursor-pointer w-7.5 h-7.5 flex items-center justify-center rounded-full transition-colors hover:bg-white/20" onClick={handleCancel}>×</button>
                 </div>
 
-                <div style={styles.content}>
-                    <div style={styles.inputGroup}>
-                        <label style={styles.label}>New list name:</label>
+                <div className="p-6 px-5 flex flex-col gap-5">
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-neutral-800">New list name:</label>
                         <input
                             type="text"
                             value={listName}
@@ -106,62 +106,57 @@ export const MakeListDialog: React.FC<MakeListDialogProps> = ({
                             }}
                             onKeyDown={handleKeyDown}
                             placeholder="Enter list name"
-                            style={{
-                                ...styles.input,
-                                borderColor: error ? '#ff6b6b' : '#ddd'
-                            }}
+                            className={`p-3 px-3.5 rounded-lg border-2 text-sm outline-none transition-colors font-sans ${error ? 'border-red-400' : 'border-slate-200 focus:border-[#CF63CF]'}`}
                             autoFocus
                         />
-                        {error && <span style={styles.errorText}>{error}</span>}
+                        {error && <span className="text-red-400 text-xs mt-1">{error}</span>}
                     </div>
 
-                    <div style={styles.inputGroup}>
-                        <label style={styles.label}>Scope:</label>
-                        <div style={styles.toggleContainer}>
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-neutral-800">Scope:</label>
+                        <div className="flex gap-2.5 flex-wrap">
                             <button
-                                style={{
-                                    ...styles.toggleBtn,
-                                    ...(listScope === 'all_sprites' ? styles.toggleActive : {})
-                                }}
+                                className={`flex-1 min-w-[120px] p-2.5 px-3.5 border-2 rounded-lg cursor-pointer text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
+                                    listScope === 'all_sprites'
+                                        ? 'border-[#CF63CF] bg-[#FCE8FC] text-[#CF63CF]'
+                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                                }`}
                                 onClick={() => setListScope('all_sprites')}
                             >
-                                <span style={styles.toggleIcon}>🌐</span>
+                                <span className="text-sm">🌐</span>
                                 For all sprites
                             </button>
                             <button
-                                style={{
-                                    ...styles.toggleBtn,
-                                    ...(listScope === 'this_sprite' ? styles.toggleActive : {})
-                                }}
+                                className={`flex-1 min-w-[120px] p-2.5 px-3.5 border-2 rounded-lg cursor-pointer text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
+                                    listScope === 'this_sprite'
+                                        ? 'border-[#CF63CF] bg-[#FCE8FC] text-[#CF63CF]'
+                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                                }`}
                                 onClick={() => setListScope('this_sprite')}
                             >
-                                <span style={styles.toggleIcon}>👤</span>
+                                <span className="text-sm">👤</span>
                                 For this sprite only
                             </button>
                         </div>
                     </div>
 
-                    <div style={styles.previewSection}>
-                        <label style={styles.label}>Preview:</label>
-                        <div style={styles.previewBlock}>
-                            <span style={styles.previewLabel}>add</span>
-                            <span style={styles.previewValue}>thing</span>
-                            <span style={styles.previewLabel}>to</span>
-                            <span style={styles.previewVariable}>{listName || 'my list'}</span>
+                    <div className="flex flex-col gap-2 mt-2">
+                        <label className="text-sm font-medium text-neutral-800">Preview:</label>
+                        <div className="bg-[#CF63CF] text-white p-2.5 px-3.5 rounded-lg font-mono text-sm flex items-center gap-2 shadow-[0_2px_8px_rgba(207,99,207,0.3)]">
+                            <span className="font-semibold">add</span>
+                            <span className="bg-white/35 p-0.75 px-2 rounded text-xs min-w-[24px] text-center">thing</span>
+                            <span className="font-semibold">to</span>
+                            <span className="bg-white/25 p-0.75 px-2 rounded text-xs">{listName || 'my list'}</span>
                         </div>
                     </div>
                 </div>
 
-                <div style={styles.footer}>
-                    <button style={styles.cancelBtn} onClick={handleCancel}>
+                <div className="flex justify-end gap-3 p-4 px-5 border-t border-slate-100">
+                    <button className="p-2.5 px-5 border border-slate-200 rounded-lg bg-white cursor-pointer text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50" onClick={handleCancel}>
                         Cancel
                     </button>
                     <button
-                        style={{
-                            ...styles.okBtn,
-                            opacity: listName.trim() ? 1 : 0.5,
-                            cursor: listName.trim() ? 'pointer' : 'not-allowed'
-                        }}
+                        className="p-2.5 px-6 border-none rounded-lg bg-[#CF63CF] text-white text-sm font-semibold transition-colors hover:bg-[#bd4fbd] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleSubmit}
                         disabled={!listName.trim()}
                     >
@@ -171,182 +166,6 @@ export const MakeListDialog: React.FC<MakeListDialogProps> = ({
             </div>
         </div>
     );
-};
-
-const styles: { [key: string]: React.CSSProperties } = {
-    overlay: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 10000,
-    },
-    dialog: {
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-        width: '420px',
-        maxWidth: '90vw',
-        fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
-        overflow: 'hidden',
-    },
-    header: {
-        backgroundColor: '#CF63CF',
-        padding: '16px 20px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderTopLeftRadius: '12px',
-        borderTopRightRadius: '12px',
-    },
-    headerText: {
-        color: 'white',
-        fontSize: '18px',
-        fontWeight: 600,
-    },
-    closeBtn: {
-        background: 'none',
-        border: 'none',
-        color: 'white',
-        fontSize: '24px',
-        cursor: 'pointer',
-        width: '30px',
-        height: '30px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: '50%',
-        transition: 'background 0.2s',
-    },
-    content: {
-        padding: '24px 20px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px',
-    },
-    inputGroup: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-    },
-    label: {
-        fontSize: '14px',
-        fontWeight: 500,
-        color: '#333',
-    },
-    input: {
-        padding: '12px 14px',
-        borderRadius: '8px',
-        border: '2px solid #ddd',
-        fontSize: '15px',
-        outline: 'none',
-        transition: 'border-color 0.2s',
-        fontFamily: 'inherit',
-    },
-    errorText: {
-        color: '#ff6b6b',
-        fontSize: '12px',
-        marginTop: '4px',
-    },
-    toggleContainer: {
-        display: 'flex',
-        gap: '10px',
-        flexWrap: 'wrap',
-    },
-    toggleBtn: {
-        flex: 1,
-        minWidth: '120px',
-        padding: '10px 14px',
-        border: '2px solid #ddd',
-        borderRadius: '8px',
-        backgroundColor: 'white',
-        cursor: 'pointer',
-        fontSize: '13px',
-        fontWeight: 500,
-        color: '#555',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '6px',
-        transition: 'all 0.2s',
-    },
-    toggleActive: {
-        borderColor: '#CF63CF',
-        backgroundColor: '#FCE8FC',
-        color: '#CF63CF',
-    },
-    toggleIcon: {
-        fontSize: '14px',
-    },
-    previewSection: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-        marginTop: '8px',
-    },
-    previewBlock: {
-        backgroundColor: '#CF63CF',
-        color: 'white',
-        padding: '10px 14px',
-        borderRadius: '8px',
-        fontFamily: "'Consolas', 'Monaco', monospace",
-        fontSize: '14px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        boxShadow: '0 2px 8px rgba(207, 99, 207, 0.3)',
-    },
-    previewLabel: {
-        fontWeight: 600,
-    },
-    previewVariable: {
-        backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        padding: '3px 8px',
-        borderRadius: '4px',
-        fontSize: '13px',
-    },
-    previewValue: {
-        backgroundColor: 'rgba(255, 255, 255, 0.35)',
-        padding: '3px 8px',
-        borderRadius: '4px',
-        fontSize: '13px',
-        minWidth: '24px',
-        textAlign: 'center',
-    },
-    footer: {
-        display: 'flex',
-        justifyContent: 'flex-end',
-        gap: '12px',
-        padding: '16px 20px',
-        borderTop: '1px solid #eee',
-    },
-    cancelBtn: {
-        padding: '10px 20px',
-        border: '1px solid #ddd',
-        borderRadius: '8px',
-        backgroundColor: 'white',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: 500,
-        color: '#555',
-        transition: 'background 0.2s',
-    },
-    okBtn: {
-        padding: '10px 24px',
-        border: 'none',
-        borderRadius: '8px',
-        backgroundColor: '#CF63CF',
-        color: 'white',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: 600,
-        transition: 'background 0.2s',
-    },
 };
 
 export default MakeListDialog;

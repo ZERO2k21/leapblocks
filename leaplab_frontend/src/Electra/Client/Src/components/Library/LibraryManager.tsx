@@ -191,23 +191,23 @@ export const LibraryManager: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: t.bg, color: t.text, fontFamily: "'Space Mono', monospace", overflow: 'hidden', borderRadius: '12px' }}>
+    <div className="flex flex-col h-full bg-[var(--lp-dark-bg)] text-[var(--lp-zinc-400)] font-mono overflow-hidden rounded-xl">
 
       {/* Header */}
-      <div style={{ padding: '16px 24px', borderBottom: `1px solid ${t.border}`, background: t.surface, boxShadow: isLightTheme ? '0 1px 4px rgba(0,0,0,0.05)' : '0 1px 4px rgba(0,0,0,0.2)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className={`p-4 px-6 border-b border-[var(--lp-border)] bg-[var(--lp-dark-surface)] ${isLightTheme ? 'shadow-sm' : 'shadow-md'}`}>
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-8 h-8 rounded-lg bg-[var(--lp-accent-primary)] flex items-center justify-center">
             <LibraryIcon size={18} color="#000" strokeWidth={3} />
           </div>
-          <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: t.white, letterSpacing: '1px', textTransform: 'uppercase' }}>LIBRARY_CORE.V1</h1>
+          <h1 className="m-0 text-lg font-black text-slate-900 dark:text-white tracking-widest uppercase">LIBRARY_CORE.V1</h1>
         </div>
-        <p style={{ margin: 0, color: t.dim, fontSize: '10px', paddingLeft: '44px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <p className="m-0 text-[10px] text-[var(--lp-zinc-600)] pl-11 uppercase tracking-wider">
           Central dependency manager for external modules
         </p>
       </div>
 
       {/* Status bar */}
-      <div style={{ margin: '12px 24px', background: t.accentDim, border: `1px solid ${t.accent}`, borderRadius: '8px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px', color: t.accent, fontWeight: 700, textTransform: 'uppercase', boxShadow: isLightTheme ? 'none' : '0 2px 8px rgba(34, 211, 238, 0.08)' }}>
+      <div className={`mx-6 my-3 bg-cyan-500/10 border border-[var(--lp-accent-primary)] rounded-lg py-2 px-3.5 flex items-center gap-2 text-[10px] text-[var(--lp-accent-primary)] font-bold uppercase ${isLightTheme ? '' : 'shadow-[0_2px_8px_rgba(34,211,238,0.08)]'}`}>
         <Info size={14} strokeWidth={3} />
         <span>
           {isLoading
@@ -217,98 +217,76 @@ export const LibraryManager: React.FC = () => {
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', padding: '0 24px 16px', gap: '16px' }}>
+      <div className="flex-1 flex overflow-hidden px-6 pb-4 gap-4">
 
         {/* Left — search + results */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, borderRight: `1px solid ${t.border}`, paddingRight: '16px' }}>
+        <div className="flex-1 flex flex-col min-w-0 border-r border-[var(--lp-border)] pr-4">
 
           {/* Filter input */}
-          <div style={{ position: 'relative', marginBottom: '16px' }}>
-            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: t.accent, fontSize: '12px', fontWeight: 900 }}>&gt;</span>
+          <div className="relative mb-4">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--lp-accent-primary)] text-xs font-black">&gt;</span>
             <input
               type="text"
               placeholder="FILTER_MODULES..."
               value={searchQuery}
               onChange={handleQueryChange}
-              style={{ width: '100%', background: t.surface, border: `1px solid ${t.border}`, borderRadius: '8px', padding: '10px 12px 10px 32px', color: t.white, fontSize: '12px', outline: 'none', boxSizing: 'border-box', fontWeight: 700, fontFamily: 'inherit', boxShadow: isLightTheme ? '0 2px 6px rgba(0,0,0,0.03)' : '0 2px 6px rgba(0,0,0,0.15)', transition: 'border-color 0.2s, box-shadow 0.2s' }}
-              onFocus={(e) => { 
-                e.target.style.borderColor = t.accent; 
-                e.target.style.boxShadow = `0 0 0 3px ${isLightTheme ? (board === 'esp32-c3' ? 'rgba(234, 88, 12, 0.15)' : 'rgba(2, 132, 199, 0.15)') : 'rgba(34, 211, 238, 0.15)'}`; 
-              }}
-              onBlur={(e) => { 
-                e.target.style.borderColor = t.border; 
-                e.target.style.boxShadow = isLightTheme ? '0 2px 6px rgba(0,0,0,0.03)' : '0 2px 6px rgba(0,0,0,0.15)'; 
-              }}
+              className={`w-full bg-[var(--lp-dark-surface)] border border-[var(--lp-border)] rounded-lg py-2.5 pr-3 pl-8 text-slate-900 dark:text-white text-xs outline-none font-bold box-border transition-all focus:border-[var(--lp-accent-primary)] focus:ring-2 ${
+                isLightTheme ? (board === 'esp32-c3' ? 'focus:ring-orange-500/20 shadow-sm' : 'focus:ring-sky-500/20 shadow-sm') : 'focus:ring-cyan-500/20 shadow-md'
+              }`}
             />
           </div>
 
           {/* Result count */}
           {!isLoading && (
-            <div style={{ fontSize: '9px', color: t.dim, marginBottom: '8px', fontWeight: 700, letterSpacing: '1px' }}>
+            <div className="text-[9px] text-[var(--lp-zinc-600)] mb-2 font-bold tracking-widest">
               QUERY_RESULT: {searchResults.length.toLocaleString()} UNITS
             </div>
           )}
 
           {/* List */}
-          <div ref={listRef} onScroll={handleScroll} style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+          <div ref={listRef} onScroll={handleScroll} className="flex-1 overflow-y-auto pr-1">
             {isLoading ? (
-              <div style={{ textAlign: 'center', marginTop: '60px', color: t.dim }}>
-                <Loader2 size={24} style={{ opacity: 0.6, marginBottom: '12px', animation: 'spin 1s linear infinite', color: t.accent }} strokeWidth={3} />
-                <p style={{ margin: 0, fontSize: '11px', fontWeight: 700 }}>SYNCING...</p>
+              <div className="text-center mt-15 text-[var(--lp-zinc-600)]">
+                <Loader2 size={24} className="opacity-60 mb-3 animate-spin text-[var(--lp-accent-primary)] mx-auto" strokeWidth={3} />
+                <p className="m-0 text-[11px] font-bold">SYNCING...</p>
               </div>
             ) : searchResults.length === 0 ? (
-              <div style={{ textAlign: 'center', marginTop: '60px', color: t.dim }}>
-                <Search size={32} style={{ opacity: 0.2, marginBottom: '12px' }} />
-                <p style={{ margin: 0, fontSize: '11px', fontWeight: 700 }}>NO_MATCHES</p>
+              <div className="text-center mt-15 text-[var(--lp-zinc-600)]">
+                <Search size={32} className="opacity-20 mb-3 mx-auto" />
+                <p className="m-0 text-[11px] font-bold">NO_MATCHES</p>
               </div>
             ) : (
               visibleResults.map(lib => (
-                <div key={lib.name} style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: '8px', padding: '12px', marginBottom: '8px', transition: 'all 0.15s ease' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = t.accent;
-                    e.currentTarget.style.background = t.surfaceHover;
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                    e.currentTarget.style.boxShadow = isLightTheme ? '0 4px 12px rgba(0,0,0,0.05)' : '0 4px 12px rgba(0,0,0,0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = t.border;
-                    e.currentTarget.style.background = t.surface;
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
+                <div
+                  key={lib.name}
+                  className="bg-[var(--lp-dark-surface)] border border-[var(--lp-border)] rounded-lg p-3 mb-2 transition-all duration-150 ease-in-out hover:border-[var(--lp-accent-primary)] hover:bg-[var(--lp-zinc-800)] hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '13px', fontWeight: 900, color: t.accentBright, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lib.name}</div>
-                      <div style={{ fontSize: '9px', color: t.dim, marginTop: '2px', fontWeight: 700 }}>AUTOR: {lib.author}</div>
+                  <div className="flex justify-between items-start mb-1.5">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-black text-[var(--lp-accent-bright)] overflow-hidden text-ellipsis whitespace-nowrap">{lib.name}</div>
+                      <div className="text-[9px] text-[var(--lp-zinc-600)] mt-0.5 font-bold">AUTOR: {lib.author}</div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px', flexShrink: 0 }}>
-                      <span style={{ 
-                        fontSize: '9px', 
-                        color: t.cyan, 
-                        background: isLightTheme ? (board === 'esp32-c3' ? 'rgba(234, 88, 12, 0.05)' : 'rgba(2, 132, 199, 0.05)') : 'rgba(34, 211, 238, 0.05)', 
-                        padding: '2px 6px', 
-                        borderRadius: '1px', 
-                        fontWeight: 700, 
-                        border: `1px solid ${isLightTheme ? (board === 'esp32-c3' ? 'rgba(234, 88, 12, 0.2)' : 'rgba(2, 132, 199, 0.2)') : 'rgba(34, 211, 238, 0.2)'}` 
-                      }}>{lib.version}</span>
+                    <div className="flex items-center gap-2 ml-3 shrink-0">
+                      <span className={`text-[9px] text-[var(--lp-accent-primary)] py-0.5 px-1.5 rounded-[1px] font-bold border border-cyan-500/20 ${
+                        isLightTheme ? (board === 'esp32-c3' ? 'bg-orange-500/5 border-orange-500/20' : 'bg-sky-500/5 border-sky-500/20') : 'bg-cyan-500/5'
+                      }`}>{lib.version}</span>
                       {lib.isInstalled ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: t.success, fontSize: '9px', fontWeight: 900 }}>
+                        <div className="flex items-center gap-1 text-[var(--lp-emerald)] text-[9px] font-black">
                           <CheckCircle size={12} strokeWidth={3} /> LINKED
                         </div>
                       ) : (
                         <button
                           onClick={() => handleInstall(lib)}
                           disabled={!!isInstalling[lib.name]}
-                          style={{ background: t.accent, border: 'none', color: '#000', borderRadius: '2px', padding: '4px 10px', fontSize: '9px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', textTransform: 'uppercase' }}
+                          className="bg-[var(--lp-accent-primary)] border-none text-black rounded-[2px] py-1 px-2.5 text-[9px] font-black cursor-pointer flex items-center gap-1 uppercase hover:opacity-90 transition-opacity"
                         >
-                          {isInstalling[lib.name] ? <Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} strokeWidth={3} /> : <Download size={10} strokeWidth={3} />}
+                          {isInstalling[lib.name] ? <Loader2 size={10} className="animate-spin" strokeWidth={3} /> : <Download size={10} strokeWidth={3} />}
                           LINK
                         </button>
                       )}
                     </div>
                   </div>
-                  <p style={{ margin: 0, fontSize: '11px', lineHeight: '1.4', color: t.white, fontWeight: 500 }}>{lib.description}</p>
+                  <p className="m-0 text-[11px] leading-relaxed text-slate-900 dark:text-white font-medium">{lib.description}</p>
                 </div>
               ))
             )}
@@ -316,29 +294,29 @@ export const LibraryManager: React.FC = () => {
         </div>
 
         {/* Right — installed */}
-        <div style={{ width: '280px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', padding: '10px 14px', background: t.surface, borderRadius: '8px', border: `1px solid ${t.border}`, boxShadow: isLightTheme ? '0 2px 6px rgba(0,0,0,0.03)' : '0 2px 6px rgba(0,0,0,0.15)' }}>
-            <div style={{ width: '24px', height: '24px', borderRadius: '2px', background: t.orange, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="w-[280px] flex flex-col">
+          <div className={`flex items-center gap-2.5 mb-4 p-2.5 px-3.5 bg-[var(--lp-dark-surface)] rounded-lg border border-[var(--lp-border)] ${isLightTheme ? 'shadow-sm' : 'shadow-md'}`}>
+            <div className="w-6 h-6 rounded-[2px] bg-[var(--lp-amber)] flex items-center justify-center">
               <Package size={14} color="#000" strokeWidth={3} />
             </div>
-            <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 900, color: t.white, letterSpacing: '0.5px', textTransform: 'uppercase' }}>LOCAL_DEPS</h2>
-            <span style={{ marginLeft: 'auto', fontSize: '10px', background: t.accent, color: '#000', padding: '1px 8px', borderRadius: '10px', fontWeight: 900 }}>{installedLibraries.length}</span>
+            <h2 className="m-0 text-xs font-black text-slate-900 dark:text-white tracking-wider uppercase">LOCAL_DEPS</h2>
+            <span className="ml-auto text-[10px] bg-[var(--lp-accent-primary)] text-black py-0.25 px-2 rounded-full font-black">{installedLibraries.length}</span>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+          <div className="flex-1 overflow-y-auto pr-1">
             {installedLibraries.length === 0 ? (
-              <div style={{ textAlign: 'center', marginTop: '40px', color: t.dim, fontSize: '11px', fontWeight: 700 }}>
-                <p style={{ margin: 0 }}>EMPTY_DEP_TREE</p>
+              <div className="text-center mt-10 text-[var(--lp-zinc-600)] text-[11px] font-bold">
+                <p className="m-0">EMPTY_DEP_TREE</p>
               </div>
             ) : (
               installedLibraries.map(lib => (
-                <div key={lib.name} style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: t.surface, marginBottom: '6px', borderRadius: '2px' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '12px', fontWeight: 900, color: t.white, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lib.name}</div>
-                    <div style={{ fontSize: '9px', color: t.cyan, marginTop: '1px', fontWeight: 700 }}>{lib.version}</div>
+                <div key={lib.name} className="p-2.5 px-3 border-b border-[var(--lp-border)] flex justify-between items-center bg-[var(--lp-dark-surface)] mb-1.5 rounded-[2px]">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-black text-slate-900 dark:text-white overflow-hidden text-ellipsis whitespace-nowrap">{lib.name}</div>
+                    <div className="text-[9px] text-[var(--lp-accent-primary)] mt-0.25 font-bold">{lib.version}</div>
                   </div>
-                  <button onClick={() => handleRemove(lib.name)} style={{ background: 'rgba(244, 63, 94, 0.1)', border: `1px solid ${t.danger}`, color: t.danger, cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', borderRadius: '2px', transition: 'all 0.1s' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = t.danger; e.currentTarget.style.color = '#000'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(244, 63, 94, 0.1)'; e.currentTarget.style.color = t.danger; }}
+                  <button
+                    onClick={() => handleRemove(lib.name)}
+                    className="bg-rose-500/10 border border-[var(--lp-rose)] text-[var(--lp-rose)] hover:bg-[var(--lp-rose)] hover:text-black cursor-pointer p-1 flex items-center rounded-[2px] transition-all"
                   >
                     <Trash2 size={12} strokeWidth={3} />
                   </button>

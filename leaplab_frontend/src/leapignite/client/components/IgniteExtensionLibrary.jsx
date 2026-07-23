@@ -53,36 +53,11 @@ export default function IgniteExtensionLibrary({ onClose, onSelectExtension }) {
     const filteredExtensions = EXTENSIONS.filter(ext => matchesSearch(ext, search.toLowerCase()));
 
     return (
-        <div className="fixed inset-0 z-[1000] flex flex-col" style={{ fontFamily: "'Nunito','Segoe UI',Tahoma,Geneva,Verdana,sans-serif", background: "#f5f0fa" }}>
-            <div style={{
-                background: "#ffffff",
-                borderBottom: "1px solid #e8ecf2",
-                height: "64px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0 24px",
-                position: "sticky",
-                top: 0,
-                zIndex: 100,
-                boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
-            }}>
-                <button onClick={onClose} style={{
-                    background: "none",
-                    border: "1px solid #e0e4ea",
-                    borderRadius: "10px",
-                    color: "#1a1a2e",
-                    fontWeight: 700,
-                    fontSize: "14px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    cursor: "pointer",
-                    padding: "8px 16px",
-                    transition: "all 0.15s",
-                }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#f3f0f8"; e.currentTarget.style.borderColor = "#d0d0e0"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#e0e4ea"; }}
+        <div className="fixed inset-0 z-[1000] flex flex-col font-sans bg-[#f5f0fa]">
+            <div className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 sticky top-0 z-[100] shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+                <button
+                    onClick={onClose}
+                    className="bg-transparent border border-slate-200 rounded-xl text-slate-900 font-bold text-sm flex items-center gap-2 cursor-pointer px-4 py-2 transition-all hover:bg-[#f3f0f8] hover:border-slate-300"
                 >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -91,66 +66,27 @@ export default function IgniteExtensionLibrary({ onClose, onSelectExtension }) {
                     Back
                 </button>
 
-                <span style={{ fontSize: "16px", fontWeight: 800, color: "#1a1a2e", letterSpacing: "0.3px" }}>Extension Library</span>
+                <span className="text-base font-extrabold text-slate-900 tracking-wide">Extension Library</span>
 
                 <a
                     href="https://docs.leapblocks.com/extensions"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{
-                        background: "linear-gradient(135deg, #0a015a, #1a0a7a)",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "10px",
-                        padding: "8px 20px",
-                        fontWeight: 700,
-                        fontSize: "13px",
-                        cursor: "pointer",
-                        textDecoration: "none",
-                        transition: "opacity 0.15s, transform 0.15s",
-                        boxShadow: "0 2px 8px rgba(10,1,90,0.15)",
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.opacity = "0.9"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}
+                    className="bg-gradient-to-br from-[#0a015a] to-[#1a0a7a] text-white border-none rounded-xl px-5 py-2 font-bold text-xs cursor-pointer no-underline transition-all shadow-[0_2px_8px_rgba(10,1,90,0.15)] hover:opacity-90 hover:-translate-y-0.5"
                 >
                     Read Documentation
                 </a>
             </div>
 
-            <div style={{
-                padding: "16px 24px",
-                borderBottom: "1px solid #edeff3",
-                background: "#faf8fd",
-            }}>
-                <div style={{
-                    background: "#ffffff",
-                    borderRadius: "10px",
-                    border: "1px solid #e0e4ea",
-                    padding: "0 14px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    maxWidth: "420px",
-                    transition: "border-color 0.15s",
-                }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#7B4FC4"; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = "#e0e4ea"; }}
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <div className="p-4 px-6 border-b border-slate-100 bg-[#faf8fd]">
+                <div className="bg-white rounded-xl border border-slate-200 px-3.5 flex items-center gap-2.5 max-w-[420px] transition-colors hover:border-[#7B4FC4]">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="stroke-slate-400" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
                     <input
                         type="text"
-                        style={{
-                            border: "none",
-                            outline: "none",
-                            background: "transparent",
-                            fontSize: "14px",
-                            color: "#1a1a2e",
-                            width: "180px",
-                            padding: "9px 0",
-                        }}
+                        className="border-none outline-none bg-transparent text-sm text-slate-900 w-45 py-2.25"
                         placeholder="Search extensions..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -158,133 +94,43 @@ export default function IgniteExtensionLibrary({ onClose, onSelectExtension }) {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 pb-4 pt-6 scroll-smooth"
-                style={{
-                    scrollbarWidth: "thin",
-                    scrollbarColor: "#d0c8e0 #f5f0fa",
-                }}
-            >
+            <div className="flex-1 overflow-y-auto px-6 pb-4 pt-6 scroll-smooth scrollbar-thin">
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5 max-w-[960px]">
                     {filteredExtensions.map(ext => (
                         <div
                             key={ext.id}
-                            className="bg-white overflow-hidden cursor-pointer transition-all duration-200"
-                            style={{
-                                borderRadius: "14px",
-                                boxShadow: "0 2px 12px rgba(10,1,90,0.06)",
-                                border: "1px solid #edeff3",
-                            }}
-                            onMouseEnter={e => {
-                                e.currentTarget.style.transform = "translateY(-4px)";
-                                e.currentTarget.style.boxShadow = "0 12px 32px rgba(10,1,90,0.10)";
-                                e.currentTarget.style.borderColor = "transparent";
-                            }}
-                            onMouseLeave={e => {
-                                e.currentTarget.style.transform = "translateY(0)";
-                                e.currentTarget.style.boxShadow = "0 2px 12px rgba(10,1,90,0.06)";
-                                e.currentTarget.style.borderColor = "#edeff3";
-                            }}
+                            className="bg-white rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 shadow-[0_2px_12px_rgba(10,1,90,0.06)] border border-slate-100 hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(10,1,90,0.10)] hover:border-transparent"
                             onClick={() => handleCardClick(ext)}
                         >
-                            <div style={{
-                                width: "100%",
-                                height: "160px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                position: "relative",
-                                overflow: "hidden",
-                                background: ext.color,
-                            }}>
-                                <span style={{
-                                    fontSize: "56px",
-                                    filter: "drop-shadow(0 3px 8px rgba(0,0,0,0.15))",
-                                    position: "relative",
-                                    zIndex: 2,
-                                    transition: "transform 0.3s",
-                                }}>{ext.emoji}</span>
-                                <div style={{
-                                    position: "absolute",
-                                    bottom: "10px",
-                                    left: "12px",
-                                    width: "38px",
-                                    height: "38px",
-                                    borderRadius: "10px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    fontSize: "18px",
-                                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                                    zIndex: 3,
-                                    backgroundColor: ext.id === 'face_detection' ? '#2e7d32' : '#1e88e5',
-                                }}>
+                            <div className="w-full h-40 flex items-center justify-center relative overflow-hidden" style={{ background: ext.color }}>
+                                <span className="text-6xl drop-shadow-md relative z-10 transition-transform">{ext.emoji}</span>
+                                <div className={`absolute bottom-2.5 left-3 w-9.5 h-9.5 rounded-xl flex items-center justify-center text-lg shadow-md z-20 ${ext.id === 'face_detection' ? 'bg-emerald-700' : 'bg-blue-600'}`}>
                                     {ext.icon}
                                 </div>
                             </div>
-                            <div style={{ padding: "14px 16px 16px" }}>
-                                <h3 style={{
-                                    margin: 0,
-                                    marginBottom: "4px",
-                                    fontSize: "15px",
-                                    fontWeight: 800,
-                                    color: "#1a1a2e",
-                                }}>{ext.name}</h3>
-                                <p style={{
-                                    margin: 0,
-                                    fontSize: "13px",
-                                    color: "#666",
-                                    lineHeight: 1.45,
-                                }}>{ext.description}</p>
+                            <div className="p-3.5 px-4 pb-4">
+                                <h3 className="m-0 mb-1 text-sm font-extrabold text-slate-900">{ext.name}</h3>
+                                <p className="m-0 text-xs text-slate-500 leading-snug">{ext.description}</p>
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {filteredExtensions.length === 0 && (
-                    <div style={{
-                        textAlign: "center",
-                        padding: "60px 24px",
-                        color: "#888",
-                    }}>
-                        <span style={{ fontSize: "44px", display: "block", marginBottom: "16px" }}>🔍</span>
-                        <p style={{ fontSize: "15px", fontWeight: 600 }}>No extensions found matching "{search}"</p>
+                    <div className="text-center py-15 px-6 text-slate-400">
+                        <span className="text-5xl block mb-4">🔍</span>
+                        <p className="text-sm font-semibold">No extensions found matching "{search}"</p>
                     </div>
                 )}
             </div>
 
             {iframeExtension && (
                 <div className="fixed inset-0 z-[1100] flex items-center justify-center">
-                    <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }} onClick={handleIframeClose} />
-                    <div className="relative" style={{
-                        width: "90%",
-                        maxWidth: "560px",
-                        height: "80%",
-                        maxHeight: "600px",
-                        borderRadius: "16px",
-                        overflow: "hidden",
-                        boxShadow: "0 24px 80px rgba(0,0,0,0.3)",
-                        zIndex: 1101,
-                        background: "#fff",
-                    }}>
-                        <button onClick={handleIframeClose} style={{
-                            position: "absolute",
-                            top: "12px",
-                            right: "12px",
-                            zIndex: 1102,
-                            background: "rgba(0,0,0,0.45)",
-                            border: "none",
-                            color: "white",
-                            width: "36px",
-                            height: "36px",
-                            borderRadius: "50%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            transition: "all 0.15s",
-                        }}
-                            onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0.7)"; e.currentTarget.style.transform = "scale(1.08)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = "rgba(0,0,0,0.45)"; e.currentTarget.style.transform = "scale(1)"; }}
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-md" onClick={handleIframeClose} />
+                    <div className="relative w-[90%] max-w-[560px] h-[80%] max-h-[600px] rounded-2xl overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.3)] z-[1101] bg-white">
+                        <button
+                            onClick={handleIframeClose}
+                            className="absolute top-3 right-3 z-[1102] bg-black/45 hover:bg-black/70 hover:scale-108 border-none text-white w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all"
                         >
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -292,8 +138,7 @@ export default function IgniteExtensionLibrary({ onClose, onSelectExtension }) {
                             </svg>
                         </button>
                         <iframe
-                            className="w-full h-full"
-                            style={{ border: "none", background: "#f8f6fc" }}
+                            className="w-full h-full border-none bg-slate-50"
                             src={getIframeUrl(iframeExtension)}
                             title={iframeExtension.name}
                             sandbox="allow-scripts allow-popups"

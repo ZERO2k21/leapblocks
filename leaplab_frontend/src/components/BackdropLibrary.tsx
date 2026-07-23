@@ -120,44 +120,44 @@ export const BackdropLibrary: React.FC<BackdropLibraryProps> = ({
     };
 
     return (
-        <div style={styles.overlay} onClick={onClose}>
-            <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 w-screen h-screen bg-black/50 z-[9999] flex items-center justify-center backdrop-blur-xs" onClick={onClose}>
+            <div className="w-screen h-screen bg-white flex flex-col overflow-hidden relative" onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
-                <div style={styles.header}>
-                    <button style={styles.backButton} onClick={onClose}>
+                <div className="bg-gradient-to-br from-[#855CD6] to-[#6D44C0] p-4 px-6 flex items-center justify-between">
+                    <button className="bg-white/20 border-none text-white text-sm font-semibold p-2 px-4 rounded-full cursor-pointer transition-colors hover:bg-white/30" onClick={onClose}>
                         ← Back
                     </button>
-                    <h2 style={styles.title}>Choose a Backdrop</h2>
-                    <div style={{ width: 80 }} /> {/* spacer */}
+                    <h2 className="text-white text-lg font-bold m-0 tracking-wide">Choose a Backdrop</h2>
+                    <div className="w-20" /> {/* spacer */}
                 </div>
 
                 {/* Search + Category Filters */}
-                <div style={styles.filterRow}>
-                    <div style={styles.searchBox}>
-                        <span style={styles.searchIcon}>🔍</span>
+                <div className="p-4 px-5 pb-3 flex flex-col gap-3 border-b border-slate-100">
+                    <div className="flex items-center bg-slate-100 rounded-full px-4 border border-slate-300 max-w-[300px]">
+                        <span className="text-sm mr-2">🔍</span>
                         <input
                             type="text"
                             placeholder="Search backdrops..."
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            style={styles.searchInput}
+                            className="border-none bg-transparent py-2.5 text-sm outline-none flex-1 text-slate-800"
                         />
                         {searchQuery && (
-                            <button style={styles.clearSearch} onClick={() => setSearchQuery('')}>
+                            <button className="border-none bg-transparent cursor-pointer text-sm text-slate-400 p-1 hover:text-slate-600" onClick={() => setSearchQuery('')}>
                                 ✕
                             </button>
                         )}
                     </div>
-                    <div style={styles.categoryTabs}>
+                    <div className="flex gap-2 flex-wrap">
                         {CATEGORIES.map(cat => (
                             <button
                                 key={cat.id}
-                                style={{
-                                    ...styles.categoryTab,
-                                    backgroundColor: activeCategory === cat.id ? cat.color : 'transparent',
-                                    color: activeCategory === cat.id ? '#fff' : '#575E75',
-                                    border: activeCategory === cat.id ? 'none' : '1px solid #d9d9d9',
-                                }}
+                                className={`p-1.5 px-3.5 rounded-full text-xs font-semibold cursor-pointer transition-all whitespace-nowrap ${
+                                    activeCategory === cat.id
+                                        ? 'text-white border-none'
+                                        : 'text-[#575E75] bg-transparent border border-slate-300 hover:border-slate-400'
+                                }`}
+                                style={{ backgroundColor: activeCategory === cat.id ? cat.color : undefined }}
                                 onClick={() => setActiveCategory(cat.id)}
                             >
                                 {cat.id}
@@ -167,42 +167,39 @@ export const BackdropLibrary: React.FC<BackdropLibraryProps> = ({
                 </div>
 
                 {/* Backdrop Grid */}
-                <div style={styles.gridContainer}>
-                    <div style={styles.grid}>
+                <div className="flex-1 overflow-auto p-4 px-5">
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-3">
                         {filteredBackdrops.map(backdrop => (
                             <div
                                 key={backdrop.id}
-                                style={{
-                                    ...styles.backdropCard,
-                                    ...(hoveredId === backdrop.id ? styles.backdropCardHover : {}),
-                                }}
+                                className="bg-white rounded-xl border-2 border-slate-200 cursor-pointer transition-all duration-200 overflow-hidden flex flex-col hover:border-[#855CD6] hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(133,92,214,0.2)]"
                                 onClick={() => onSelectBackdrop(backdrop)}
                                 onMouseEnter={() => setHoveredId(backdrop.id)}
                                 onMouseLeave={() => setHoveredId(null)}
                             >
-                                <div style={styles.backdropPreview}>
+                                <div className="w-full h-24 bg-slate-50 flex justify-center items-center overflow-hidden">
                                     <img
                                         src={backdrop.image}
                                         alt={backdrop.name}
-                                        style={styles.backdropImage}
+                                        className="w-full h-full object-cover"
                                     />
                                 </div>
-                                <div style={styles.backdropName}>{backdrop.name}</div>
+                                <div className="w-full p-1.5 px-2 text-[11px] font-semibold text-[#575E75] text-center border-t border-slate-100 whitespace-nowrap overflow-hidden text-ellipsis">{backdrop.name}</div>
                             </div>
                         ))}
                         {filteredBackdrops.length === 0 && (
-                            <div style={styles.emptyState}>
-                                <span style={{ fontSize: 48 }}>🔍</span>
-                                <p>No backdrops found for "{searchQuery}"</p>
+                            <div className="col-span-full text-center py-15 text-slate-400">
+                                <span className="text-5xl">🔍</span>
+                                <p className="mt-2">No backdrops found for "{searchQuery}"</p>
                             </div>
                         )}
                     </div>
                 </div>
 
                 {/* Floating Action Buttons */}
-                <div style={styles.fabContainer}>
+                <div className="absolute bottom-5 right-6 flex flex-col gap-2.5 z-10">
                     <button
-                        style={{ ...styles.fab, backgroundColor: '#4C97FF' }}
+                        className="w-12 h-12 rounded-full border-none text-[22px] text-white bg-[#4C97FF] cursor-pointer flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.25)] transition-transform hover:scale-105"
                         onClick={() => fileInputRef.current?.click()}
                         title="Upload a backdrop"
                     >
@@ -216,195 +213,11 @@ export const BackdropLibrary: React.FC<BackdropLibraryProps> = ({
                     type="file"
                     accept="image/*,.svg"
                     onChange={handleFileUpload}
-                    style={{ display: 'none' }}
+                    className="hidden"
                 />
             </div>
         </div>
     );
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// STYLES
-// ═══════════════════════════════════════════════════════════════════════════
-const styles: { [key: string]: React.CSSProperties } = {
-    overlay: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backdropFilter: 'blur(4px)',
-    },
-    modal: {
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: '#fff',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        position: 'relative',
-    },
-    header: {
-        background: 'linear-gradient(135deg, #855CD6, #6D44C0)',
-        padding: '16px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    backButton: {
-        background: 'rgba(255,255,255,0.2)',
-        border: 'none',
-        color: '#fff',
-        fontSize: '14px',
-        fontWeight: '600',
-        padding: '8px 16px',
-        borderRadius: '20px',
-        cursor: 'pointer',
-        transition: 'background 0.2s',
-    },
-    title: {
-        color: '#fff',
-        fontSize: '18px',
-        fontWeight: '700',
-        margin: 0,
-        letterSpacing: '0.3px',
-    },
-    filterRow: {
-        padding: '16px 20px 12px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        borderBottom: '1px solid #eee',
-    },
-    searchBox: {
-        display: 'flex',
-        alignItems: 'center',
-        backgroundColor: '#f5f5f5',
-        borderRadius: '24px',
-        padding: '0 16px',
-        border: '1px solid #d9d9d9',
-        maxWidth: '300px',
-    },
-    searchIcon: {
-        fontSize: '14px',
-        marginRight: '8px',
-    },
-    searchInput: {
-        border: 'none',
-        background: 'transparent',
-        padding: '10px 0',
-        fontSize: '14px',
-        outline: 'none',
-        flex: 1,
-        color: '#333',
-    },
-    clearSearch: {
-        border: 'none',
-        background: 'transparent',
-        cursor: 'pointer',
-        fontSize: '14px',
-        color: '#999',
-        padding: '4px',
-    },
-    categoryTabs: {
-        display: 'flex',
-        gap: '8px',
-        flexWrap: 'wrap',
-    },
-    categoryTab: {
-        padding: '6px 14px',
-        borderRadius: '16px',
-        fontSize: '12px',
-        fontWeight: '600',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        whiteSpace: 'nowrap',
-    },
-    gridContainer: {
-        flex: 1,
-        overflow: 'auto',
-        padding: '16px 20px',
-    },
-    grid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-        gap: '12px',
-    },
-    backdropCard: {
-        backgroundColor: '#fff',
-        borderRadius: '12px',
-        border: '2px solid #e8e8e8',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-    },
-    backdropCardHover: {
-        border: '2px solid #855CD6',
-        transform: 'translateY(-2px)',
-        boxShadow: '0 6px 16px rgba(133, 92, 214, 0.2)',
-    },
-    backdropPreview: {
-        width: '100%',
-        height: '96px',
-        backgroundColor: '#fafafa',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden',
-    },
-    backdropImage: {
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-    },
-    backdropName: {
-        width: '100%',
-        padding: '6px 8px',
-        fontSize: '11px',
-        fontWeight: '600',
-        color: '#575E75',
-        textAlign: 'center',
-        borderTop: '1px solid #eee',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-    },
-    emptyState: {
-        gridColumn: '1 / -1',
-        textAlign: 'center',
-        padding: '60px 20px',
-        color: '#999',
-    },
-    fabContainer: {
-        position: 'absolute',
-        bottom: '20px',
-        right: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        zIndex: 10,
-    },
-    fab: {
-        width: '48px',
-        height: '48px',
-        borderRadius: '50%',
-        border: 'none',
-        fontSize: '22px',
-        color: '#fff',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-        transition: 'transform 0.15s',
-    },
 };
 
 export default BackdropLibrary;

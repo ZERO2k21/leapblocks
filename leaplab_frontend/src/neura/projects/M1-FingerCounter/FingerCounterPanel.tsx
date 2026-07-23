@@ -301,7 +301,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
                             <h2 className="text-xl sm:text-2xl font-extrabold text-[#0ea5e9] mb-0">✋ AI Finger Counter!</h2>
@@ -312,9 +312,9 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 mt-3 min-h-0">
                         {/* Camera */}
-                        <div className="flex-1 flex flex-col gap-2" style={{ minWidth: 0 }}>
+                        <div className="flex-1 flex flex-col gap-2 min-w-0">
                             {cameraError && !cameraOn && (
                                 <div className="flex flex-col items-center justify-center bg-white/85 backdrop-blur-xl rounded-2xl p-5 border border-red-200">
                                     <span className="text-4xl mb-2">🚫</span>
@@ -324,10 +324,10 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                                 </div>
                             )}
 
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
 
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
@@ -362,8 +362,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                                     {cameraOn ? '📷 Stop' : '📷 Start'}
                                 </button>
                                 <button onClick={handleCapture} disabled={!cameraOn || isCapturing || modelLoading || !selectedClass || selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS}
-                                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40"
-                                    style={{ background: isCapturing ? '#94a3b8' : '#0ea5e9' }}>
+                                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-[#0ea5e9]'}`}>
                                     {isCapturing ? '⏳ Capturing...' : '📸 Capture'}
                                 </button>
                             </div>
@@ -444,7 +443,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
                             <h2 className="text-xl sm:text-2xl font-extrabold text-[#0ea5e9] mb-0">🧪 Test Your Finger Counter!</h2>
@@ -455,13 +454,13 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 mt-3 min-h-0">
                         {/* Camera Feed */}
-                        <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                        <div className="flex-1 flex flex-col min-w-0">
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
 
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
@@ -473,13 +472,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                                 {/* Large Count Display */}
                                 {currentCount > 0 && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <div className="animate-fade-in" style={{
-                                            fontSize: '120px',
-                                            fontWeight: 900,
-                                            color: COUNT_COLORS[currentCount] || '#fff',
-                                            textShadow: '0 4px 20px rgba(0,0,0,0.5)',
-                                            lineHeight: 1
-                                        }}>
+                                        <div className="animate-fade-in text-[120px] font-black drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)] leading-none" style={{ color: COUNT_COLORS[currentCount] || '#fff' }}>
                                             {currentCount}
                                         </div>
                                     </div>
@@ -528,7 +521,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                             {/* Current Count Display */}
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-4 border border-gray-100 text-center">
                                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Fingers Detected</p>
-                                <div className="text-6xl font-black" style={{ color: COUNT_COLORS[currentCount] || '#94a3b8', lineHeight: 1 }}>
+                                <div className="text-6xl font-black leading-none" style={{ color: COUNT_COLORS[currentCount] || '#94a3b8' }}>
                                     {currentCount || '—'}
                                 </div>
                                 {prediction && (
@@ -546,7 +539,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                                 </div>
                                 <div className="bg-[#f0f9ff] rounded-xl p-2.5 border border-[#e0f2fe]">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">✋ Hand</p>
-                                    <p className="text-lg font-extrabold" style={{ color: handDetected ? '#10b981' : '#94a3b8' }}>
+                                    <p className={`text-lg font-extrabold ${handDetected ? 'text-emerald-500' : 'text-slate-400'}`}>
                                         {handDetected ? 'Found' : 'None'}
                                     </p>
                                 </div>
@@ -558,10 +551,9 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                                     <p className="text-[10px] font-bold text-gray-700 mb-2">📈 Count History</p>
                                     <div className="flex items-end gap-1 h-16">
                                         {countHistory.map((count, i) => (
-                                            <div key={i} className="flex-1 rounded-t-sm" style={{
+                                            <div key={i} className="flex-1 rounded-t-xs min-h-1" style={{
                                                 height: `${(count / 5) * 100}%`,
-                                                background: COUNT_COLORS[count] || '#94a3b8',
-                                                minHeight: '4px'
+                                                background: COUNT_COLORS[count] || '#94a3b8'
                                             }} />
                                         ))}
                                     </div>

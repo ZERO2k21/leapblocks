@@ -471,7 +471,7 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
     return (
         <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
             {savedMessage && (
-                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-[#6366f1] text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
                     {savedMessage}
                 </div>
             )}
@@ -494,10 +494,10 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0" style={{ color: ACCENT }}>Posture Monitor!</h2>
+                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0 text-indigo-600">Posture Monitor!</h2>
                             <p className="text-xs text-[#4a4455]">Teach the AI to recognize sitting postures!</p>
                         </div>
                         <div className="w-full max-w-[720px]">
@@ -505,12 +505,12 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
-                        <div className="flex-1 flex flex-col gap-2" style={{ minWidth: 0 }}>
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 mt-3">
+                        <div className="flex-1 flex flex-col gap-2 min-w-0">
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -527,25 +527,27 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                                         <span className="text-5xl mb-3">🪑</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to collect posture samples</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg" style={{ background: ACCENT }}>Turn On Camera</button>
+                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg bg-indigo-600 hover:bg-indigo-700 transition-colors">Turn On Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border" style={{ borderColor: ACCENT, color: ACCENT, background: '#fff' }}>
+                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-indigo-600 text-indigo-600 bg-white hover:bg-indigo-50 transition-colors">
                                     {cameraOn ? 'Stop' : 'Start'}
                                 </button>
-                                <button onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass}
-                                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40"
-                                    style={{ background: isCapturing ? '#94a3b8' : ACCENT }}>
+                                <button
+                                    onClick={handleCapture}
+                                    disabled={!cameraOn || isCapturing || !selectedClass}
+                                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white transition-colors disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                >
                                     {isCapturing ? '...' : 'Capture Pose'}
                                 </button>
                             </div>
                         </div>
 
                         <div className="w-full lg:w-72 flex flex-col gap-2 overflow-y-auto">
-                            <div className="rounded-xl p-3 border" style={{ background: ACCENT_LIGHT, borderColor: `${ACCENT}20` }}>
-                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: ACCENT }}>Posture Types</p>
+                            <div className="rounded-xl p-3 border bg-indigo-50 border-indigo-500/20">
+                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5 text-indigo-600">Posture Types</p>
                                 <div className="flex flex-col gap-1">
                                     {POSTURE_CLASSES.map(posture => (
                                         <span key={posture} className="text-[9px] text-gray-600 flex items-center gap-1.5">
@@ -556,8 +558,8 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                                 </div>
                             </div>
 
-                            <div className="rounded-xl p-3 border" style={{ background: ACCENT_LIGHT, borderColor: `${ACCENT}20` }}>
-                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: ACCENT }}>Tips</p>
+                            <div className="rounded-xl p-3 border bg-indigo-50 border-indigo-500/20">
+                                <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5 text-indigo-600">Tips</p>
                                 <div className="flex flex-col gap-1">
                                     {['Sit facing the camera', 'Keep back straight for good posture', 'Slouch for bad posture samples', 'Lean left/right for leaning samples'].map(tip => (
                                         <span key={tip} className="text-[9px] text-gray-600">• {tip}</span>
@@ -578,13 +580,13 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                             )}
 
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="rounded-xl p-2.5 border" style={{ background: ACCENT_LIGHT, borderColor: `${ACCENT}20` }}>
+                                <div className="rounded-xl p-2.5 border bg-indigo-50 border-indigo-500/20">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Total</p>
-                                    <p className="text-lg font-extrabold" style={{ color: ACCENT }}>{mode.getTotalSamples()}</p>
+                                    <p className="text-lg font-extrabold text-indigo-600">{mode.getTotalSamples()}</p>
                                 </div>
-                                <div className="rounded-xl p-2.5 border" style={{ background: ACCENT_LIGHT, borderColor: `${ACCENT}20` }}>
+                                <div className="rounded-xl p-2.5 border bg-indigo-50 border-indigo-500/20">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Classes</p>
-                                    <p className="text-lg font-extrabold" style={{ color: ACCENT }}>{mode.project?.classes.length || 0}</p>
+                                    <p className="text-lg font-extrabold text-indigo-600">{mode.project?.classes.length || 0}</p>
                                 </div>
                             </div>
                         </div>
@@ -596,19 +598,19 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col items-center justify-center p-8">
                     <div className="text-center mb-6">
-                        <h2 className="text-2xl font-extrabold mb-2" style={{ color: ACCENT }}>Training Posture AI!</h2>
+                        <h2 className="text-2xl font-extrabold mb-2 text-indigo-600">Training Posture AI!</h2>
                         <p className="text-sm text-gray-500">Teaching the AI to recognize sitting postures...</p>
                     </div>
                     {modelLoading ? (
                         <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 border-4 rounded-full animate-spin" style={{ borderColor: ACCENT, borderTopColor: 'transparent' }} />
-                            <p className="text-sm font-bold" style={{ color: ACCENT }}>Loading model...</p>
+                            <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm font-bold text-indigo-600">Loading model...</p>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-4">
                             <span className="text-6xl">✓</span>
                             <p className="text-sm font-bold text-green-600">Model Ready!</p>
-                            <button onClick={() => mode.setMode('test')} className="px-6 py-3 text-white rounded-xl text-sm font-bold shadow-lg" style={{ background: ACCENT }}>
+                            <button onClick={() => mode.setMode('test')} className="px-6 py-3 text-white rounded-xl text-sm font-bold shadow-lg bg-indigo-600 hover:bg-indigo-700 transition-colors">
                                 Start Monitoring
                             </button>
                         </div>
@@ -618,10 +620,10 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex flex-col items-center animate-fade-in">
                         <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0" style={{ color: ACCENT }}>Posture Monitoring</h2>
+                            <h2 className="text-xl sm:text-2xl font-extrabold mb-0 text-indigo-600">Posture Monitoring</h2>
                             <p className="text-xs text-[#4a4455]">Sit properly and get real-time feedback!</p>
                         </div>
                         <div className="w-full max-w-[720px]">
@@ -629,12 +631,12 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-4 flex-1" style={{ marginTop: '12px', minHeight: 0 }}>
-                        <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1" style={{ minHeight: '300px' }}>
-                                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)', display: cameraOn ? 'block' : 'none' }} />
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 mt-3">
+                        <div className="flex-1 flex flex-col min-w-0">
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
+                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -643,7 +645,7 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                                 )}
                                 {postureState && POSTURE_CONFIG[postureState] && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <div className="animate-fade-in px-8 py-4 rounded-2xl flex flex-col items-center" style={{ background: `${POSTURE_CONFIG[postureState].color}CC`, backdropFilter: 'blur(8px)' }}>
+                                        <div className="animate-fade-in px-8 py-4 rounded-2xl flex flex-col items-center backdrop-blur-md bg-black/60">
                                             <span className="text-5xl mb-1">{POSTURE_CONFIG[postureState].emoji}</span>
                                             <span className="text-3xl font-black text-white">{postureState}</span>
                                         </div>
@@ -654,15 +656,15 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                                         <span className="text-5xl mb-3">🪑</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to monitor posture</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg" style={{ background: ACCENT }}>Start Camera</button>
+                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg bg-indigo-600 hover:bg-indigo-700 transition-colors">Start Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2 mt-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border" style={{ borderColor: ACCENT, color: ACCENT, background: '#fff' }}>
+                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-indigo-600 text-indigo-600 bg-white hover:bg-indigo-50 transition-colors">
                                     {cameraOn ? 'Stop Camera' : 'Start Camera'}
                                 </button>
-                                <button onClick={resetSession} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-gray-300 text-gray-600 bg-white">
+                                <button onClick={resetSession} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-gray-300 text-gray-600 bg-white hover:bg-gray-50 transition-colors">
                                     Reset Session
                                 </button>
                             </div>
@@ -673,7 +675,7 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-4 border border-gray-100 text-center">
                                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2">Current Posture</p>
                                 <div className="text-5xl mb-1">{postureState && POSTURE_CONFIG[postureState] ? POSTURE_CONFIG[postureState].emoji : '🪑'}</div>
-                                <div className="text-lg font-black" style={{ color: postureState && POSTURE_CONFIG[postureState] ? POSTURE_CONFIG[postureState].color : '#94a3b8' }}>
+                                <div className={`text-lg font-black ${postureState && POSTURE_CONFIG[postureState] ? 'text-indigo-600' : 'text-slate-400'}`}>
                                     {postureState || 'Waiting...'}
                                 </div>
                                 {prediction && (
@@ -687,15 +689,19 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] font-bold text-gray-700">Posture Score</span>
-                                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-md" style={{ color: postureScore >= 70 ? '#10b981' : postureScore >= 40 ? '#f59e0b' : '#ef4444', background: postureScore >= 70 ? '#ecfdf5' : postureScore >= 40 ? '#fffbeb' : '#fef2f2' }}>
+                                    <span className={`text-xs font-extrabold px-2 py-0.5 rounded-md ${
+                                        postureScore >= 70 ? 'text-emerald-600 bg-emerald-50' : postureScore >= 40 ? 'text-amber-600 bg-amber-50' : 'text-red-600 bg-red-50'
+                                    }`}>
                                         {postureScore}%
                                     </span>
                                 </div>
                                 <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                                    <div className="h-full rounded-full transition-all duration-500" style={{
-                                        width: `${postureScore}%`,
-                                        background: postureScore >= 70 ? '#10b981' : postureScore >= 40 ? '#f59e0b' : '#ef4444'
-                                    }} />
+                                    <div
+                                        className={`h-full rounded-full transition-all duration-500 ${
+                                            postureScore >= 70 ? 'bg-emerald-500' : postureScore >= 40 ? 'bg-amber-500' : 'bg-red-500'
+                                        }`}
+                                        style={{ width: `${postureScore}%` }}
+                                    />
                                 </div>
                             </div>
 
@@ -703,19 +709,19 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
                                 <p className="text-[10px] font-bold text-gray-700 mb-2">Session Stats</p>
                                 <div className="grid grid-cols-2 gap-2">
-                                    <div className="text-center p-2 rounded-lg" style={{ background: '#ecfdf5' }}>
+                                    <div className="text-center p-2 rounded-lg bg-emerald-50">
                                         <p className="text-[8px] text-gray-500 font-bold uppercase">Good</p>
                                         <p className="text-lg font-extrabold text-green-600">{goodCount}</p>
                                     </div>
-                                    <div className="text-center p-2 rounded-lg" style={{ background: '#fef2f2' }}>
+                                    <div className="text-center p-2 rounded-lg bg-red-50">
                                         <p className="text-[8px] text-gray-500 font-bold uppercase">Bad</p>
                                         <p className="text-lg font-extrabold text-red-600">{badCount}</p>
                                     </div>
-                                    <div className="text-center p-2 rounded-lg" style={{ background: '#fffbeb' }}>
+                                    <div className="text-center p-2 rounded-lg bg-amber-50">
                                         <p className="text-[8px] text-gray-500 font-bold uppercase">Left</p>
                                         <p className="text-lg font-extrabold text-amber-600">{leftCount}</p>
                                     </div>
-                                    <div className="text-center p-2 rounded-lg" style={{ background: '#fffbeb' }}>
+                                    <div className="text-center p-2 rounded-lg bg-amber-50">
                                         <p className="text-[8px] text-gray-500 font-bold uppercase">Right</p>
                                         <p className="text-lg font-extrabold text-amber-600">{rightCount}</p>
                                     </div>
@@ -730,23 +736,27 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] font-bold text-gray-700">Confidence</span>
-                                    <span className="text-xs font-extrabold bg-white px-2 py-0.5 rounded-md" style={{ color: ACCENT }}>{Math.round(confidenceThreshold * 100)}%</span>
+                                    <span className="text-xs font-extrabold bg-white px-2 py-0.5 rounded-md text-indigo-600">{Math.round(confidenceThreshold * 100)}%</span>
                                 </div>
-                                <input type="range" min="0" max="100" value={Math.round(confidenceThreshold * 100)}
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={Math.round(confidenceThreshold * 100)}
                                     onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
-                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                                    style={{ background: `linear-gradient(to right, ${ACCENT} ${Math.round(confidenceThreshold * 100)}%, #e5e7eb ${Math.round(confidenceThreshold * 100)}%)` }} />
+                                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-indigo-600 bg-slate-200"
+                                />
                             </div>
 
                             {/* Speed & Pose Detection */}
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="rounded-xl p-2.5 border" style={{ background: ACCENT_LIGHT, borderColor: `${ACCENT}20` }}>
+                                <div className="rounded-xl p-2.5 border bg-indigo-50 border-indigo-500/20">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Speed</p>
                                     <p className="text-lg font-extrabold text-gray-800">{inferenceTime}ms</p>
                                 </div>
-                                <div className="rounded-xl p-2.5 border" style={{ background: ACCENT_LIGHT, borderColor: `${ACCENT}20` }}>
+                                <div className="rounded-xl p-2.5 border bg-indigo-50 border-indigo-500/20">
                                     <p className="text-[8px] text-gray-500 font-bold uppercase">Pose</p>
-                                    <p className="text-lg font-extrabold" style={{ color: poseDetected ? '#10b981' : '#94a3b8' }}>
+                                    <p className={`text-lg font-extrabold ${poseDetected ? 'text-emerald-500' : 'text-slate-400'}`}>
                                         {poseDetected ? 'Found' : 'None'}
                                     </p>
                                 </div>
@@ -754,7 +764,7 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
 
                             {/* Consecutive Bad Count */}
                             {consecutiveBadCount > 0 && (
-                                <div className="rounded-xl p-3 border" style={{ background: '#fef2f2', borderColor: '#fecaca' }}>
+                                <div className="rounded-xl p-3 border bg-red-50 border-red-200">
                                     <div className="flex items-center justify-between">
                                         <span className="text-[10px] font-bold text-red-600">Consecutive Bad</span>
                                         <span className="text-sm font-extrabold text-red-600">{consecutiveBadCount}/{BAD_POSTURE_THRESHOLD}</span>
@@ -776,9 +786,9 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                                                 <div key={label} className="flex items-center gap-2">
                                                     <span className="text-[9px] font-bold text-gray-600 w-20 truncate">{label}</span>
                                                     <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                                        <div className="h-full rounded-full transition-all" style={{ width: `${conf * 100}%`, background: ACCENT }} />
+                                                        <div className="h-full rounded-full transition-all bg-indigo-600" style={{ width: `${conf * 100}%` }} />
                                                     </div>
-                                                    <span className="text-[9px] font-bold" style={{ color: ACCENT }}>{Math.round(conf * 100)}%</span>
+                                                    <span className="text-[9px] font-bold text-indigo-600">{Math.round(conf * 100)}%</span>
                                                 </div>
                                             ))
                                         }

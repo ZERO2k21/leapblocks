@@ -834,14 +834,7 @@ export default function ForgeElectra({
   const electraVars = useMemo(() => getElectraVars(board, uiTheme), [board, uiTheme]);
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden" style={{
-      ...electraVars as React.CSSProperties,
-      background: 'var(--lp-bg)',
-      backgroundImage: 'var(--lp-bg-gradient)',
-      color: 'var(--lp-text-color)',
-      fontFamily: "'Outfit', sans-serif",
-      transition: 'background-color 0.4s ease, background-image 0.4s ease, color 0.4s ease',
-    }}>
+    <div className="flex flex-col h-screen w-screen overflow-hidden font-sans transition-colors duration-400 bg-slate-950 text-slate-100" style={electraVars as React.CSSProperties}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Space+Mono:wght@400;700&display=swap');
         @keyframes tabGlowEntrance { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
@@ -885,7 +878,7 @@ export default function ForgeElectra({
       <input
         type="file"
         ref={fileInputRef}
-        style={{ display: 'none' }}
+        className="hidden"
         accept=".leap,.lbp,.json"
         onChange={handleWebImport}
       />
@@ -910,11 +903,11 @@ export default function ForgeElectra({
         isSaving={isSaving}
       />
 
-      <main className={`forge-main-split flex-1 flex gap-2 p-2 bg-transparent min-h-0 min-w-0 ${uiTheme === 'light' ? 'max-lg:relative' : ''}`} style={uiTheme === 'light' ? { ...getLightThemeVars(board) as React.CSSProperties, color: '#0f172a' } : {}}>
+      <main className={`forge-main-split flex-1 flex gap-2 p-2 bg-transparent min-h-0 min-w-0 ${uiTheme === 'light' ? 'max-lg:relative text-slate-900' : ''}`} style={uiTheme === 'light' ? (getLightThemeVars(board) as React.CSSProperties) : undefined}>
         {/* Far Left: Component Drawer */}
         {showPartPicker && (
-          <div className="part-picker-pane h-full border overflow-hidden flex flex-col relative backdrop-blur-[16px] max-lg:absolute max-lg:top-2 max-lg:right-2 max-lg:bottom-2 max-lg:w-[320px] max-lg:z-70 max-md:w-[calc(100%-16px)] max-md:right-2 max-md:left-2" style={{ width: 'var(--sidebar-width)', background: 'var(--lp-dark-surface)', borderRadius: 'var(--lp-radius)', borderColor: 'var(--lp-border)', boxShadow: 'var(--lp-shadow)' }}>
-            <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, var(--lp-accent-primary), transparent)', opacity: 0.3 }} />
+          <div className="part-picker-pane h-full border border-slate-700/50 overflow-hidden flex flex-col relative backdrop-blur-md max-lg:absolute max-lg:top-2 max-lg:right-2 max-lg:bottom-2 max-lg:w-[320px] max-lg:z-70 max-md:w-[calc(100%-16px)] max-md:right-2 max-md:left-2 w-[280px] bg-slate-900/90 rounded-2xl shadow-xl">
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
             <ComponentSidebar
               onSelect={(type) => {
                 const state = useForgeStore.getState();
@@ -939,9 +932,9 @@ export default function ForgeElectra({
         )}
 
         {/* Middle: Simulation Canvas (takes flex: 1) */}
-        <div className="canvas-pane flex-[1.2] max-lg:flex-[1_1_100%] max-lg:w-full max-lg:h-full max-lg:z-10 overflow-hidden flex flex-col relative backdrop-blur-[16px]" style={{ background: 'var(--lp-dark-surface)', border: '1px solid var(--lp-border)', borderRadius: 'var(--lp-radius)', boxShadow: 'var(--lp-shadow)' }}>
-          <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, var(--lp-accent-primary), transparent)', opacity: 0.3, transition: 'background 0.4s ease' }} />
-          <div style={{ flex: 1, position: 'relative', height: '100%' }}>
+        <div className="canvas-pane flex-[1.2] max-lg:flex-[1_1_100%] max-lg:w-full max-lg:h-full max-lg:z-10 overflow-hidden flex flex-col relative backdrop-blur-md bg-slate-900/90 border border-slate-700/50 rounded-2xl shadow-xl">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent transition-all duration-400" />
+          <div className="flex-1 relative h-full">
             <Suspense fallback={<Loader />}>
               <ForgeCanvas
                 onToggleSimulation={handleToggleSimulation}
@@ -959,8 +952,8 @@ export default function ForgeElectra({
             {/* Floating WiFi Status */}
             {board === 'esp32-c3' && isSimulating && wifiStatus && (
               <div className="absolute bottom-5 right-5 z-10">
-                <div className="flex items-center gap-2 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.5px] backdrop-blur-[8px]" style={{ background: 'var(--lp-glass)', color: 'var(--lp-accent-bright)', border: '1px solid var(--lp-accent-primary)', borderRadius: 'var(--lp-radius)', boxShadow: 'var(--lp-shadow-lg)' }}>
-                  <div className="w-[6px] h-[6px] rounded-full animate-[pulse-dot_1.5s_ease-in-out_infinite]" style={{ background: 'var(--lp-accent-primary)', boxShadow: '0 0 8px var(--lp-accent-primary)' }} />
+                <div className="flex items-center gap-2 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/40 rounded-xl shadow-lg">
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-[pulse-dot_1.5s_ease-in-out_infinite] shadow-[0_0_8px_#22d3ee]" />
                   {wifiStatus}
                 </div>
               </div>
@@ -970,172 +963,75 @@ export default function ForgeElectra({
 
         {/* Middle/Right: Interactive Programming Pane */}
         {showEditor && (
-          <div className="editor-pane flex-[0.8] min-w-[400px] max-lg:absolute max-lg:top-2 max-lg:right-2 max-lg:bottom-2 max-lg:w-[420px] max-lg:z-60 max-md:w-[calc(100%-16px)] max-md:right-2 max-md:left-2 overflow-hidden flex flex-col relative backdrop-blur-[16px]" style={{ background: 'var(--lp-dark-surface)', border: '1px solid var(--lp-border)', borderRadius: 'var(--lp-radius)', boxShadow: 'var(--lp-shadow)' }}>
-            <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, var(--lp-accent-primary), transparent)', opacity: 0.3, transition: 'background 0.4s ease' }} />
+          <div className="editor-pane flex-[0.8] min-w-[400px] max-lg:absolute max-lg:top-2 max-lg:right-2 max-lg:bottom-2 max-lg:w-[420px] max-lg:z-60 max-md:w-[calc(100%-16px)] max-md:right-2 max-md:left-2 overflow-hidden flex flex-col relative backdrop-blur-md bg-slate-900/90 border border-slate-700/50 rounded-2xl shadow-xl">
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent transition-all duration-400" />
             {/* Top: Sketch Editor */}
-            <div style={{
-              flex: activeTab === 'libraries' ? 1 : 1.5,
-              display: 'flex',
-              flexDirection: 'column',
-              borderBottom: activeTab === 'libraries' ? 'none' : '1px solid var(--lp-border)',
-              minHeight: 0
-            }}>
+            <div className={`flex flex-col min-h-0 ${activeTab === 'libraries' ? 'flex-1 border-b-0' : 'flex-[1.5] border-b border-slate-700/50'}`}>
               <div
-                className="flex items-center relative z-10"
-                style={{
-                  height: '38px',
-                  padding: '0 16px',
-                  gap: '2px',
-                  background: uiTheme === 'light'
-                    ? 'rgba(255, 255, 255, 0.6)'
-                    : 'rgba(10, 12, 16, 0.4)',
-                  borderBottom: `1px solid ${uiTheme === 'light' ? 'rgba(15, 23, 42, 0.06)' : 'rgba(255, 255, 255, 0.05)'}`,
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
-                }}
+                className={`flex items-center relative z-10 h-9.5 px-4 gap-0.5 border-b backdrop-blur-md ${
+                  uiTheme === 'light'
+                    ? 'bg-white/60 border-slate-900/6'
+                    : 'bg-slate-950/40 border-white/5'
+                }`}
               >
                 {/* Board badge */}
                 <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    paddingTop: '5px',
-                    paddingBottom: '5px',
-                    paddingLeft: '12px',
-                    paddingRight: '12px',
-                    borderRadius: '20px',
-                    fontSize: '9px',
-                    fontWeight: 900,
-                    fontFamily: "'Outfit', sans-serif",
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    background: uiTheme === 'light'
-                      ? `rgba(${board === 'arduino-uno' ? '0, 132, 199' : '234, 88, 12'}, 0.08)`
-                      : 'var(--lp-badge-bg, rgba(255, 255, 255, 0.03))',
-                    border: `1px solid ${uiTheme === 'light'
-                      ? `rgba(${board === 'arduino-uno' ? '0, 132, 199' : '234, 88, 12'}, 0.15)`
-                      : 'var(--lp-badge-border, rgba(255, 255, 255, 0.08))'}`,
-                    color: 'var(--lp-badge-color, var(--lp-accent-primary))',
-                    boxShadow: uiTheme === 'light'
-                      ? 'none'
-                      : 'inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 8px rgba(0,0,0,0.12)',
-                    flexShrink: 0,
-                    boxSizing: 'border-box',
-                    height: '22px'
-                  }}
+                  className={`flex items-center gap-2 py-1 px-3 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0 h-5.5 box-border border ${
+                    uiTheme === 'light'
+                      ? (board === 'arduino-uno' ? 'bg-sky-500/8 border-sky-500/15 text-sky-600' : 'bg-orange-500/8 border-orange-500/15 text-orange-600')
+                      : 'bg-white/3 border-white/8 text-cyan-400 shadow-inner'
+                  }`}
                 >
                   <span
-                    style={{
-                      display: 'block',
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      background: 'var(--lp-badge-color, var(--lp-accent-primary))',
-                      boxShadow: uiTheme !== 'light' ? `0 0 8px var(--lp-badge-color, var(--lp-accent-primary))` : 'none',
-                      flexShrink: 0
-                    }}
+                    className={`block w-1.5 h-1.5 rounded-full shrink-0 ${
+                      uiTheme === 'light'
+                        ? (board === 'arduino-uno' ? 'bg-sky-500' : 'bg-orange-500')
+                        : 'bg-cyan-400 shadow-[0_0_8px_#22d3ee]'
+                    }`}
                   />
-                  <span style={{ lineHeight: '1', display: 'inline-block' }}>
+                  <span className="leading-none inline-block">
                     {board === 'esp32-c3' ? 'ESP32-C3' : 'ARDUINO UNO'}
                   </span>
                 </div>
 
                 {/* Divider */}
-                <div
-                  style={{
-                    width: '1px',
-                    height: '18px',
-                    margin: '0 10px',
-                    background: uiTheme === 'light' ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.06)',
-                  }}
-                />
+                <div className={`w-px h-4.5 mx-2.5 ${uiTheme === 'light' ? 'bg-slate-900/8' : 'bg-white/6'}`} />
 
                 {/* SKETCH tab */}
                 <button
-                  className="relative flex items-center cursor-pointer border-none"
-                  style={{
-                    gap: '6px',
-                    padding: '0 12px',
-                    height: '38px',
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    fontFamily: "'Outfit', sans-serif",
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    background: 'transparent',
-                    color: activeTab === 'code'
-                      ? 'var(--lp-accent-bright)'
-                      : (uiTheme === 'light' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.5)'),
-                    transition: 'color 0.2s ease',
-                  }}
+                  className={`relative flex items-center gap-1.5 px-3 h-9.5 text-[10px] font-bold tracking-wider uppercase cursor-pointer border-none bg-transparent transition-colors duration-200 ${
+                    activeTab === 'code'
+                      ? 'text-cyan-400'
+                      : (uiTheme === 'light' ? 'text-slate-500/60 hover:text-slate-700' : 'text-slate-400/50 hover:text-slate-200')
+                  }`}
                   onClick={() => setActiveTab('code')}
-                  onMouseEnter={e => {
-                    if (activeTab !== 'code') e.currentTarget.style.color = uiTheme === 'light' ? '#334155' : '#e2e8f0';
-                  }}
-                  onMouseLeave={e => {
-                    if (activeTab !== 'code') e.currentTarget.style.color = uiTheme === 'light' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.5)';
-                  }}
                 >
                   <Code size={13} strokeWidth={2.5} />
                   Sketch
                   {/* Active indicator */}
                   {activeTab === 'code' && (
-                    <div
-                      className="absolute bottom-0 left-3 right-3"
-                      style={{
-                        height: '2px',
-                        borderRadius: '2px 2px 0 0',
-                        background: 'var(--lp-accent-primary)',
-                        boxShadow: uiTheme !== 'light' ? `0 0 8px var(--lp-accent-primary)` : 'none',
-                      }}
-                    />
+                    <div className="absolute bottom-0 left-3 right-3 h-0.5 rounded-t-xs bg-cyan-400 shadow-[0_0_8px_#22d3ee]" />
                   )}
                 </button>
 
                 {/* LIBRARIES tab */}
                 <button
-                  className="relative flex items-center cursor-pointer border-none"
-                  style={{
-                    gap: '6px',
-                    padding: '0 12px',
-                    height: '38px',
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    fontFamily: "'Outfit', sans-serif",
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    background: 'transparent',
-                    color: activeTab === 'libraries'
-                      ? 'var(--lp-accent-bright)'
-                      : (uiTheme === 'light' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.5)'),
-                    transition: 'color 0.2s ease',
-                  }}
+                  className={`relative flex items-center gap-1.5 px-3 h-9.5 text-[10px] font-bold tracking-wider uppercase cursor-pointer border-none bg-transparent transition-colors duration-200 ${
+                    activeTab === 'libraries'
+                      ? 'text-cyan-400'
+                      : (uiTheme === 'light' ? 'text-slate-500/60 hover:text-slate-700' : 'text-slate-400/50 hover:text-slate-200')
+                  }`}
                   onClick={() => setActiveTab('libraries')}
-                  onMouseEnter={e => {
-                    if (activeTab !== 'libraries') e.currentTarget.style.color = uiTheme === 'light' ? '#334155' : '#e2e8f0';
-                  }}
-                  onMouseLeave={e => {
-                    if (activeTab !== 'libraries') e.currentTarget.style.color = uiTheme === 'light' ? 'rgba(100, 116, 139, 0.6)' : 'rgba(148, 163, 184, 0.5)';
-                  }}
                 >
                   <LibraryIcon size={13} strokeWidth={2.5} />
                   Libraries
                   {activeTab === 'libraries' && (
-                    <div
-                      className="absolute bottom-0 left-3 right-3"
-                      style={{
-                        height: '2px',
-                        borderRadius: '2px 2px 0 0',
-                        background: 'var(--lp-accent-primary)',
-                        boxShadow: uiTheme !== 'light' ? `0 0 8px var(--lp-accent-primary)` : 'none',
-                      }}
-                    />
+                    <div className="absolute bottom-0 left-3 right-3 h-0.5 rounded-t-xs bg-cyan-400 shadow-[0_0_8px_#22d3ee]" />
                   )}
                 </button>
               </div>
 
-              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+              <div className="flex-1 relative overflow-hidden">
                 {activeTab === 'libraries' ? (
                   <LibraryManager />
                 ) : (
@@ -1160,18 +1056,18 @@ export default function ForgeElectra({
         )}
       </main>
 
-      <footer className="flex items-center px-4 justify-between relative text-[10px] h-[30px]" style={{ background: 'var(--lp-dark-bg)', borderTop: '1px solid var(--lp-border)', color: 'var(--lp-zinc-400)', ...(uiTheme === 'light' ? getLightThemeVars(board) : {}) as React.CSSProperties }}>
-        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, var(--lp-accent-primary), transparent)', opacity: 0.3 }} />
+      <footer className={`flex items-center px-4 justify-between relative text-[10px] h-[30px] bg-slate-950 border-t border-slate-800 text-slate-400 ${uiTheme === 'light' ? 'text-slate-700' : ''}`} style={uiTheme === 'light' ? (getLightThemeVars(board) as React.CSSProperties) : undefined}>
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-cyan-500/30 to-transparent" />
         <div className="flex items-center gap-5">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-[var(--lp-radius-sm)] font-bold text-[9px] uppercase tracking-[1px] border" style={{ background: 'var(--lp-zinc-800)', color: 'var(--lp-accent-primary)', borderColor: 'var(--lp-border-active)' }}>Electra Engine v1.0</span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-sm font-bold text-[9px] uppercase tracking-widest border bg-slate-800 text-cyan-400 border-slate-700">Electra Engine v1.0</span>
           {isSimulating && (
-            <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.5px] px-2 py-0.5 rounded-[var(--lp-radius-sm)]" style={{ color: 'var(--lp-emerald)', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-              <div className="w-[6px] h-[6px] rounded-full animate-[pulse-dot_1.5s_ease-in-out_infinite]" style={{ background: 'var(--lp-emerald)', boxShadow: '0 0 8px var(--lp-emerald)' }} />
+            <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-[pulse-dot_1.5s_ease-in-out_infinite] shadow-[0_0_8px_#10b981]" />
               SIMULATION ACTIVE ({board.toUpperCase()})
             </div>
           )}
         </div>
-        <div className="font-semibold tracking-[0.05em]">
+        <div className="font-semibold tracking-wider">
           {new Date().toLocaleTimeString()}
         </div>
       </footer>

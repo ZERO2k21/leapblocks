@@ -247,11 +247,11 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
     const micScale = 1 + (averageVolume / 255) * 0.16
 
     return (
-        <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
+        <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
             {/* Header + Workflow - centered (only for collect/test modes) */}
             {mode.mode !== 'train' && (
                 <div className="w-full flex flex-col items-center animate-fade-in">
-                    <div className="text-center" style={{ marginBottom: '12px' }}>
+                    <div className="text-center mb-3">
                         <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">🎤 Sound Catcher!</h2>
                         <p className="text-xs text-[#4a4455]">Record sounds to teach your AI!</p>
                     </div>
@@ -263,54 +263,48 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
-                <div className="w-full flex flex-col lg:flex-row gap-4 flex-1 min-h-0" style={{ marginTop: '16px' }}>
+                <div className="w-full flex flex-col lg:flex-row gap-4 flex-1 min-h-0 mt-4">
                     {/* Left half - Waveform visualizer */}
-                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
-                        <div style={{ flex: 1, borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', position: 'relative' }}>
-                            <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.7 }} />
+                    <div className="flex-1 min-w-0 flex flex-col min-h-[220px]">
+                        <div className="flex-1 rounded-2xl overflow-hidden bg-[#0f0e26] border border-[#3b2f63] shadow-[0_4px_20px_rgba(0,0,0,0.15)] relative">
+                            <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-70" />
 
                             {/* LIVE indicator */}
-                            <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 10px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', borderRadius: '6px', zIndex: 10 }}>
-                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
-                                <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>LIVE</span>
+                            <div className="absolute top-2.5 left-2.5 flex items-center gap-1.25 py-1 px-2.5 bg-black/50 backdrop-blur-md rounded-md z-10">
+                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]" />
+                                <span className="text-white text-[10px] font-bold">LIVE</span>
                             </div>
 
                             {/* Class name badge */}
                             {selectedClass && (
-                                <div style={{ position: 'absolute', bottom: '10px', left: '10px', padding: '4px 10px', borderRadius: '6px', background: selectedClass.color, color: '#fff', fontSize: '10px', fontWeight: 700, zIndex: 10 }}>
+                                <div className="absolute bottom-2.5 left-2.5 py-1 px-2.5 rounded-md text-white text-[10px] font-bold z-10" style={{ background: selectedClass.color }}>
                                     {selectedClass.name}
                                 </div>
                             )}
 
                             {/* Sample count */}
                             {selectedClass && (
-                                <div style={{ position: 'absolute', bottom: '10px', right: '10px', padding: '3px 8px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', borderRadius: '5px', zIndex: 10 }}>
-                                    <span style={{ color: '#fff', fontSize: '9px', fontWeight: 700 }}>
+                                <div className="absolute bottom-2.5 right-2.5 py-0.75 px-2 bg-black/50 backdrop-blur-md rounded-md z-10">
+                                    <span className="text-white text-[9px] font-bold">
                                         {selectedClass.samples.length} samples
                                     </span>
                                 </div>
                             )}
 
                             {/* Center mic icon */}
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
-                                <div style={{
-                                    width: '72px',
-                                    height: '72px',
-                                    borderRadius: '50%',
-                                    background: isRecording ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.08)',
-                                    border: isRecording ? '2px solid #ef4444' : '2px solid rgba(255,255,255,0.25)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transform: `scale(${micScale})`,
-                                    transition: 'transform 0.05s ease-out, background-color 0.2s, border-color 0.2s',
-                                    boxShadow: isRecording ? '0 0 24px rgba(239,68,68,0.4)' : '0 0 16px rgba(255,255,255,0.05)',
-                                    marginBottom: '10px',
-                                }}>
-                                    <span style={{ fontSize: '2rem' }}>{isRecording ? '🎙️' : '🎤'}</span>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
+                                <div
+                                    className={`w-[72px] h-[72px] rounded-full flex items-center justify-center transition-transform duration-75 mb-2.5 ${
+                                        isRecording
+                                            ? 'bg-red-500/15 border-2 border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.4)]'
+                                            : 'bg-white/10 border-2 border-white/25 shadow-[0_0_16px_rgba(255,255,255,0.05)]'
+                                    }`}
+                                    style={{ transform: `scale(${micScale})` }}
+                                >
+                                    <span className="text-3xl">{isRecording ? '🎙️' : '🎤'}</span>
                                 </div>
-                                <div style={{ padding: '4px 12px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em' }}>
+                                <div className="py-1 px-3 bg-black/50 backdrop-blur-md rounded-full border border-white/10">
+                                    <span className="text-white text-[10px] font-bold tracking-wider">
                                         {isRecording ? '🔴 Recording...' : '🎤 Listening...'}
                                     </span>
                                 </div>
@@ -319,15 +313,15 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                     </div>
 
                     {/* Right half - Controls, Stats, Samples */}
-                    <div style={{ width: isMobile ? '100%' : '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', height: isMobile ? 'auto' : '100%' }}>
+                    <div className={`shrink-0 flex flex-col gap-2.5 ${isMobile ? 'w-full h-auto' : 'w-[280px] h-full'}`}>
                         {/* Tips */}
-                        <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', borderRadius: '10px', padding: '8px 12px', border: '1px solid rgba(99,14,212,0.1)' }}>
-                            <div className="flex items-center" style={{ gap: '6px' }}>
-                                <div style={{ width: '20px', height: '20px', borderRadius: '5px', background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', flexShrink: 0 }}>💡</div>
-                                <div className="flex flex-wrap" style={{ gap: '2px 10px' }}>
+                        <div className="bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-lg p-2 px-3 border border-[#630ed4]/10">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-5 h-5 rounded-md bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-[10px] shrink-0">💡</div>
+                                <div className="flex flex-wrap gap-x-2.5 gap-y-0.5">
                                     {['Record in quiet environment', 'Speak clearly', 'Try different volumes', 'Record 5+ samples'].map((tip) => (
-                                        <span key={tip} className="flex items-center" style={{ gap: '4px', fontSize: '9px', color: '#4b5563' }}>
-                                            <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#630ed4', flexShrink: 0 }} />
+                                        <span key={tip} className="flex items-center gap-1 text-[9px] text-gray-600">
+                                            <span className="w-0.75 h-0.75 rounded-full bg-[#630ed4] shrink-0" />
                                             {tip}
                                         </span>
                                     ))}
@@ -339,92 +333,52 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={startAudio}
-                                style={{
-                                    flex: 1,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '6px',
-                                    padding: '10px 16px',
-                                    borderRadius: '12px',
-                                    fontSize: '12px',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    background: 'linear-gradient(135deg, #630ed4, #8b5cf6)',
-                                    color: '#fff',
-                                    boxShadow: '0 4px 14px rgba(99,14,212,0.35)',
-                                    transition: 'all 0.2s',
-                                }}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-br from-[#630ed4] to-[#8b5cf6] text-white shadow-[0_4px_14px_rgba(99,14,212,0.35)] transition-all"
                             >
-                                <span style={{ fontSize: '16px' }}>🎙️</span>
+                                <span className="text-base">🎙️</span>
                                 Mic On
                             </button>
                             <button
                                 onClick={handleCapture}
                                 disabled={!canAddSamples || isRecording}
-                                style={{
-                                    flex: 1,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '6px',
-                                    padding: '10px 16px',
-                                    borderRadius: '12px',
-                                    fontSize: '12px',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: canAddSamples && !isRecording ? 'pointer' : 'not-allowed',
-                                    background: isRecording
-                                        ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none transition-all ${
+                                    isRecording
+                                        ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-[0_4px_14px_rgba(239,68,68,0.4)]'
                                         : atSampleLimit
-                                            ? 'linear-gradient(135deg, #d1d5db, #9ca3af)'
-                                            : 'linear-gradient(135deg, #630ed4, #8b5cf6)',
-                                    color: '#fff',
-                                    boxShadow: isRecording
-                                        ? '0 4px 14px rgba(239,68,68,0.4)'
-                                        : '0 4px 14px rgba(99,14,212,0.35)',
-                                    opacity: canAddSamples || isRecording ? 1 : 0.5,
-                                    transition: 'all 0.2s',
-                                }}
+                                            ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white cursor-not-allowed'
+                                            : 'bg-gradient-to-br from-[#630ed4] to-[#8b5cf6] text-white shadow-[0_4px_14px_rgba(99,14,212,0.35)]'
+                                } ${canAddSamples || isRecording ? 'opacity-100 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                             >
-                                <span style={{ fontSize: '16px' }}>{isRecording ? '⏹️' : '🔴'}</span>
+                                <span className="text-base">{isRecording ? '⏹️' : '🔴'}</span>
                                 {isRecording ? 'Stop' : 'Record'}
                             </button>
                         </div>
 
                         {/* Stats */}
-                        <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
-                            <div className="flex justify-between" style={{ marginBottom: '6px' }}>
-                                <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📊 Total Samples</span>
-                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#630ed4' }}>{mode.getTotalSamples()}</span>
+                        <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200 shadow-sm">
+                            <div className="flex justify-between mb-1.5">
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">📊 Total Samples</span>
+                                <span className="text-sm font-extrabold text-[#630ed4]">{mode.getTotalSamples()}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span style={{ fontSize: '10px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎯 Classes</span>
-                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#630ed4' }}>{mode.project?.classes.length || 0}</span>
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">🎯 Classes</span>
+                                <span className="text-sm font-extrabold text-[#630ed4]">{mode.project?.classes.length || 0}</span>
                             </div>
                         </div>
 
                         {/* Samples */}
                         {selectedClass && selectedClass.samples.length > 0 && (
-                            <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderRadius: '12px', padding: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.03)', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                                <div className="flex items-center justify-between" style={{ marginBottom: '8px', flexShrink: 0 }}>
-                                    <div className="flex items-center" style={{ gap: '6px' }}>
-                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: selectedClass.color }} />
-                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#131b2e' }}>{selectedClass.name}</span>
+                            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
+                                <div className="flex items-center justify-between mb-2 shrink-0">
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-2 h-2 rounded-full" style={{ background: selectedClass.color }} />
+                                        <span className="text-[11px] font-bold text-[#131b2e]">{selectedClass.name}</span>
                                     </div>
-                                    <span style={{
-                                        fontSize: '10px',
-                                        fontWeight: 700,
-                                        padding: '2px 6px',
-                                        borderRadius: '5px',
-                                        background: atSampleLimit ? '#fef3c7' : '#f5f3ff',
-                                        color: atSampleLimit ? '#c32c00' : '#630ed4',
-                                    }}>
+                                    <span className={`text-[10px] font-bold py-0.5 px-1.5 rounded ${atSampleLimit ? 'bg-amber-100 text-[#c32c00]' : 'bg-[#f5f3ff] text-[#630ed4]'}`}>
                                         {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}
                                     </span>
                                 </div>
-                                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }} className="neura-scrollbar">
+                                <div className="flex-1 min-h-0 overflow-y-auto neura-scrollbar">
                                     <SampleGrid samples={selectedClass.samples} type="audio" onRemove={(id) => mode.removeSample(selectedClass.id, id)} />
                                 </div>
                             </div>
@@ -435,8 +389,8 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
 
             {/* TRAIN MODE */}
             {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar" style={{ padding: '12px 20px' }}>
-                    <div className="w-full" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
+                    <div className="w-full flex-1 min-h-0 flex flex-col">
                         <TrainPanel 
                             isTraining={isTraining} 
                             accuracy={mode.accuracy} 
@@ -457,52 +411,42 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
 
             {/* TEST MODE */}
             {mode.mode === 'test' && (
-                <div className="w-full" style={{ flex: 1, minHeight: 0, marginTop: '16px', display: 'flex', flexDirection: 'column' }}>
+                <div className="w-full flex-1 min-h-0 mt-4 flex flex-col">
                     {/* Horizontal split */}
-                    <div className="w-full" style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', flex: 1, minHeight: 0 }}>
+                    <div className={`w-full flex flex-1 min-h-0 gap-4 ${isMobile ? 'flex-col' : 'flex-row'}`}>
                         {/* Left half - Waveform visualizer */}
-                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: isMobile ? '30vh' : 0 }}>
-                            <div style={{ flex: 1, borderRadius: '16px', overflow: 'hidden', background: '#0f0e26', border: '1px solid #3b2f63', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', position: 'relative' }}>
-                                <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.7 }} />
+                        <div className={`flex-1 min-w-0 flex flex-col ${isMobile ? 'min-h-[30vh]' : 'min-h-0'}`}>
+                            <div className="flex-1 rounded-2xl overflow-hidden bg-[#0f0e26] border border-[#3b2f63] shadow-[0_4px_20px_rgba(0,0,0,0.15)] relative">
+                                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-70" />
 
                                 {/* TESTING badge */}
-                                <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 10px', background: 'rgba(0,108,68,0.8)', backdropFilter: 'blur(8px)', borderRadius: '6px', zIndex: 10 }}>
-                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />
-                                    <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>TESTING</span>
+                                <div className="absolute top-2.5 left-2.5 flex items-center gap-1.25 py-1 px-2.5 bg-[#006c44]/80 backdrop-blur-md rounded-md z-10">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                                    <span className="text-white text-[10px] font-bold">TESTING</span>
                                 </div>
 
                                 {/* Center content */}
-                                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
                                     {modelLoading && (
-                                        <div className="flex items-center" style={{ gap: '6px', padding: '6px 14px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '14px' }}>
-                                            <div style={{ width: '12px', height: '12px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                                            <span style={{ color: '#fff', fontSize: '10px', fontWeight: 700 }}>Loading model...</span>
+                                        <div className="flex items-center gap-1.5 py-1.5 px-3.5 bg-black/50 backdrop-blur-md rounded-full border border-white/10 mb-3.5">
+                                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            <span className="text-white text-[10px] font-bold">Loading model...</span>
                                         </div>
                                     )}
 
-                                    <div style={{
-                                        width: '72px',
-                                        height: '72px',
-                                        borderRadius: '50%',
-                                        background: 'rgba(255,255,255,0.08)',
-                                        border: '2px solid rgba(255,255,255,0.25)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        transform: `scale(${micScale})`,
-                                        transition: 'transform 0.05s ease-out',
-                                        boxShadow: '0 0 16px rgba(255,255,255,0.05)',
-                                        marginBottom: '10px',
-                                    }}>
-                                        <span style={{ fontSize: '2rem' }}>🎤</span>
+                                    <div
+                                        className="w-[72px] h-[72px] rounded-full bg-white/10 border-2 border-white/25 flex items-center justify-center transition-transform duration-75 shadow-[0_0_16px_rgba(255,255,255,0.05)] mb-2.5"
+                                        style={{ transform: `scale(${micScale})` }}
+                                    >
+                                        <span className="text-3xl">🎤</span>
                                     </div>
 
                                     {prediction && (
-                                        <div className="flex flex-col items-center" style={{ gap: '4px', padding: '8px 16px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Prediction</span>
-                                            <div className="flex items-center" style={{ gap: '6px' }}>
-                                                <span style={{ color: '#fff', fontSize: '13px', fontWeight: 800, textTransform: 'capitalize' }}>{prediction.label}</span>
-                                                <span style={{ color: '#34d399', fontSize: '11px', fontWeight: 800 }}>
+                                        <div className="flex flex-col items-center gap-1 py-2 px-4 bg-black/50 backdrop-blur-md rounded-xl border border-white/10">
+                                            <span className="text-white/50 text-[8px] font-bold uppercase tracking-widest">Prediction</span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-white text-xs font-extrabold capitalize">{prediction.label}</span>
+                                                <span className="text-emerald-400 text-[11px] font-extrabold">
                                                     {Math.round(Object.values(prediction.confidences).reduce((a, b) => Math.max(a, b), 0) * 100)}%
                                                 </span>
                                             </div>
@@ -513,14 +457,13 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                         </div>
 
                         {/* Right half - Test results */}
-                        <div style={{ width: isMobile ? '100%' : '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px', height: isMobile ? 'auto' : '100%' }}>
+                        <div className={`shrink-0 flex flex-col gap-2.5 ${isMobile ? 'w-full h-auto' : 'w-[280px] h-full'}`}>
                             <TestPanel prediction={prediction} isProcessing={isProcessing}><div /></TestPanel>
                         </div>
                     </div>
                 </div>
             )}
-
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
     )
 }
+

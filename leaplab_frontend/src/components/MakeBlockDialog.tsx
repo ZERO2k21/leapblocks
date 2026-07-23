@@ -89,30 +89,28 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div style={styles.overlay} onClick={(e) => e.target === e.currentTarget && handleCancel()}>
-            <div style={styles.dialog}>
-                <div style={styles.header}>
-                    <span style={styles.headerText}>Make a Block</span>
-                    <button style={styles.closeBtn} onClick={handleCancel}>×</button>
+        <div className="fixed inset-0 bg-black/55 flex items-center justify-center z-[10000] backdrop-blur-xs" onClick={(e) => e.target === e.currentTarget && handleCancel()}>
+            <div className="bg-white rounded-2xl shadow-[0_12px_48px_rgba(0,0,0,0.3)] w-[560px] max-w-[90vw] font-sans overflow-hidden max-h-[90vh] flex flex-col">
+                <div className="bg-[#FF6680] p-4 px-6 flex justify-between items-center">
+                    <span className="text-white text-[1.1rem] font-bold">Make a Block</span>
+                    <button className="bg-transparent border-none text-white text-3xl cursor-pointer font-light leading-none" onClick={handleCancel}>×</button>
                 </div>
 
-                <div style={styles.content}>
+                <div className="p-6 flex flex-col gap-6 overflow-y-auto">
                     {/* Block Preview Area - leap Style */}
-                    <div style={styles.previewSection}>
-                        <div style={styles.previewBlock}>
-                            <span style={styles.previewText}>{blockName || 'my block'}</span>
+                    <div className="flex justify-center bg-[#F8F9FA] p-8 rounded-xl border-2 border-[#EDF2F7]">
+                        <div className="bg-[#FF6680] text-white py-3 px-6 rounded-lg flex items-center gap-3 shadow-[0_4px_0_#CC5166] text-[1.1rem] font-bold flex-wrap">
+                            <span className="whitespace-nowrap">{blockName || 'my block'}</span>
                             {args.map((arg) => (
                                 <span
                                     key={arg.id}
-                                    style={{
-                                        ...styles.previewArg,
-                                        backgroundColor: arg.type === 'boolean' ? '#4C97FF' : 'white',
-                                        color: arg.type === 'boolean' ? 'white' : '#575E75',
-                                        borderRadius: arg.type === 'boolean' ? '20px' : (arg.type === 'label' ? '0' : '8px'),
-                                        border: arg.type === 'label' ? 'none' : '1px solid rgba(0,0,0,0.1)',
-                                        padding: arg.type === 'label' ? '0' : '4px 12px',
-                                        fontWeight: arg.type === 'label' ? 'bold' : 'normal'
-                                    }}
+                                    className={`text-[0.9rem] min-w-[32px] text-center ${
+                                        arg.type === 'boolean'
+                                            ? 'bg-[#4C97FF] text-white rounded-full border border-black/10 px-3 py-1 font-normal'
+                                            : arg.type === 'label'
+                                            ? 'bg-transparent text-[#575E75] rounded-none border-none p-0 font-bold'
+                                            : 'bg-white text-[#575E75] rounded-lg border border-black/10 px-3 py-1 font-normal'
+                                    }`}
                                 >
                                     {arg.value}
                                 </span>
@@ -121,25 +119,25 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
                     </div>
 
                     {/* Argument Generation Buttons */}
-                    <div style={styles.addButtonsRow}>
-                        <button type="button" style={styles.addBtn} onClick={() => addArgument('input')}>
-                            <div style={styles.iconBox}>123</div>
-                            <span style={styles.addBtnText}>Add an input<br />number or text</span>
+                    <div className="grid grid-cols-3 gap-3">
+                        <button type="button" className="flex flex-col items-center p-3 bg-white border border-[#E2E8F0] rounded-xl cursor-pointer transition-all gap-2 shadow-xs hover:border-[#CBD5E0] hover:bg-gray-50" onClick={() => addArgument('input')}>
+                            <div className="w-10 h-6 bg-white border border-[#CBD5E0] rounded flex items-center justify-center text-[0.8rem] text-[#4A5568]">123</div>
+                            <span className="text-[0.75rem] text-[#4A5568] leading-tight font-medium">Add an input<br />number or text</span>
                         </button>
-                        <button type="button" style={styles.addBtn} onClick={() => addArgument('boolean')}>
-                            <div style={{ ...styles.iconBox, borderRadius: '20px', width: '30px', height: '18px' }}></div>
-                            <span style={styles.addBtnText}>Add an input<br />boolean</span>
+                        <button type="button" className="flex flex-col items-center p-3 bg-white border border-[#E2E8F0] rounded-xl cursor-pointer transition-all gap-2 shadow-xs hover:border-[#CBD5E0] hover:bg-gray-50" onClick={() => addArgument('boolean')}>
+                            <div className="w-[30px] h-[18px] bg-white border border-[#CBD5E0] rounded-full flex items-center justify-center text-[0.8rem] text-[#4A5568]"></div>
+                            <span className="text-[0.75rem] text-[#4A5568] leading-tight font-medium">Add an input<br />boolean</span>
                         </button>
-                        <button type="button" style={styles.addBtn} onClick={() => addArgument('label')}>
-                            <div style={{ ...styles.iconBox, border: 'none', fontWeight: 'bold' }}>label</div>
-                            <span style={styles.addBtnText}>Add a label</span>
+                        <button type="button" className="flex flex-col items-center p-3 bg-white border border-[#E2E8F0] rounded-xl cursor-pointer transition-all gap-2 shadow-xs hover:border-[#CBD5E0] hover:bg-gray-50" onClick={() => addArgument('label')}>
+                            <div className="w-10 h-6 bg-white border-none flex items-center justify-center text-[0.8rem] text-[#4A5568] font-bold">label</div>
+                            <span className="text-[0.75rem] text-[#4A5568] leading-tight font-medium">Add a label</span>
                         </button>
                     </div>
 
                     {/* Inputs and Labels Configurator */}
-                    <div style={styles.configArea}>
-                        <div style={styles.fieldGroup}>
-                            <label style={styles.fieldLabel}>Block name:</label>
+                    <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-[0.85rem] font-semibold text-[#4A5568]">Block name:</label>
                             <input
                                 type="text"
                                 value={blockName}
@@ -147,27 +145,26 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
                                     setBlockName(e.target.value);
                                     setError(null);
                                 }}
-                                style={{
-                                    ...styles.textInput,
-                                    borderColor: error ? '#ff6680' : '#ddd'
-                                }}
+                                className={`p-3 rounded-lg border text-[0.95rem] outline-none w-full ${
+                                    error ? 'border-[#FF6680]' : 'border-[#E2E8F0] focus:border-[#FF6680]'
+                                }`}
                                 autoFocus
                             />
-                            {error && <span style={styles.errorText}>{error}</span>}
+                            {error && <span className="text-[#FF6680] text-[0.75rem] font-medium">{error}</span>}
                         </div>
 
                         {args.map((arg, index) => (
-                            <div key={arg.id} style={styles.argRow}>
-                                <span style={styles.argLabel}>{arg.type === 'label' ? 'Label:' : 'Input:'}</span>
+                            <div key={arg.id} className="flex items-center gap-3 p-2.5 bg-[#F7FAFC] rounded-lg border border-[#EDF2F7]">
+                                <span className="text-[0.8rem] text-[#718096] min-w-[60px] font-medium">{arg.type === 'label' ? 'Label:' : 'Input:'}</span>
                                 <input
                                     type="text"
                                     value={arg.value}
                                     onChange={(e) => updateArgument(arg.id, e.target.value)}
-                                    style={styles.argInput}
+                                    className="flex-1 p-2 px-3 rounded-md border border-[#E2E8F0] text-[0.9rem] outline-none focus:border-[#FF6680]"
                                 />
                                 <button
                                     type="button"
-                                    style={styles.removeArgBtn}
+                                    className="bg-transparent border-none text-[#A0AEC0] cursor-pointer text-2xl font-extralight px-1 hover:text-red-500"
                                     onClick={() => removeArgument(arg.id)}
                                 >
                                     ×
@@ -177,30 +174,28 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
                     </div>
 
                     {/* Warp Mode Toggle */}
-                    <div style={styles.checkboxRow}>
-                        <label style={styles.checkboxLabel}>
+                    <div className="flex items-center py-1">
+                        <label className="flex items-center gap-3 text-[0.95rem] text-[#4A5568] cursor-pointer font-medium">
                             <input
                                 type="checkbox"
                                 checked={warp}
                                 onChange={(e) => setWarp(e.target.checked)}
-                                style={styles.checkbox}
+                                className="w-5 h-5 cursor-pointer accent-[#FF6680]"
                             />
                             <span>Run without screen refresh</span>
                         </label>
                     </div>
                 </div>
 
-                <div style={styles.footer}>
-                    <button type="button" style={styles.cancelBtn} onClick={handleCancel}>
+                <div className="flex justify-end gap-3 p-6 border-t border-[#EDF2F7]">
+                    <button type="button" className="p-2.5 px-6 border border-[#E2E8F0] rounded-lg bg-white text-[#4A5568] font-semibold cursor-pointer text-[0.95rem] hover:bg-gray-50" onClick={handleCancel}>
                         Cancel
                     </button>
                     <button
                         type="button"
-                        style={{
-                            ...styles.okBtn,
-                            opacity: blockName.trim() ? 1 : 0.5,
-                            cursor: blockName.trim() ? 'pointer' : 'not-allowed'
-                        }}
+                        className={`p-2.5 px-8 border-none rounded-lg bg-[#FF6680] text-white font-bold text-[0.95rem] shadow-[0_4px_12px_rgba(255,102,128,0.2)] ${
+                            blockName.trim() ? 'cursor-pointer opacity-100 hover:bg-[#e5536c]' : 'cursor-not-allowed opacity-50'
+                        }`}
                         onClick={() => handleSubmit()}
                         disabled={!blockName.trim()}
                     >
@@ -210,234 +205,6 @@ export const MakeBlockDialog: React.FC<MakeBlockDialogProps> = ({
             </div>
         </div>
     );
-};
-
-const styles: { [key: string]: React.CSSProperties } = {
-    overlay: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.55)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 10000,
-        backdropFilter: 'blur(2px)',
-    },
-    dialog: {
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        boxShadow: '0 12px 48px rgba(0, 0, 0, 0.3)',
-        width: '560px',
-        maxWidth: '90vw',
-        fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
-        overflow: 'hidden',
-        maxHeight: '90vh',
-        display: 'flex',
-        flexDirection: 'column',
-    },
-    header: {
-        backgroundColor: '#FF6680',
-        padding: '16px 24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    headerText: {
-        color: 'white',
-        fontSize: '1.1rem',
-        fontWeight: 700,
-    },
-    closeBtn: {
-        background: 'none',
-        border: 'none',
-        color: 'white',
-        fontSize: '28px',
-        cursor: 'pointer',
-        fontWeight: 300,
-        lineHeight: 1,
-    },
-    content: {
-        padding: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '24px',
-        overflowY: 'auto',
-    },
-    previewSection: {
-        display: 'flex',
-        justifyContent: 'center',
-        background: '#F8F9FA',
-        padding: '32px',
-        borderRadius: '12px',
-        border: '2px solid #EDF2F7',
-    },
-    previewBlock: {
-        backgroundColor: '#FF6680',
-        color: 'white',
-        padding: '12px 24px',
-        borderRadius: '8px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        boxShadow: '0 4px 0 #CC5166',
-        fontSize: '1.1rem',
-        fontWeight: 700,
-        flexWrap: 'wrap',
-    },
-    previewText: {
-        whiteSpace: 'nowrap',
-    },
-    previewArg: {
-        fontSize: '0.9rem',
-        minWidth: '32px',
-        textAlign: 'center',
-    },
-    addButtonsRow: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '12px',
-    },
-    addBtn: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: '12px',
-        background: 'white',
-        border: '1px solid #E2E8F0',
-        borderRadius: '12px',
-        cursor: 'pointer',
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        gap: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-    },
-    addBtnText: {
-        fontSize: '0.75rem',
-        color: '#4A5568',
-        lineHeight: 1.2,
-        fontWeight: 500,
-    },
-    iconBox: {
-        width: '40px',
-        height: '24px',
-        backgroundColor: 'white',
-        border: '1px solid #CBD5E0',
-        borderRadius: '4px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '0.8rem',
-        color: '#4A5568',
-    },
-    configArea: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-    },
-    fieldGroup: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '6px',
-    },
-    fieldLabel: {
-        fontSize: '0.85rem',
-        fontWeight: 600,
-        color: '#4A5568',
-    },
-    textInput: {
-        padding: '12px',
-        borderRadius: '8px',
-        border: '1px solid #E2E8F0',
-        fontSize: '0.95rem',
-        outline: 'none',
-        width: '100%',
-    },
-    argRow: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '10px',
-        backgroundColor: '#F7FAFC',
-        borderRadius: '8px',
-        border: '1px solid #EDF2F7',
-    },
-    argLabel: {
-        fontSize: '0.8rem',
-        color: '#718096',
-        minWidth: '60px',
-        fontWeight: 500,
-    },
-    argInput: {
-        flex: 1,
-        padding: '8px 12px',
-        borderRadius: '6px',
-        border: '1px solid #E2E8F0',
-        fontSize: '0.9rem',
-        outline: 'none',
-    },
-    removeArgBtn: {
-        background: 'none',
-        border: 'none',
-        color: '#A0AEC0',
-        cursor: 'pointer',
-        fontSize: '1.5rem',
-        fontWeight: 200,
-        padding: '0 4px',
-    },
-    errorText: {
-        color: '#FF6680',
-        fontSize: '0.75rem',
-        fontWeight: 500,
-    },
-    checkboxRow: {
-        display: 'flex',
-        alignItems: 'center',
-        padding: '4px 0',
-    },
-    checkboxLabel: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        fontSize: '0.95rem',
-        color: '#4A5568',
-        cursor: 'pointer',
-        fontWeight: 500,
-    },
-    checkbox: {
-        width: '20px',
-        height: '20px',
-        cursor: 'pointer',
-    },
-    footer: {
-        display: 'flex',
-        justifyContent: 'flex-end',
-        gap: '12px',
-        padding: '24px',
-        borderTop: '1px solid #EDF2F7',
-    },
-    cancelBtn: {
-        padding: '10px 24px',
-        border: '1px solid #E2E8F0',
-        borderRadius: '8px',
-        backgroundColor: 'white',
-        color: '#4A5568',
-        fontWeight: 600,
-        cursor: 'pointer',
-        fontSize: '0.95rem',
-    },
-    okBtn: {
-        padding: '10px 32px',
-        border: 'none',
-        borderRadius: '8px',
-        backgroundColor: '#FF6680',
-        color: 'white',
-        fontWeight: 700,
-        cursor: 'pointer',
-        fontSize: '0.95rem',
-        boxShadow: '0 4px 12px rgba(255, 102, 128, 0.2)',
-    },
 };
 
 export default MakeBlockDialog;

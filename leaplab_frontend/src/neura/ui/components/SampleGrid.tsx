@@ -50,7 +50,7 @@ function KeypointSkeleton({ data }: { data: string }) {
     try {
         const keypoints = JSON.parse(data)
         if (!Array.isArray(keypoints) || keypoints.length < 5) {
-            return <span style={{ fontSize: '1.25rem' }}>🤸</span>
+            return <span className="text-xl">🤸</span>
         }
 
         const isHand = keypoints.length === 21 || keypoints.length === 78
@@ -79,7 +79,7 @@ function KeypointSkeleton({ data }: { data: string }) {
         })
 
         return (
-            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', padding: '4px' }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full p-1">
                 {/* Draw connections */}
                 {connections.map(([i, j], idx) => {
                     if (i >= normalizedKps.length || j >= normalizedKps.length) return null
@@ -113,7 +113,7 @@ function KeypointSkeleton({ data }: { data: string }) {
             </svg>
         )
     } catch {
-        return <span style={{ fontSize: '1.25rem' }}>🤸</span>
+        return <span className="text-xl">🤸</span>
     }
 }
 
@@ -147,109 +147,43 @@ export default function SampleGrid({ samples, type, onRemove, onUndo }: SampleGr
 
     if (samples.length === 0) {
         return (
-            <div
-                style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '24px 16px',
-                    background: 'rgba(250,248,255,0.5)',
-                    borderRadius: '12px',
-                    border: '2px dashed rgba(204,195,216,0.4)',
-                    height: '100%',
-                    minHeight: '80px'
-                }}
-            >
-                <span style={{ fontSize: '1.75rem', marginBottom: '8px' }}>{TYPE_EMOJI[type]}</span>
-                <p style={{ fontSize: '12px', fontWeight: 700, color: '#7b7487' }}>No samples yet</p>
-                <p style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>Capture some to teach your AI!</p>
+            <div className="flex flex-col items-center justify-center p-6 py-4 bg-[#faf8ff]/50 rounded-xl border-2 border-dashed border-[#ccc3d8]/40 h-full min-h-[80px]">
+                <span className="text-2xl mb-2">{TYPE_EMOJI[type]}</span>
+                <p className="text-xs font-bold text-[#7b7487]">No samples yet</p>
+                <p className="text-[10px] text-slate-400 mt-1">Capture some to teach your AI!</p>
             </div>
         )
     }
 
     return (
-        <div style={{ position: 'relative', height: '100%', overflowY: 'auto', paddingRight: '2px' }}>
-            <div
-                style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: '6px',
-                }}
-            >
+        <div className="relative h-full overflow-y-auto pr-0.5">
+            <div className="grid grid-cols-3 gap-1.5">
                 {samples.map((sample, index) => (
                     <div
                         key={sample.id}
-                        style={{
-                            position: 'relative',
-                            aspectRatio: '1/1',
-                            borderRadius: '10px',
-                            overflow: 'hidden',
-                            background: '#fff',
-                            border: '1px solid #e5e7eb',
-                            cursor: 'default',
-                            transition: 'all 0.15s ease',
-                        }}
-                        className="group"
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'
-                            e.currentTarget.style.transform = 'scale(1.02)'
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.boxShadow = 'none'
-                            e.currentTarget.style.transform = 'scale(1)'
-                        }}
+                        className="group relative aspect-square rounded-lg overflow-hidden bg-white border border-slate-200 cursor-default transition-all duration-150 hover:shadow-md hover:scale-[1.02]"
                     >
                         {type === 'image' && (
                             <img
                                 src={sample.data}
                                 alt={`Sample ${index + 1}`}
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                }}
+                                className="w-full h-full object-cover"
                             />
                         )}
                         {type === 'audio' && (
-                            <div style={{
-                                width: '100%',
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: 'linear-gradient(135deg, #d1fae5, #ecfdf5)',
-                            }}>
-                                <span style={{ fontSize: '1.25rem' }}>🎵</span>
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-50">
+                                <span className="text-xl">🎵</span>
                             </div>
                         )}
                         {type === 'text' && (
-                            <div style={{
-                                width: '100%',
-                                height: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                padding: '6px',
-                                background: 'linear-gradient(135deg, #dbeafe, #eff6ff)',
-                            }}>
-                                <p style={{ fontSize: '8px', color: '#4b5563', textAlign: 'center', overflow: 'hidden' }}>
+                            <div className="w-full h-full flex items-center justify-center p-1.5 bg-gradient-to-br from-blue-100 to-blue-50">
+                                <p className="text-[8px] text-slate-600 text-center overflow-hidden">
                                     {sample.data.slice(0, 50)}
                                 </p>
                             </div>
                         )}
                         {type === 'keypoints' && (
-                            <div style={{
-                                width: '100%',
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: 'linear-gradient(135deg, #fef3c7, #fffbeb)',
-                                position: 'relative',
-                            }}>
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-amber-100 to-amber-50 relative">
                                 <KeypointSkeleton data={sample.data} />
                             </div>
                         )}
@@ -260,65 +194,21 @@ export default function SampleGrid({ samples, type, onRemove, onUndo }: SampleGr
                                 e.stopPropagation()
                                 handleRemove(sample)
                             }}
-                            style={{
-                                position: 'absolute',
-                                top: '4px',
-                                right: '4px',
-                                width: '20px',
-                                height: '20px',
-                                borderRadius: '50%',
-                                background: '#ef4444',
-                                color: '#fff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '10px',
-                                border: 'none',
-                                cursor: 'pointer',
-                                boxShadow: '0 2px 6px rgba(239,68,68,0.3)',
-                                zIndex: 10,
-                            }}
-                            className="opacity-90 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-150"
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] border-none cursor-pointer shadow-[0_2px_6px_rgba(239,68,68,0.3)] z-10 opacity-90 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-150"
                         >
                             ✕
                         </button>
 
                         {/* Time badge */}
-                        <div
-                            style={{
-                                position: 'absolute',
-                                bottom: '3px',
-                                left: '3px',
-                                padding: '2px 5px',
-                                borderRadius: '4px',
-                                background: 'rgba(0,0,0,0.55)',
-                                backdropFilter: 'blur(4px)',
-                                zIndex: 10,
-                            }}
-                            className="opacity-90 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-150"
-                        >
-                            <span style={{ color: '#fff', fontSize: '8px', fontWeight: 600 }}>
+                        <div className="absolute bottom-0.75 left-0.75 px-1.25 py-0.5 rounded bg-black/55 backdrop-blur-xs z-10 opacity-90 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-150">
+                            <span className="text-white text-[8px] font-semibold">
                                 {formatTime(sample.timestamp)}
                             </span>
                         </div>
 
                         {/* Index number */}
-                        <div
-                            style={{
-                                position: 'absolute',
-                                top: '3px',
-                                left: '3px',
-                                width: '16px',
-                                height: '16px',
-                                borderRadius: '4px',
-                                background: 'rgba(0,0,0,0.45)',
-                                backdropFilter: 'blur(4px)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <span style={{ color: '#fff', fontSize: '8px', fontWeight: 700 }}>
+                        <div className="absolute top-0.75 left-0.75 w-4 h-4 rounded bg-black/45 backdrop-blur-xs flex items-center justify-center">
+                            <span className="text-white text-[8px] font-bold">
                                 {index + 1}
                             </span>
                         </div>
@@ -328,41 +218,13 @@ export default function SampleGrid({ samples, type, onRemove, onUndo }: SampleGr
 
             {/* Undo toast */}
             {deletedSample && onUndo && (
-                <div style={{
-                    position: 'fixed',
-                    bottom: '24px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    zIndex: 50,
-                }}>
-                    <div
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            padding: '10px 16px',
-                            background: 'rgba(19,27,46,0.95)',
-                            backdropFilter: 'blur(12px)',
-                            borderRadius: '14px',
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                        }}
-                    >
-                        <span style={{ fontSize: '14px' }}>🗑️</span>
-                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>Deleted</span>
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+                    <div className="flex items-center gap-2.5 px-4 py-2.5 bg-[#131b2e]/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/10">
+                        <span className="text-sm">🗑️</span>
+                        <span className="text-xs font-semibold text-white">Deleted</span>
                         <button
                             onClick={handleUndo}
-                            style={{
-                                padding: '5px 10px',
-                                background: '#630ed4',
-                                color: '#fff',
-                                borderRadius: '8px',
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                border: 'none',
-                                cursor: 'pointer',
-                                transition: 'all 0.15s ease',
-                            }}
+                            className="px-2.5 py-1.25 bg-[#630ed4] text-white rounded-lg text-[11px] font-bold border-none cursor-pointer transition-all duration-150 hover:bg-[#520bb2]"
                         >
                             ↩️ Undo
                         </button>
