@@ -285,6 +285,21 @@ export default function PhoneCanvasEnhanced({ appState }) {
         window.__draggedComponentId = null;
     };
 
+    const getComponentUnderPoint = (clientX, clientY, sourceCompId) => {
+        const draggedElem = sourceCompId ? document.querySelector(`[data-component-id="${sourceCompId}"]`) : null;
+        let origPointerEvents = '';
+        if (draggedElem) {
+            origPointerEvents = draggedElem.style.pointerEvents;
+            draggedElem.style.pointerEvents = 'none';
+        }
+        const targetElem = document.elementFromPoint(clientX, clientY);
+        if (draggedElem) {
+            draggedElem.style.pointerEvents = origPointerEvents;
+        }
+        if (!targetElem) return null;
+        return targetElem.closest('[data-component-id]');
+    };
+
     const handlePointerDownComponent = (e, compId) => {
         if (e.pointerType === 'touch') return; // Handled by handleTouchStartComponent
         if (e.button && e.button !== 0) return;
@@ -307,18 +322,15 @@ export default function PhoneCanvasEnhanced({ appState }) {
             }
 
             if (isDragging) {
-                const targetElem = document.elementFromPoint(moveEvt.clientX, moveEvt.clientY);
-                if (targetElem) {
-                    const compElem = targetElem.closest('[data-component-id]');
-                    if (compElem) {
-                        const targetId = compElem.getAttribute('data-component-id');
-                        if (targetId && targetId !== compId) {
-                            const rect = compElem.getBoundingClientRect();
-                            const relativeY = moveEvt.clientY - rect.top;
-                            const position = relativeY < rect.height / 2 ? 'before' : 'after';
-                            setDropTargetComponent({ id: targetId, position });
-                            return;
-                        }
+                const compElem = getComponentUnderPoint(moveEvt.clientX, moveEvt.clientY, compId);
+                if (compElem) {
+                    const targetId = compElem.getAttribute('data-component-id');
+                    if (targetId && targetId !== compId) {
+                        const rect = compElem.getBoundingClientRect();
+                        const relativeY = moveEvt.clientY - rect.top;
+                        const position = relativeY < rect.height / 2 ? 'before' : 'after';
+                        setDropTargetComponent({ id: targetId, position });
+                        return;
                     }
                 }
                 setDropTargetComponent(null);
@@ -331,19 +343,16 @@ export default function PhoneCanvasEnhanced({ appState }) {
             window.removeEventListener('pointercancel', handlePointerUpGlobal);
 
             if (isDragging) {
-                const targetElem = document.elementFromPoint(upEvt.clientX, upEvt.clientY);
-                if (targetElem) {
-                    const compElem = targetElem.closest('[data-component-id]');
-                    if (compElem) {
-                        const targetId = compElem.getAttribute('data-component-id');
-                        if (targetId && targetId !== compId) {
-                            const rect = compElem.getBoundingClientRect();
-                            const relativeY = upEvt.clientY - rect.top;
-                            const position = relativeY < rect.height / 2 ? 'before' : 'after';
-                            const moveFn = moveComponent || appState.moveComponent;
-                            if (moveFn) {
-                                moveFn(compId, targetId, position);
-                            }
+                const compElem = getComponentUnderPoint(upEvt.clientX, upEvt.clientY, compId);
+                if (compElem) {
+                    const targetId = compElem.getAttribute('data-component-id');
+                    if (targetId && targetId !== compId) {
+                        const rect = compElem.getBoundingClientRect();
+                        const relativeY = upEvt.clientY - rect.top;
+                        const position = relativeY < rect.height / 2 ? 'before' : 'after';
+                        const moveFn = moveComponent || appState.moveComponent;
+                        if (moveFn) {
+                            moveFn(compId, targetId, position);
                         }
                     }
                 }
@@ -386,18 +395,15 @@ export default function PhoneCanvasEnhanced({ appState }) {
             }
 
             if (isDragging) {
-                const targetElem = document.elementFromPoint(currentTouch.clientX, currentTouch.clientY);
-                if (targetElem) {
-                    const compElem = targetElem.closest('[data-component-id]');
-                    if (compElem) {
-                        const targetId = compElem.getAttribute('data-component-id');
-                        if (targetId && targetId !== compId) {
-                            const rect = compElem.getBoundingClientRect();
-                            const relativeY = currentTouch.clientY - rect.top;
-                            const position = relativeY < rect.height / 2 ? 'before' : 'after';
-                            setDropTargetComponent({ id: targetId, position });
-                            return;
-                        }
+                const compElem = getComponentUnderPoint(currentTouch.clientX, currentTouch.clientY, compId);
+                if (compElem) {
+                    const targetId = compElem.getAttribute('data-component-id');
+                    if (targetId && targetId !== compId) {
+                        const rect = compElem.getBoundingClientRect();
+                        const relativeY = currentTouch.clientY - rect.top;
+                        const position = relativeY < rect.height / 2 ? 'before' : 'after';
+                        setDropTargetComponent({ id: targetId, position });
+                        return;
                     }
                 }
                 setDropTargetComponent(null);
@@ -412,19 +418,16 @@ export default function PhoneCanvasEnhanced({ appState }) {
             if (isDragging) {
                 const currentTouch = endEvt.changedTouches[0];
                 if (currentTouch) {
-                    const targetElem = document.elementFromPoint(currentTouch.clientX, currentTouch.clientY);
-                    if (targetElem) {
-                        const compElem = targetElem.closest('[data-component-id]');
-                        if (compElem) {
-                            const targetId = compElem.getAttribute('data-component-id');
-                            if (targetId && targetId !== compId) {
-                                const rect = compElem.getBoundingClientRect();
-                                const relativeY = currentTouch.clientY - rect.top;
-                                const position = relativeY < rect.height / 2 ? 'before' : 'after';
-                                const moveFn = moveComponent || appState.moveComponent;
-                                if (moveFn) {
-                                    moveFn(compId, targetId, position);
-                                }
+                    const compElem = getComponentUnderPoint(currentTouch.clientX, currentTouch.clientY, compId);
+                    if (compElem) {
+                        const targetId = compElem.getAttribute('data-component-id');
+                        if (targetId && targetId !== compId) {
+                            const rect = compElem.getBoundingClientRect();
+                            const relativeY = currentTouch.clientY - rect.top;
+                            const position = relativeY < rect.height / 2 ? 'before' : 'after';
+                            const moveFn = moveComponent || appState.moveComponent;
+                            if (moveFn) {
+                                moveFn(compId, targetId, position);
                             }
                         }
                     }
@@ -1322,7 +1325,7 @@ export default function PhoneCanvasEnhanced({ appState }) {
             : {};
 
         const isDragged = draggedComponentId === comp.id;
-        const dragOpacity = isDragged ? { opacity: 0.4, pointerEvents: 'none' } : {};
+        const dragOpacity = isDragged ? { opacity: 0.4 } : {};
 
         return (
             <div
