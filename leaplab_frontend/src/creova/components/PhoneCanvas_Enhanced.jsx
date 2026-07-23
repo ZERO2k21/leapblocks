@@ -27,6 +27,18 @@ export default function PhoneCanvasEnhanced({ appState }) {
     const [isAddingScreen, setIsAddingScreen] = useState(false);
     const [deleteScreenTarget, setDeleteScreenTarget] = useState(null);
     const [newScreenName, setNewScreenName] = useState('');
+    const [screenDropdownOpen, setScreenDropdownOpen] = useState(false);
+    const screenDropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (screenDropdownRef.current && !screenDropdownRef.current.contains(e.target)) {
+                setScreenDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
     const [currentTime, setCurrentTime] = useState('12:00');
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
     const [isEditingDimensions, setIsEditingDimensions] = useState(false);
@@ -1146,67 +1158,116 @@ export default function PhoneCanvasEnhanced({ appState }) {
             {/* Professional Top Bar - Fixed at top of canvas pane */}
             <div className="w-full bg-white border-b border-slate-200 py-3 flex items-center justify-between gap-2 xl:gap-6 z-30 shadow-sm h-16 px-6">
                 <div className="flex items-center gap-2 xl:gap-6 pl-4">
-                    {/* Screen Selector - Tab Style */}
-                    <div className="flex items-center gap-2 xl:gap-4">
-                        <span className="text-[15px] font-extrabold text-slate-900 uppercase tracking-wider select-none hidden xl:inline">Screens</span>
-                        <div className="flex bg-slate-200/50 p-1 rounded-xl gap-1.5 xl:gap-2 items-center h-[38px]">
-                            {screens.map(screen => (
-                                <div key={screen.id} className="relative group/screen flex items-center">
-                                    <button
-                                        onClick={() => {
-                                            setActiveScreen(screen.id);
-                                            setSelectedId(screen.id);
-                                        }}
-                                        className={`rounded-lg text-[14px] font-bold flex items-center justify-center transition-all h-[30px] pl-4 ${
-                                            screen.id === 'Screen1' ? 'pr-4' : 'pr-8'
-                                        } ${
-                                            activeScreen === screen.id
-                                                ? 'bg-white text-blue-600 shadow-sm'
-                                                : 'text-slate-900 hover:text-slate-950 hover:bg-white/40'
-                                        }`}
-                                    >
-                                        {screen.id}
-                                    </button>
-                                    {screen.id !== 'Screen1' && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setDeleteScreenTarget(screen.id);
-                                            }}
-                                            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-slate-100/50 transition-all opacity-0 group-hover/screen:opacity-100 w-4 h-4"
-                                            title="Delete Screen"
-                                        >
-                                            <XIcon className="w-3.5 h-3.5" />
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
-                            {isAddingScreen ? (
-                                <div className="flex items-center gap-1.5 bg-white rounded-lg px-2 shadow-sm border border-blue-200 h-[30px]">
-                                    <input
-                                        type="text"
-                                        autoFocus
-                                        placeholder="Name"
-                                        className="w-16 outline-none text-slate-900 text-xs font-bold"
-                                        value={newScreenName}
-                                        onChange={(e) => setNewScreenName(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleAddScreen()}
-                                    />
-                                    <button onClick={handleAddScreen} className="text-green-600 hover:bg-green-50 p-0.5 rounded flex items-center justify-center">
-                                        <Check className="h-3.5 w-3.5" />
-                                    </button>
-                                    <button onClick={() => setIsAddingScreen(false)} className="text-red-600 hover:bg-red-50 p-0.5 rounded flex items-center justify-center">
-                                        <XIcon className="h-3.5 w-3.5" />
-                                    </button>
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => setIsAddingScreen(true)}
-                                    className="text-slate-900 hover:text-blue-600 hover:bg-white/40 rounded-lg flex items-center justify-center transition-all h-[30px] w-[30px]"
-                                    title="Add Screen"
+                    {/* Screen Selector - Premium Dropdown Style */}
+                    <div className="flex items-center gap-2 xl:gap-3">
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest select-none hidden sm:inline">Screen</span>
+                        <div className="relative" ref={screenDropdownRef}>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setScreenDropdownOpen(prev => !prev);
+                                }}
+                                className="h-9 px-3.5 bg-slate-50 hover:bg-white text-slate-900 border border-slate-200/90 rounded-xl font-bold text-xs flex items-center gap-2.5 shadow-2xs transition-all cursor-pointer focus:outline-none focus:border-blue-500 hover:border-blue-300"
+                            >
+                                <span className="truncate max-w-[120px]">{activeScreen}</span>
+                                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${screenDropdownOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                            </button>
+
+                            {/* Dropdown Menu Overlay */}
+                            {screenDropdownOpen && (
+                                <div
+                                    className="absolute top-full left-0 mt-1.5 w-52 bg-white border border-slate-200/90 rounded-2xl shadow-xl z-50 py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                                    onClick={(e) => e.stopPropagation()}
                                 >
-                                    <Plus className="h-[18px] w-[18px]" />
-                                </button>
+                                    <div className="px-3 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 mb-1">
+                                        Select Screen ({screens.length})
+                                    </div>
+                                    <div className="max-h-48 overflow-y-auto py-0.5">
+                                        {screens.map(screen => (
+                                            <div
+                                                key={screen.id}
+                                                onClick={() => {
+                                                    setActiveScreen(screen.id);
+                                                    setSelectedId(screen.id);
+                                                    setScreenDropdownOpen(false);
+                                                }}
+                                                className={`group flex items-center justify-between px-3 py-2 text-xs font-bold rounded-lg mx-1 cursor-pointer transition-colors ${
+                                                    activeScreen === screen.id
+                                                        ? 'bg-blue-50 text-blue-600 font-extrabold'
+                                                        : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2 truncate min-w-0">
+                                                    <div className={`w-2 h-2 rounded-full shrink-0 ${activeScreen === screen.id ? 'bg-blue-600' : 'bg-slate-300'}`} />
+                                                    <span className="truncate">{screen.id}</span>
+                                                </div>
+                                                {screen.id !== 'Screen1' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setDeleteScreenTarget(screen.id);
+                                                            setScreenDropdownOpen(false);
+                                                        }}
+                                                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1 rounded-md transition-all shrink-0 cursor-pointer ml-2"
+                                                        title="Delete Screen"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Add Screen Form or Button inside Dropdown */}
+                                    <div className="border-t border-slate-100 mt-1 pt-1 px-1">
+                                        {isAddingScreen ? (
+                                            <div className="flex items-center gap-1.5 p-1 bg-slate-50 rounded-xl border border-blue-200">
+                                                <input
+                                                    type="text"
+                                                    autoFocus
+                                                    placeholder="Screen Name"
+                                                    className="w-full bg-white px-2 py-1 outline-none text-slate-900 text-xs font-bold rounded-lg border border-slate-200"
+                                                    value={newScreenName}
+                                                    onChange={(e) => setNewScreenName(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            handleAddScreen();
+                                                            setScreenDropdownOpen(false);
+                                                        }
+                                                    }}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        handleAddScreen();
+                                                        setScreenDropdownOpen(false);
+                                                    }}
+                                                    className="text-white bg-blue-600 hover:bg-blue-700 p-1 rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
+                                                >
+                                                    <Check className="h-3.5 w-3.5" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsAddingScreen(false)}
+                                                    className="text-slate-500 hover:bg-slate-200 p-1 rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
+                                                >
+                                                    <XIcon className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsAddingScreen(true)}
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-blue-600 hover:bg-blue-50/70 rounded-xl transition-colors cursor-pointer"
+                                            >
+                                                <Plus className="h-4 w-4" />
+                                                <span>Add Screen...</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </div>
