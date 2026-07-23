@@ -284,9 +284,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
         setDragOver(false);
         setDropTarget(null);
 
-        let type = e.dataTransfer.getData('componentType');
-        let componentData = e.dataTransfer.getData('componentData');
-        let draggedId = e.dataTransfer.getData('draggedComponentId') || draggedComponentId;
+        let type = e.dataTransfer ? e.dataTransfer.getData('componentType') : '';
+        let componentData = e.dataTransfer ? e.dataTransfer.getData('componentData') : '';
+        let draggedId = e.dataTransfer ? (e.dataTransfer.getData('draggedComponentId') || draggedComponentId) : draggedComponentId;
 
         // Fallback for touch devices: polyfill dataTransfer may not persist
         if (!type && !draggedId && window.__dragComponent) {
@@ -295,19 +295,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
             window.__dragComponent = null;
         }
 
-        // If a layout is currently selected, unconditionally place the dropped element inside that layout container
-        let finalTargetId = targetContainerId;
-        if (selectedComponent) {
-            const isLayout = isArrangementType(selectedComponent.type) && selectedComponent.type !== 'Map' && selectedComponent.type !== 'FeatureCollection';
-            if (isLayout) {
-                finalTargetId = selectedComponent.id;
-            }
-        }
-
         if (draggedId) {
-            const targetId = finalTargetId || currentScreen.id;
+            const targetId = targetContainerId || currentScreen.id;
             if (draggedId !== targetId) {
-                const position = finalTargetId ? 'inside' : 'after';
+                const position = targetContainerId ? 'inside' : 'after';
                 if (appState.moveComponent) {
                     appState.moveComponent(draggedId, targetId, position);
                 }
@@ -317,19 +308,26 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
         if (!type) return;
 
-        // Validate: Map containers only accept map features
+        let finalTargetId = targetContainerId;
+        if (!finalTargetId && selectedComponent) {
+            const isLayout = isArrangementType(selectedComponent.type) && selectedComponent.type !== 'Map' && selectedComponent.type !== 'FeatureCollection';
+            if (isLayout) {
+                finalTargetId = selectedComponent.id;
+            }
+        }
+
+        // Validate Map features vs non-map containers
         if (finalTargetId) {
             const target = findComponentById(finalTargetId, components);
             if (target && target.type === 'Map' && !mapFeatureTypes.includes(type)) {
-                return; // Reject non-map features dropped on Map
+                return;
             }
             if (target && target.type !== 'Map' && mapFeatureTypes.includes(type)) {
-                return; // Reject map features dropped on non-Map containers
+                return;
             }
         } else {
-            // Dropping on Screen directly - reject map features if not inside a Map
             if (mapFeatureTypes.includes(type)) {
-                return; // Map features need a Map container
+                return;
             }
         }
 
@@ -343,7 +341,6 @@ export default function PhoneCanvasEnhanced({ appState }) {
             }
         }
 
-        // If dropping into a container, select it first
         if (finalTargetId) {
             setSelectedId(finalTargetId);
         }
@@ -1383,6 +1380,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
             <div
                 ref={containerRef}
                 className="flex-1 w-full overflow-auto flex flex-col items-center justify-start gap-4 p-4 min-h-0 relative bg-gradient-to-br from-slate-50 to-slate-100"
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
                 style={{
                     backgroundImage: `
                         radial-gradient(circle at center, rgba(255, 122, 0, 0.04) 0%, transparent 70%),
@@ -1470,6 +1470,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         {/* Screen Content */}
                         <div
                             className="overflow-y-auto relative flex flex-col flex-1 w-full pb-16"
+                            onDrop={handleDrop}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
                             style={{
                                 height: `${displayHeight}px`,
                                 backgroundColor: currentScreen.backgroundColor || '#ffffff',
@@ -1483,6 +1486,9 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         >
                             <div
                                 className="flex flex-col gap-[5px] p-2 min-h-full w-full relative flex-grow"
+                                onDrop={handleDrop}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
                                 style={{
                                     alignItems: currentScreen.alignHorizontal === 'Center' || currentScreen.alignHorizontal === '2' || currentScreen.alignHorizontal === 2 ? 'center' :
                                         currentScreen.alignHorizontal === 'Right' || currentScreen.alignHorizontal === '3' || currentScreen.alignHorizontal === 3 ? 'flex-end' : 'flex-start',
