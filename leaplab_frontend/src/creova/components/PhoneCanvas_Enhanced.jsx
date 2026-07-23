@@ -8,7 +8,7 @@ import { Plus, Check, X as XIcon, Wifi, Battery, Signal, ChevronLeft, RotateCw, 
 import ComponentIcon from './ComponentIcon';
 
 export default function PhoneCanvasEnhanced({ appState }) {
-    const { screens, activeScreen, selectedId, selectedComponent, isArrangementType, addComponent, setSelectedId, setActiveScreen, addScreen, deleteScreen, media, designViewport, setDesignViewport } = appState;
+    const { screens, activeScreen, selectedId, selectedComponent, isArrangementType, addComponent, moveComponent, setSelectedId, setActiveScreen, addScreen, deleteScreen, media, designViewport, setDesignViewport } = appState;
     const [deviceType, setDeviceType] = useState(designViewport?.deviceType || 'phone'); // 'phone', 'tablet7', 'tablet10'
     const [orientation, setOrientation] = useState(designViewport?.orientation || 'portrait'); // 'portrait', 'landscape'
     const [dragOver, setDragOver] = useState(false);
@@ -283,6 +283,163 @@ export default function PhoneCanvasEnhanced({ appState }) {
 
         setDraggedComponentId(null);
         window.__draggedComponentId = null;
+    };
+
+    const handlePointerDownComponent = (e, compId) => {
+        if (e.pointerType === 'touch') return; // Handled by handleTouchStartComponent
+        if (e.button && e.button !== 0) return;
+        e.stopPropagation();
+
+        setSelectedId(compId);
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        let isDragging = false;
+
+        const handlePointerMoveGlobal = (moveEvt) => {
+            const dx = Math.abs(moveEvt.clientX - startX);
+            const dy = Math.abs(moveEvt.clientY - startY);
+
+            if (!isDragging && (dx > 4 || dy > 4)) {
+                isDragging = true;
+                setDraggedComponentId(compId);
+                window.__draggedComponentId = compId;
+            }
+
+            if (isDragging) {
+                const targetElem = document.elementFromPoint(moveEvt.clientX, moveEvt.clientY);
+                if (targetElem) {
+                    const compElem = targetElem.closest('[data-component-id]');
+                    if (compElem) {
+                        const targetId = compElem.getAttribute('data-component-id');
+                        if (targetId && targetId !== compId) {
+                            const rect = compElem.getBoundingClientRect();
+                            const relativeY = moveEvt.clientY - rect.top;
+                            const position = relativeY < rect.height / 2 ? 'before' : 'after';
+                            setDropTargetComponent({ id: targetId, position });
+                            return;
+                        }
+                    }
+                }
+                setDropTargetComponent(null);
+            }
+        };
+
+        const handlePointerUpGlobal = (upEvt) => {
+            window.removeEventListener('pointermove', handlePointerMoveGlobal);
+            window.removeEventListener('pointerup', handlePointerUpGlobal);
+            window.removeEventListener('pointercancel', handlePointerUpGlobal);
+
+            if (isDragging) {
+                const targetElem = document.elementFromPoint(upEvt.clientX, upEvt.clientY);
+                if (targetElem) {
+                    const compElem = targetElem.closest('[data-component-id]');
+                    if (compElem) {
+                        const targetId = compElem.getAttribute('data-component-id');
+                        if (targetId && targetId !== compId) {
+                            const rect = compElem.getBoundingClientRect();
+                            const relativeY = upEvt.clientY - rect.top;
+                            const position = relativeY < rect.height / 2 ? 'before' : 'after';
+                            const moveFn = moveComponent || appState.moveComponent;
+                            if (moveFn) {
+                                moveFn(compId, targetId, position);
+                            }
+                        }
+                    }
+                }
+            }
+
+            setDraggedComponentId(null);
+            setDropTargetComponent(null);
+            setDropTarget(null);
+            window.__draggedComponentId = null;
+        };
+
+        window.addEventListener('pointermove', handlePointerMoveGlobal);
+        window.addEventListener('pointerup', handlePointerUpGlobal);
+        window.addEventListener('pointercancel', handlePointerUpGlobal);
+    };
+
+    const handleTouchStartComponent = (e, compId) => {
+        e.stopPropagation();
+
+        setSelectedId(compId);
+
+        const touch = e.touches[0];
+        if (!touch) return;
+        const startX = touch.clientX;
+        const startY = touch.clientY;
+        let isDragging = false;
+
+        const handleTouchMoveGlobal = (moveEvt) => {
+            if (moveEvt.cancelable) moveEvt.preventDefault();
+            const currentTouch = moveEvt.touches[0];
+            if (!currentTouch) return;
+
+            const dx = Math.abs(currentTouch.clientX - startX);
+            const dy = Math.abs(currentTouch.clientY - startY);
+
+            if (!isDragging && (dx > 4 || dy > 4)) {
+                isDragging = true;
+                setDraggedComponentId(compId);
+                window.__draggedComponentId = compId;
+            }
+
+            if (isDragging) {
+                const targetElem = document.elementFromPoint(currentTouch.clientX, currentTouch.clientY);
+                if (targetElem) {
+                    const compElem = targetElem.closest('[data-component-id]');
+                    if (compElem) {
+                        const targetId = compElem.getAttribute('data-component-id');
+                        if (targetId && targetId !== compId) {
+                            const rect = compElem.getBoundingClientRect();
+                            const relativeY = currentTouch.clientY - rect.top;
+                            const position = relativeY < rect.height / 2 ? 'before' : 'after';
+                            setDropTargetComponent({ id: targetId, position });
+                            return;
+                        }
+                    }
+                }
+                setDropTargetComponent(null);
+            }
+        };
+
+        const handleTouchEndGlobal = (endEvt) => {
+            window.removeEventListener('touchmove', handleTouchMoveGlobal);
+            window.removeEventListener('touchend', handleTouchEndGlobal);
+            window.removeEventListener('touchcancel', handleTouchEndGlobal);
+
+            if (isDragging) {
+                const currentTouch = endEvt.changedTouches[0];
+                if (currentTouch) {
+                    const targetElem = document.elementFromPoint(currentTouch.clientX, currentTouch.clientY);
+                    if (targetElem) {
+                        const compElem = targetElem.closest('[data-component-id]');
+                        if (compElem) {
+                            const targetId = compElem.getAttribute('data-component-id');
+                            if (targetId && targetId !== compId) {
+                                const rect = compElem.getBoundingClientRect();
+                                const relativeY = currentTouch.clientY - rect.top;
+                                const position = relativeY < rect.height / 2 ? 'before' : 'after';
+                                const moveFn = moveComponent || appState.moveComponent;
+                                if (moveFn) {
+                                    moveFn(compId, targetId, position);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            setDraggedComponentId(null);
+            setDropTargetComponent(null);
+            setDropTarget(null);
+            window.__draggedComponentId = null;
+        };
+
+        window.addEventListener('touchmove', handleTouchMoveGlobal, { passive: false });
+        window.addEventListener('touchend', handleTouchEndGlobal, { passive: false });
+        window.addEventListener('touchcancel', handleTouchEndGlobal, { passive: false });
     };
 
     const handleDrop = (e, targetContainerId = null) => {
@@ -1158,29 +1315,40 @@ export default function PhoneCanvasEnhanced({ appState }) {
         const isDropTarget = dropTargetComponent && dropTargetComponent.id === comp.id;
         const dropIndicatorStyle = isDropTarget
             ? (dropTargetComponent.position === 'before'
-                ? { boxShadow: '0 -3px 0 0 #3b82f6 inset' }
+                ? { boxShadow: '0 -4px 0 0 #3b82f6' }
                 : dropTargetComponent.position === 'after'
-                    ? { boxShadow: '0 3px 0 0 #3b82f6 inset' }
+                    ? { boxShadow: '0 4px 0 0 #3b82f6' }
                     : { outline: '2px solid #3b82f6', outlineOffset: '-2px' })
             : {};
 
         const isDragged = draggedComponentId === comp.id;
-        const dragOpacity = isDragged ? { opacity: 0.4 } : {};
+        const dragOpacity = isDragged ? { opacity: 0.4, pointerEvents: 'none' } : {};
 
-        return React.cloneElement(childElement, {
-            draggable: true,
-            onDragStart: (e) => handleComponentDragStart(e, comp.id),
-            onDragEnd: handleComponentDragEnd,
-            onDragOver: (e) => handleComponentDragOver(e, comp.id),
-            onDragLeave: handleComponentDragLeave,
-            onDrop: (e) => handleDropOnComponent(e, comp.id),
-            style: {
-                ...(childElement.props.style || {}),
-                ...dropIndicatorStyle,
-                ...dragOpacity,
-                cursor: 'grab'
-            }
-        });
+        return (
+            <div
+                key={comp.id}
+                data-component-id={comp.id}
+                draggable
+                onDragStart={(e) => handleComponentDragStart(e, comp.id)}
+                onDragEnd={handleComponentDragEnd}
+                onDragOver={(e) => handleComponentDragOver(e, comp.id)}
+                onDragLeave={handleComponentDragLeave}
+                onDrop={(e) => handleDropOnComponent(e, comp.id)}
+                onPointerDown={(e) => handlePointerDownComponent(e, comp.id)}
+                onTouchStart={(e) => handleTouchStartComponent(e, comp.id)}
+                style={{
+                    ...dropIndicatorStyle,
+                    ...dragOpacity,
+                    cursor: 'grab',
+                    touchAction: 'none',
+                    position: 'relative',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none'
+                }}
+            >
+                {childElement}
+            </div>
+        );
     };
 
     const phoneHeaderFooter = (currentScreen.showStatusBar !== false ? 48 : 0) + (currentScreen.titleVisible !== false ? 56 : 0) + 40; // status + title + nav

@@ -451,20 +451,28 @@ export const Stage: React.FC<StageProps> = ({
         return () => gameLoop.removeUpdateCallback(handleUpdate);
     }, [render, sprites, isRunning]);
 
-    // ── Pointer handlers (unchanged logic) ────────────────────────────────
+    // ── Helper to calculate stage X/Y from client coordinates ──────────────
+    const getStageCoordinates = (clientX: number, clientY: number) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return { mouseX: 0, mouseY: 0 };
+        const rect   = canvas.getBoundingClientRect();
+        const mouseX = ((clientX - rect.left) * (width  / rect.width))  - width  / 2;
+        const mouseY = height / 2 - ((clientY - rect.top) * (height / rect.height));
+        return { mouseX, mouseY };
+    };
+
+    // ── Pointer handlers ──────────────────────────────────────────────────
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        const rect   = canvas.getBoundingClientRect();
-        const mouseX = ((e.clientX - rect.left)  * (width  / rect.width))  - width  / 2;
-        const mouseY = height / 2 - ((e.clientY - rect.top) * (height / rect.height));
+        const { mouseX, mouseY } = getStageCoordinates(e.clientX, e.clientY);
 
         for (let i = sprites.length - 1; i >= 0; i--) {
             const sprite = sprites[i];
             if (!sprite.visible) continue;
             const scale = sprite.size / 100;
-            const w = (sprite.currentCostume?.width  || 80) * scale;
-            const h = (sprite.currentCostume?.height || 80) * scale;
+            const w = Math.max((sprite.currentCostume?.width  || 80) * scale, 40);
+            const h = Math.max((sprite.currentCostume?.height || 80) * scale, 40);
 
             if (Math.abs(mouseX - sprite.x) <= w / 2 && Math.abs(mouseY - sprite.y) <= h / 2) {
                 animationVM.setMouseDown(true);
@@ -486,9 +494,7 @@ export const Stage: React.FC<StageProps> = ({
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        const mx = ((e.clientX - rect.left)  * (width  / rect.width))  - width  / 2;
-        const my = height / 2 - ((e.clientY - rect.top) * (height / rect.height));
+        const { mouseX: mx, mouseY: my } = getStageCoordinates(e.clientX, e.clientY);
 
         animationVM.setMousePosition(mx, my);
 
@@ -507,7 +513,65 @@ export const Stage: React.FC<StageProps> = ({
             const sprite = sprites.find(s => s.id === draggingSpriteId);
             sprite?.setDragging(false);
             setDraggingSpriteId(null);
-            canvasRef.current?.releasePointerCapture(e.pointerId);
+            try {
+                canvasRef.current?.releasePointerCapture(e.pointerId);
+            } catch {
+                // Ignore capture errors on pointerup if already released
+            }
+        }
+    };
+
+    // ── Touch handlers (Direct Touchscreen Support) ───────────────────────
+    const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        if (e.touches.length !== 1) return; // Single touch drag
+        const touch = e.touches[0];
+        const { mouseX, mouseY } = getStageCoordinates(touch.clientX, touch.clientY);
+
+        for (let i = sprites.length - 1; i >= 0; i--) {
+            const sprite = sprites[i];
+            if (!sprite.visible) continue;
+            const scale = sprite.size / 100;
+            const w = Math.max((sprite.currentCostume?.width  || 80) * scale, 44);
+            const h = Math.max((sprite.currentCostume?.height || 80) * scale, 44);
+
+            if (Math.abs(mouseX - sprite.x) <= w / 2 && Math.abs(mouseY - sprite.y) <= h / 2) {
+                animationVM.setMouseDown(true);
+                setDraggingSpriteId(sprite.id);
+                setDragOffset({ x: sprite.x - mouseX, y: sprite.y - mouseY });
+                sprite.setDragging(true);
+                onSpriteSelect?.(sprite.id);
+                onSpriteClick?.(sprite.id);
+                return;
+            }
+        }
+
+        animationVM.setMouseDown(true);
+        onStageClick?.(mouseX, mouseY);
+        onSpriteClick?.('stage');
+    };
+
+    const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        const { mouseX: mx, mouseY: my } = getStageCoordinates(touch.clientX, touch.clientY);
+
+        animationVM.setMousePosition(mx, my);
+
+        if (draggingSpriteId) {
+            const sprite = sprites.find(s => s.id === draggingSpriteId);
+            if (sprite) {
+                sprite.setX(mx + dragOffset.x);
+                sprite.setY(my + dragOffset.y);
+            }
+        }
+    };
+
+    const handleTouchEnd = () => {
+        animationVM.setMouseDown(false);
+        if (draggingSpriteId) {
+            const sprite = sprites.find(s => s.id === draggingSpriteId);
+            sprite?.setDragging(false);
+            setDraggingSpriteId(null);
         }
     };
 
@@ -594,11 +658,16 @@ export const Stage: React.FC<StageProps> = ({
                     maxHeight: '100%',    // NEW
                     backgroundColor: isCameraOn ? 'transparent' : '#fff',
                     cursor: draggingSpriteId ? 'grabbing' : 'default',  // CHANGED
+                    touchAction: 'none',  // Prevents touch gestures from scrolling the page
                 }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchEnd}
             />
 
             {/* ── PEN TRAIL LAYER ──────────────────────────────────────────── */}
