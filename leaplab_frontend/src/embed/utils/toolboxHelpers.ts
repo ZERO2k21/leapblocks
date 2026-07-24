@@ -49,11 +49,7 @@ export const createMoreBlocksCategory = () => ({
 });
 
 export const withCategoryHeaders = (contents: any[]) => {
-    const categoriesWithMoreBlocks = contents.some((category: any) => category?.name === MORE_BLOCKS_CATEGORY_NAME)
-        ? contents
-        : [...contents, createMoreBlocksCategory()];
-
-    return categoriesWithMoreBlocks.map((category: any) => {
+    return contents.map((category: any) => {
         if (!isToolboxCategory(category) || !Array.isArray(category.contents)) {
             return category;
         }

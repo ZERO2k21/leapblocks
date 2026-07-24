@@ -3431,7 +3431,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
                         <>
                             {/* Add Extension Button - Premium integrated design */}
-                            <div className="absolute bottom-3 left-3 z-[100] add-extension-btn-container">
+                            <div className="absolute bottom-3 right-16 z-[100] add-extension-btn-container">
                                 <button
                                     onClick={() => setShowExtensionLibrary(true)}
                                     className="group flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#855CD6] to-[#9B6FE8] hover:from-[#7348C4] hover:to-[#8A5DD6] rounded-xl border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
