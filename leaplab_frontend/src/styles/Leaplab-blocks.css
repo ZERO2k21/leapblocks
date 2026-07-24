@@ -16,213 +16,213 @@
 
 /* Main block styling */
 .blocklyBlockCanvas .blocklyDraggable {
-    border-radius: 8px !important;
-    box-shadow: none !important;
-    transition: box-shadow 0.2s ease !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  transition: box-shadow 0.2s ease !important;
 }
 
 .blocklyBlockCanvas .blocklyDraggable:hover {
-    box-shadow: none !important;
+  box-shadow: none !important;
 }
 
 /* Block text styling */
 .blocklyText {
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: calc(12px * var(--block-scale)) !important;
-    font-weight: 500 !important;
-    line-height: 1.2 !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-size: calc(12px * var(--block-scale)) !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
 }
 
 /* Block connection styling */
 .blocklyPath {
-    stroke-linecap: round !important;
-    stroke-linejoin: round !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
 }
 
 /* Category colors - leap official */
 .blocklyMainBackground {
-    background-color: #f9f9f9 !important;
+  background-color: #f9f9f9 !important;
 }
 
 /* Motion blocks styling */
 .blocklyBlockCanvas .blocklyDraggable[style*="rgb(76, 151, 255)"] {
-    border-radius: 12px !important;
+  border-radius: 12px !important;
 }
 
 /* Looks blocks styling */
 .blocklyBlockCanvas .blocklyDraggable[style*="rgb(153, 102, 255)"] {
-    border-radius: 12px !important;
+  border-radius: 12px !important;
 }
 
 /* Sound blocks styling */
 .blocklyBlockCanvas .blocklyDraggable[style*="rgb(207, 99, 207)"] {
-    border-radius: 12px !important;
+  border-radius: 12px !important;
 }
 
 /* Events blocks styling */
 .blocklyBlockCanvas .blocklyDraggable[style*="rgb(255, 191, 0)"] {
-    border-radius: 12px !important;
+  border-radius: 12px !important;
 }
 
 /* Control blocks styling */
 .blocklyBlockCanvas .blocklyDraggable[style*="rgb(255, 171, 25)"] {
-    border-radius: 12px !important;
+  border-radius: 12px !important;
 }
 
 /* Sensing blocks styling */
 .blocklyBlockCanvas .blocklyDraggable[style*="rgb(92, 177, 214)"] {
-    border-radius: 12px !important;
+  border-radius: 12px !important;
 }
 
 /* Operators blocks styling */
 .blocklyBlockCanvas .blocklyDraggable[style*="rgb(89, 192, 89)"] {
-    border-radius: 12px !important;
+  border-radius: 12px !important;
 }
 
 /* Variables blocks styling */
 .blocklyBlockCanvas .blocklyDraggable[style*="rgb(255, 140, 26)"] {
-    border-radius: 12px !important;
+  border-radius: 12px !important;
 }
 
 /* My Blocks styling */
 .blocklyBlockCanvas .blocklyDraggable[style*="rgb(255, 102, 128)"] {
-    border-radius: 12px !important;
+  border-radius: 12px !important;
 }
 
 /* Field styling */
 .blocklyFieldTextInput {
-    background-color: transparent !important;
-    border: none !important;
-    border-radius: 4px !important;
-    padding: 2px 4px !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: 12px !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 2px 4px !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-size: 12px !important;
 }
 
 .blocklyFieldTextInput:focus {
-    background-color: rgba(255, 255, 255, 0.8) !important;
-    outline: 2px solid rgba(76, 151, 255, 0.5) !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  outline: 2px solid rgba(76, 151, 255, 0.5) !important;
 }
 
 /* Dropdown styling */
 .blocklyDropdownArrow {
-    fill: #666 !important;
+  fill: #666 !important;
 }
 
 .blocklyFieldDropdown {
-    background-color: rgba(255, 255, 255, 0.9) !important;
-    border: 1px solid #ddd !important;
-    border-radius: 4px !important;
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid #ddd !important;
+  border-radius: 4px !important;
 }
 
 /* Toolbox category styling */
 .leapblox-icon {
-    transition: transform 0.2s ease !important;
+  transition: transform 0.2s ease !important;
 }
 
 .blocklyTreeRow:hover .leapblox-icon {
-    transform: scale(1.1) !important;
+  transform: scale(1.1) !important;
 }
 
 /* Connection highlights */
 .blocklyBlockCanvas .blocklyHighlightedConnection {
-    stroke-width: 4px !important;
-    stroke: #4C97FF !important;
-    fill: none !important;
+  stroke-width: 4px !important;
+  stroke: #4C97FF !important;
+  fill: none !important;
 }
 
 /* Shadow blocks */
 .blocklyShadow {
-    opacity: 0.6 !important;
+  opacity: 0.6 !important;
 }
 
 /* Comment styling */
 .blocklyCommentTextarea {
-    background-color: #fff !important;
-    border: 1px solid #ddd !important;
-    border-radius: 4px !important;
-    font-family: 'Helvetica Neue', Arial, sans-serif !important;
-    font-size: 11px !important;
-    padding: 4px !important;
+  background-color: #fff !important;
+  border: 1px solid #ddd !important;
+  border-radius: 4px !important;
+  font-family: 'Helvetica Neue', Arial, sans-serif !important;
+  font-size: 11px !important;
+  padding: 4px !important;
 }
 
 /* Workspace background */
 .blocklyMainBackground {
-    background-color: #f0f0f0 !important;
-    background-image: 
-        linear-gradient(rgba(255,255,255,.8) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.8) 1px, transparent 1px) !important;
-    background-size: 20px 20px !important;
+  background-color: #f0f0f0 !important;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .8) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .8) 1px, transparent 1px) !important;
+  background-size: 20px 20px !important;
 }
 
 /* Scrollbar styling */
 .blocklyScrollbarHorizontal .blocklyScrollbarThumb,
 .blocklyScrollbarVertical .blocklyScrollbarThumb {
-    background-color: #ccc !important;
-    border-radius: 4px !important;
+  background-color: #ccc !important;
+  border-radius: 4px !important;
 }
 
 .blocklyScrollbarHorizontal .blocklyScrollbarThumb:hover,
 .blocklyScrollbarVertical .blocklyScrollbarThumb:hover {
-    background-color: #999 !important;
+  background-color: #999 !important;
 }
 
 /* Zoom controls */
 .blocklyZoom {
-    background-color: #fff !important;
-    border: 1px solid #ddd !important;
-    border-radius: 4px !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  background-color: #fff !important;
+  border: 1px solid #ddd !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Trash can */
 .blocklyTrash {
-    opacity: 0.8 !important;
-    transition: opacity 0.2s ease !important;
+  opacity: 0.8 !important;
+  transition: opacity 0.2s ease !important;
 }
 
 .blocklyTrash:hover {
-    opacity: 1 !important;
+  opacity: 1 !important;
 }
 
 /* Category specific styling */
 .blocklyCategoryIcon {
-    width: 20px !important;
-    height: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
 }
 
 /* Enhanced block shadows for depth */
 .blocklyBlockCanvas .blocklyDraggable {
-    filter: none !important;
+  filter: none !important;
 }
 
 /* Active block highlighting */
 .blocklyBlockCanvas .blocklySelected {
-    filter: drop-shadow(0 0 0 2px #4C97FF) !important;
+  filter: drop-shadow(0 0 0 2px #4C97FF) !important;
 }
 
 /* Input connection styling */
 .blocklyInputConnection {
-    stroke-width: 2px !important;
-    stroke-linecap: round !important;
+  stroke-width: 2px !important;
+  stroke-linecap: round !important;
 }
 
 /* Output connection styling */
 .blocklyOutputConnection {
-    stroke-width: 2px !important;
-    stroke-linecap: round !important;
+  stroke-width: 2px !important;
+  stroke-linecap: round !important;
 }
 
 /* Statement connection styling */
 .blocklyPreviousConnection,
 .blocklyNextConnection {
-    stroke-width: 2px !important;
-    stroke-linecap: round !important;
+  stroke-width: 2px !important;
+  stroke-linecap: round !important;
 }
 
 /* UI Regression Fix: Hide flyout when not in blocks tab */
 .hide-flyout .blocklyFlyout {
-    display: none !important;
+  display: none !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -231,106 +231,107 @@
 
 /* Button container positioning */
 .add-extension-btn-container {
-    position: absolute;
-    bottom: 12px;
-    left: 12px;
-    z-index: 100;
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 100;
 }
 
 /* Shine animation effect */
 .add-extension-btn-container button {
-    position: relative;
-    overflow: hidden;
+  position: relative;
+  overflow: hidden;
 }
 
 .add-extension-btn-container button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s ease;
-    pointer-events: none;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+  pointer-events: none;
 }
 
 .add-extension-btn-container button:hover::before {
-    left: 100%;
+  left: 100%;
 }
 
 /* Responsive Design - Tablet */
 @media (max-width: 1024px) {
-    .add-extension-btn-container {
-        bottom: 10px;
-        left: 10px;
-    }
+  .add-extension-btn-container {
+    bottom: 10px;
+    left: 10px;
+  }
 }
 
 /* Responsive Design - Mobile */
 @media (max-width: 768px) {
-    .add-extension-btn-container {
-        bottom: 8px;
-        left: 8px;
-    }
-    
-    .add-extension-btn-container button {
-        width: 44px !important;
-        height: 44px !important;
-        padding: 10px !important;
-    }
-    
-    /* Disable expansion on mobile */
-    .add-extension-btn-container button:hover {
-        width: 44px !important;
-        padding-right: 10px !important;
-    }
-    
-    /* Hide text on mobile */
-    .add-extension-btn-container button .text-left {
-        display: none !important;
-    }
+  .add-extension-btn-container {
+    bottom: 8px;
+    left: 8px;
+  }
+
+  .add-extension-btn-container button {
+    width: 44px !important;
+    height: 44px !important;
+    padding: 10px !important;
+  }
+
+  /* Disable expansion on mobile */
+  .add-extension-btn-container button:hover {
+    width: 44px !important;
+    padding-right: 10px !important;
+  }
+
+  /* Hide text on mobile */
+  .add-extension-btn-container button .text-left {
+    display: none !important;
+  }
 }
 
 /* Responsive Design - Extra Small */
 @media (max-width: 480px) {
-    .add-extension-btn-container {
-        bottom: 6px;
-        left: 6px;
-    }
-    
-    .add-extension-btn-container button {
-        width: 40px !important;
-        height: 40px !important;
-        padding: 8px !important;
-    }
-    
-    .add-extension-btn-container button:hover {
-        width: 40px !important;
-        padding-right: 8px !important;
-    }
+  .add-extension-btn-container {
+    bottom: 6px;
+    left: 6px;
+  }
+
+  .add-extension-btn-container button {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 8px !important;
+  }
+
+  .add-extension-btn-container button:hover {
+    width: 40px !important;
+    padding-right: 8px !important;
+  }
 }
 
 /* Accessibility - Focus state */
 .add-extension-btn-container button:focus {
-    outline: 2px solid #fff;
-    outline-offset: 2px;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 /* Animation for smooth appearance */
 @keyframes slideInFromLeft {
-    from {
-        transform: translateX(-100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .add-extension-btn-container {
-    animation: slideInFromLeft 0.3s ease-out;
+  animation: slideInFromLeft 0.3s ease-out;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -339,18 +340,18 @@
 
 /* Fix toolbox categories overlapping with top MenuBar */
 .blocklyToolboxDiv {
-    top: 0 !important;
-    padding-top: 0 !important;
+  top: 0 !important;
+  padding-top: 0 !important;
 }
 
 /* Fix flyout overlapping with top MenuBar */
 .blocklyFlyout {
-    top: 0 !important;
+  top: 0 !important;
 }
 
 /* Ensure toolbox content starts below the MenuBar (58px height) */
 .blocklyToolboxContents {
-    padding-top: 58px !important;
+  padding-top: 58px !important;
 }
 
 /* ── EXTRACTED FROM INDEX.CSS ── */
@@ -947,18 +948,18 @@ body #root .blocklyFlyoutButton .blocklyText,
 .blocklyFlyout .blocklyCheckbox {
   display: block !important;
   fill: #fff !important;
-  stroke: rgba(0,0,0,0.2) !important;
+  stroke: rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Category colors for separate pills in flyout */
 /* Sensing (Blue) */
-.blocklyFlyout g[data-type^="sensing_"] .blocklyPath { 
-  fill: #5CB1D6 !important; 
+.blocklyFlyout g[data-type^="sensing_"] .blocklyPath {
+  fill: #5CB1D6 !important;
 }
 
 /* Variables/Lists (Orange) */
-.blocklyFlyout g[data-type^="data_"] .blocklyPath { 
-  fill: #FF8C1A !important; 
+.blocklyFlyout g[data-type^="data_"] .blocklyPath {
+  fill: #FF8C1A !important;
 }
 
 
@@ -1086,16 +1087,16 @@ rect.blocklyCheckbox[fill*="true"],
 
 /* Color coding for Sensing (Blue) in the flyout */
 .blocklyFlyout .blocklyBlockCanvas g[style*="fill: #00000000"] .blocklyFieldRect {
-   fill: #5CB1D6 !important;
+  fill: #5CB1D6 !important;
 }
 
 .blocklyFlyout .blocklyBlockCanvas g[style*="fill: #00000000"] .blocklyText {
-   fill: white !important;
+  fill: white !important;
 }
 
 /* Adjust checkbox styling to be a bit more robust */
 .blocklyFlyout .blocklyCheckbox {
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)) !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1)) !important;
 }
 
 /* Fix: respect SVG/HTML presentation attributes for display="none" (e.g. Blockly flyout scrollbars hidden state) */
@@ -1114,6 +1115,7 @@ rect[display="none"] {
   .blocklyToolboxDiv {
     width: 68px !important;
   }
+
   .blocklyFlyout {
     min-width: 240px !important;
   }
@@ -1125,10 +1127,12 @@ rect[display="none"] {
     width: 56px !important;
     padding: 6px 0 8px !important;
   }
+
   .blocklyToolboxCategory {
     min-height: 40px !important;
     padding: 2px 2px 6px 2px !important;
   }
+
   .blocklyFlyout {
     min-width: 200px !important;
   }
@@ -1140,9 +1144,11 @@ rect[display="none"] {
     width: 48px !important;
     padding: 4px 0 6px !important;
   }
+
   .blocklyToolboxCategory {
     min-height: 36px !important;
   }
+
   .blocklyFlyout {
     min-width: 180px !important;
   }
@@ -1153,10 +1159,16 @@ rect[display="none"] {
   .blocklyToolboxDiv {
     width: 90px !important;
   }
+
   .blocklyFlyout {
     min-width: 320px !important;
   }
+
   .blocklyToolboxCategory {
     min-height: 56px !important;
   }
+}
+
+.blocklyToolboxCategory {
+  min-height: 56px !important;
 }

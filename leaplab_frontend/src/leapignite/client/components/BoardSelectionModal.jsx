@@ -84,11 +84,10 @@ export default function BoardSelectionModal({ isOpen, onClose, onSelect, current
                             key={board.id}
                             type="button"
                             onClick={() => { onSelect(board.id, board.name); onClose(); }}
-                            className={`flex flex-col items-center justify-center px-3 py-4 rounded-lg cursor-pointer transition-all duration-150 ${
-                                currentBoard === board.id
+                            className={`flex flex-col items-center justify-center px-3 py-4 rounded-lg cursor-pointer transition-all duration-150 ${currentBoard === board.id
                                     ? 'border-2 border-purple-600 bg-purple-50'
                                     : 'border-2 border-gray-200 bg-white hover:border-purple-600 hover:bg-purple-50/50'
-                            }`}
+                                }`}
                         >
                             <BoardIcon board={board} />
                             <span className="mt-2.5 text-xs font-semibold text-gray-800">{board.name}</span>

@@ -3135,7 +3135,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 board={selectedBoard}
 
+                boardName={selectedBoardName}
+
                 onBoardChange={setSelectedBoard}
+
+                onOpenBoardModal={() => setIsBoardModalOpen(true)}
 
                 isConnected={isConnected}
 
@@ -3170,6 +3174,10 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 onSave={handleSaveProject}
 
                 onEditAction={(action: string) => addLog(`Edit action: ${action}`)}
+
+                onUndo={() => workspaceRef.current?.undo(false)}
+
+                onRedo={() => workspaceRef.current?.undo(true)}
 
             />
 
@@ -3541,376 +3549,376 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 {/* Right Panel — hidden in embed mode when sounds tab is active (full-screen sound editor) */}
                 {(isEmbedMode && workspaceTab === 'sounds') ? null : (
-                <div className={`${styles.rightPanel} right-panel-responsive`} style={{
+                    <div className={`${styles.rightPanel} right-panel-responsive`} style={{
 
-                    width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '256px' : '496px'),
+                        width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '256px' : '496px'),
 
-                    transition: 'width 0.2s ease-in-out',
+                        transition: 'width 0.2s ease-in-out',
 
-                }}>
-
-                    {/* Stage Container */}
-                    <div ref={stageContainerRef} className={`${!isFullscreen ? styles.stageContainer : ''} stage-container-responsive`} style={{
-                        width: isFullscreen ? '100vw' : '100%',
-                        height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '155px' : (editorMode === 'stage' ? 'auto' : '310px')),
-                        transition: isFullscreen ? 'none' : 'all 0.2s ease-in-out',
-                        position: isFullscreen ? 'fixed' : 'relative',
-                        top: isFullscreen ? 0 : 'auto',
-                        left: isFullscreen ? 0 : 'auto',
-                        zIndex: isFullscreen ? 9999 : 1,
-                        display: (editorMode === 'stage' || isFullscreen) ? 'flex' : 'none',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'flex-start',
-                        background: isFullscreen ? '#f0f0f0' : 'transparent',
-                        overflowX: 'hidden',
-                        overflowY: 'hidden',
-                        gap: 0,
                     }}>
 
-                        {/* Fullscreen Toolbar — light gray, matches reference images */}
-                        {isFullscreen && (
-                            <div style={{
-                                width: '100%',
-                                height: '48px',
-                                background: '#f0f0f0',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '0 16px',
-                                boxSizing: 'border-box',
-                                borderBottom: '1px solid #ddd',
-                                flexShrink: 0,
-                                zIndex: 10,
-                            }}>
-                                {/* Left: Run + Stop */}
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                    <button
-                                        onClick={handleRunClick}
-                                        title="Run"
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
-                                    >
-                                        <svg viewBox="0 0 24 24" width="28" height="28">
-                                            <circle cx="12" cy="12" r="11" fill="#4CAF50" />
-                                            <polygon fill="white" points="10,8 17,12 10,16" />
-                                        </svg>
-                                    </button>
-                                    <button
-                                        onClick={handleStopClick}
-                                        title="Stop"
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
-                                    >
-                                        <svg viewBox="0 0 24 24" width="28" height="28">
-                                            <circle cx="12" cy="12" r="11" fill="#F44336" />
-                                            <rect x="8" y="8" width="8" height="8" fill="white" rx="1" />
-                                        </svg>
-                                    </button>
-                                </div>
+                        {/* Stage Container */}
+                        <div ref={stageContainerRef} className={`${!isFullscreen ? styles.stageContainer : ''} stage-container-responsive`} style={{
+                            width: isFullscreen ? '100vw' : '100%',
+                            height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '155px' : (editorMode === 'stage' ? 'auto' : '310px')),
+                            transition: isFullscreen ? 'none' : 'all 0.2s ease-in-out',
+                            position: isFullscreen ? 'fixed' : 'relative',
+                            top: isFullscreen ? 0 : 'auto',
+                            left: isFullscreen ? 0 : 'auto',
+                            zIndex: isFullscreen ? 9999 : 1,
+                            display: (editorMode === 'stage' || isFullscreen) ? 'flex' : 'none',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'flex-start',
+                            background: isFullscreen ? '#f0f0f0' : 'transparent',
+                            overflowX: 'hidden',
+                            overflowY: 'hidden',
+                            gap: 0,
+                        }}>
 
-                                {/* Center: Camera, Image, Sound, Timer */}
-                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            {/* Fullscreen Toolbar — light gray, matches reference images */}
+                            {isFullscreen && (
+                                <div style={{
+                                    width: '100%',
+                                    height: '48px',
+                                    background: '#f0f0f0',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '0 16px',
+                                    boxSizing: 'border-box',
+                                    borderBottom: '1px solid #ddd',
+                                    flexShrink: 0,
+                                    zIndex: 10,
+                                }}>
+                                    {/* Left: Run + Stop */}
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        <button
+                                            onClick={handleRunClick}
+                                            title="Run"
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                        >
+                                            <svg viewBox="0 0 24 24" width="28" height="28">
+                                                <circle cx="12" cy="12" r="11" fill="#4CAF50" />
+                                                <polygon fill="white" points="10,8 17,12 10,16" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            onClick={handleStopClick}
+                                            title="Stop"
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                        >
+                                            <svg viewBox="0 0 24 24" width="28" height="28">
+                                                <circle cx="12" cy="12" r="11" fill="#F44336" />
+                                                <rect x="8" y="8" width="8" height="8" fill="white" rx="1" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    {/* Center: Camera, Image, Sound, Timer */}
+                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                        <button
+                                            onClick={() => setIsCameraOn(!isCameraOn)}
+                                            title="Toggle Camera"
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}
+                                        >
+                                            {isCameraOn ? <Camera size={20} /> : <CameraOff size={20} />}
+                                        </button>
+                                        <button title="Screenshot" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}>
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                                <rect x="3" y="3" width="18" height="14" rx="2" />
+                                                <polyline points="3 13 8 8 13 12" />
+                                                <polyline points="13 12 16 9 21 13" />
+                                            </svg>
+                                        </button>
+                                        <button title="Sound" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}>
+                                            <Volume2 size={20} />
+                                        </button>
+                                        {/* Timer pill */}
+                                        <div style={{
+                                            background: '#6c3fc5',
+                                            color: 'white',
+                                            padding: '3px 12px',
+                                            borderRadius: '20px',
+                                            fontSize: '13px',
+                                            fontWeight: 600,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                        }}>
+                                            <span>0 : 00</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Right: Exit fullscreen */}
                                     <button
-                                        onClick={() => setIsCameraOn(!isCameraOn)}
-                                        title="Toggle Camera"
+                                        onClick={handleFullscreen}
+                                        title="Exit Fullscreen"
                                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}
                                     >
-                                        {isCameraOn ? <Camera size={20} /> : <CameraOff size={20} />}
-                                    </button>
-                                    <button title="Screenshot" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}>
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                            <rect x="3" y="3" width="18" height="14" rx="2" />
-                                            <polyline points="3 13 8 8 13 12" />
-                                            <polyline points="13 12 16 9 21 13" />
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
                                         </svg>
                                     </button>
-                                    <button title="Sound" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}>
-                                        <Volume2 size={20} />
-                                    </button>
-                                    {/* Timer pill */}
+                                </div>
+                            )}
+
+
+
+                            {/* --- STAGE RENDERING --- */}
+                            {(() => {
+                                const CANVAS_WIDTH = 480;
+                                const CANVAS_HEIGHT = 310;
+
+                                const TOOLBAR_H = 48;
+                                const fsScale = isFullscreen
+                                    ? Math.min(
+                                        window.innerWidth / CANVAS_WIDTH,
+                                        (window.innerHeight - TOOLBAR_H) / CANVAS_HEIGHT
+                                    )
+                                    : 1;
+                                const displayW = isFullscreen ? Math.round(CANVAS_WIDTH * fsScale) : CANVAS_WIDTH;
+                                const displayH = isFullscreen ? Math.round(CANVAS_HEIGHT * fsScale) : CANVAS_HEIGHT;
+
+                                return (
                                     <div style={{
-                                        background: '#6c3fc5',
-                                        color: 'white',
-                                        padding: '3px 12px',
-                                        borderRadius: '20px',
-                                        fontSize: '13px',
-                                        fontWeight: 600,
+                                        flex: 1,
+                                        width: '100%',
                                         display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
+                                        flexDirection: 'column',
+                                        alignItems: isFullscreen ? 'center' : 'stretch',
+                                        justifyContent: isFullscreen ? 'center' : 'flex-start',
+                                        position: 'relative',
+                                        overflow: 'visible',
+                                        height: isFullscreen ? `calc(100vh - ${TOOLBAR_H}px)` : 'auto',
                                     }}>
-                                        <span>0 : 00</span>
+                                        {/* Stage canvas - display container */}
+                                        <div style={{
+                                            width: isFullscreen ? `${displayW}px` : '100%',
+                                            height: isFullscreen ? `${displayH}px` : 'auto',
+                                            background: 'white',
+                                            boxShadow: isFullscreen ? '0 4px 32px rgba(0,0,0,0.18)' : 'none',
+                                            borderRadius: isFullscreen ? '4px' : '0',
+                                            overflow: 'hidden',
+                                            position: 'relative',
+                                            flex: '0 0 auto',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}>
+                                            {/* Scaling wrapper - preserves internal resolution at 480x310 */}
+                                            <div style={{
+                                                width: `${CANVAS_WIDTH}px`,
+                                                height: `${CANVAS_HEIGHT}px`,
+                                                transform: isFullscreen ? `scale(${fsScale})` : 'none',
+                                                transformOrigin: 'center center',
+                                                flex: '0 0 auto',
+                                                overflow: 'visible',
+                                            }}>
+                                                <Stage
+
+                                                    width={CANVAS_WIDTH}
+
+                                                    height={CANVAS_HEIGHT}
+
+                                                    sprites={sprites}
+
+                                                    isRunning={isRunning}
+
+                                                    showGridNumbers={showGrid}
+
+                                                    onSpriteSelect={handleSpriteSelect}
+
+                                                    onSpriteClick={handleSpriteClick}
+
+                                                    isCameraOn={isCameraOn}
+
+                                                    variableMonitors={variableMonitors}
+
+                                                    listMonitors={listMonitors}
+
+                                                    tableMonitors={tableMonitors}
+
+                                                    selectedSpriteId={selectedSpriteId}
+
+                                                    onMonitorPositionChange={handleMonitorPositionChange}
+
+                                                    onMonitorResize={handleMonitorResize}
+
+                                                    onMonitorBringToFront={handleMonitorBringToFront}
+
+                                                    onVariableModeChange={handleVariableModeChange}
+
+                                                    onVariableValueChange={handleVariableValueChange}
+
+                                                    onVariableSliderRangeChange={handleVariableSliderRangeChange}
+
+                                                    onListAddItem={handleListAddItem}
+
+                                                    onListEditItem={handleListEditItem}
+
+                                                    onListDeleteItem={handleListDeleteItem}
+
+                                                />
+
+                                                {/* Ask-and-wait input overlay */}
+                                                {askState.isAsking && (
+                                                    <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', zIndex: 100 }}>
+                                                        <AskBar question={askState.question} onSubmit={handleAskSubmit} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Sprite & Stage Panel Unit — hidden in fullscreen for clean presentation */}
+                                        {editorMode === 'stage' && !isFullscreen && (
+                                            <div className={styles.assetsContainer} style={{
+                                                width: isFullscreen ? '240px' : '100%',
+                                                flex: isFullscreen ? 'none' : '1 1 auto',
+                                                minHeight: 0,
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'flex-start',
+                                                alignItems: 'stretch',
+                                                overflow: 'visible',
+                                                ...(isFullscreen ? {
+                                                    position: 'fixed' as const,
+                                                    right: 0,
+                                                    top: '48px',
+                                                    height: 'calc(100vh - 48px)',
+                                                    zIndex: 10000,
+                                                    background: '#f5f5f5',
+                                                    borderLeft: '1px solid #d9d9d9',
+                                                } : {}),
+                                            }}>
+                                                <SpritePanel
+                                                    sprites={sprites}
+                                                    selectedSpriteId={selectedSpriteId}
+                                                    onSelectSprite={handleSpriteSelect}
+                                                    onAddSprite={addSprite}
+                                                    onDeleteSprite={deleteSprite}
+                                                    onRemoveBackground={handleRemoveBackground}
+                                                    onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
+                                                    onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
+                                                    onUploadSprite={handleUploadSprite}
+                                                    stageManager={stageManager}
+                                                    backdropVersion={backdropRefresh}
+                                                    isFullscreen={isFullscreen}
+                                                    onCopyCodeToSprite={handleCopyCodeToSprite}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
+
+                                );
+
+                            })()}
+
+                        </div>
+
+                        {/* Code Preview - Only in Upload mode AND NOT Fullscreen */}
+                        {editorMode === 'upload' && !isFullscreen && (
+                            <>
+
+                                {/* Code Preview */}
+
+                                <div className={styles.codeHeader}>
+
+                                    <span>💻 Arduino Code</span>
+
+                                    {uploadProgress && <span className={styles.uploadStatus}>{uploadProgress}</span>}
+
                                 </div>
 
-                                {/* Right: Exit fullscreen */}
-                                <button
-                                    onClick={handleFullscreen}
-                                    title="Exit Fullscreen"
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}
-                                >
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                                    </svg>
-                                </button>
-                            </div>
+                                <div className={`${styles.codeArea} code-preview-area`}>
+
+                                    <pre className={styles.codeContent}>
+
+                                        {generatedCode.split('\n').map((line, i) => (
+
+                                            <div key={i} className={styles.codeLine}>
+
+                                                <span className={styles.lineNumber}>{i + 1}</span>
+
+                                                <span>{line}</span>
+
+                                            </div>
+
+                                        ))}
+
+                                    </pre>
+
+                                </div>
+
+                            </>
+
                         )}
 
 
 
-                        {/* --- STAGE RENDERING --- */}
-                        {(() => {
-                            const CANVAS_WIDTH = 480;
-                            const CANVAS_HEIGHT = 310;
+                        {/* Bottom tabs - Only visible in Upload mode */}
 
-                            const TOOLBAR_H = 48;
-                            const fsScale = isFullscreen
-                                ? Math.min(
-                                    window.innerWidth / CANVAS_WIDTH,
-                                    (window.innerHeight - TOOLBAR_H) / CANVAS_HEIGHT
-                                )
-                                : 1;
-                            const displayW = isFullscreen ? Math.round(CANVAS_WIDTH * fsScale) : CANVAS_WIDTH;
-                            const displayH = isFullscreen ? Math.round(CANVAS_HEIGHT * fsScale) : CANVAS_HEIGHT;
+                        {editorMode !== 'stage' && (
 
-                            return (
-                                <div style={{
-                                    flex: 1,
-                                    width: '100%',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: isFullscreen ? 'center' : 'stretch',
-                                    justifyContent: isFullscreen ? 'center' : 'flex-start',
-                                    position: 'relative',
-                                    overflow: 'visible',
-                                    height: isFullscreen ? `calc(100vh - ${TOOLBAR_H}px)` : 'auto',
-                                }}>
-                                    {/* Stage canvas - display container */}
-                                    <div style={{
-                                        width: isFullscreen ? `${displayW}px` : '100%',
-                                        height: isFullscreen ? `${displayH}px` : 'auto',
-                                        background: 'white',
-                                        boxShadow: isFullscreen ? '0 4px 32px rgba(0,0,0,0.18)' : 'none',
-                                        borderRadius: isFullscreen ? '4px' : '0',
-                                        overflow: 'hidden',
-                                        position: 'relative',
-                                        flex: '0 0 auto',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}>
-                                        {/* Scaling wrapper - preserves internal resolution at 480x310 */}
-                                        <div style={{
-                                            width: `${CANVAS_WIDTH}px`,
-                                            height: `${CANVAS_HEIGHT}px`,
-                                            transform: isFullscreen ? `scale(${fsScale})` : 'none',
-                                            transformOrigin: 'center center',
-                                            flex: '0 0 auto',
-                                            overflow: 'visible',
-                                        }}>
-                                        <Stage
+                            <>
 
-                                            width={CANVAS_WIDTH}
+                                <div className={styles.bottomTabs}>
 
-                                            height={CANVAS_HEIGHT}
+                                    <button
 
-                                            sprites={sprites}
+                                        className={activeTab === 'log' ? styles.bottomTabActive : styles.bottomTab}
 
-                                            isRunning={isRunning}
+                                        onClick={() => setActiveTab('log')}
 
-                                            showGridNumbers={showGrid}
+                                    >⏩ Log</button>
 
-                                            onSpriteSelect={handleSpriteSelect}
+                                    <button
 
-                                            onSpriteClick={handleSpriteClick}
+                                        className={activeTab === 'serial' ? styles.bottomTabActive : styles.bottomTab}
 
-                                            isCameraOn={isCameraOn}
+                                        onClick={() => setActiveTab('serial')}
 
-                                            variableMonitors={variableMonitors}
+                                    >📟 Serial Monitor</button>
 
-                                            listMonitors={listMonitors}
+                                </div>
 
-                                            tableMonitors={tableMonitors}
+                                <div className={`${styles.logArea} log-area-responsive`}>
 
-                                            selectedSpriteId={selectedSpriteId}
+                                    {activeTab === 'log' ? (
 
-                                            onMonitorPositionChange={handleMonitorPositionChange}
+                                        logMessages.map((msg, i) => <div key={i} className={styles.logLine}>{msg}</div>)
 
-                                            onMonitorResize={handleMonitorResize}
+                                    ) : (
 
-                                            onMonitorBringToFront={handleMonitorBringToFront}
+                                        <SerialMonitor
 
-                                            onVariableModeChange={handleVariableModeChange}
+                                            baudRate={baudRate}
 
-                                            onVariableValueChange={handleVariableValueChange}
+                                            setBaudRate={setBaudRate}
 
-                                            onVariableSliderRangeChange={handleVariableSliderRangeChange}
+                                            lineEnding={lineEnding}
 
-                                            onListAddItem={handleListAddItem}
+                                            setLineEnding={setLineEnding}
 
-                                            onListEditItem={handleListEditItem}
+                                            messages={serialMessages}
 
-                                            onListDeleteItem={handleListDeleteItem}
+                                            setMessages={setSerialMessages}
+
+                                            onSendMessage={handleSendSerial}
+
+                                            isConnected={isConnected}
 
                                         />
 
-                                        {/* Ask-and-wait input overlay */}
-                                        {askState.isAsking && (
-                                            <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', zIndex: 100 }}>
-                                                <AskBar question={askState.question} onSubmit={handleAskSubmit} />
-                                            </div>
-                                        )}
-                                        </div>
-                                    </div>
-
-                                    {/* Sprite & Stage Panel Unit — hidden in fullscreen for clean presentation */}
-                                    {editorMode === 'stage' && !isFullscreen && (
-                                        <div className={styles.assetsContainer} style={{
-                                            width: isFullscreen ? '240px' : '100%',
-                                            flex: isFullscreen ? 'none' : '1 1 auto',
-                                            minHeight: 0,
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            justifyContent: 'flex-start',
-                                            alignItems: 'stretch',
-                                            overflow: 'visible',
-                                            ...(isFullscreen ? {
-                                                position: 'fixed' as const,
-                                                right: 0,
-                                                top: '48px',
-                                                height: 'calc(100vh - 48px)',
-                                                zIndex: 10000,
-                                                background: '#f5f5f5',
-                                                borderLeft: '1px solid #d9d9d9',
-                                            } : {}),
-                                        }}>
-                                            <SpritePanel
-                                                sprites={sprites}
-                                                selectedSpriteId={selectedSpriteId}
-                                                onSelectSprite={handleSpriteSelect}
-                                                onAddSprite={addSprite}
-                                                onDeleteSprite={deleteSprite}
-                                                onRemoveBackground={handleRemoveBackground}
-                                                onOpenSpriteLibrary={() => setShowSpriteLibrary(true)}
-                                                onOpenBackdropLibrary={() => setShowBackdropLibrary(true)}
-                                                onUploadSprite={handleUploadSprite}
-                                                stageManager={stageManager}
-                                                backdropVersion={backdropRefresh}
-                                                isFullscreen={isFullscreen}
-                                                onCopyCodeToSprite={handleCopyCodeToSprite}
-                                            />
-                                        </div>
                                     )}
+
                                 </div>
 
-                            );
+                            </>
 
-                        })()}
+                        )}
 
                     </div>
-
-                    {/* Code Preview - Only in Upload mode AND NOT Fullscreen */}
-                    {editorMode === 'upload' && !isFullscreen && (
-                        <>
-
-                            {/* Code Preview */}
-
-                            <div className={styles.codeHeader}>
-
-                                <span>💻 Arduino Code</span>
-
-                                {uploadProgress && <span className={styles.uploadStatus}>{uploadProgress}</span>}
-
-                            </div>
-
-                            <div className={`${styles.codeArea} code-preview-area`}>
-
-                                <pre className={styles.codeContent}>
-
-                                    {generatedCode.split('\n').map((line, i) => (
-
-                                        <div key={i} className={styles.codeLine}>
-
-                                            <span className={styles.lineNumber}>{i + 1}</span>
-
-                                            <span>{line}</span>
-
-                                        </div>
-
-                                    ))}
-
-                                </pre>
-
-                            </div>
-
-                        </>
-
-                    )}
-
-
-
-                    {/* Bottom tabs - Only visible in Upload mode */}
-
-                    {editorMode !== 'stage' && (
-
-                        <>
-
-                            <div className={styles.bottomTabs}>
-
-                                <button
-
-                                    className={activeTab === 'log' ? styles.bottomTabActive : styles.bottomTab}
-
-                                    onClick={() => setActiveTab('log')}
-
-                                >⏩ Log</button>
-
-                                <button
-
-                                    className={activeTab === 'serial' ? styles.bottomTabActive : styles.bottomTab}
-
-                                    onClick={() => setActiveTab('serial')}
-
-                                >📟 Serial Monitor</button>
-
-                            </div>
-
-                            <div className={`${styles.logArea} log-area-responsive`}>
-
-                                {activeTab === 'log' ? (
-
-                                    logMessages.map((msg, i) => <div key={i} className={styles.logLine}>{msg}</div>)
-
-                                ) : (
-
-                                    <SerialMonitor
-
-                                        baudRate={baudRate}
-
-                                        setBaudRate={setBaudRate}
-
-                                        lineEnding={lineEnding}
-
-                                        setLineEnding={setLineEnding}
-
-                                        messages={serialMessages}
-
-                                        setMessages={setSerialMessages}
-
-                                        onSendMessage={handleSendSerial}
-
-                                        isConnected={isConnected}
-
-                                    />
-
-                                )}
-
-                            </div>
-
-                        </>
-
-                    )}
-
-                </div>
                 )}
 
             </div>
