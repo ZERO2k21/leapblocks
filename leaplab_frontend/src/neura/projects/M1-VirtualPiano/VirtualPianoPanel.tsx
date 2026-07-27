@@ -200,14 +200,11 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                 for (const cls of mode.project!.classes) {
                     if (thisBuild !== rebuildAbortRef.current) return
                     if (cls.samples.length > 0) {
-                        for (const sample of cls.samples) {
-                            try {
-                                const features = JSON.parse(sample.data)
-                                const padded = new Float32Array(78)
-                                padded.set(features, 0)
-                                await classifierRef.current.addSample(padded, cls.name)
-                            } catch { /* skip */ }
-                        }
+                        await classifierRef.current.rebuildClass(
+                            cls.name,
+                            cls.samples.map(s => s.data),
+                            true
+                        )
                     }
                 }
                 if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false)

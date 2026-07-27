@@ -53,6 +53,7 @@ export class HandPoseClassifier {
     private modelPromise: Promise<any> | null = null
     private webglLostHandler: (() => void) | null = null
     private webglRestoredHandler: (() => void) | null = null
+    private webglCanvas: HTMLCanvasElement | null = null
 
     private async ensureModel() {
         if (this.handModel) return this.handModel
@@ -85,6 +86,7 @@ export class HandPoseClassifier {
 
     attachWebGLHandlers(canvas: HTMLCanvasElement) {
         this.detachWebGLHandlers()
+        this.webglCanvas = canvas
         this.webglLostHandler = () => {
             console.warn('[HandPose] WebGL context lost — disposing model')
             this.dispose()
@@ -97,28 +99,32 @@ export class HandPoseClassifier {
     }
 
     detachWebGLHandlers() {
-        if (this.webglLostHandler) {
-            document.querySelector('canvas')?.removeEventListener('webglcontextlost', this.webglLostHandler)
+        if (this.webglLostHandler && this.webglCanvas) {
+            this.webglCanvas.removeEventListener('webglcontextlost', this.webglLostHandler)
             this.webglLostHandler = null
         }
-        if (this.webglRestoredHandler) {
-            document.querySelector('canvas')?.removeEventListener('webglcontextrestored', this.webglRestoredHandler)
+        if (this.webglRestoredHandler && this.webglCanvas) {
+            this.webglCanvas.removeEventListener('webglcontextrestored', this.webglRestoredHandler)
             this.webglRestoredHandler = null
         }
+        this.webglCanvas = null
     }
 
     /**
      * Normalize raw landmark coordinates to [0,1] relative to hand bounding box.
-     * Returns a63-d Float32Array (21 keypoints × 3).
+     * Returns a 63-d Float32Array (21 keypoints × 3).
      */
     normalizeKeypoints(keypoints: HandKeypoint[]): Float32Array {
         const validKeypoints = keypoints.filter(kp => kp.score > 0.3)
         if (validKeypoints.length === 0) return new Float32Array(LEGACY_FEATURE_SIZE)
 
-        const minX = Math.min(...validKeypoints.map(kp => kp.x))
-        const maxX = Math.max(...validKeypoints.map(kp => kp.x))
-        const minY = Math.min(...validKeypoints.map(kp => kp.y))
-        const maxY = Math.max(...validKeypoints.map(kp => kp.y))
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+        for (const kp of validKeypoints) {
+            if (kp.x < minX) minX = kp.x
+            if (kp.x > maxX) maxX = kp.x
+            if (kp.y < minY) minY = kp.y
+            if (kp.y > maxY) maxY = kp.y
+        }
         const rangeX = maxX - minX || 1
         const rangeY = maxY - minY || 1
 
@@ -156,10 +162,10 @@ export class HandPoseClassifier {
         features[64] = kp[MIDDLE_TIP].y < kp[MIDDLE_PIP].y ? 1 : 0
         features[65] = kp[RING_TIP].y < kp[RING_PIP].y ? 1 : 0
         features[66] = kp[PINKY_TIP].y < kp[PINKY_PIP].y ? 1 : 0
-        // Thumb: tip.x farther from palm center than IP joint
-        // Use both directions — if hand is mirrored, thumb extends in +x direction
-        const thumbOutward = Math.abs(kp[THUMB_TIP].x - kp[INDEX_MCP].x) > Math.abs(kp[THUMB_IP].x - kp[INDEX_MCP].x)
-        features[67] = thumbOutward ? 1 : 0
+        // Thumb: tip is farther from palm center than IP joint (works for any hand orientation)
+        const thumbTipDist = euclidean(kp[THUMB_TIP], kp[INDEX_MCP])
+        const thumbIpDist = euclidean(kp[THUMB_IP], kp[INDEX_MCP])
+        features[67] = thumbTipDist > thumbIpDist * 1.1 ? 1 : 0
 
         // --- Tip-to-wrist distances (indices 68-72), normalized by hand size ---
         const handSize = euclidean(kp[WRIST], kp[MIDDLE_MCP]) || 1
