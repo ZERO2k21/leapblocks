@@ -71,13 +71,15 @@ export function classifyDrawErase(features: Float32Array): ClassificationResult 
  * @param features HandPoseClassifier 78-d features
  * @param videoWidth Width of video frame
  * @param videoHeight Height of video frame
- * @param numKeys Number of piano keys (default 8)
+ * @param numKeys Number of piano keys (default 7)
  */
+const PIANO_NOTE_NAMES = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si']
+
 export function classifyPianoKey(
     features: Float32Array,
     videoWidth: number,
     videoHeight: number,
-    numKeys: number = 8
+    numKeys: number = 7
 ): ClassificationResult {
     // Index fingertip is landmark 8, normalized coordinates are in features[24-25] (index tip x,y)
     // features[24] = index_tip.x normalized, features[25] = index_tip.y normalized
@@ -96,11 +98,12 @@ export function classifyPianoKey(
 
     // Map x position to key index (0 to numKeys-1)
     const keyIndex = Math.min(numKeys - 1, Math.max(0, Math.floor(tipX * numKeys)))
-    const keyName = `key_${keyIndex}`
+    const keyName = PIANO_NOTE_NAMES[keyIndex] || `key_${keyIndex}`
 
     const details: Record<string, number> = {}
     for (let i = 0; i < numKeys; i++) {
-        details[`key_${i}`] = i === keyIndex ? 1 : 0
+        const name = PIANO_NOTE_NAMES[i] || `key_${i}`
+        details[name] = i === keyIndex ? 1 : 0
     }
 
     return {
