@@ -51,6 +51,8 @@ RUN arduino-cli lib install \
 
 RUN chmod -R 777 /app/arduino-data
 
+RUN npm install -g tsx
+
 WORKDIR /app
 
 COPY server/package.json server/package-lock.json* /tmp/server/
@@ -71,4 +73,4 @@ EXPOSE 3002
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:3001/health || exit 1
 
-CMD ["node", "server/server.js"]
+CMD ["tsx", "server/server.ts"]
