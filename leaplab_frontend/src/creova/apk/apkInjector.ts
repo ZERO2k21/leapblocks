@@ -24,6 +24,8 @@ interface AppConfig {
   permissions?: string[];
   screenOrientation?: string | null;
   renderedIconsDir?: string | null;
+  projectPath?: string | null;
+  projectDir?: string | null;
 }
 
 interface ManifestOptions {
@@ -122,6 +124,10 @@ class ApkInjector {
       `inject_${this.projectName}_${Date.now()}`
     );
     await fs.ensureDir(this.workingDir);
+    console.log('[ApkInjector] initialize() — workingDir:', this.workingDir);
+    console.log('[ApkInjector]   Apktool:', TOOLS.apktool);
+    console.log('[ApkInjector]   Signer:', TOOLS.signer);
+    console.log('[ApkInjector]   Java binary:', resolveJavaBinary());
   }
 
   async runJava(args: string[], description: string, onProgress?: (event: ProgressEvent) => void): Promise<{ stdout: string; stderr: string }> {
@@ -173,10 +179,14 @@ class ApkInjector {
   }
 
   async decodeApk(templatePath: string, onProgress?: (event: ProgressEvent) => void): Promise<string> {
+    console.log('[ApkInjector] decodeApk() - template:', templatePath);
+    console.log('[ApkInjector]   Template exists:', await fs.pathExists(templatePath));
+    console.log('[ApkInjector]   Template size:', (await fs.stat(templatePath).catch(() => null))?.size);
     onProgress?.({ stage: 'decoding', progress: 10, message: 'Decoding template APK...' });
 
     const decodedDir = path.join(this.workingDir!, 'decoded');
     await fs.ensureDir(decodedDir);
+    console.log('[ApkInjector]   Decoded dir:', decodedDir);
 
     await this.runJava(
       [TOOLS.apktool, 'decode', '-f', '-o', decodedDir, templatePath],
@@ -184,55 +194,196 @@ class ApkInjector {
       onProgress
     );
 
+    const decodedFiles = await fs.readdir(decodedDir).catch(() => []);
+    console.log('[ApkInjector]   Decoded files:', decodedFiles.join(', '));
+
     onProgress?.({ stage: 'decoded', progress: 25, message: 'Template decoded' });
     return decodedDir;
   }
 
-  async injectAssets(decodedDir: string, webAppFiles: WebAppFiles, mediaAssets?: MediaAsset[], onProgress?: (event: ProgressEvent) => void): Promise<string> {
+  async resolveMediaBuffer(item: MediaAsset, projectDir?: string | null): Promise<Buffer | null> {
+    const data = item.data || (item as any).url || (item as any).path || (item as any).filepath;
+    const filenameRaw = item.filename || (item as any).name || (item as any).path;
+    const filename = filenameRaw ? path.basename(String(filenameRaw)) : '';
+
+    console.log(`[ApkInjector] resolveMediaBuffer("${filename}") — data type: ${typeof data}, data length: ${data ? String(data).length : 0}, projectDir: ${projectDir}`);
+
+    if (Buffer.isBuffer(data)) {
+      console.log(`[ApkInjector]   → data is Buffer (${data.length} bytes)`);
+      return data;
+    }
+
+    if (typeof data === 'string' && data.length > 0) {
+      if (data.startsWith('data:')) {
+        const commaIdx = data.indexOf(',');
+        if (commaIdx >= 0) {
+          const b64 = data.substring(commaIdx + 1).trim();
+          try {
+            const buf = Buffer.from(b64, 'base64');
+            if (buf.length > 0) {
+              console.log(`[ApkInjector]   → resolved from data: URL (${buf.length} bytes)`);
+              return buf;
+            }
+          } catch (_) {
+            console.log(`[ApkInjector]   → data: URL base64 decode failed`);
+          }
+        }
+      }
+
+      let cleanPath = data.replace(/^file:\/\/\/?/i, '').trim();
+      try {
+        cleanPath = decodeURIComponent(cleanPath);
+      } catch (_) {}
+
+      if (process.platform === 'win32' && /^\/[a-zA-Z]:/.test(cleanPath)) {
+        cleanPath = cleanPath.substring(1);
+      }
+
+      if (path.isAbsolute(cleanPath)) {
+        const exists = await fs.pathExists(cleanPath);
+        console.log(`[ApkInjector]   → trying absolute path: "${cleanPath}" exists=${exists}`);
+        if (exists) {
+          try {
+            const stat = await fs.stat(cleanPath);
+            if (stat.isFile()) {
+              const buf = await fs.readFile(cleanPath);
+              if (buf.length > 0) {
+                console.log(`[ApkInjector]   → resolved from absolute path (${buf.length} bytes)`);
+                return buf;
+              }
+            }
+          } catch (_) {}
+        }
+      } else if (projectDir) {
+        const resolvedRelative = path.join(projectDir, cleanPath);
+        const exists = await fs.pathExists(resolvedRelative);
+        console.log(`[ApkInjector]   → trying relative path via projectDir: "${resolvedRelative}" exists=${exists}`);
+        if (exists) {
+          try {
+            const stat = await fs.stat(resolvedRelative);
+            if (stat.isFile()) {
+              const buf = await fs.readFile(resolvedRelative);
+              if (buf.length > 0) {
+                console.log(`[ApkInjector]   → resolved from relative path (${buf.length} bytes)`);
+                return buf;
+              }
+            }
+          } catch (_) {}
+        }
+      } else {
+        console.log(`[ApkInjector]   → cannot resolve relative path without projectDir`);
+      }
+
+      if (!data.includes('\\') && !data.includes(':') && !data.startsWith('http')) {
+        try {
+          const buf = Buffer.from(data, 'base64');
+          if (buf.length > 10) {
+            const isPng = buf[0] === 0x89 && buf[1] === 0x50;
+            const isJpeg = buf[0] === 0xFF && buf[1] === 0xD8;
+            const isGif = buf[0] === 0x47 && buf[1] === 0x49;
+            const isMp3 = buf[0] === 0xFF && (buf[1] & 0xE0) === 0xE0;
+            const isMp4 = buf.length > 12 && buf[4] === 0x66 && buf[5] === 0x74;
+            if (isPng || isJpeg || isGif || isMp3 || isMp4) {
+              console.log(`[ApkInjector]   → resolved from raw base64 data (${buf.length} bytes)`);
+              return buf;
+            }
+          }
+        } catch (_) {
+          console.log(`[ApkInjector]   → raw base64 decode failed`);
+        }
+      }
+    }
+
+    if (filename) {
+      const homedir = require('os').homedir();
+      const candidates = [
+        projectDir && path.join(projectDir, filename),
+        projectDir && path.join(projectDir, 'media', filename),
+        projectDir && path.join(projectDir, 'assets', filename),
+        projectDir && path.join(projectDir, 'uploads', filename),
+        path.join(homedir, 'Downloads', filename),
+        path.join(homedir, 'Desktop', filename),
+      ].filter(Boolean) as string[];
+
+      console.log(`[ApkInjector]   → trying filename-based search`);
+      for (const cand of candidates) {
+        const exists = await fs.pathExists(cand);
+        console.log(`[ApkInjector]     check: "${cand}" exists=${exists}`);
+        if (exists) {
+          try {
+            const stat = await fs.stat(cand);
+            if (stat.isFile()) {
+              const buf = await fs.readFile(cand);
+              if (buf.length > 0) {
+                console.log(`[ApkInjector]   → resolved via filename search (${buf.length} bytes)`);
+                return buf;
+              }
+            }
+          } catch (_) {}
+        }
+      }
+    }
+
+    console.log(`[ApkInjector]   → FAILED to resolve buffer for "${filename}"`);
+    return null;
+  }
+
+  async injectAssets(decodedDir: string, webAppFiles: WebAppFiles, mediaAssets?: MediaAsset[], onProgress?: (event: ProgressEvent) => void, projectDir?: string | null): Promise<string> {
+    console.log('[ApkInjector] injectAssets()');
+    console.log('[ApkInjector]   decodedDir:', decodedDir);
+    console.log('[ApkInjector]   webAppFiles:', Object.keys(webAppFiles).length, 'files');
+    console.log('[ApkInjector]   mediaAssets:', mediaAssets?.length || 0, 'items');
+    console.log('[ApkInjector]   projectDir:', projectDir);
     onProgress?.({ stage: 'injecting', progress: 35, message: 'Injecting web assets...' });
 
     const assetsDir = path.join(decodedDir, 'assets');
-    await fs.ensureDir(assetsDir);
+    const wwwDir = path.join(assetsDir, 'www');
+    const mediaDir = path.join(wwwDir, 'media');
+    await fs.ensureDir(mediaDir);
 
+    let written = 0;
     for (const [filePath, content] of Object.entries(webAppFiles)) {
-      const fullPath = path.join(assetsDir, filePath);
+      const fullPath = path.join(wwwDir, filePath);
       await fs.ensureDir(path.dirname(fullPath));
       await fs.writeFile(fullPath, content);
+      written++;
     }
+    console.log('[ApkInjector]   wrote', written, 'web app files to', wwwDir);
 
     if (mediaAssets?.length) {
-      const mediaDir = path.join(assetsDir, 'www', 'media');
-      await fs.ensureDir(mediaDir);
-
+      let injected = 0;
+      let skipped = 0;
       for (const item of mediaAssets) {
-        if (!item.data) continue;
-        const dataStr = String(item.data);
-        const commaIdx = dataStr.indexOf(',');
-        const b64 = commaIdx >= 0 ? dataStr.substring(commaIdx + 1) : dataStr;
-        if (!b64) continue;
+        const filenameRaw = item.filename || (item as any).name || (item as any).path;
+        if (!filenameRaw) { skipped++; continue; }
+        const filename = path.basename(String(filenameRaw));
+
         try {
-          let buffer = Buffer.from(b64, 'base64');
-          if (buffer.length <= 10) {
-            const rootDir = path.join(__dirname, '..', '..', '..');
-            if (item.filename.endsWith('.mp4')) {
-              const testMp4 = path.join(rootDir, 'node_modules', '@chromatic-com', 'storybook', 'assets', 'visual-test-illustration.mp4');
-              if (await fs.pathExists(testMp4)) {
-                buffer = await fs.readFile(testMp4);
-              }
-            } else if (item.filename.endsWith('.mp3')) {
-              const testMp3 = path.join(rootDir, 'build', 'assets', 'sounds', 'robot.mp3.mp3');
-              if (await fs.pathExists(testMp3)) {
-                buffer = await fs.readFile(testMp3);
-              }
-            }
+          const buffer = await this.resolveMediaBuffer(item, projectDir);
+
+          if (buffer && buffer.length > 0) {
+            await fs.writeFile(path.join(mediaDir, filename), buffer);
+            await fs.writeFile(path.join(wwwDir, filename), buffer);
+            injected++;
+            console.log(`[ApkInjector]   ✓ Injected media: ${filename} (${buffer.length} bytes)`);
+          } else {
+            skipped++;
+            onProgress?.({ stage: 'media_skip', message: `Skipped media (no data resolved): ${filename}` });
+            console.log(`[ApkInjector]   ✗ Skipped media (no data): ${filename}`);
           }
-          if (buffer.length > 0) {
-            await fs.writeFile(path.join(mediaDir, item.filename), buffer);
-          }
-        } catch (_) {
-          onProgress?.({ stage: 'media_skip', message: `Skipped unreadable media: ${item.filename}` });
+        } catch (err) {
+          skipped++;
+          onProgress?.({ stage: 'media_skip', message: `Skipped unreadable media: ${filename}` });
+          console.log(`[ApkInjector]   ✗ Skipped media (error): ${filename} - ${err}`);
         }
       }
+      console.log(`[ApkInjector]   Media injection summary: ${injected} injected, ${skipped} skipped`);
+
+      // Log what's in the media dir
+      const mediaFiles = await fs.readdir(mediaDir).catch(() => []);
+      console.log('[ApkInjector]   Files in mediaDir:', mediaFiles.join(', '));
+    } else {
+      console.log('[ApkInjector]   No media assets to inject');
     }
 
     onProgress?.({ stage: 'injected', progress: 50, message: 'Assets injected' });
@@ -256,7 +407,7 @@ class ApkInjector {
     }
 
     if (appName) {
-      manifest = manifest.replace(/android:label="[^"]*"/, `android:label="${appName}"`);
+      manifest = manifest.replace(/android:label="[^"]*"/g, `android:label="${appName}"`);
     }
 
     const requiredPerms = [
@@ -305,6 +456,10 @@ class ApkInjector {
     }
 
     await fs.writeFile(manifestPath, manifest);
+    console.log('[ApkInjector] modifyManifest() — patched');
+    console.log('[ApkInjector]   appName:', appName, '| packageName:', packageName);
+    console.log('[ApkInjector]   permissions:', requiredPerms);
+    console.log('[ApkInjector]   screenOrientation:', screenOrientation, '| hasCustomIcon:', hasCustomIcon);
     onProgress?.({ stage: 'manifest_done', progress: 60, message: 'Manifest patched' });
   }
 
@@ -609,23 +764,23 @@ class ApkInjector {
     .registers 8
     :try_start_0
     iget-object v0, p0, L${pkgPath}/BluetoothBridge;->outStream:Ljava/io/OutputStream;
-    if-eqz v0, :cond_7
+    if-nez v0, :cond_7
 
     const/4 v0, 0x0
     return v0
 
     :cond_7
-    if-eqz p1, :cond_d
+    if-nez p1, :cond_d
 
-    const/4 v0, 0x1
+    const/4 v0, 0x0
     return v0
 
     :cond_d
     invoke-virtual {p1}, Ljava/lang/String;->length()I
     move-result v0
-    if-eqz v0, :cond_13
+    if-nez v0, :cond_13
 
-    const/4 v0, 0x1
+    const/4 v0, 0x0
     return v0
 
     :cond_13
@@ -898,18 +1053,25 @@ class ApkInjector {
       const bundledDir = path.join(__dirname, 'default_icons');
       if (await fs.pathExists(bundledDir)) {
         sourceDir = bundledDir;
+        console.log('[ApkInjector] injectAppIcon() — using bundled icons from:', bundledDir);
       }
     }
-    if (!sourceDir) return;
+    if (!sourceDir) {
+      console.log('[ApkInjector] injectAppIcon() — no source icons, skipping');
+      return;
+    }
+    console.log('[ApkInjector] injectAppIcon() — source:', sourceDir);
     onProgress?.({ stage: 'icon_inject', progress: 72, message: 'Injecting pre-rendered custom app icons...' });
 
     try {
       const anyDpiDir = path.join(decodedDir, 'res', 'mipmap-anydpi-v26');
       if (await fs.pathExists(anyDpiDir)) {
         await fs.remove(anyDpiDir);
+        console.log('[ApkInjector]   Removed anydpi-v26 dir');
       }
 
       const densities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
+      let copied = 0;
 
       for (const d of densities) {
         const sourcePng = path.join(sourceDir, `${d}.png`);
@@ -919,11 +1081,15 @@ class ApkInjector {
 
           await fs.copy(sourcePng, path.join(mipmapDir, 'ic_launcher.png'));
           await fs.copy(sourcePng, path.join(mipmapDir, 'ic_launcher_round.png'));
+          copied++;
+          console.log(`[ApkInjector]   Copied ${d} icons`);
         }
       }
+      console.log('[ApkInjector]   Injected icons for', copied, 'densities');
 
       onProgress?.({ stage: 'icon_inject_done', progress: 74, message: 'Custom app icons injected successfully' });
     } catch (err) {
+      console.error('[ApkInjector]   Icon injection error:', err);
       onProgress?.({ stage: 'icon_inject_failed', message: `Icon injection failed: ${(err as Error).message}. Using default template icon.` });
     }
   }
@@ -934,6 +1100,9 @@ class ApkInjector {
       permissions = [];
     }
 
+    console.log('[ApkInjector] injectWebViewActivity()');
+    console.log('[ApkInjector]   packageName:', packageName);
+    console.log('[ApkInjector]   permissions:', permissions);
     onProgress?.({ stage: 'smali', progress: 65, message: 'Injecting WebView activity...' });
 
     const pkgPath = packageName.replace(/\./g, '/');
@@ -1036,10 +1205,17 @@ class ApkInjector {
       .replace(/\{\{packageName\}\}/g, pkgPath);
 
     await fs.writeFile(path.join(smaliDir, 'MainActivity.smali'), smali);
+    console.log('[ApkInjector]   Wrote smali files to:', smaliDir);
+    console.log('[ApkInjector]   Files: MainActivity.smali, BluetoothBridge.smali, LeapChromeClient.smali, LeapWebViewClient.smali');
+    console.log('[ApkInjector]   Runtime permissions needed (API 23):', needed23);
+    console.log('[ApkInjector]   Runtime permissions needed (API 31):', needed31);
     onProgress?.({ stage: 'smali_done', progress: 70, message: 'WebView activity and Bluetooth bridge injected' });
   }
 
   async rebuildApk(decodedDir: string, outputApkPath: string, onProgress?: (event: ProgressEvent) => void): Promise<string> {
+    console.log('[ApkInjector] rebuildApk()');
+    console.log('[ApkInjector]   decodedDir:', decodedDir);
+    console.log('[ApkInjector]   outputApkPath:', outputApkPath);
     onProgress?.({ stage: 'rebuilding', progress: 75, message: 'Rebuilding APK...' });
 
     await this.runJava(
@@ -1048,12 +1224,23 @@ class ApkInjector {
       onProgress
     );
 
+    const exists = await fs.pathExists(outputApkPath);
+    const size = exists ? (await fs.stat(outputApkPath)).size : 0;
+    console.log('[ApkInjector]   Rebuilt APK:', outputApkPath, `exists=${exists} size=${size}`);
+
     onProgress?.({ stage: 'rebuilt', progress: 85, message: 'APK rebuilt' });
     return outputApkPath;
   }
 
   async signApk(unsignedApkPath: string, outputDir: string, onProgress?: (event: ProgressEvent) => void): Promise<string> {
+    console.log('[ApkInjector] signApk()');
+    console.log('[ApkInjector]   unsigned:', unsignedApkPath);
+    console.log('[ApkInjector]   outputDir:', outputDir);
     onProgress?.({ stage: 'signing', progress: 90, message: 'Signing APK...' });
+
+    const unsignedExists = await fs.pathExists(unsignedApkPath);
+    console.log('[ApkInjector]   Unsigned APK exists:', unsignedExists);
+    if (!unsignedExists) console.log('[ApkInjector]   WARNING: unsigned APK not found!');
 
     await this.runJava(
       [TOOLS.signer, '-a', unsignedApkPath, '-o', outputDir, '--allowResign'],
@@ -1062,13 +1249,17 @@ class ApkInjector {
     );
 
     const files = await fs.readdir(outputDir);
+    console.log('[ApkInjector]   Files in outputDir:', files);
     const signedFile = files.find((f: string) =>
       f.toLowerCase().endsWith('.apk') &&
       (f.includes('debugSigned') || f.includes('aligned'))
     );
 
+    const resultPath = signedFile ? path.join(outputDir, signedFile) : unsignedApkPath;
+    console.log('[ApkInjector]   Signed APK:', resultPath);
+
     onProgress?.({ stage: 'signed', progress: 98, message: 'APK signed' });
-    return signedFile ? path.join(outputDir, signedFile) : unsignedApkPath;
+    return resultPath;
   }
 
   async fullBuild(templateApkPath: string, webAppFiles: WebAppFiles, appConfig: AppConfig, onProgress?: (event: ProgressEvent) => void): Promise<string> {
@@ -1081,28 +1272,48 @@ class ApkInjector {
       renderedIconsDir = null,
     } = appConfig;
 
+    console.log('[ApkInjector] ==================== fullBuild() ====================');
+    console.log('[ApkInjector] appName:', appName, '| packageName:', packageName);
+    console.log('[ApkInjector] permissions:', permissions);
+    console.log('[ApkInjector] screenOrientation:', screenOrientation);
+    console.log('[ApkInjector] renderedIconsDir:', renderedIconsDir);
+    console.log('[ApkInjector] mediaAssets count:', mediaAssets.length);
+    console.log('[ApkInjector] webAppFiles count:', Object.keys(webAppFiles).length);
+    console.log('[ApkInjector] template:', templateApkPath);
+
     await this.initialize(appName);
 
+    console.log('[ApkInjector] Step 1/7: decodeApk...');
     const decodedDir = await this.decodeApk(templateApkPath, onProgress);
-    await this.injectAssets(decodedDir, webAppFiles, mediaAssets, onProgress);
+    const projectDir = appConfig.projectDir || (appConfig.projectPath ? path.dirname(appConfig.projectPath) : null);
+    console.log('[ApkInjector] Step 2/7: injectAssets...');
+    await this.injectAssets(decodedDir, webAppFiles, mediaAssets, onProgress, projectDir);
     const hasCustomIcon = !!renderedIconsDir || fs.pathExistsSync(path.join(__dirname, 'default_icons'));
+    console.log('[ApkInjector] Step 3/7: modifyManifest...');
     await this.modifyManifest(decodedDir, { appName, packageName, permissions, screenOrientation, hasCustomIcon }, onProgress);
+    console.log('[ApkInjector] Step 4/7: injectWebViewActivity...');
     await this.injectWebViewActivity(decodedDir, packageName, permissions, onProgress);
+    console.log('[ApkInjector] Step 5/7: injectAppIcon...');
     await this.injectAppIcon(decodedDir, renderedIconsDir ?? undefined, onProgress);
 
     const unsignedPath = path.join(this.workingDir!, 'unsigned.apk');
+    console.log('[ApkInjector] Step 6/7: rebuildApk...');
     await this.rebuildApk(decodedDir, unsignedPath, onProgress);
 
     const signedOutputDir = path.join(this.workingDir!, 'signed');
     await fs.ensureDir(signedOutputDir);
+    console.log('[ApkInjector] Step 7/7: signApk...');
     const signedPath = await this.signApk(unsignedPath, signedOutputDir, onProgress);
 
     onProgress?.({ stage: 'complete', progress: 100, message: 'Build complete!' });
+    console.log('[ApkInjector] ==================== fullBuild() COMPLETE ====================');
+    console.log('[ApkInjector] Signed path:', signedPath);
     return signedPath;
   }
 
   async cleanup(): Promise<void> {
     if (this.workingDir && await fs.pathExists(this.workingDir)) {
+      console.log('[ApkInjector] cleanup() — removing:', this.workingDir);
       await fs.remove(this.workingDir);
     }
   }

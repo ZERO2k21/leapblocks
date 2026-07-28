@@ -81,7 +81,11 @@ import { handlers } from './src/handlers';\n\n`;
         case 'TextBox':
           return `        <TextInput ${styleMatch} placeholder="${props.hint || ''}" multiline={${!!props.multiLine}} />`;
         case 'Image':
-          return `        <Image ${styleMatch} source={{ uri: '${props.picture || 'https://via.placeholder.com/100'}' }} resizeMode="${props.scalePicture ? 'contain' : 'cover'}" />`;
+          const picValue = props.Picture || props.picture || '';
+          const imageSource = picValue.startsWith('http') || picValue.startsWith('data:') || picValue.startsWith('file:')
+            ? picValue
+            : picValue ? `media/${picValue}` : 'https://via.placeholder.com/100';
+          return `        <Image ${styleMatch} source={{ uri: '${imageSource}' }} resizeMode="${props.scalePicture ? 'contain' : 'cover'}" />`;
         case 'CheckBox':
           return `        <View style={{ flexDirection: 'row', alignItems: 'center', margin: 4 }}>
           <Switch value={${Boolean(props.checked)}} onValueChange={handlers.${id}_Changed} />

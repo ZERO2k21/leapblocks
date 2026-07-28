@@ -1,3 +1,4 @@
+
 function escapeHtml(text: string): string {
   const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
   return String(text).replace(/[&<>"']/g, (c) => map[c] || c);
@@ -5,12 +6,30 @@ function escapeHtml(text: string): string {
 
 function mediaUrl(path: string): string {
   if (!path) return '';
-  if (path.startsWith('http') || path.startsWith('data:') || path.startsWith('file:') || path.startsWith('blob:')) return path;
-  return 'media/' + path;
+  if (typeof path !== 'string') return '';
+  path = path.trim();
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:') || path.startsWith('blob:')) return path;
+
+  let cleanName = path;
+  if (cleanName.startsWith('file:')) {
+    cleanName = cleanName.replace(/^file:\/\/\/?/i, '');
+  }
+  if (cleanName.includes('/') || cleanName.includes('\\')) {
+    cleanName = cleanName.split(/[/\\]/).pop() || cleanName;
+  }
+  try {
+    cleanName = decodeURIComponent(cleanName);
+  } catch (_) {}
+
+  if (cleanName.startsWith('media/')) return cleanName;
+  return 'media/' + cleanName;
 }
 
 function cssIdSelector(id: string): string {
-  return '#' + CSS.escape(id);
+  if (typeof CSS !== 'undefined' && CSS.escape) {
+    return '#' + CSS.escape(id);
+  }
+  return '#' + id.replace(/([!"#$%&'()*+,./:;<=>?@[\]^`{|}~ ])/g, '\\$1');
 }
 
 function walkComponentTree(components: any[], fn: (comp: any) => void): void {
@@ -39,7 +58,7 @@ function generateComponentCss(comp: any): string {
   if (props.FontItalic) styles.fontStyle = 'italic';
   if (props.Visible === false) styles.display = 'none';
   if (props.Image || props.Picture) {
-    styles.backgroundImage = `url(${mediaUrl(props.Image || props.Picture)})`;
+    styles.backgroundImage = `url("${encodeURI(mediaUrl(props.Image || props.Picture))}")`;
     styles.backgroundSize = '100% 100%';
   }
   if (props.Radius !== undefined) styles.borderRadius = props.Radius + 'px';
@@ -168,10 +187,11 @@ function generateStylesCss(appState: any): string {
 html, body {
   width: 100%;
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   overflow: hidden;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
+  background: #0f172a;
 }
 
 #app-root {
@@ -236,6 +256,8 @@ html, body {
   background: #ffffff;
   transform-origin: center center;
   -webkit-font-smoothing: antialiased;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2);
+  border-radius: 16px;
 }
 
 .screen-inner {
@@ -245,55 +267,99 @@ html, body {
   height: 100%;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 8px 8px 52px 8px;
-  gap: 5px;
+  padding: 16px 16px 64px 16px;
+  gap: 10px;
+  background: #ffffff;
 }
 
 .comp-button {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 24px;
+  background: #4285f4;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: 'Roboto', sans-serif;
   cursor: pointer;
   outline: none;
   -webkit-appearance: none;
   touch-action: manipulation;
   user-select: none;
-  font-family: sans-serif;
+  text-align: center;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(66,133,244,0.3);
+  transition: opacity 0.15s ease, transform 0.1s ease;
 }
 
 .comp-button:active {
-  opacity: 0.75;
-  transform: scale(0.97);
+  opacity: 0.85;
+  transform: scale(0.98);
+  box-shadow: 0 1px 4px rgba(66,133,244,0.2);
 }
 
-.comp-label { display: inline; }
+.comp-label {
+  display: block;
+  font-size: 16px;
+  color: #1f2937;
+  line-height: 1.5;
+  word-wrap: break-word;
+  letter-spacing: 0.15px;
+}
 
 .comp-textbox {
   display: block;
-  border: 1px solid #ccc;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 16px;
+  color: #1f2937;
+  background: #fafafa;
   outline: none;
   -webkit-appearance: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: 'Roboto', sans-serif;
 }
 
 .comp-textbox:focus {
   border-color: #4285f4;
-  box-shadow: 0 0 0 2px rgba(66,133,244,0.2);
+  box-shadow: 0 0 0 3px rgba(66,133,244,0.15);
+  background: #ffffff;
 }
 
-.comp-image { display: block; object-fit: contain; }
+.comp-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+}
 
 .comp-checkbox {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
+  font-size: 16px;
+  color: #1f2937;
+  padding: 4px 0;
 }
 
 .comp-checkbox input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   accent-color: #4285f4;
+  cursor: pointer;
 }
 
 .comp-slider {
@@ -302,66 +368,90 @@ html, body {
   -webkit-appearance: none;
   height: 6px;
   border-radius: 3px;
-  background: #ddd;
+  background: #e0e0e0;
   outline: none;
 }
 
 .comp-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: #4285f4;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(66,133,244,0.35);
 }
 
 .comp-switch {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  font-size: 16px;
+  color: #1f2937;
+  padding: 4px 0;
 }
 
 .comp-listview {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  background: #ffffff;
 }
 
 .comp-listview-item {
-  padding: 12px 16px;
+  padding: 14px 18px;
   border-bottom: 1px solid #f0f0f0;
+  font-size: 16px;
+  color: #1f2937;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
+.comp-listview-item:last-child { border-bottom: none; }
 .comp-listview-item:active { background: #e8f0fe; }
 
 .comp-spinner {
   display: block;
-  border: 1px solid #ccc;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 16px;
   outline: none;
   -webkit-appearance: none;
-  background: white;
+  background: #fafafa;
   cursor: pointer;
+  font-family: 'Roboto', sans-serif;
 }
 
 .comp-datepicker, .comp-timepicker {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 24px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 12px;
+  background: #fafafa;
+  font-size: 16px;
   cursor: pointer;
-  border: 1px solid #ccc;
-  background: white;
+  font-family: 'Roboto', sans-serif;
 }
 
-.comp-webviewer { border: none; display: block; }
-.comp-canvas { display: block; touch-action: none; }
+.comp-webviewer { border: none; display: block; border-radius: 12px; overflow: hidden; }
+.comp-canvas { display: block; touch-action: none; border-radius: 8px; }
+.comp-videoplayer { display: block; max-width: 100%; border-radius: 12px; overflow: hidden; }
+.comp-map { display: block; border-radius: 12px; overflow: hidden; }
 
-.arrangement-horizontal { display: flex; flex-direction: row; flex-wrap: nowrap; }
-.arrangement-vertical { display: flex; flex-direction: column; }
-.arrangement-horizontal-scroll { display: flex; flex-direction: row; overflow-x: auto; flex-wrap: nowrap; }
-.arrangement-vertical-scroll { display: flex; flex-direction: column; overflow-y: auto; }
-.arrangement-table { display: grid; }
+.arrangement-horizontal { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; align-items: stretch; }
+.arrangement-vertical { display: flex; flex-direction: column; gap: 8px; }
+.arrangement-horizontal-scroll { display: flex; flex-direction: row; overflow-x: auto; flex-wrap: nowrap; gap: 8px; }
+.arrangement-vertical-scroll { display: flex; flex-direction: column; overflow-y: auto; gap: 8px; }
+.arrangement-table { display: grid; gap: 8px; }
 .arrangement-absolute { position: relative; }
 
 .toast-notification {
@@ -369,14 +459,16 @@ html, body {
   bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0,0,0,0.8);
+  background: rgba(30,30,30,0.92);
   color: white;
-  padding: 12px 24px;
-  border-radius: 24px;
+  padding: 14px 28px;
+  border-radius: 28px;
   font-size: 14px;
+  font-weight: 500;
   z-index: 9999;
   animation: toast-in 0.3s ease, toast-out 0.3s ease 2.7s;
   pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
 }
 
 @keyframes toast-in {
@@ -410,7 +502,7 @@ html, body {
     const bgColor = screen.backgroundColor || '#ffffff';
     const bgImage = screen.backgroundImage || screen.BackgroundImage || '';
     let screenCss = `${cssIdSelector('screen-' + screen.id)} .screen-viewport { background-color: ${bgColor};`;
-    if (bgImage) screenCss += ` background-image: url(${mediaUrl(bgImage)}); background-size: 100% 100%;`;
+    if (bgImage) screenCss += ` background-image: url("${encodeURI(mediaUrl(bgImage))}"); background-size: 100% 100%;`;
     screenCss += ' }\n';
     css += screenCss;
 
@@ -444,13 +536,42 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     Spinner: 'select', DatePicker: 'button', TimePicker: 'button', Canvas: 'canvas',
     WebViewer: 'iframe', VideoPlayer: 'video', Map: 'div', Marker: 'div',
     ListPicker: 'button', ContactPicker: 'button', PhoneNumberPicker: 'button',
-    EmailPicker: 'button', FilePicker: 'button', ImagePicker: 'button'
+    EmailPicker: 'button', FilePicker: 'button', ImagePicker: 'button',
+    HorizontalArrangement: 'div', HorizontalScrollArrangement: 'div',
+    VerticalArrangement: 'div', VerticalScrollArrangement: 'div',
+    TableArrangement: 'div'
   };
 
   const tag = tagMap[type] || 'div';
+  const compClassMap: Record<string, string> = {
+    Button: 'comp-button', Label: 'comp-label', TextBox: 'comp-textbox',
+    PasswordTextBox: 'comp-textbox', Image: 'comp-image', ListView: 'comp-listview',
+    CheckBox: 'comp-checkbox', Switch: 'comp-switch', Slider: 'comp-slider',
+    Spinner: 'comp-spinner', DatePicker: 'comp-datepicker', TimePicker: 'comp-timepicker',
+    Canvas: 'comp-canvas', WebViewer: 'comp-webviewer', VideoPlayer: 'comp-videoplayer',
+    Map: 'comp-map', ListPicker: 'comp-button', ContactPicker: 'comp-button',
+    PhoneNumberPicker: 'comp-button', EmailPicker: 'comp-button',
+    FilePicker: 'comp-button', ImagePicker: 'comp-button'
+  };
   let js = `  // Create: ${id} (${type})\n`;
   js += `  var ${id}_el = document.createElement('${tag}');\n`;
   js += `  ${id}_el.id = 'comp-${id}';\n`;
+  const cssClass = compClassMap[type];
+  if (cssClass) {
+    js += `  ${id}_el.className = '${cssClass}';\n`;
+  }
+
+  if (props.Width && props.Width !== 'auto' && type !== 'Canvas') {
+    const w = typeof props.Width === 'number' || /^\d+$/.test(String(props.Width)) ? props.Width + 'px' : props.Width;
+    js += `  ${id}_el.style.width = '${w}';\n`;
+  }
+  if (props.Height && props.Height !== 'auto' && type !== 'Canvas') {
+    const h = typeof props.Height === 'number' || /^\d+$/.test(String(props.Height)) ? props.Height + 'px' : props.Height;
+    js += `  ${id}_el.style.height = '${h}';\n`;
+  }
+  if (props.Visible === false) {
+    js += `  ${id}_el.style.display = 'none';\n`;
+  }
 
   if (parentType === 'arrangement-table') {
     const col = props.Column || 0;
@@ -461,8 +582,10 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
 
   if (type === 'TextBox') {
     js += `  ${id}_el.type = 'text';\n`;
+    js += `  ${id}_el.style.width = '100%';\n`;
   } else if (type === 'PasswordTextBox') {
     js += `  ${id}_el.type = 'password';\n`;
+    js += `  ${id}_el.style.width = '100%';\n`;
   } else if (type === 'Slider') {
     js += `  ${id}_el.type = 'range';\n`;
     if (props.MinValue !== undefined) js += `  ${id}_el.min = '${props.MinValue}';\n`;
@@ -470,7 +593,7 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     if (props.ThumbEnabled === false) js += `  ${id}_el.style.pointerEvents = 'none';\n`;
   } else if (type === 'Spinner') {
     if (props.ElementsFromString) {
-      js += `  (${props.ElementsFromString || ''}).split(',').forEach(function(item) {\n`;
+      js += `  (${JSON.stringify(props.ElementsFromString)}).split(',').forEach(function(item) {\n`;
       js += `    var opt = document.createElement('option');\n`;
       js += `    opt.textContent = item.trim();\n`;
       js += `    ${id}_el.appendChild(opt);\n`;
@@ -542,13 +665,104 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     js += `  ${id}_el.disabled = true;\n`;
   }
 
+  if (type === 'Image' && (props.Picture || props.Image)) {
+    const pic = String(props.Picture || props.Image);
+    js += `  ${id}_el.src = '${escapeHtml(mediaUrl(pic))}';\n`;
+  }
+  if (type === 'VideoPlayer' && (props.Source || props.source)) {
+    const src = String(props.Source || props.source);
+    js += `  ${id}_el.src = '${escapeHtml(mediaUrl(src))}';\n`;
+  }
+
+  if (type === 'Button' || type === 'ListPicker' || type === 'ContactPicker' ||
+      type === 'PhoneNumberPicker' || type === 'EmailPicker' || type === 'FilePicker' ||
+      type === 'ImagePicker' || type === 'DatePicker' || type === 'TimePicker') {
+    const text = props.Text || props.ElementsFromString || '';
+    js += `  ${id}_el.textContent = '${escapeHtml(text)}';\n`;
+  }
+
+  if (type === 'Label') {
+    const text = props.Text || '';
+    js += `  ${id}_el.textContent = '${escapeHtml(text)}';\n`;
+  }
+
+  if (props.FontSize) {
+    const fs = typeof props.FontSize === 'number' ? props.FontSize + 'px' : props.FontSize;
+    js += `  ${id}_el.style.fontSize = '${fs}';\n`;
+  }
+  if (props.TextColor) {
+    js += `  ${id}_el.style.color = '${props.TextColor}';\n`;
+  }
+  if (props.BackgroundColor && props.BackgroundColor !== 'none') {
+    js += `  ${id}_el.style.backgroundColor = '${props.BackgroundColor}';\n`;
+  }
+  if (props.FontBold) {
+    js += `  ${id}_el.style.fontWeight = 'bold';\n`;
+  }
+  if (props.FontItalic) {
+    js += `  ${id}_el.style.fontStyle = 'italic';\n`;
+  }
+  if (props.Radius !== undefined) {
+    js += `  ${id}_el.style.borderRadius = '${props.Radius}px';\n`;
+  }
+
+  const clickTypes = ['Button', 'ListPicker', 'ContactPicker', 'PhoneNumberPicker', 'EmailPicker', 'FilePicker', 'ImagePicker', 'DatePicker', 'TimePicker'];
+  if (clickTypes.includes(type)) {
+    js += `  ${id}_el.addEventListener('click', function() { if (typeof window['${id}_Click'] === 'function') window['${id}_Click'](); });\n`;
+  }
+  if (type === 'TextBox' || type === 'PasswordTextBox') {
+    js += `  ${id}_el.addEventListener('input', function() { if (typeof window['${id}_TextChanged'] === 'function') window['${id}_TextChanged'](); });\n`;
+  }
+  if (type === 'CheckBox' || type === 'Switch') {
+    js += `  ${id}_el.querySelector('input').addEventListener('change', function() { if (typeof window['${id}_Changed'] === 'function') window['${id}_Changed'](); });\n`;
+  }
+  if (type === 'Slider') {
+    js += `  ${id}_el.addEventListener('input', function() { if (typeof window['${id}_PositionChanged'] === 'function') window['${id}_PositionChanged'](Number(this.value)); });\n`;
+  }
+  if (type === 'ListView') {
+    js += `  ${id}_el.addEventListener('click', function(e) { var item = e.target.closest('.comp-listview-item'); if (item) { if (typeof window['${id}_AfterPicking'] === 'function') window['${id}_AfterPicking'](); } });\n`;
+  }
+
   for (const child of (comp.children || [])) {
     js += generateComponentCreation(child, `${id}_el`, type);
   }
 
-  const arrangementClass = getArrangementClass(props.Arrangement);
+  const typeArrangementMap: Record<string, string> = {
+    'HorizontalArrangement': 'arrangement-horizontal',
+    'HorizontalScrollArrangement': 'arrangement-horizontal-scroll',
+    'VerticalArrangement': 'arrangement-vertical',
+    'VerticalScrollArrangement': 'arrangement-vertical-scroll',
+    'TableArrangement': 'arrangement-table',
+  };
+  let arrangementClass = typeArrangementMap[type] || '';
+  if (!arrangementClass) {
+    arrangementClass = getArrangementClass(props.Arrangement);
+  }
   if (arrangementClass) {
-    js += `  ${id}_el.className = '${arrangementClass}';\n`;
+    js += `  ${id}_el.classList.add('${arrangementClass}');\n`;
+  }
+
+  if (arrangementClass && arrangementClass.startsWith('arrangement-')) {
+    const hAlign = props.AlignHorizontal;
+    const vAlign = props.AlignVertical;
+    if (hAlign !== undefined || vAlign !== undefined) {
+      js += `  ${id}_el.style.display = 'flex';\n`;
+    }
+    if (arrangementClass === 'arrangement-horizontal' || arrangementClass === 'arrangement-horizontal-scroll') {
+      if (hAlign === 2) js += `  ${id}_el.style.justifyContent = 'center';\n`;
+      else if (hAlign === 3) js += `  ${id}_el.style.justifyContent = 'flex-end';\n`;
+      else js += `  ${id}_el.style.justifyContent = 'flex-start';\n`;
+      if (vAlign === 2) js += `  ${id}_el.style.alignItems = 'center';\n`;
+      else if (vAlign === 3) js += `  ${id}_el.style.alignItems = 'flex-end';\n`;
+      else js += `  ${id}_el.style.alignItems = 'stretch';\n`;
+    } else if (arrangementClass === 'arrangement-vertical' || arrangementClass === 'arrangement-vertical-scroll') {
+      if (vAlign === 2) js += `  ${id}_el.style.alignItems = 'center';\n`;
+      else if (vAlign === 3) js += `  ${id}_el.style.alignItems = 'flex-end';\n`;
+      else js += `  ${id}_el.style.alignItems = 'stretch';\n`;
+      if (hAlign === 2) js += `  ${id}_el.style.justifyContent = 'center';\n`;
+      else if (hAlign === 3) js += `  ${id}_el.style.justifyContent = 'flex-end';\n`;
+      else js += `  ${id}_el.style.justifyContent = 'flex-start';\n`;
+    }
   }
 
   js += `  ${parentVar}.appendChild(${id}_el);\n`;
@@ -801,9 +1015,24 @@ function generateAppJs(appState: any): string {
 
   var state = {};
   var currentScreen = ${JSON.stringify(firstScreenId)};
+  var screenHistory = [];
   var components = {};
   var DESIGN_WIDTH = ${designViewport.width};
   var DESIGN_HEIGHT = ${designViewport.height};
+
+  function formatMediaUrl(val) {
+    if (!val) return '';
+    var str = String(val).trim();
+    if (str.indexOf('http://') === 0 || str.indexOf('https://') === 0 || str.indexOf('data:') === 0 || str.indexOf('blob:') === 0) return str;
+    if (str.indexOf('file:') === 0) {
+      str = str.replace(/^file:\/\/\/?/i, '');
+    }
+    var parts = str.split(/[/\\]/);
+    var filename = parts[parts.length - 1];
+    try { filename = decodeURIComponent(filename); } catch(e) {}
+    if (filename.indexOf('media/') === 0) return filename;
+    return 'media/' + filename;
+  }
 
   function showRuntimeError(message) {
     var root = document.getElementById('app-root');
@@ -953,13 +1182,13 @@ function generateAppJs(appState: any): string {
   function SoundShim(id, props) {
     this.id = id;
     var src = props.Source || props.source || '';
-    this._source = (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('file:') && !src.startsWith('blob:')) ? 'media/' + src : src;
+    this._source = formatMediaUrl(src);
     this._volume = props.Volume !== undefined ? Number(props.Volume) : 1.0;
     this._isLooping = !!props.IsLooping;
     this._audio = null;
   }
   SoundShim.prototype = {
-    get Source() { return this._source; }, set Source(v) { this._source = v; if (this._audio) this._audio.src = v; },
+    get Source() { return this._source; }, set Source(v) { this._source = formatMediaUrl(v); if (this._audio) this._audio.src = this._source; },
     get Volume() { return this._volume; }, set Volume(v) { this._volume = Number(v); if (this._audio) this._audio.volume = this._volume; },
     get IsLooping() { return this._isLooping; }, set IsLooping(v) { this._isLooping = !!v; if (this._audio) this._audio.loop = this._isLooping; },
     _initAudio: function() { if (!this._audio && this._source) { this._audio = new Audio(this._source); this._audio.volume = this._volume; this._audio.loop = this._isLooping; var self = this; this._audio.addEventListener('ended', function() { if (typeof window[self.id + '_Completed'] === 'function') window[self.id + '_Completed'](); }); } },
@@ -1102,16 +1331,18 @@ function generateAppJs(appState: any): string {
   function VideoPlayerShim(id, props) {
     this.id = id;
     var src = props.Source || props.source || '';
-    this._source = (src && !src.startsWith('http') && !src.startsWith('data:') && !src.startsWith('file:') && !src.startsWith('blob:')) ? 'media/' + src : src;
+    this._source = formatMediaUrl(src);
     this._volume = props.Volume !== undefined ? Number(props.Volume) : 50;
     this._fullScreen = !!props.FullScreen;
+    var el = this._getEl();
+    if (el && this._source && !el.src) { el.src = this._source; }
   }
   VideoPlayerShim.prototype = {
     _getEl: function() { return document.getElementById('comp-' + this.id); },
-    get Source() { return this._source; }, set Source(v) { this._source = v; var el = this._getEl(); if (el) el.src = (v && !v.startsWith('http') && !v.startsWith('data:') && !v.startsWith('file:') && !v.startsWith('blob:')) ? 'media/' + v : v; },
+    get Source() { return this._source; }, set Source(v) { this._source = formatMediaUrl(v); var el = this._getEl(); if (el) el.src = this._source; },
     get Volume() { return this._volume; }, set Volume(v) { this._volume = Number(v); var el = this._getEl(); if (el) el.volume = Math.max(0, Math.min(1, this._volume / 100)); },
     get FullScreen() { return this._fullScreen; }, set FullScreen(v) { this._fullScreen = !!v; var el = this._getEl(); if (el && v && el.requestFullscreen) el.requestFullscreen(); },
-    Start: function() { var el = this._getEl(); if (el) { el.volume = Math.max(0, Math.min(1, this._volume / 100)); el.play().catch(function(e){}); } },
+    Start: function() { var el = this._getEl(); if (el) { if (!el.src && this._source) el.src = this._source; el.volume = Math.max(0, Math.min(1, this._volume / 100)); el.play().catch(function(e){}); } },
     Pause: function() { var el = this._getEl(); if (el) el.pause(); },
     Stop: function() { var el = this._getEl(); if (el) { el.pause(); el.currentTime = 0; } },
     SeekTo: function(ms) { var el = this._getEl(); if (el) el.currentTime = Number(ms) / 1000; },
@@ -1204,7 +1435,7 @@ function generateAppJs(appState: any): string {
           .then(function(data) { if (data.success) { var responseType = (data.headers && data.headers['content-type']) || 'text/plain'; self._emitGotText(requestUrl, data.status || 200, responseType, data.body || ''); } else { self._emitGotText(requestUrl, 0, '', data.error || 'Relay request failed'); } })
           .catch(function(err) { if (timeoutId) clearTimeout(timeoutId); if (err && err.name === 'AbortError') self._emitTimedOut(requestUrl); else self._emitGotText(requestUrl, 0, '', err && err.message ? err.message : String(err)); });
       } else {
-        var options: any = { method: method || 'GET', body: body, headers: {} };
+        var options = { method: method || 'GET', body: body, headers: {} };
         if (contentType) options.headers['Content-Type'] = contentType;
         if (controller) options.signal = controller.signal;
         var finalUrl = requestUrl;
@@ -1344,7 +1575,11 @@ function generateAppJs(appState: any): string {
     else if (prop === 'FontSize') el.style.fontSize = typeof value === 'number' ? value + 'px' : value;
     else if (prop === 'FontBold') el.style.fontWeight = value ? 'bold' : '';
     else if (prop === 'FontItalic') el.style.fontStyle = value ? 'italic' : '';
-    else if (prop === 'Picture' || prop === 'Image') { if (el.tagName === 'IMG') { el.src = value || ''; } else { el.style.backgroundImage = value ? 'url(' + value + ')' : ''; el.style.backgroundSize = '100% 100%'; } }
+    else if (prop === 'Picture' || prop === 'Image' || prop === 'Source') {
+      var picValue = formatMediaUrl(value);
+      if (el.tagName === 'IMG' || el.tagName === 'VIDEO' || el.tagName === 'AUDIO') { el.src = picValue; }
+      else { el.style.backgroundImage = picValue ? 'url("' + encodeURI(picValue) + '")' : ''; el.style.backgroundSize = '100% 100%'; }
+    }
     else if (prop === 'Hint') { if (el.placeholder !== undefined) el.placeholder = String(value || ''); }
     else if (prop === 'Checked') { var cb = document.getElementById('comp-' + id + '-input'); if (cb) cb.checked = !!value; }
     else if (prop === 'Radius') el.style.borderRadius = value + 'px';
@@ -1373,13 +1608,23 @@ function generateAppJs(appState: any): string {
     for (var i = 0; i < allScreens.length; i++) allScreens[i].classList.remove('active');
     var target = document.getElementById('screen-' + screenId);
     if (target) target.classList.add('active');
+    if (currentScreen && currentScreen !== screenId) {
+      screenHistory.push(currentScreen);
+    }
     currentScreen = screenId;
     if (typeof window['__ScreenChanged'] === 'function') window['__ScreenChanged'](screenId);
   }
 
   function closeScreen() {
-    // Go back to first screen
-    navigateTo(currentScreen);
+    if (screenHistory.length > 0) {
+      var prevScreen = screenHistory.pop();
+      var allScreens = document.querySelectorAll('.screen');
+      for (var i = 0; i < allScreens.length; i++) allScreens[i].classList.remove('active');
+      var target = document.getElementById('screen-' + prevScreen);
+      if (target) target.classList.add('active');
+      currentScreen = prevScreen;
+      if (typeof window['__ScreenChanged'] === 'function') window['__ScreenChanged'](prevScreen);
+    }
   }
 
   window.addEventListener('resize', resizeScreens);
@@ -1446,6 +1691,9 @@ function generateAppJs(appState: any): string {
     try {
       resizeScreens();
       navigateTo('${firstScreenId}');
+      setTimeout(function() {
+        if (typeof window['${firstScreenId}_Initialize'] === 'function') window['${firstScreenId}_Initialize']();
+      }, 100);
     } catch (error) {
       showRuntimeError(error && error.message ? error.message : String(error));
     }

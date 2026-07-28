@@ -229,13 +229,12 @@
    ADD EXTENSION BUTTON - Premium Design with Shine Animation
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Button container positioning - bottom-right corner */
+/* Button container positioning */
 .add-extension-btn-container {
-  position: absolute !important;
-  bottom: 12px !important;
-  right: 64px !important;
-  left: auto !important;
-  z-index: 100 !important;
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 100;
 }
 
 /* Shine animation effect */
@@ -263,18 +262,16 @@
 /* Responsive Design - Tablet */
 @media (max-width: 1024px) {
   .add-extension-btn-container {
-    bottom: 10px !important;
-    right: 56px !important;
-    left: auto !important;
+    bottom: 10px;
+    left: 10px;
   }
 }
 
 /* Responsive Design - Mobile */
 @media (max-width: 768px) {
   .add-extension-btn-container {
-    bottom: 8px !important;
-    right: 48px !important;
-    left: auto !important;
+    bottom: 8px;
+    left: 8px;
   }
 
   .add-extension-btn-container button {
@@ -298,9 +295,8 @@
 /* Responsive Design - Extra Small */
 @media (max-width: 480px) {
   .add-extension-btn-container {
-    bottom: 6px !important;
-    right: 44px !important;
-    left: auto !important;
+    bottom: 6px;
+    left: 6px;
   }
 
   .add-extension-btn-container button {
@@ -322,9 +318,9 @@
 }
 
 /* Animation for smooth appearance */
-@keyframes slideInFromRight {
+@keyframes slideInFromLeft {
   from {
-    transform: translateX(100%);
+    transform: translateX(-100%);
     opacity: 0;
   }
 
@@ -335,7 +331,7 @@
 }
 
 .add-extension-btn-container {
-  animation: slideInFromRight 0.3s ease-out;
+  animation: slideInFromLeft 0.3s ease-out;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -405,16 +401,15 @@
   background: linear-gradient(180deg, #94a3b8, #64748b);
 }
 
-/* Each category row - MORE vertical spacing & auto height to prevent vertical overlapping */
+/* Each category row - MORE vertical spacing */
 .blocklyToolboxCategory {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  padding: 6px 4px 10px 4px !important;
-  margin: 0 2px 4px 2px !important;
-  min-height: 52px !important;
-  height: auto !important;
+  padding: 4px 3px 10px 3px !important;
+  margin: 0 2px 2px 2px !important;
+  min-height: 48px !important;
   border-radius: 8px !important;
   cursor: pointer !important;
   transition: background-color 0.15s ease !important;
@@ -422,12 +417,11 @@
   pointer-events: auto !important;
 }
 
-/* Make the container the interactive element with auto height */
+/* Make the container the interactive element */
 .blocklyToolboxCategoryContainer {
   pointer-events: auto !important;
   cursor: pointer !important;
   border-radius: 8px !important;
-  height: auto !important;
   transition: background-color 0.15s ease !important;
 }
 
@@ -435,14 +429,14 @@
   background-color: rgba(0, 0, 0, 0.05) !important;
 }
 
-/* Row content container - vertical layout with auto height */
+/* Row content container - vertical layout with gap */
 .blocklyTreeRowContentContainer {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: flex-start !important;
   width: 100% !important;
-  height: auto !important;
+  height: 100% !important;
 }
 
 /* Hide default Blockly icon */
@@ -618,39 +612,110 @@
    CATEGORY COLORED CIRCLES (LeapBlox-style circular icons)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Disable legacy CSS ::before pseudo-element icons to prevent duplicate icons and vertical overlap */
+/* Create circular icon before each category label */
 .blocklyToolboxCategory::before {
-  display: none !important;
-  content: none !important;
+  content: '';
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  margin-bottom: 4px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background-size: 18px;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
-/* Styling for JS-generated .leapblox-icon */
-.leapblox-icon {
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 50% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 14px !important;
-  color: white !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15) !important;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease !important;
-  pointer-events: none !important;
-  flex-shrink: 0 !important;
-  margin-bottom: 4px !important;
+.blocklyToolboxCategory:hover::before {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-.blocklyTreeRow:hover .leapblox-icon,
-.blocklyToolboxCategory:hover .leapblox-icon,
-.blocklyToolboxCategoryContainer:hover .leapblox-icon {
-  transform: translateY(-2px) scale(1.05) !important;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15) !important;
+.blocklyToolboxSelected::before {
+  border: 2px solid white;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-.blocklyToolboxSelected .leapblox-icon {
-  border: 2px solid white !important;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08), 0 6px 12px rgba(0, 0, 0, 0.15) !important;
+/* Motion - Blue */
+.blocklyToolboxCategory[aria-label*="Motion"]::before,
+.blocklyToolboxCategory[aria-label*="motion"]::before {
+  background-color: var(--motion-color);
+  content: '🏃';
+}
+
+/* Looks - Purple */
+.blocklyToolboxCategory[aria-label*="Looks"]::before,
+.blocklyToolboxCategory[aria-label*="looks"]::before {
+  background-color: var(--looks-color);
+  content: '👁️';
+}
+
+/* Sound - Pink */
+.blocklyToolboxCategory[aria-label*="Sound"]::before,
+.blocklyToolboxCategory[aria-label*="sound"]::before {
+  background-color: var(--sound-color);
+  content: '🔊';
+}
+
+/* Events - Yellow/Gold */
+.blocklyToolboxCategory[aria-label*="Events"]::before,
+.blocklyToolboxCategory[aria-label*="events"]::before {
+  background-color: var(--events-color);
+  content: '⚡';
+}
+
+/* Control - Orange */
+.blocklyToolboxCategory[aria-label*="Control"]::before,
+.blocklyToolboxCategory[aria-label*="control"]::before {
+  background-color: var(--control-color);
+  content: '🔄';
+}
+
+/* Sensing - Light Blue */
+.blocklyToolboxCategory[aria-label*="Sensing"]::before,
+.blocklyToolboxCategory[aria-label*="sensing"]::before {
+  background-color: var(--sensing-color);
+  content: '👆';
+}
+
+/* Operators - Green */
+.blocklyToolboxCategory[aria-label*="Operators"]::before,
+.blocklyToolboxCategory[aria-label*="operators"]::before {
+  background-color: var(--operators-color);
+  content: '➕';
+}
+
+/* Variables - Red/Orange */
+.blocklyToolboxCategory[aria-label*="Variables"]::before,
+.blocklyToolboxCategory[aria-label*="variables"]::before {
+  background-color: var(--variables-color);
+  content: '📊';
+}
+
+/* My Blocks / Procedures - Pink */
+.blocklyToolboxCategory[aria-label*="My Blocks"]::before,
+.blocklyToolboxCategory[aria-label*="Procedures"]::before {
+  background-color: var(--myblocks-color);
+  content: '🧩';
+}
+
+/* More Blocks - Slate placeholder */
+.blocklyToolboxCategory[aria-label*="More Blocks"]::before,
+.blocklyToolboxCategory[aria-label*="more blocks"]::before {
+  background-color: var(--moreblocks-color);
+  content: '➕';
+}
+
+/* Hardware - Teal */
+.blocklyToolboxCategory[aria-label*="Hardware"]::before,
+.blocklyToolboxCategory[aria-label*="hardware"]::before,
+.blocklyToolboxCategory[aria-label*="Arduino"]::before {
+  background-color: var(--hardware-color);
+  content: '🔌';
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

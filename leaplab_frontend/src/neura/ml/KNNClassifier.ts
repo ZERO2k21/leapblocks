@@ -15,30 +15,15 @@ export class KNNClassifier {
     private disposed = false
 
     /**
-     * L2-normalize a 1D tensor to unit length.
-     * Required for cosine similarity via dot product.
-     */
-    private l2Normalize(tensor: any): any {
-        const tf = window.tf
-        const norm = tf.norm(tensor)
-        const normalized = tf.div(tensor, norm.add(1e-8))
-        norm.dispose()
-        return normalized
-    }
-
-    /**
      * Add an example embedding for a given class label.
-     * Embeddings are L2-normalized so dot product = cosine similarity.
      * @param embedding - A 1D tf.Tensor (the feature vector)
      * @param label - The class name/label
      */
     async addExample(embedding: any, label: string): Promise<void> {
         const tf = await ensureTf()
         const flat = embedding.reshape([embedding.size])
-        const normalized = this.l2Normalize(flat)
-        const ex = normalized.expandDims(0)
+        const ex = flat.expandDims(0)
         flat.dispose()
-        normalized.dispose()
         if (!this.examples[label]) {
             this.examples[label] = ex
         } else {
@@ -62,7 +47,6 @@ export class KNNClassifier {
     /**
      * Predict the class of an embedding using cosine similarity + distance-weighted top-k voting.
      * Automatically adjusts k based on the smallest class size for optimal accuracy.
-     * Query embedding is L2-normalized to match stored normalized examples.
      */
     async predictClass(embedding: any, k = 5): Promise<KNNPrediction | null> {
         const tf = await ensureTf()
@@ -70,10 +54,8 @@ export class KNNClassifier {
         if (!labels.length) return null
 
         const flat = embedding.reshape([embedding.size])
-        const normalized = this.l2Normalize(flat)
-        const emb = normalized.expandDims(0)
+        const emb = flat.expandDims(0)
         flat.dispose()
-        normalized.dispose()
 
         // Adaptive k: clamp to smallest class size to avoid bias toward larger classes
         const minClassSize = Math.min(...labels.map(l => (this.examples[l] as any).shape[0]))

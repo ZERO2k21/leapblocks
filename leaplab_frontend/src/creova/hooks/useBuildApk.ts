@@ -29,26 +29,42 @@ export function useBuildApk(
   const handleBuildApk = useCallback(async () => {
     const isElectron = typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.buildApk === 'function';
 
+    console.log('[BUILD-UI] Build Production button clicked');
+    console.log('[BUILD-UI] Platform:', isElectron ? 'Electron' : 'Web');
+    console.log('[BUILD-UI] App state keys:', Object.keys(appState));
+
     setIsBuildModalOpen(true);
     setBuildState('building');
-    setBuildLogs(['Initializing build process...']);
+    setBuildLogs(['[BUILD] Initializing build process...']);
     setApkPath(null);
 
     try {
+      const tStart = Date.now();
       const payload = appState.getSerializedState();
+      console.log('[BUILD-UI] Serialized state:', {
+        appName: payload.appName,
+        packageName: payload.packageName,
+        screenCount: payload.screens?.length,
+        mediaCount: payload.media?.length,
+        hasBlockLogic: !!payload.blockLogic,
+        hasBlockly: !!(window as any).__LEAP_BLOCK_XML__
+      });
+
       const liveBlockXml = typeof window !== 'undefined' ? (window as any).__LEAP_BLOCK_XML__ : null;
       if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
         payload.blockLogic = liveBlockXml;
+        console.log('[BUILD-UI] Captured live Blockly XML from window.__LEAP_BLOCK_XML__');
       }
       const visibleComponentCount = countVisibleComponents(payload.screens || []);
       setBuildLogs((prev) => [
         ...prev,
-        `Project snapshot: ${(payload.screens || []).length || 1} screen(s), ${visibleComponentCount} visible component(s)`
+        `[BUILD] Project snapshot: ${(payload.screens || []).length || 1} screen(s), ${visibleComponentCount} visible component(s)`
       ]);
 
       if (payload.blockLogic && payload.blockLogic.trim().startsWith('<')) {
         try {
-          setBuildLogs((prev) => [...prev, 'Transpiling block logic to JavaScript...']);
+          setBuildLogs((prev) => [...prev, '[BUILD] Transpiling block logic to JavaScript...']);
+          console.log('[BUILD-UI] Starting Blockly transpilation (XML → JS)');
           const { initializeAllBlocks } = await import('../blocks/definitions/index');
           const Blockly = (await import('blockly')).default || (await import('blockly'));
           const { javascriptGenerator } = await import('blockly/javascript');
@@ -56,6 +72,7 @@ export function useBuildApk(
           initializeAllBlocks();
 
           const { currentScreen, components } = buildBlocklyContextFromPayload(payload);
+          console.log('[BUILD-UI] Blockly context built:', { currentScreenId: currentScreen?.id, componentCount: components?.length });
           (window as any).LeapLab_Components = components;
           (window as any).LeapLab_ActiveScreen = currentScreen;
 
@@ -63,6 +80,7 @@ export function useBuildApk(
           try {
             const xml = (Blockly as any).utils.xml.textToDom(payload.blockLogic);
             (Blockly as any).Xml.domToWorkspace(xml, tempWorkspace);
+            console.log('[BUILD-UI] Blocks loaded into workspace:', tempWorkspace.getAllBlocks(false).length, 'blocks');
 
             if (currentScreen) {
               const flattenVisible = (list: any[] = []): any[] =>
@@ -76,65 +94,85 @@ export function useBuildApk(
                 ...allComps.map(c => c.id)
               ]);
               const allBlocks = tempWorkspace.getAllBlocks(false);
+              let pruned = 0;
               allBlocks.forEach((block: any) => {
                 if (block.getField('INSTANCE')) {
                   const instanceName = block.getFieldValue('INSTANCE');
                   if (!instanceName || !validNames.has(instanceName)) {
                     block.dispose(false);
+                    pruned++;
                   }
                 }
               });
+              if (pruned > 0) console.log('[BUILD-UI] Pruned', pruned, 'orphaned blocks');
             }
 
             const generatedJs = javascriptGenerator.workspaceToCode(tempWorkspace);
             if (generatedJs && generatedJs.trim()) {
               payload.blockLogic = generatedJs;
-              setBuildLogs((prev) => [...prev, 'Block logic transpiled to JavaScript']);
+              setBuildLogs((prev) => [...prev, '[BUILD] Block logic transpiled to JavaScript']);
+              console.log('[BUILD-UI] Generated JS length:', generatedJs.length);
             } else {
               payload.blockLogic = '';
-              setBuildLogs((prev) => [...prev, 'No block logic to transpile']);
+              setBuildLogs((prev) => [...prev, '[BUILD] No block logic to transpile']);
             }
           } finally {
             tempWorkspace.dispose();
           }
         } catch (transpileErr: any) {
-          console.warn('Block transpilation failed, building without block logic:', transpileErr);
-          setBuildLogs((prev) => [...prev, `Block transpilation skipped: ${transpileErr?.message || transpileErr}`]);
+          console.warn('[BUILD-UI] Block transpilation failed:', transpileErr);
+          setBuildLogs((prev) => [...prev, `[BUILD] Block transpilation skipped: ${transpileErr?.message || transpileErr}`]);
           payload.blockLogic = onTranspileFailMessage
             ? `console.warn('[LeapApp] Block transpilation failed:', ${JSON.stringify(transpileErr?.message || transpileErr)});`
             : '';
         }
+      } else if (payload.blockLogic) {
+        console.log('[BUILD-UI] blockLogic is JS (not XML), length:', payload.blockLogic.length);
+      } else {
+        console.log('[BUILD-UI] No block logic present');
       }
 
       if (isElectron && window.electronAPI?.buildApk) {
-        setBuildLogs((prev) => [...prev, 'Sending build request to main process...']);
+        setBuildLogs((prev) => [...prev, '[BUILD] Sending build request to Electron main process...']);
+        console.log('[BUILD-UI] Calling window.electronAPI.buildApk()');
         const result = await window.electronAPI.buildApk(payload);
+        console.log('[BUILD-UI] Electron build result:', result);
+        const elapsed = ((Date.now() - tStart) / 1000).toFixed(1);
+        setBuildLogs((prev) => [...prev, `[BUILD] Electron build completed in ${elapsed}s`]);
 
         if (result.success) {
           setBuildState('success');
           setApkPath(result.outputPath || null);
-          setBuildLogs((prev) => [...prev, 'Build complete! APK is ready.']);
+          setBuildLogs((prev) => [...prev, '[BUILD] Build complete! APK is ready.']);
+          console.log('[BUILD-UI] APK output path:', result.outputPath);
         } else {
           setBuildState('error');
-          setBuildLogs((prev) => [...prev, `Build failed: ${result.error}`]);
+          setBuildLogs((prev) => [...prev, `[BUILD] Build failed: ${result.error}`]);
+          console.error('[BUILD-UI] Electron build error:', result.error);
         }
       } else {
         const { CLOUD_COMPILER_URL } = await import('../../config/platform');
         const serverLabel = CLOUD_COMPILER_URL.includes('localhost') ? 'local' : 'cloud';
-        setBuildLogs((prev) => [...prev, `Sending build request to ${serverLabel} compiler (${CLOUD_COMPILER_URL})...`]);
+        setBuildLogs((prev) => [...prev, `[BUILD] Sending build request to ${serverLabel} compiler (${CLOUD_COMPILER_URL})...`]);
+        console.log('[BUILD-UI] Fetching POST', CLOUD_COMPILER_URL + '/build-apk');
+        console.log('[BUILD-UI] Payload keys:', Object.keys(payload));
+        console.log('[BUILD-UI] Payload media items:', payload.media?.length || 0);
 
         const response = await fetch(`${CLOUD_COMPILER_URL}/build-apk`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+        console.log('[BUILD-UI] Server response status:', response.status);
 
         if (!response.ok) {
           const text = await response.text();
+          console.error('[BUILD-UI] Server error response:', text);
           throw new Error(`Server error: ${response.status} - ${text}`);
         }
 
         const result = await response.json();
+        console.log('[BUILD-UI] Server result:', { success: result.success, downloadUrl: result.downloadUrl, logCount: result.logs?.length, cloudBuildUnsupported: result.cloudBuildUnsupported });
         if (result.logs && result.logs.length) {
           setBuildLogs((prev) => [...prev, ...result.logs]);
         }
@@ -147,15 +185,19 @@ export function useBuildApk(
             ? result.downloadUrl
             : `${CLOUD_COMPILER_URL}${result.downloadUrl}`;
           setApkPath(fullDownloadUrl);
-          setBuildLogs((prev) => [...prev, 'Build complete! APK is ready to download.']);
+          const elapsed = ((Date.now() - tStart) / 1000).toFixed(1);
+          setBuildLogs((prev) => [...prev, `[BUILD] Build complete! APK ready to download (${elapsed}s).`]);
+          console.log('[BUILD-UI] Download URL:', fullDownloadUrl);
         } else {
           setBuildState('error');
-          setBuildLogs((prev) => [...prev, `Build failed: ${result.error}`]);
+          setBuildLogs((prev) => [...prev, `[BUILD] Build failed: ${result.error}`]);
+          console.error('[BUILD-UI] Server build error:', result.error);
         }
       }
     } catch (error: any) {
+      console.error('[BUILD-UI] Build process error:', error);
       setBuildState('error');
-      setBuildLogs((prev) => [...prev, `Build failed: ${error?.message || error}`]);
+      setBuildLogs((prev) => [...prev, `[BUILD] Build failed: ${error?.message || error}`]);
     }
   }, [appState, setIsBuildModalOpen, setBuildState, setBuildLogs, setApkPath, onTranspileFailMessage]);
 

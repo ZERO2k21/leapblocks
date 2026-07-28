@@ -389,21 +389,30 @@ function binToIntelHex(buf: Buffer): string {
 // ─── POST /build-apk ──────────────────────────────────────────
 app.post('/build-apk', async (req: Request, res: Response) => {
   const project = req.body;
+  const reqTime = Date.now();
+  console.log('[APK] ==================== /build-apk REQUEST ====================');
+  console.log('[APK] Timestamp:', new Date().toISOString());
+  console.log('[APK] appName:', project?.appName, '| packageName:', project?.packageName);
+  console.log('[APK] screens:', project?.screens?.length, '| media:', project?.media?.length);
   if (!project || typeof project !== 'object') {
+    console.log('[APK] ERROR: No project data');
     return res.status(400).json({ success: false, error: 'No project data provided' });
   }
 
   try {
     const buildPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.js');
-    console.log(`[APK] buildPath: ${buildPath}`);
+    console.log('[APK] buildPath:', buildPath);
+    console.log('[APK] buildPath exists:', fs.existsSync(buildPath));
 
     let builder: any;
     if (fs.existsSync(buildPath)) {
       const ApkBuilder = _require(buildPath);
       builder = new ApkBuilder();
+      console.log('[APK] Builder instance created');
     }
 
     if (!builder || typeof builder.build !== 'function') {
+      console.log('[APK] Builder not available');
       const logs = [
         '[10%] Cloud APK builder not available on this server.',
         '[30%] APK builds require the local LeapBlocks server or Electron app.',
@@ -419,22 +428,31 @@ app.post('/build-apk', async (req: Request, res: Response) => {
     }
 
     const logs: string[] = [];
-    const outputPath = await builder.build(project, ({ progress, message }: { progress?: number; message?: string }) => {
+    console.log('[APK] Calling builder.build()...');
+    const outputPath = await builder.build(project, ({ stage, progress, message }: { stage?: string; progress?: number; message?: string }) => {
       if (message) {
         const prefix = progress !== undefined ? `[${progress}%] ` : '';
-        logs.push(`${prefix}${message}`);
-        console.log(`[APK] ${prefix}${message}`);
+        const entry = `${prefix}${message}`;
+        logs.push(entry);
+        console.log(`[APK] ${entry}`);
       }
     });
+
+    const elapsed = ((Date.now() - reqTime) / 1000).toFixed(1);
+    console.log('[APK] build() returned:', outputPath, '| elapsed:', elapsed + 's');
 
     const apkName = `${sanitizeApkName(project.appName)}.apk`;
     const publicPath = path.join(APK_PUBLIC_DIR, apkName);
     fs.mkdirSync(APK_PUBLIC_DIR, { recursive: true });
 
     if (fs.existsSync(outputPath)) {
+      console.log('[APK] Copying APK to public:', publicPath);
       fs.copyFileSync(outputPath, publicPath);
+    } else {
+      console.log('[APK] WARNING: outputPath does not exist:', outputPath);
     }
 
+    console.log('[APK] ==================== /build-apk COMPLETE ====================');
     return res.json({
       success: true,
       downloadUrl: `/apks/${apkName}`,
@@ -442,7 +460,8 @@ app.post('/build-apk', async (req: Request, res: Response) => {
       logs,
     });
   } catch (err: any) {
-    console.error('[APK] build failed:', err);
+    console.error('[APK] ==================== /build-apk FAILED ====================');
+    console.error('[APK] Error:', err.message, '| Stack:', err.stack);
     return res.status(500).json({
       success: false,
       error: err.message || String(err),

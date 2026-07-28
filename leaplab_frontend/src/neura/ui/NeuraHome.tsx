@@ -109,18 +109,18 @@ const PROJECT_TEMPLATES = [
         tag: '🔊 Audio',
         projectType: 'audio-classifier' as ProjectType
     },
-    // Virtual Piano (Hand Pose)
+    // Hand Pose Classifier
     {
-        name: 'Virtual Piano',
-        description: 'Play piano with hand gestures!',
-        icon: '🎹',
-        icon2: '✋',
-        icon3: '🎵',
-        classes: ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si'],
-        color: '#8b5cf6',
-        bg: 'from-[#8b5cf6]/10 to-[#a78bfa]/10',
+        name: 'Finger Counter',
+        description: 'Count fingers with AI hand tracking!',
+        icon: '✋',
+        icon2: '☝️',
+        icon3: '🖖',
+        classes: ['One', 'Two', 'Three', 'Four', 'Five'],
+        color: '#0ea5e9',
+        bg: 'from-[#0ea5e9]/10 to-[#38bdf8]/10',
         tag: '✋ Hand Gesture',
-        projectType: 'virtual-piano' as ProjectType
+        projectType: 'finger-counter' as ProjectType
     },
     // Body Pose Classifier
     {

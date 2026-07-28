@@ -64,6 +64,64 @@ function collectPermissions(screens: Screen[] = []): string[] {
   return [...perms];
 }
 
+function collectMediaAssets(screens: Screen[] = [], explicitMedia: any[] = []): any[] {
+  const mediaMap = new Map<string, any>();
+  const explicitByName = new Map<string, any>();
+  for (const item of explicitMedia) {
+    const rawName = item.filename || item.name || item.path;
+    if (rawName) {
+      const cleanName = path.basename(String(rawName));
+      mediaMap.set(cleanName, item);
+      explicitByName.set(cleanName, item);
+    }
+  }
+
+  const checkAndAdd = (val: unknown) => {
+    if (!val || typeof val !== 'string') return;
+    const str = val.trim();
+    if (!str || str.startsWith('http://') || str.startsWith('https://') || str.startsWith('blob:')) return;
+
+    let cleanName = str;
+    if (cleanName.startsWith('file:')) {
+      cleanName = cleanName.replace(/^file:\/\/\/?/i, '');
+    }
+    if (cleanName.includes('/') || cleanName.includes('\\')) {
+      cleanName = path.basename(cleanName);
+    }
+    try { cleanName = decodeURIComponent(cleanName); } catch (_) {}
+    if (cleanName.startsWith('media/')) cleanName = cleanName.substring(6);
+
+    if (cleanName && !mediaMap.has(cleanName)) {
+      const matchedExplicit = explicitByName.get(cleanName);
+      if (matchedExplicit && matchedExplicit.data) {
+        mediaMap.set(cleanName, { filename: cleanName, data: matchedExplicit.data, type: matchedExplicit.type });
+      } else {
+        mediaMap.set(cleanName, { filename: cleanName, data: str });
+      }
+    }
+  };
+
+  const walk = (components: ComponentItem[] = []) => {
+    for (const comp of components) {
+      const props = (comp as any).props || {};
+      checkAndAdd(props.Picture);
+      checkAndAdd(props.Image);
+      checkAndAdd(props.Source);
+      checkAndAdd(props.source);
+      if (comp.children?.length) walk(comp.children);
+    }
+  };
+
+  for (const screen of screens) {
+    checkAndAdd((screen as any).backgroundImage);
+    checkAndAdd((screen as any).BackgroundImage);
+    walk(screen.components || []);
+    walk(screen.nonVisibleComponents || []);
+  }
+
+  return Array.from(mediaMap.values());
+}
+
 function countVisibleComponents(screens: Screen[] = []): number {
   let count = 0;
   const walk = (components: ComponentItem[] = []) => {
@@ -135,6 +193,23 @@ class ApkBuilder {
   }
 
   async build(appState: AppState, onProgress?: (event: ProgressEvent) => void): Promise<string> {
+    console.log('[APK-BUILDER] ==================== BUILD STARTED ====================');
+    console.log('[APK-BUILDER] App:', appState.appName, '| Package:', appState.packageName);
+    console.log('[APK-BUILDER] Screens:', appState.screens?.length, '| Media:', appState.media?.length);
+    console.log('[APK-BUILDER] Template path:', this.templatePath);
+    console.log('[APK-BUILDER] Template exists:', await fs.pathExists(this.templatePath));
+
+    if (Array.isArray(appState.media) && appState.media.length > 0) {
+      console.log('[APK-BUILDER] Media items from appState:');
+      for (let i = 0; i < appState.media.length; i++) {
+        const item = appState.media[i];
+        const dataStr = item.data ? String(item.data) : '';
+        console.log(`[APK-BUILDER]   media[${i}]: filename="${item.filename}" type="${item.type}" dataLen=${dataStr.length} hasData=${!!item.data} dataPrefix=${dataStr.substring(0, 30)}`);
+      }
+    } else {
+      console.log('[APK-BUILDER] No media items in appState');
+    }
+
     const appName = (appState.appName || 'MyApp').replace(/[^a-zA-Z0-9]/g, '') || 'MyApp';
     const packageName = appState.packageName || `com.leaplab.${appName.toLowerCase()}`;
     const versionCode = normalizeVersionCode(appState.versionCode);
@@ -142,6 +217,11 @@ class ApkBuilder {
     const normalizedAppState = { ...appState, versionCode, versionName };
     const screens: Screen[] = Array.isArray(appState.screens) ? appState.screens : [];
     const visibleComponentCount = countVisibleComponents(screens);
+
+    console.log('[APK-BUILDER] App name:', appName);
+    console.log('[APK-BUILDER] Package:', packageName);
+    console.log('[APK-BUILDER] Version:', versionCode, versionName);
+    console.log('[APK-BUILDER] Screens:', screens.length, '| Visible components:', visibleComponentCount);
 
     try {
       onProgress?.({ stage: 'generating', progress: 5, message: 'Generating web application...' });
@@ -158,50 +238,79 @@ class ApkBuilder {
         });
       }
       const webAppFiles = generateWebApp(normalizedAppState);
-      onProgress?.({ stage: 'generated', progress: 10, message: `Generated ${Object.keys(webAppFiles).length} files` });
+      const fileCount = Object.keys(webAppFiles).length;
+      onProgress?.({ stage: 'generated', progress: 10, message: `Generated ${fileCount} files` });
+      console.log('[APK-BUILDER] Web app files generated:', fileCount);
+      const htmlFile = webAppFiles['index.html'];
+      if (htmlFile) console.log('[APK-BUILDER] index.html length:', htmlFile.length);
+      const jsFile = webAppFiles['app.js'];
+      if (jsFile) console.log('[APK-BUILDER] app.js length:', jsFile.length);
 
       const hasTemplate = await fs.pathExists(this.templatePath);
+      console.log('[APK-BUILDER] Template APK found:', hasTemplate, 'at', this.templatePath);
 
       if (hasTemplate) {
         onProgress?.({ stage: 'template_found', progress: 12, message: 'Using WebView template APK' });
 
         const permissions = collectPermissions(screens);
         const screenOrientation = resolveScreenOrientation(screens, appState.designViewport);
+        const mediaAssets = collectMediaAssets(screens, appState.media || []);
 
+        console.log('[APK-BUILDER] Permissions:', permissions);
+        console.log('[APK-BUILDER] Screen orientation:', screenOrientation);
+        console.log('[APK-BUILDER] Collected media assets:', mediaAssets.length);
+        for (let i = 0; i < mediaAssets.length; i++) {
+          const m = mediaAssets[i];
+          const dataStr = m.data ? String(m.data) : '';
+          console.log(`[APK-BUILDER]   mediaAsset[${i}]: filename="${m.filename}" hasData=${!!m.data} dataPrefix=${dataStr.substring(0, 40)}`);
+        }
+
+        console.log('[APK-BUILDER] Calling injector.fullBuild()...');
         const signedPath = await this.injector.fullBuild(
           this.templatePath,
           webAppFiles,
           {
             appName,
             packageName,
-            mediaAssets: appState.media || [],
+            mediaAssets,
             permissions,
             screenOrientation,
             renderedIconsDir: appState.renderedIconsDir || null,
+            projectPath: appState.projectPath || appState.path || null,
+            projectDir: appState.projectDir || null,
           },
           onProgress
         );
+        console.log('[APK-BUILDER] injector.fullBuild() returned:', signedPath);
 
         await fs.ensureDir(OUTPUT_DIR);
         const finalPath = path.join(OUTPUT_DIR, `${appName}.apk`);
+        console.log('[APK-BUILDER] Copying signed APK to:', finalPath);
         await fs.copy(signedPath, finalPath, { overwrite: true });
 
         await this.injector.cleanup();
         onProgress?.({ stage: 'complete', progress: 100, message: `Build complete: ${finalPath}` });
+        console.log('[APK-BUILDER] ==================== BUILD COMPLETE ====================');
+        console.log('[APK-BUILDER] Final APK path:', finalPath);
         return finalPath;
 
       } else {
         onProgress?.({ stage: 'no_template', progress: 12, message: 'No template APK — building from minimal structure' });
+        console.log('[APK-BUILDER] No template found — using buildWithoutTemplate()');
         return await this.buildWithoutTemplate(appName, packageName, appState, webAppFiles, onProgress);
       }
 
     } catch (error) {
+      console.error('[APK-BUILDER] Build error:', error);
+      console.error('[APK-BUILDER] Error stack:', (error as Error).stack);
       await this.injector.cleanup().catch(() => { });
       throw error;
     }
   }
 
   async buildWithoutTemplate(appName: string, packageName: string, appState: AppState, webAppFiles: Record<string, string>, onProgress?: (event: ProgressEvent) => void): Promise<string> {
+    console.log('[APK-BUILDER] buildWithoutTemplate() started');
+    console.log('[APK-BUILDER]   appName:', appName, '| packageName:', packageName);
     await this.injector.initialize(appName);
 
     const decodedDir = path.join(this.injector.workingDir!, 'decoded');
@@ -209,6 +318,7 @@ class ApkBuilder {
     const screenOrientation = resolveScreenOrientation(Array.isArray(appState.screens) ? appState.screens : [], appState.designViewport);
 
     onProgress?.({ stage: 'creating_structure', progress: 15, message: 'Creating APK structure...' });
+    console.log('[APK-BUILDER] Creating APK structure at:', decodedDir);
 
     await fs.ensureDir(decodedDir);
     await fs.ensureDir(path.join(decodedDir, 'smali', ...pkgPath.split('/')));
@@ -273,36 +383,53 @@ versionInfo:
 
     const screens: Screen[] = Array.isArray(appState.screens) ? appState.screens : [];
     const permissions = collectPermissions(screens);
+    console.log('[APK-BUILDER] No-template permissions:', permissions);
 
     let manifest = await fs.readFile(path.join(decodedDir, 'AndroidManifest.xml'), 'utf8');
     for (const perm of permissions) {
       if (!manifest.includes(perm)) {
         manifest = manifest.replace('</manifest>', `    <uses-permission android:name="${perm}" />\n</manifest>`);
+        console.log('[APK-BUILDER] Added permission:', perm);
       }
     }
     await fs.writeFile(path.join(decodedDir, 'AndroidManifest.xml'), manifest);
 
     onProgress?.({ stage: 'injecting_assets', progress: 30, message: 'Injecting web assets...' });
-    await this.injector.injectAssets(decodedDir, webAppFiles, appState.media || [], onProgress);
+    const mediaAssets = collectMediaAssets(screens, appState.media || []);
+    const projectDir = appState.projectDir || (appState.projectPath ? path.dirname(appState.projectPath) : null);
+    console.log('[APK-BUILDER] Collected', mediaAssets.length, 'media assets for injection');
+    console.log('[APK-BUILDER] projectDir:', projectDir);
+    for (let i = 0; i < mediaAssets.length; i++) {
+      const m = mediaAssets[i];
+      const dataStr = m.data ? String(m.data) : '';
+      console.log(`[APK-BUILDER]   mediaAsset[${i}]: filename="${m.filename}" hasData=${!!m.data} dataPrefix=${dataStr.substring(0, 40)}`);
+    }
+    await this.injector.injectAssets(decodedDir, webAppFiles, mediaAssets, onProgress, projectDir);
 
     onProgress?.({ stage: 'injecting_smali', progress: 50, message: 'Injecting WebView activity...' });
+    console.log('[APK-BUILDER] Injecting WebView activity for package:', packageName);
     await this.injector.injectWebViewActivity(decodedDir, packageName, permissions, onProgress);
 
-    await this.injector.injectAppIcon(decodedDir, appState.renderedIconsDir || null, onProgress);
+    console.log('[APK-BUILDER] Injecting app icon...');
+    await this.injector.injectAppIcon(decodedDir, appState.renderedIconsDir || undefined, onProgress);
 
     const unsignedPath = path.join(this.injector.workingDir!, 'unsigned.apk');
+    console.log('[APK-BUILDER] Rebuilding APK...');
     await this.injector.rebuildApk(decodedDir, unsignedPath, onProgress);
 
     const signedOutputDir = path.join(this.injector.workingDir!, 'signed');
     await fs.ensureDir(signedOutputDir);
+    console.log('[APK-BUILDER] Signing APK...');
     const signedPath = await this.injector.signApk(unsignedPath, signedOutputDir, onProgress);
 
     await fs.ensureDir(OUTPUT_DIR);
     const finalPath = path.join(OUTPUT_DIR, `${appName}.apk`);
+    console.log('[APK-BUILDER] Copying to final path:', finalPath);
     await fs.copy(signedPath, finalPath, { overwrite: true });
 
     await this.injector.cleanup();
     onProgress?.({ stage: 'complete', progress: 100, message: `Build complete: ${finalPath}` });
+    console.log('[APK-BUILDER] buildWithoutTemplate() complete:', finalPath);
     return finalPath;
   }
 }

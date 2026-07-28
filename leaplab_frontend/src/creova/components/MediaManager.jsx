@@ -32,13 +32,21 @@ export default function MediaManager({ appState }) {
                 fileList.forEach(file => {
                     const reader = new FileReader();
                     reader.onload = (event) => {
+                        const data = event.target.result;
+                        const b64len = data.indexOf(',') >= 0 ? data.length - data.indexOf(',') - 1 : data.length;
+                        if (data.length < 50 || b64len < 10) {
+                            console.warn('[MEDIA-UPLOAD] File appears empty:', file.name, 'size:', file.size, 'dataLen:', data.length, 'b64Len:', b64len);
+                        }
                         addMedia({
                             filename: file.name,
                             type: file.type,
                             size: file.size,
-                            data: event.target.result,
+                            data: data,
                             timestamp: Date.now()
                         });
+                    };
+                    reader.onerror = () => {
+                        console.error('[MEDIA-UPLOAD] FileReader error for', file.name, reader.error);
                     };
                     reader.readAsDataURL(file);
                 });
@@ -78,22 +86,30 @@ export default function MediaManager({ appState }) {
         return <File className={className} />;
     };
 
-    const handleFileUpload = (e) => {
+const handleFileUpload = (e) => {
         const files = Array.from(e.target.files);
         files.forEach(file => {
             const reader = new FileReader();
             reader.onload = (event) => {
+                const data = event.target.result;
+                const b64len = data.indexOf(',') >= 0 ? data.length - data.indexOf(',') - 1 : data.length;
+                if (data.length < 50 || b64len < 10) {
+                    console.warn('[MEDIA-UPLOAD] File appears empty:', file.name, 'size:', file.size, 'dataLen:', data.length, 'b64Len:', b64len);
+                }
                 addMedia({
                     filename: file.name,
                     type: file.type,
                     size: file.size,
-                    data: event.target.result,
+                    data: data,
                     timestamp: Date.now()
                 });
             };
+            reader.onerror = () => {
+                console.error('[MEDIA-UPLOAD] FileReader error for', file.name, reader.error);
+            };
             reader.readAsDataURL(file);
         });
-        e.target.value = null; // Reset input
+e.target.value = null;
     };
 
     const handleDragOver = (e) => {
@@ -130,13 +146,21 @@ export default function MediaManager({ appState }) {
         files.forEach(file => {
             const reader = new FileReader();
             reader.onload = (event) => {
+                const data = event.target.result;
+                const b64len = data.indexOf(',') >= 0 ? data.length - data.indexOf(',') - 1 : data.length;
+                if (data.length < 50 || b64len < 10) {
+                    console.warn('[MEDIA-UPLOAD] File appears empty:', file.name, 'size:', file.size, 'dataLen:', data.length, 'b64Len:', b64len);
+                }
                 addMedia({
                     filename: file.name,
                     type: file.type,
                     size: file.size,
-                    data: event.target.result,
+                    data: data,
                     timestamp: Date.now()
                 });
+            };
+            reader.onerror = () => {
+                console.error('[MEDIA-UPLOAD] FileReader error for', file.name, reader.error);
             };
             reader.readAsDataURL(file);
         });

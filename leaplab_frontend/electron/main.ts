@@ -250,20 +250,30 @@ app.on('before-quit', () => {
 // IPC Handlers
 
 ipcMain.handle('build-apk', async (event, appState) => {
+  console.log('[ELECTRON-MAIN] ==================== IPC build-apk ====================');
+  console.log('[ELECTRON-MAIN] appName:', appState?.appName, '| packageName:', appState?.packageName);
+  console.log('[ELECTRON-MAIN] screens:', appState?.screens?.length, '| media:', appState?.media?.length);
+  console.log('[ELECTRON-MAIN] APP_ROOT:', APP_ROOT);
   const logCallback = (msg: string) => {
+    console.log('[ELECTRON-MAIN] Log:', msg);
     try {
       if (!event.sender.isDestroyed()) {
         event.sender.send('build-log', msg);
       }
     } catch (err) {
-      console.error("Failed to send log:", err);
+      console.error("[ELECTRON-MAIN] Failed to send log:", err);
     }
   };
 
   try {
+    const tStart = Date.now();
+    console.log('[ELECTRON-MAIN] Calling buildApk()...');
     const outputPath = await buildApk(appState, APP_ROOT, logCallback);
+    const elapsed = ((Date.now() - tStart) / 1000).toFixed(1);
+    console.log('[ELECTRON-MAIN] buildApk() returned:', outputPath, '| elapsed:', elapsed + 's');
     return { success: true, outputPath };
   } catch (error: any) {
+    console.error('[ELECTRON-MAIN] buildApk() failed:', error.message, '| stack:', error.stack);
     return { success: false, error: error.message || error.toString() };
   }
 });
