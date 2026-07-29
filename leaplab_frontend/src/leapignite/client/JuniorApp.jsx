@@ -40,6 +40,7 @@ import { moveRoboTutorial } from "./tutorials/moveRobo";
 import { makeSoundsTutorial } from "./tutorials/makeSounds";
 import JuniorTutorialOverlay from "./components/JuniorTutorialOverlay";
 import { ToastProvider, useToast } from "./components/Toast";
+import { ConfirmDialogProvider } from "./components/ConfirmDialog";
 import { useCloudProjectStore } from "../../store/cloudProjectStore";
 import { useStageSize } from "./hooks/useStageSize";
 import { useIdleHints } from "./hooks/useIdleHints";
@@ -82,7 +83,9 @@ const cloneWorkspaceData = (workspaceJson) => JSON.parse(JSON.stringify(workspac
 export default function JuniorApp({ onBack, projectUrl }) {
     return (
         <ToastProvider>
-            <JuniorAppInner onBack={onBack} projectUrl={projectUrl} />
+            <ConfirmDialogProvider>
+                <JuniorAppInner onBack={onBack} projectUrl={projectUrl} />
+            </ConfirmDialogProvider>
         </ToastProvider>
     );
 }
