@@ -1357,8 +1357,18 @@ export default function MyProjectsDashboard({ onOpenProject }: MyProjectsDashboa
                                 </div>
 
                                 {/* Arrow button */}
-                                <div className="absolute bottom-6 right-6 w-10 h-10 flex items-center justify-center bg-white border border-[#e2e8f0]/40 rounded-full transition-all duration-300 z-[2] group-hover:scale-110 shadow-sm" style={{ borderColor: meta?.accent || '#6366f1' }}>
-                                    <ChevronRight size={20} className="transition-colors group-hover:!text-white" style={{ color: meta?.darkAccent || '#4f46e5' }} />
+                                <div
+                                    className="absolute bottom-6 right-6 w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 z-[2] group-hover:scale-110 shadow-sm bg-white border border-[#e2e8f0]/40 group-hover:!bg-[var(--accent-color)] group-hover:!border-[var(--accent-color)]"
+                                    style={{
+                                        borderColor: meta?.accent || '#6366f1',
+                                        '--accent-color': meta?.accent || '#6366f1',
+                                    } as React.CSSProperties}
+                                >
+                                    <ChevronRight
+                                        size={20}
+                                        className="transition-colors group-hover:!text-white"
+                                        style={{ color: meta?.darkAccent || '#4f46e5' }}
+                                    />
                                 </div>
                             </button>
                         );
