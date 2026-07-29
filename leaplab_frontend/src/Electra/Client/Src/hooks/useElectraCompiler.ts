@@ -74,13 +74,34 @@ export function useElectraCompiler({
         });
         if (result.success && result.hexContent) {
           startSimulation(result.hexContent, code);
-        } else if (result.error) {
-          const { appendSerial } = useForgeStore.getState();
-          appendSerial('❌ COMPILATION ERROR:\n');
-          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-          appendSerial(result.error + '\n');
-          appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-          appendSerial('\nPlease fix the errors and try again.\n');
+        } else {
+          // Fallback to client-side transpiler so simulation runs in browser even without local CLI or server compiler
+          try {
+            const { transpileCode } = await import('../services/CompilerService');
+            const transpileResult = await transpileCode(code, FQBN[board] ?? 'arduino:avr:uno');
+            if (transpileResult.success && transpileResult.jsCode) {
+              const runner = await getSimulationRunner();
+              runner.setBoard(board);
+              runner.setTranspiledJS(transpileResult.jsCode);
+              startSimulation('__esp32_c3_transpiled__', code);
+            } else if (result.error) {
+              const { appendSerial } = useForgeStore.getState();
+              appendSerial('❌ COMPILATION ERROR:\n');
+              appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+              appendSerial((result.error || transpileResult.error) + '\n');
+              appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+              appendSerial('\nPlease fix the errors and try again.\n');
+            }
+          } catch {
+            if (result.error) {
+              const { appendSerial } = useForgeStore.getState();
+              appendSerial('❌ COMPILATION ERROR:\n');
+              appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+              appendSerial(result.error + '\n');
+              appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+              appendSerial('\nPlease fix the errors and try again.\n');
+            }
+          }
         }
       }
     } catch (err: any) {

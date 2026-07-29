@@ -194,11 +194,41 @@ export class ArduinoRuntime {
   }
 
 
+  public getBuiltinLedPin(): number {
+    try {
+      const { nodes } = useForgeStore.getState();
+      const boardNode = nodes.find(n => ['arduino-uno', 'arduino-nano', 'arduino-mega', 'esp32-c3', 'esp32'].includes(n.data?.type));
+      const boardType = boardNode?.data?.type || 'arduino-uno';
+      if (boardType === 'esp32-c3') return 8;
+      if (boardType === 'esp32') return 2;
+      return 13;
+    } catch {
+      return 13;
+    }
+  }
+
   public digitalWrite(pin: number, value: number): void {
     const prev = this.pinValues.get(pin) ?? LOW;
     const curr = value ? HIGH : LOW;
     this.pinValues.set(pin, curr);
-    console.log(`[ESP32C3 digitalWrite] pin=${pin} value=${value ? 'HIGH' : 'LOW'} (prev=${prev === HIGH ? 'HIGH' : prev === LOW ? 'LOW' : 'UNINIT'}) ${prev !== curr ? '→ CHANGED' : '→ no change'}`);
+    console.log(`[ArduinoRuntime digitalWrite] pin=${pin} value=${value ? 'HIGH' : 'LOW'} (prev=${prev === HIGH ? 'HIGH' : prev === LOW ? 'LOW' : 'UNINIT'}) ${prev !== curr ? '→ CHANGED' : '→ no change'}`);
+    if (prev !== curr) {
+      try {
+        const { nodes, updateNodeData } = useForgeStore.getState();
+        const boardNode = nodes.find(n => ['arduino-uno', 'arduino-nano', 'arduino-mega', 'esp32-c3', 'esp32'].includes(n.data?.type));
+        if (boardNode) {
+          const currentPinStates = boardNode.data?.pinStates || {};
+          const isHigh = curr === HIGH;
+          const pinKey = `pin_${pin}`;
+          updateNodeData(boardNode.id, {
+            pinStates: { ...currentPinStates, [pinKey]: isHigh },
+            ...(pin === 13 || pin === 8 ? { led13: isHigh, led1: isHigh } : {})
+          });
+        }
+      } catch (e) {
+        console.warn('[ArduinoRuntime] Failed to update board node pinState:', e);
+      }
+    }
     if (prev !== curr && this.onPinChange) {
       this.onPinChange(pin, curr, false);
     }
@@ -835,7 +865,7 @@ export class ArduinoRuntime {
 
       // ── Constants ──────────────────────────────────────────
       HIGH, LOW, INPUT, OUTPUT, INPUT_PULLUP, INPUT_PULLDOWN,
-      LED_BUILTIN,
+      LED_BUILTIN: this.getBuiltinLedPin(),
       WIFI_OFF: 0,
       WIFI_STA: 1,
       WIFI_AP: 2,

@@ -188,7 +188,7 @@ export const SelectionToolbar: React.FC = () => {
   };
 
   const getCategoryIcon = (categoryName: string, primaryColor: string) => {
-    const size = 22;
+    const size = 18;
     const style = { color: primaryColor };
     const category = categoryName.toUpperCase();
     if (category.includes('MOTOR') || category.includes('ACTUATOR')) return <Zap size={size} style={style} strokeWidth={2.5} />;
@@ -214,10 +214,10 @@ export const SelectionToolbar: React.FC = () => {
     const currentValue = config.isTopLevel ? (selectedNode?.data?.[config.key] ?? config.default ?? config.min) : (currentValues?.[config.key] ?? config.default ?? config.min);
 
     return (
-      <div className="flex items-center gap-[12px] bg-slate-50 p-[10px_16px] rounded-[12px] border-2 border-slate-200">
-        <Sliders size={14} className="text-slate-500" />
-        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px] min-w-[65px]">{config.label}</span>
-        <span className="text-[12px] text-slate-700 font-bold">{currentValue}{config.unit && <span className="ml-1 text-[10px] text-slate-500">{config.unit}</span>}</span>
+      <div className="flex items-center gap-2 bg-slate-50 p-1.5 px-3 rounded-lg border border-slate-200">
+        <Sliders size={13} className="text-slate-500" />
+        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.5px] min-w-[55px]">{config.label}</span>
+        <span className="text-[11px] text-slate-700 font-bold">{currentValue}{config.unit && <span className="ml-1 text-[9px] text-slate-500">{config.unit}</span>}</span>
       </div>
     );
   };
@@ -228,11 +228,11 @@ export const SelectionToolbar: React.FC = () => {
   const renderLEDColorPalette = () => {
     if (nodeType !== 'led' && nodeType !== 'led-ring' && nodeType !== 'led-bar-graph') return null;
     return (
-      <div className="flex items-center gap-[12px] bg-slate-50 p-[10px_16px] rounded-[12px] border-2 border-slate-200">
-        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">LED COLOR</span>
-        <div className="flex gap-[10px] items-center">
+      <div className="flex items-center gap-2 bg-slate-50 p-1.5 px-3 rounded-lg border border-slate-200">
+        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.5px]">LED COLOR</span>
+        <div className="flex gap-1.5 items-center">
           {LED_COLORS.map((lc) => (
-            <button key={lc.color} onClick={() => updateNodeData(selectedNode!.id, { color: lc.color })} title={lc.name} className={`w-[26px] h-[26px] rounded-full cursor-pointer transition-all duration-200 hover:scale-110 hover:-translate-y-[1px] active:scale-95 border-[3px] border-white shadow-md ${selectedNode?.data?.color === lc.color ? 'ring-2 ring-blue-400 scale-110' : ''}`} style={{ backgroundColor: lc.color }} />
+            <button key={lc.color} onClick={() => updateNodeData(selectedNode!.id, { color: lc.color })} title={lc.name} className={`w-5 h-5 rounded-full cursor-pointer transition-all duration-200 hover:scale-110 active:scale-95 border-2 border-white shadow-sm ${selectedNode?.data?.color === lc.color ? 'ring-2 ring-blue-400 scale-110' : ''}`} style={{ backgroundColor: lc.color }} />
           ))}
         </div>
       </div>
@@ -242,10 +242,10 @@ export const SelectionToolbar: React.FC = () => {
   const renderColorPalette = () => {
     if (!selectedEdge) return null;
     return (
-      <div className="flex items-center bg-slate-50 p-[10px_16px] rounded-[12px] border-2 border-slate-200">
-        <div className="flex gap-[10px] items-center">
+      <div className="flex items-center bg-slate-50 p-1.5 px-3 rounded-lg border border-slate-200">
+        <div className="flex gap-1.5 items-center">
           {WIRE_COLORS.map((wc) => (
-            <button key={wc.color} onClick={() => updateEdgeData(selectedEdge.id, { color: wc.color })} title={wc.name} className={`w-[26px] h-[26px] rounded-full cursor-pointer transition-all duration-200 hover:scale-110 hover:-translate-y-[1px] active:scale-95 border-[3px] border-white shadow-md ${selectedEdge.data?.color === wc.color ? 'ring-2 ring-blue-400 scale-110' : ''}`} style={{ backgroundColor: wc.color }} />
+            <button key={wc.color} onClick={() => updateEdgeData(selectedEdge.id, { color: wc.color })} title={wc.name} className={`w-5 h-5 rounded-full cursor-pointer transition-all duration-200 hover:scale-110 active:scale-95 border-2 border-white shadow-sm ${selectedEdge.data?.color === wc.color ? 'ring-2 ring-blue-400 scale-110' : ''}`} style={{ backgroundColor: wc.color }} />
           ))}
         </div>
       </div>
@@ -255,13 +255,13 @@ export const SelectionToolbar: React.FC = () => {
   const renderIRReceiverInput = () => {
     if (nodeType !== 'ir-receiver') return null;
     return (
-      <div className="flex items-center gap-[12px] bg-slate-50 p-[10px_16px] rounded-[12px] border-2 border-slate-200">
-        <Radio size={14} className="text-blue-500" />
-        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">ADDR</span>
-        <input type="text" value={irAddress} onChange={(e) => setIrAddress(e.target.value)} className="w-[44px] bg-white text-slate-700 border-2 border-slate-200 rounded-[10px] p-[8px_10px] text-[12px] text-center outline-none focus:border-blue-400 font-mono font-bold" />
-        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">CMD</span>
-        <input type="text" value={irCommand} onChange={(e) => setIrCommand(e.target.value)} className="w-[48px] bg-white text-slate-700 border-2 border-slate-200 rounded-[10px] p-[8px_10px] text-[12px] text-center outline-none focus:border-blue-400 font-mono font-bold" />
-        <button onClick={() => { const addr = parseInt(irAddress) || 0; const cmd = parseInt(irCommand) || 0; if (selectedNode?.id) import('../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => circuitEngine.sendIRSignalToReceiver(selectedNode.id, addr, cmd)); }} className="bg-blue-500 hover:bg-blue-600 active:scale-95 text-white border-none p-[8px_16px] rounded-[10px] text-[11px] font-bold cursor-pointer uppercase tracking-[0.5px] transition-all shadow-md">Send</button>
+      <div className="flex items-center gap-2 bg-slate-50 p-1.5 px-3 rounded-lg border border-slate-200">
+        <Radio size={13} className="text-blue-500" />
+        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.5px]">ADDR</span>
+        <input type="text" value={irAddress} onChange={(e) => setIrAddress(e.target.value)} className="w-9 bg-white text-slate-700 border border-slate-200 rounded-md p-1 text-[11px] text-center outline-none focus:border-blue-400 font-mono font-bold" />
+        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.5px]">CMD</span>
+        <input type="text" value={irCommand} onChange={(e) => setIrCommand(e.target.value)} className="w-10 bg-white text-slate-700 border border-slate-200 rounded-md p-1 text-[11px] text-center outline-none focus:border-blue-400 font-mono font-bold" />
+        <button onClick={() => { const addr = parseInt(irAddress) || 0; const cmd = parseInt(irCommand) || 0; if (selectedNode?.id) import('../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => circuitEngine.sendIRSignalToReceiver(selectedNode.id, addr, cmd)); }} className="bg-blue-500 hover:bg-blue-600 active:scale-95 text-white border-none p-1 px-2.5 rounded-md text-[10px] font-bold cursor-pointer uppercase tracking-[0.5px] transition-all shadow-sm">Send</button>
       </div>
     );
   };
@@ -281,17 +281,17 @@ export const SelectionToolbar: React.FC = () => {
     const arrowColors = [{ value: '', label: 'Dynamic (Orange)' }, { value: 'none', label: 'None (Hidden)' }, { value: 'orange', label: 'Orange' }, { value: 'white', label: 'White' }, { value: 'green', label: 'Green' }, { value: 'blue', label: 'Blue' }, { value: 'yellow', label: 'Yellow' }, { value: 'red', label: 'Red' }];
 
     return (
-      <div className="flex items-center gap-[12px] bg-slate-50 p-[10px_16px] rounded-[12px] border-2 border-slate-200">
-        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">SIZE</span>
+      <div className="flex items-center gap-2 bg-slate-50 p-1.5 px-3 rounded-lg border border-slate-200">
+        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.5px]">SIZE</span>
         <CustomSelect value={currentSize} onChange={(val) => updateNodeData(selectedNode!.id, { size: parseInt(val) || 23 })} options={sizes} primaryColor={badgeInfo.primary} />
-        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">DISP</span>
+        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.5px]">DISP</span>
         <CustomSelect value={currentDisplay} onChange={(val) => updateNodeData(selectedNode!.id, { display: val })} options={displays} primaryColor={badgeInfo.primary} />
-        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">GEAR</span>
-        <div className="flex items-center gap-[8px]">
+        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.5px]">GEAR</span>
+        <div className="flex items-center gap-1.5">
           <CustomSelect value={gearOptions.some(opt => opt.value === currentGearRatio) ? currentGearRatio : 'custom'} onChange={(val) => { if (val !== 'custom') updateNodeData(selectedNode!.id, { gearRatio: val }); }} options={gearOptions} primaryColor={badgeInfo.primary} />
-          {(currentGearRatio === 'custom' || !['1:1', '2:1', '2048:200', '64:1', '10:1', '100:1'].includes(currentGearRatio)) && <input type="text" value={currentGearRatio === 'custom' ? '' : currentGearRatio} onChange={(e) => updateNodeData(selectedNode!.id, { gearRatio: e.target.value })} className="w-[60px] bg-white text-slate-700 border-2 border-slate-200 rounded-[10px] p-[8px_10px] text-[12px] outline-none focus:border-blue-400 font-mono font-bold" />}
+          {(currentGearRatio === 'custom' || !['1:1', '2:1', '2048:200', '64:1', '10:1', '100:1'].includes(currentGearRatio)) && <input type="text" value={currentGearRatio === 'custom' ? '' : currentGearRatio} onChange={(e) => updateNodeData(selectedNode!.id, { gearRatio: e.target.value })} className="w-12 bg-white text-slate-700 border border-slate-200 rounded-md p-1 text-[11px] outline-none focus:border-blue-400 font-mono font-bold" />}
         </div>
-        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.5px]">ARROW</span>
+        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.5px]">ARROW</span>
         <CustomSelect value={currentArrow} onChange={(val) => updateNodeData(selectedNode!.id, { arrow: val })} options={arrowColors} primaryColor={badgeInfo.primary} />
       </div>
     );
@@ -302,7 +302,7 @@ export const SelectionToolbar: React.FC = () => {
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
-      className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000] flex items-center bg-white p-3 rounded-2xl border-2 border-slate-200 transition-all duration-200 ease-out shadow-[0_8px_24px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.08)] animate-[slideUp_0.25s_ease-out]"
+      className="absolute bottom-5 left-1/2 -translate-x-1/2 z-[1000] flex items-center bg-white p-1.5 px-2.5 rounded-xl border border-slate-200 transition-all duration-200 ease-out shadow-[0_6px_20px_rgba(0,0,0,0.1),0_2px_6px_rgba(0,0,0,0.06)] animate-[slideUp_0.25s_ease-out]"
     >
       <style>{`
         @keyframes slideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
@@ -347,10 +347,10 @@ export const SelectionToolbar: React.FC = () => {
       {selectedNode ? (
         <>
           <div className="flex items-center select-none">
-            <div className="group relative rounded-2xl bg-white border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-default">
-              <div className="flex items-center gap-3.5 p-3 px-4.5">
+            <div className="group relative rounded-xl bg-white border border-slate-200 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm cursor-default">
+              <div className="flex items-center gap-2.5 p-1.5 px-3">
                 <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border-2 transition-transform duration-200 group-hover:scale-105"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-transform duration-200 group-hover:scale-105"
                   style={{
                     background: `linear-gradient(135deg, ${badgeInfo.primary}18 0%, ${badgeInfo.primary}10 100%)`,
                     borderColor: `${badgeInfo.primary}35`
@@ -358,12 +358,12 @@ export const SelectionToolbar: React.FC = () => {
                 >
                   {getCategoryIcon(badgeInfo.category, badgeInfo.primary)}
                 </div>
-                <div className="flex flex-col gap-0.75">
-                  <span className="text-sm font-extrabold text-slate-800 tracking-wide leading-tight uppercase font-sans">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-extrabold text-slate-800 tracking-wide leading-tight uppercase font-sans">
                     {badgeInfo.displayName}
                   </span>
                   <span
-                    className="text-[10px] font-bold tracking-wider leading-none uppercase"
+                    className="text-[9px] font-bold tracking-wider leading-none uppercase"
                     style={{ color: badgeInfo.primary }}
                   >
                     {badgeInfo.category}
@@ -374,18 +374,18 @@ export const SelectionToolbar: React.FC = () => {
           </div>
           {hasControls && (
             <>
-              <div className="w-0.5 h-8 bg-slate-200 rounded-full self-center mx-3.5" />
-              <div className="flex gap-3 items-center">{renderSlider()}{renderLEDColorPalette()}{renderIRReceiverInput()}{renderStepperControls()}</div>
+              <div className="w-0.5 h-6 bg-slate-200 rounded-full self-center mx-2.5" />
+              <div className="flex gap-2 items-center">{renderSlider()}{renderLEDColorPalette()}{renderIRReceiverInput()}{renderStepperControls()}</div>
             </>
           )}
         </>
       ) : (
         <>
           <div className="flex items-center select-none">
-            <div className="group relative rounded-2xl bg-white border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-default">
-              <div className="flex items-center gap-3.5 p-3 px-4.5">
+            <div className="group relative rounded-xl bg-white border border-slate-200 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-default">
+              <div className="flex items-center gap-2.5 p-1.5 px-3">
                 <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border-2 transition-transform duration-200 group-hover:scale-105"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-transform duration-200 group-hover:scale-105"
                   style={{
                     background: `linear-gradient(135deg, ${badgeInfo.primary}18 0%, ${badgeInfo.primary}10 100%)`,
                     borderColor: `${badgeInfo.primary}35`
@@ -393,12 +393,12 @@ export const SelectionToolbar: React.FC = () => {
                 >
                   {getCategoryIcon(badgeInfo.category, badgeInfo.primary)}
                 </div>
-                <div className="flex flex-col gap-0.75">
-                  <span className="text-sm font-extrabold text-slate-800 tracking-wide leading-tight uppercase font-sans">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-extrabold text-slate-800 tracking-wide leading-tight uppercase font-sans">
                     {badgeInfo.displayName}
                   </span>
                   <span
-                    className="text-[10px] font-bold tracking-wider leading-none uppercase"
+                    className="text-[9px] font-bold tracking-wider leading-none uppercase"
                     style={{ color: badgeInfo.primary }}
                   >
                     {badgeInfo.category}
@@ -409,8 +409,8 @@ export const SelectionToolbar: React.FC = () => {
           </div>
           {hasControls && (
             <>
-              <div className="w-0.5 h-8 bg-slate-200 rounded-full self-center mx-3.5" />
-              <div className="flex gap-3 items-center">{renderColorPalette()}</div>
+              <div className="w-0.5 h-6 bg-slate-200 rounded-full self-center mx-2.5" />
+              <div className="flex gap-2 items-center">{renderColorPalette()}</div>
             </>
           )}
         </>
@@ -418,14 +418,14 @@ export const SelectionToolbar: React.FC = () => {
 
       {!(selectedNode && ['esp32-c3', 'esp32', 'arduino-uno'].includes(nodeType)) && (
         <>
-          <div className="w-0.5 h-8 bg-slate-200 rounded-full self-center mx-3.5" />
+          <div className="w-0.5 h-6 bg-slate-200 rounded-full self-center mx-2.5" />
           <div className="flex items-center">
             <button
               onClick={handleDelete}
               title="Remove"
-              className="group relative flex items-center justify-center w-10 h-10 rounded-xl cursor-pointer border-2 border-red-200 bg-red-50 transition-all duration-200 hover:bg-red-100 hover:border-red-300 hover:scale-105 active:scale-95"
+              className="group relative flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer border border-red-200 bg-red-50 transition-all duration-200 hover:bg-red-100 hover:border-red-300 hover:scale-105 active:scale-95"
             >
-              <Trash2 size={18} className="text-red-500 transition-transform duration-200 group-hover:scale-110" />
+              <Trash2 size={15} className="text-red-500 transition-transform duration-200 group-hover:scale-110" />
             </button>
           </div>
         </>

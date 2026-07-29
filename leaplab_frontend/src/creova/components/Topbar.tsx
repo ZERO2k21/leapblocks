@@ -421,6 +421,17 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
                   <FolderOpen size={18} strokeWidth={2} className="opacity-80 shrink-0" />
                   <span>Open Project</span>
                 </button>
+                {onDownload && (
+                  <button
+                    type="button"
+                    onClick={() => { onDownload(); setMobileMenuOpen(false); }}
+                    className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-[16px] font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${isElectra ? 'hover:bg-[#22d3ee]/8 text-[#f4f4f5] hover:text-[#22d3ee]' : 'hover:bg-white/8 text-white/90 hover:text-white'
+                      }`}
+                  >
+                    <Download size={18} strokeWidth={2} className="opacity-80 shrink-0" />
+                    <span>Download .leap</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => { onSaveAs?.(); setMobileMenuOpen(false); }}

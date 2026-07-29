@@ -533,6 +533,28 @@ class SimulationRunner {
     this.pinOutputs.set(pinId, isOutput);
     this.pinStates.set(pinId, state);
     this.notifyListeners(pinId, state);
+
+    // Sync board node pinStates and led13 in store so onboard LEDs (such as L / Pin 13) glow visually
+    try {
+      const isHigh = state === 'HIGH' || (typeof state === 'number' && state > 0);
+      const isPin13 = pinId === 'PB5' || pinId === '13' || pinId === 'P13' || pinId === 'ESP13' || pinId === 'ESP8' || pinId === 'PB7';
+      import('../../../utlis/store/useForgeStore').then(({ useForgeStore }) => {
+        const { nodes, updateNodeData } = useForgeStore.getState();
+        const boardNode = nodes.find(n => ['arduino-uno', 'arduino-nano', 'arduino-mega', 'esp32-c3', 'esp32'].includes(n.data?.type));
+        if (boardNode) {
+          const pinKey = pinId === 'PB5' ? 'pin_13' : `pin_${pinId.replace(/^(ESP|P)/, '')}`;
+          const currentPinStates = boardNode.data?.pinStates || {};
+          if (currentPinStates[pinKey] !== isHigh || (isPin13 && boardNode.data?.led13 !== isHigh)) {
+            updateNodeData(boardNode.id, {
+              pinStates: { ...currentPinStates, [pinKey]: isHigh },
+              ...(isPin13 ? { led13: isHigh, led1: isHigh } : {})
+            });
+          }
+        }
+      });
+    } catch (e) {
+      // Ignore
+    }
   }
 
   getPinState(pinId: string): PinState {

@@ -496,6 +496,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         selectionOnDrag={false}
         panOnScroll={false}
         fitView
+        fitViewOptions={{ maxZoom: 1, padding: 0.2 }}
         snapToGrid
         snapGrid={[10, 10]}
         minZoom={0.1}
@@ -536,6 +537,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
           maskColor="rgba(0, 0, 0, 0.6)"
           pannable
           zoomable
+          inversePan={true}
         />
 
         {/* ── Zoom percentage display (Wokwi-style) ── */}

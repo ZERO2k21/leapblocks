@@ -296,6 +296,11 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       mappedProps.pixels = Array.isArray(data.pixels) ? (data.numPixels ?? data.pixels.length) : (data.pixels ?? 16);
     }
     mappedProps.neopixelPixels = data.neopixelPixels ?? [];
+  } else if (['arduino-uno', 'arduino-nano', 'arduino-mega', 'esp32-c3', 'esp32'].includes(data.type)) {
+    // MCU Boards: internal power LED and built-in "L" LED (connected internally to Pin 13 & GND)
+    mappedProps.ledPower = isSimulating || data.ledPower === true;
+    mappedProps.led13 = data.pinStates?.pin_13 === true || data.pinStates?.pin_PB5 === true || data.pinStates?.pin_PB7 === true || data.led13 === true || false;
+    mappedProps.led1 = data.pinStates?.pin_8 === true || data.pinStates?.pin_13 === true || data.pinStates?.pin_2 === true || data.led1 === true || false;
   }
 
   // ── Ref for NeoPixel DOM access (setPixel requires DOM methods) ──
