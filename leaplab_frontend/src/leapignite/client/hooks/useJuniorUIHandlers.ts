@@ -40,6 +40,7 @@ interface UseJuniorUIHandlersProps {
     isLoadingWorkspaceRef: React.MutableRefObject<boolean>;
     spriteWorkspacesRef: React.MutableRefObject<Map<string, any>>;
     activeSpriteIdRef: React.MutableRefObject<string>;
+    setOriginalStageSize: (size: { width: number; height: number } | null) => void;
 }
 
 declare global {
@@ -74,7 +75,8 @@ export function useJuniorUIHandlers({
     project,
     isLoadingWorkspaceRef,
     spriteWorkspacesRef,
-    activeSpriteIdRef
+    activeSpriteIdRef,
+    setOriginalStageSize
 }: UseJuniorUIHandlersProps) {
     const handleToggleCamera = async () => {
         await toggleCamera(isCameraOn, setIsCameraOn, cameraStreamRef, cameraVideoRef);
@@ -105,6 +107,11 @@ export function useJuniorUIHandlers({
         if (!stageContainer) return;
 
         if (!document.fullscreenElement) {
+            const stage = document.querySelector('.stage');
+            if (stage) {
+                const rect = stage.getBoundingClientRect();
+                setOriginalStageSize({ width: rect.width, height: rect.height });
+            }
             (stageContainer as any).requestFullscreen?.();
         } else {
             document.exitFullscreen?.();

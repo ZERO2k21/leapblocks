@@ -121,6 +121,8 @@ function JuniorAppInner({ onBack, projectUrl }) {
     const [recordingCount, setRecordingCount] = useState(1);
     const [showGrid, setShowGrid] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [fullscreenScale, setFullscreenScale] = useState(1);
+    const [originalStageSize, setOriginalStageSize] = useState(null);
     const draggedBlockRef = useRef(null);
     const [isDraggingBlock, setIsDraggingBlock] = useState(false);
     const [successSpriteId, setSuccessSpriteId] = useState(null);
@@ -595,7 +597,8 @@ function JuniorAppInner({ onBack, projectUrl }) {
         project,
         isLoadingWorkspaceRef,
         spriteWorkspacesRef,
-        activeSpriteIdRef
+        activeSpriteIdRef,
+        setOriginalStageSize
     });
 
     // --- EFFECT HOOKS ---
@@ -649,11 +652,24 @@ function JuniorAppInner({ onBack, projectUrl }) {
 
     useEffect(() => {
         const handleFsChange = () => {
-            setIsFullscreen(!!document.fullscreenElement);
+            const entering = !!document.fullscreenElement;
+            setIsFullscreen(entering);
+            if (!entering) {
+                setOriginalStageSize(null);
+                setFullscreenScale(1);
+            }
         };
         document.addEventListener('fullscreenchange', handleFsChange);
         return () => document.removeEventListener('fullscreenchange', handleFsChange);
     }, []);
+
+    useEffect(() => {
+        if (isFullscreen && originalStageSize && stageSize.width > 0 && stageSize.height > 0) {
+            const scaleX = stageSize.width / originalStageSize.width;
+            const scaleY = stageSize.height / originalStageSize.height;
+            setFullscreenScale(Math.min(scaleX, scaleY));
+        }
+    }, [isFullscreen, originalStageSize, stageSize]);
 
 
 
@@ -874,6 +890,13 @@ function JuniorAppInner({ onBack, projectUrl }) {
                             ? `url(${currentScene.backgroundImage}) center/cover no-repeat`
                             : (currentScene.background || 'transparent'),
                     }}>
+                        <div style={{
+                            transform: isFullscreen ? `scale(${fullscreenScale})` : 'none',
+                            transformOrigin: '0 0',
+                            width: isFullscreen && originalStageSize ? originalStageSize.width : '100%',
+                            height: isFullscreen && originalStageSize ? originalStageSize.height : '100%',
+                            position: 'relative',
+                        }}>
                         {isCameraOn && (
                             <video
                                 ref={cameraVideoRef}
@@ -905,6 +928,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
                             height={stageSize.height}
                             className="absolute top-0 left-0 pointer-events-none z-5 w-full h-full"
                         />
+                        </div>
                     </div>
                 </RightPanel>
             </div>

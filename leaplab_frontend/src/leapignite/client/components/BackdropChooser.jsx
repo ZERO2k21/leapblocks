@@ -28,7 +28,14 @@ const mappedleapBackdrops = leapBackdrops.map(bg => ({
     color: '#E0E0E0'
 }));
 
-const BACKDROP_LIBRARY = [...PRESET_BACKDROPS, ...mappedleapBackdrops];
+const BACKDROP_LIBRARY = (() => {
+    const seen = new Set();
+    return [...PRESET_BACKDROPS, ...mappedleapBackdrops].filter(bg => {
+        if (seen.has(bg.id)) return false;
+        seen.add(bg.id);
+        return true;
+    });
+})();
 
 const SOLID_COLORS = [
     { name: 'White', color: '#FFFFFF' },
