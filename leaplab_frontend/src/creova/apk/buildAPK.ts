@@ -73,6 +73,7 @@ function collectMediaAssets(screens: Screen[] = [], explicitMedia: any[] = []): 
       const cleanName = path.basename(String(rawName));
       mediaMap.set(cleanName, item);
       explicitByName.set(cleanName, item);
+      console.log(`[APK-BUILDER] collectMedia: explicit media "${cleanName}" hasData=${!!item.data} dataLen=${item.data ? String(item.data).length : 0}`);
     }
   }
 
@@ -92,10 +93,13 @@ function collectMediaAssets(screens: Screen[] = [], explicitMedia: any[] = []): 
     if (cleanName.startsWith('media/')) cleanName = cleanName.substring(6);
 
     if (cleanName && !mediaMap.has(cleanName)) {
-      const matchedExplicit = explicitByName.get(cleanName);
+      const matchedExplicit = explicitByName.get(cleanName)
+        || Array.from(explicitByName.entries()).find(([k]) => k.toLowerCase() === cleanName.toLowerCase())?.[1];
       if (matchedExplicit && matchedExplicit.data) {
+        console.log(`[APK-BUILDER] collectMedia: component ref "${cleanName}" matched explicit media`);
         mediaMap.set(cleanName, { filename: cleanName, data: matchedExplicit.data, type: matchedExplicit.type });
       } else {
+        console.log(`[APK-BUILDER] collectMedia: component ref "${cleanName}" has NO matching media — using raw string as data`);
         mediaMap.set(cleanName, { filename: cleanName, data: str });
       }
     }
@@ -259,10 +263,18 @@ class ApkBuilder {
         console.log('[APK-BUILDER] Permissions:', permissions);
         console.log('[APK-BUILDER] Screen orientation:', screenOrientation);
         console.log('[APK-BUILDER] Collected media assets:', mediaAssets.length);
+        onProgress?.({ stage: 'media_collected', message: `Collected ${mediaAssets.length} media asset(s) from ${screens.length} screen(s)` });
         for (let i = 0; i < mediaAssets.length; i++) {
           const m = mediaAssets[i];
           const dataStr = m.data ? String(m.data) : '';
-          console.log(`[APK-BUILDER]   mediaAsset[${i}]: filename="${m.filename}" hasData=${!!m.data} dataPrefix=${dataStr.substring(0, 40)}`);
+          const dataPreview = dataStr.substring(0, 60);
+          const hasDataUrl = dataStr.startsWith('data:');
+          const b64Len = hasDataUrl && dataStr.indexOf(',') >= 0 ? dataStr.length - dataStr.indexOf(',') - 1 : 0;
+          console.log(`[APK-BUILDER]   mediaAsset[${i}]: filename="${m.filename}" hasData=${!!m.data} isDataUrl=${hasDataUrl} b64Len=${b64Len} dataPrefix=${dataPreview}`);
+          onProgress?.({ stage: 'media_detail', message: `  [${i}] ${m.filename}: dataUrl=${hasDataUrl} b64Len=${b64Len}` });
+        }
+        if (mediaAssets.length === 0) {
+          onProgress?.({ stage: 'media_empty', message: 'WARNING: No media assets collected. Ensure files are uploaded in Media Manager and component Source properties reference them.' });
         }
 
         console.log('[APK-BUILDER] Calling injector.fullBuild()...');
@@ -399,10 +411,17 @@ versionInfo:
     const projectDir = appState.projectDir || (appState.projectPath ? path.dirname(appState.projectPath) : null);
     console.log('[APK-BUILDER] Collected', mediaAssets.length, 'media assets for injection');
     console.log('[APK-BUILDER] projectDir:', projectDir);
+    onProgress?.({ stage: 'media_collected', message: `Collected ${mediaAssets.length} media asset(s)` });
     for (let i = 0; i < mediaAssets.length; i++) {
       const m = mediaAssets[i];
       const dataStr = m.data ? String(m.data) : '';
-      console.log(`[APK-BUILDER]   mediaAsset[${i}]: filename="${m.filename}" hasData=${!!m.data} dataPrefix=${dataStr.substring(0, 40)}`);
+      const hasDataUrl = dataStr.startsWith('data:');
+      const b64Len = hasDataUrl && dataStr.indexOf(',') >= 0 ? dataStr.length - dataStr.indexOf(',') - 1 : 0;
+      console.log(`[APK-BUILDER]   mediaAsset[${i}]: filename="${m.filename}" hasData=${!!m.data} isDataUrl=${hasDataUrl} b64Len=${b64Len} dataPrefix=${dataStr.substring(0, 40)}`);
+      onProgress?.({ stage: 'media_detail', message: `  [${i}] ${m.filename}: dataUrl=${hasDataUrl} b64Len=${b64Len}` });
+    }
+    if (mediaAssets.length === 0) {
+      onProgress?.({ stage: 'media_empty', message: 'WARNING: No media assets found. Upload files in Media Manager.' });
     }
     await this.injector.injectAssets(decodedDir, webAppFiles, mediaAssets, onProgress, projectDir);
 

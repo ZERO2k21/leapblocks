@@ -711,7 +711,11 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     js += `  ${id}_el.addEventListener('click', function() { if (typeof window['${id}_Click'] === 'function') window['${id}_Click'](); });\n`;
   }
   if (type === 'TextBox' || type === 'PasswordTextBox') {
-    js += `  ${id}_el.addEventListener('input', function() { if (typeof window['${id}_TextChanged'] === 'function') window['${id}_TextChanged'](); });\n`;
+    js += `  ${id}_el.addEventListener('input', function() { state['${id}'] = state['${id}'] || {}; state['${id}']['Text'] = this.value; if (typeof window['${id}_TextChanged'] === 'function') window['${id}_TextChanged'](); });\n`;
+    if (props.Text) {
+      js += `  ${id}_el.value = '${escapeHtml(String(props.Text))}';\n`;
+      js += `  state['${id}'] = state['${id}'] || {}; state['${id}']['Text'] = '${escapeHtml(String(props.Text))}';\n`;
+    }
   }
   if (type === 'CheckBox' || type === 'Switch') {
     js += `  ${id}_el.querySelector('input').addEventListener('change', function() { if (typeof window['${id}_Changed'] === 'function') window['${id}_Changed'](); });\n`;
@@ -1025,13 +1029,13 @@ function generateAppJs(appState: any): string {
     var str = String(val).trim();
     if (str.indexOf('http://') === 0 || str.indexOf('https://') === 0 || str.indexOf('data:') === 0 || str.indexOf('blob:') === 0) return str;
     if (str.indexOf('file:') === 0) {
-      str = str.replace(/^file:\/\/\/?/i, '');
+      str = str.replace(/^file:\\/\\/\\/?/i, '');
     }
-    var parts = str.split(/[/\\]/);
+    var parts = str.split(/[\\\\/]/);
     var filename = parts[parts.length - 1];
     try { filename = decodeURIComponent(filename); } catch(e) {}
     if (filename.indexOf('media/') === 0) return filename;
-    return 'media/' + filename;
+    return 'media/' + encodeURI(filename);
   }
 
   function showRuntimeError(message) {
@@ -1208,8 +1212,10 @@ function generateAppJs(appState: any): string {
     get Pitch() { return this._pitch; }, set Pitch(v) { this._pitch = Number(v); },
     get SpeechRate() { return this._speechRate; }, set SpeechRate(v) { this._speechRate = Number(v); },
     Speak: function(message) {
+      console.log('[LeapApp] TTS.Speak called — message:', JSON.stringify(message), 'type:', typeof message);
+      if (message === undefined || message === null) { console.log('[LeapApp] TTS.Speak — message is', message); message = ''; }
       if (window.AndroidSpeech && typeof window.AndroidSpeech.speak === 'function') { window.AndroidSpeech.speak(message); return; }
-      if (!window.speechSynthesis) return;
+      if (!window.speechSynthesis) { console.log('[LeapApp] TTS.Speak — speechSynthesis not available'); return; }
       var self = this;
       if (typeof window[self.id + '_BeforeSpeaking'] === 'function') window[self.id + '_BeforeSpeaking']();
       var utterance = new SpeechSynthesisUtterance(message);
@@ -1560,12 +1566,12 @@ function generateAppJs(appState: any): string {
 
   var ScreenClasses = {};
 
-  function getComponentValue(id, prop) { try { return (state[id] || {})[prop]; } catch(e) { return undefined; } }
+  function getComponentValue(id, prop) { try { var v = (state[id] || {})[prop]; if (v === undefined) { console.log('[LeapApp] getComponentValue("' + id + '", "' + prop + '") — state missing, state keys:', Object.keys(state)); } return v; } catch(e) { console.log('[LeapApp] getComponentValue error:', e); return undefined; } }
   function setComponentProperty(id, prop, value) { try { if (!state[id]) state[id] = {}; state[id][prop] = value; applyComponentProperty(id, prop, value); } catch(e) {} }
   function applyComponentProperty(id, prop, value) {
     var el = document.getElementById('comp-' + id);
     if (!el) return;
-    if (prop === 'Text' && el.tagName !== 'INPUT' && el.tagName !== 'SELECT') { el.textContent = String(value || ''); }
+    if (prop === 'Text') { if (el.tagName === 'INPUT' || el.tagName === 'SELECT') { el.value = String(value || ''); } else { el.textContent = String(value || ''); } }
     else if (prop === 'BackgroundColor') el.style.backgroundColor = value || '';
     else if (prop === 'TextColor') el.style.color = value || '';
     else if (prop === 'Visible') el.style.display = value ? '' : 'none';

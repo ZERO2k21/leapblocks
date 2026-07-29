@@ -92,9 +92,12 @@ const handleFileUpload = (e) => {
             const reader = new FileReader();
             reader.onload = (event) => {
                 const data = event.target.result;
-                const b64len = data.indexOf(',') >= 0 ? data.length - data.indexOf(',') - 1 : data.length;
-                if (data.length < 50 || b64len < 10) {
-                    console.warn('[MEDIA-UPLOAD] File appears empty:', file.name, 'size:', file.size, 'dataLen:', data.length, 'b64Len:', b64len);
+                const commaIdx = data.indexOf(',');
+                const b64len = commaIdx >= 0 ? data.length - commaIdx - 1 : data.length;
+                const b64prefix = commaIdx >= 0 ? data.substring(0, Math.min(commaIdx, 60)) : 'none';
+                console.log('[MEDIA-UPLOAD] File:', file.name, '| size:', file.size, '| type:', file.type, '| dataLen:', data.length, '| b64Len:', b64len, '| b64Prefix:', b64prefix);
+                if (file.size > 0 && (b64len < 10 || b64len < file.size * 0.1)) {
+                    console.warn('[MEDIA-UPLOAD] WARNING: b64 data is suspiciously small for file size', file.name, file.size, b64len);
                 }
                 addMedia({
                     filename: file.name,
@@ -147,9 +150,12 @@ e.target.value = null;
             const reader = new FileReader();
             reader.onload = (event) => {
                 const data = event.target.result;
-                const b64len = data.indexOf(',') >= 0 ? data.length - data.indexOf(',') - 1 : data.length;
-                if (data.length < 50 || b64len < 10) {
-                    console.warn('[MEDIA-UPLOAD] File appears empty:', file.name, 'size:', file.size, 'dataLen:', data.length, 'b64Len:', b64len);
+                const commaIdx = data.indexOf(',');
+                const b64len = commaIdx >= 0 ? data.length - commaIdx - 1 : data.length;
+                const b64prefix = commaIdx >= 0 ? data.substring(0, Math.min(commaIdx, 60)) : 'none';
+                console.log('[MEDIA-UPLOAD] Drop file:', file.name, '| size:', file.size, '| type:', file.type, '| dataLen:', data.length, '| b64Len:', b64len);
+                if (file.size > 0 && (b64len < 10 || b64len < file.size * 0.1)) {
+                    console.warn('[MEDIA-UPLOAD] WARNING: b64 data is suspiciously small for file size', file.name, file.size, b64len);
                 }
                 addMedia({
                     filename: file.name,

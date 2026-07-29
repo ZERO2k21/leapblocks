@@ -1,5 +1,9 @@
 import { useCallback } from 'react';
+import Blockly, { javascriptGenerator } from '@blockly-runtime';
 import { countVisibleComponents, buildBlocklyContextFromPayload } from '../utils/projectHelpers';
+import '../blocks/generators/reactnative';
+import { initializeAllBlocks } from '../blocks/definitions/index';
+import { CLOUD_COMPILER_URL } from '../../config/platform';
 
 export type BuildState = 'idle' | 'building' | 'success' | 'error';
 
@@ -49,6 +53,13 @@ export function useBuildApk(
         hasBlockLogic: !!payload.blockLogic,
         hasBlockly: !!(window as any).__LEAP_BLOCK_XML__
       });
+      if (Array.isArray(payload.media) && payload.media.length > 0) {
+        payload.media.forEach((item: any, i: number) => {
+          const dataStr = item.data ? String(item.data) : '';
+          const b64len = dataStr.indexOf(',') >= 0 ? dataStr.length - dataStr.indexOf(',') - 1 : dataStr.length;
+          console.log(`[BUILD-UI] payload.media[${i}]: filename="${item.filename}" type="${item.type}" dataLen=${dataStr.length} b64Len=${b64len} hasData=${!!item.data}`);
+        });
+      }
 
       const liveBlockXml = typeof window !== 'undefined' ? (window as any).__LEAP_BLOCK_XML__ : null;
       if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
@@ -65,10 +76,6 @@ export function useBuildApk(
         try {
           setBuildLogs((prev) => [...prev, '[BUILD] Transpiling block logic to JavaScript...']);
           console.log('[BUILD-UI] Starting Blockly transpilation (XML → JS)');
-          const { initializeAllBlocks } = await import('../blocks/definitions/index');
-          const Blockly = (await import('blockly')).default || (await import('blockly'));
-          const { javascriptGenerator } = await import('blockly/javascript');
-          await import('../blocks/generators/reactnative');
           initializeAllBlocks();
 
           const { currentScreen, components } = buildBlocklyContextFromPayload(payload);
@@ -151,7 +158,6 @@ export function useBuildApk(
           console.error('[BUILD-UI] Electron build error:', result.error);
         }
       } else {
-        const { CLOUD_COMPILER_URL } = await import('../../config/platform');
         const serverLabel = CLOUD_COMPILER_URL.includes('localhost') ? 'local' : 'cloud';
         setBuildLogs((prev) => [...prev, `[BUILD] Sending build request to ${serverLabel} compiler (${CLOUD_COMPILER_URL})...`]);
         console.log('[BUILD-UI] Fetching POST', CLOUD_COMPILER_URL + '/build-apk');

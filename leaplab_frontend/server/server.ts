@@ -5,14 +5,11 @@ import fs from 'fs';
 import os from 'os';
 import { spawn } from 'child_process';
 import crypto from 'crypto';
-import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
+import { fileURLToPath, pathToFileURL } from 'url';
 import http from 'http';
 import https from 'https';
 import { v4 as uuidv4 } from 'uuid';
 import { transpileArduinoToJS } from './transpiler.js';
-
-const _require = createRequire(import.meta.url);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -400,15 +397,18 @@ app.post('/build-apk', async (req: Request, res: Response) => {
   }
 
   try {
-    const buildPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.js');
-    console.log('[APK] buildPath:', buildPath);
-    console.log('[APK] buildPath exists:', fs.existsSync(buildPath));
+    const jsPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.js');
+    const tsPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.ts');
+    const buildPath = fs.existsSync(jsPath) ? jsPath : (fs.existsSync(tsPath) ? tsPath : null);
+    console.log('[APK] jsPath:', jsPath, 'exists:', fs.existsSync(jsPath));
+    console.log('[APK] tsPath:', tsPath, 'exists:', fs.existsSync(tsPath));
 
     let builder: any;
-    if (fs.existsSync(buildPath)) {
-      const ApkBuilder = _require(buildPath);
+    if (buildPath) {
+      const ApkModule = await import(pathToFileURL(buildPath).href);
+      const ApkBuilder = ApkModule.default || ApkModule;
       builder = new ApkBuilder();
-      console.log('[APK] Builder instance created');
+      console.log('[APK] Builder instance created from:', buildPath);
     }
 
     if (!builder || typeof builder.build !== 'function') {
@@ -507,9 +507,14 @@ setInterval(() => {
 let builderModule: any = null;
 async function getBuilder(): Promise<any> {
   if (!builderModule) {
-    const bPath = path.join(__dirname, '..', 'src', 'studio', 'engine', 'localBuilder.js');
-    if (fs.existsSync(bPath)) {
-      builderModule = await import(`file://${bPath.replace(/\\/g, '/')}`);
+    const jsPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.js');
+    const tsPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.ts');
+    const bPath = fs.existsSync(jsPath) ? jsPath : (fs.existsSync(tsPath) ? tsPath : null);
+    if (bPath) {
+      const mod = await import(pathToFileURL(bPath).href);
+      const Builder = mod.default || mod;
+      builderModule = new Builder();
+      console.log('[APK-BUILDER] Loaded from:', bPath);
     }
   }
   return builderModule;
@@ -534,12 +539,31 @@ app.post('/build', async (req: Request, res: Response) => {
 
     const builder = await getBuilder();
     if (builder && typeof builder.build === 'function') {
-      builder.build(jobId, project).catch((err: any) => {
-        const j = jobs.get(jobId);
-        if (j) { j.status = 'error'; j.error = err.message; }
+      job.status = 'building';
+      const apkName = sanitizeApkName(project.appName);
+      const finalPath = path.join(APK_PUBLIC_DIR, `${apkName}.apk`);
+
+      builder.build(project, (event: { stage?: string; progress?: number; message?: string }) => {
+        if (event.progress !== undefined) job.progress = event.progress;
+        if (event.message) {
+          job.logs.push({ message: event.message, type: event.stage === 'complete' ? 'success' : 'info' });
+        }
+      }).then((outputPath: string) => {
+        fs.mkdirSync(APK_PUBLIC_DIR, { recursive: true });
+        if (fs.existsSync(outputPath)) {
+          fs.copyFileSync(outputPath, finalPath);
+          try { fs.rmSync(outputPath, { force: true }); } catch {}
+        }
+        job.status = 'done';
+        job.progress = 100;
+        job.apkPath = finalPath;
+        job.logs.push({ message: `Build complete: ${finalPath}`, type: 'success' });
+      }).catch((err: any) => {
+        job.status = 'error';
+        job.error = err.message;
+        job.logs.push({ message: `Build failed: ${err.message}`, type: 'error' });
       });
     } else {
-      job.status = 'building';
       simulateBuild(job, project);
     }
 

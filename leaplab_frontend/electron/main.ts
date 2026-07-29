@@ -253,6 +253,17 @@ ipcMain.handle('build-apk', async (event, appState) => {
   console.log('[ELECTRON-MAIN] ==================== IPC build-apk ====================');
   console.log('[ELECTRON-MAIN] appName:', appState?.appName, '| packageName:', appState?.packageName);
   console.log('[ELECTRON-MAIN] screens:', appState?.screens?.length, '| media:', appState?.media?.length);
+  if (appState?.media?.length) {
+    for (let i = 0; i < appState.media.length; i++) {
+      const item = appState.media[i];
+      const dataStr = item.data ? String(item.data) : '';
+      const b64len = dataStr.indexOf(',') >= 0 ? dataStr.length - dataStr.indexOf(',') - 1 : dataStr.length;
+      console.log(`[ELECTRON-MAIN] IPC media[${i}]: filename="${item.filename}" type="${item.type || '?'}" dataLen=${dataStr.length} b64Len=${b64len} hasData=${!!item.data}`);
+      if (b64len > 100 && b64len < (item.size || Infinity) * 0.5) {
+        console.warn(`[ELECTRON-MAIN] WARNING: media[${i}] b64 data (${b64len} bytes) is much smaller than reported file size (${item.size} bytes)`);
+      }
+    }
+  }
   console.log('[ELECTRON-MAIN] APP_ROOT:', APP_ROOT);
   const logCallback = (msg: string) => {
     console.log('[ELECTRON-MAIN] Log:', msg);

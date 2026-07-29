@@ -221,6 +221,9 @@ class ApkInjector {
           try {
             const buf = Buffer.from(b64, 'base64');
             if (buf.length > 0) {
+              if (buf.length < 100 && (filename.includes('.mp3') || filename.includes('.mp4') || filename.includes('.wav') || filename.includes('.ogg') || filename.includes('.png') || filename.includes('.jpg'))) {
+                console.warn(`[ApkInjector]   ⚠ WARNING: "${filename}" decoded to only ${buf.length} bytes — this is likely placeholder data, not a real file. Upload a real file in Media Manager.`);
+              }
               console.log(`[ApkInjector]   → resolved from data: URL (${buf.length} bytes)`);
               return buf;
             }
@@ -274,7 +277,7 @@ class ApkInjector {
         console.log(`[ApkInjector]   → cannot resolve relative path without projectDir`);
       }
 
-      if (!data.includes('\\') && !data.includes(':') && !data.startsWith('http')) {
+      if (!data.includes('\\') && !data.includes(':') && !data.startsWith('http') && !data.startsWith('data:')) {
         try {
           const buf = Buffer.from(data, 'base64');
           if (buf.length > 10) {
@@ -305,16 +308,19 @@ class ApkInjector {
         path.join(homedir, 'Desktop', filename),
       ].filter(Boolean) as string[];
 
-      console.log(`[ApkInjector]   → trying filename-based search`);
+      const ext = filename.includes('.') ? path.extname(filename).toLowerCase() : '';
+      const isMediaFile = ['.mp3', '.mp4', '.wav', '.ogg', '.aac', '.flac', '.avi', '.mov', '.mkv', '.webm'].includes(ext);
+      const minSearchSize = isMediaFile ? 1024 : 10;
+      console.log(`[ApkInjector]   → trying filename-based search (minSize=${minSearchSize})`);
       for (const cand of candidates) {
         const exists = await fs.pathExists(cand);
         console.log(`[ApkInjector]     check: "${cand}" exists=${exists}`);
         if (exists) {
           try {
             const stat = await fs.stat(cand);
-            if (stat.isFile()) {
+            if (stat.isFile() && stat.size >= minSearchSize) {
               const buf = await fs.readFile(cand);
-              if (buf.length > 0) {
+              if (buf.length >= minSearchSize) {
                 console.log(`[ApkInjector]   → resolved via filename search (${buf.length} bytes)`);
                 return buf;
               }
@@ -324,7 +330,7 @@ class ApkInjector {
       }
     }
 
-    console.log(`[ApkInjector]   → FAILED to resolve buffer for "${filename}"`);
+    console.log(`[ApkInjector]   → FAILED to resolve buffer for "${filename}" — data preview: ${typeof data === 'string' ? data.substring(0, 80) : String(data)}`);
     return null;
   }
 
@@ -353,6 +359,7 @@ class ApkInjector {
     if (mediaAssets?.length) {
       let injected = 0;
       let skipped = 0;
+      onProgress?.({ stage: 'media_inject_start', message: `Injecting ${mediaAssets.length} media file(s)...` });
       for (const item of mediaAssets) {
         const filenameRaw = item.filename || (item as any).name || (item as any).path;
         if (!filenameRaw) { skipped++; continue; }
@@ -361,29 +368,36 @@ class ApkInjector {
         try {
           const buffer = await this.resolveMediaBuffer(item, projectDir);
 
-          if (buffer && buffer.length > 0) {
+          const ext = path.extname(filename).toLowerCase();
+          const isMedia = ['.mp3', '.mp4', '.wav', '.ogg', '.aac', '.flac', '.avi', '.mov', '.mkv', '.webm'].includes(ext);
+          const minSize = isMedia ? 1024 : 10;
+          if (buffer && buffer.length >= minSize) {
             await fs.writeFile(path.join(mediaDir, filename), buffer);
             await fs.writeFile(path.join(wwwDir, filename), buffer);
             injected++;
             console.log(`[ApkInjector]   ✓ Injected media: ${filename} (${buffer.length} bytes)`);
+            onProgress?.({ stage: 'media_injected', message: `  ✓ ${filename} (${buffer.length} bytes)` });
           } else {
             skipped++;
-            onProgress?.({ stage: 'media_skip', message: `Skipped media (no data resolved): ${filename}` });
-            console.log(`[ApkInjector]   ✗ Skipped media (no data): ${filename}`);
+            const reason = !buffer || buffer.length === 0 ? 'no data resolved' : `too small (${buffer.length} bytes, minimum ${minSize})`;
+            console.log(`[ApkInjector]   ✗ Skipped media (${reason}): ${filename}`);
+            onProgress?.({ stage: 'media_skip', message: `  ✗ ${filename} — ${reason}` });
           }
         } catch (err) {
           skipped++;
-          onProgress?.({ stage: 'media_skip', message: `Skipped unreadable media: ${filename}` });
           console.log(`[ApkInjector]   ✗ Skipped media (error): ${filename} - ${err}`);
+          onProgress?.({ stage: 'media_skip', message: `  ✗ ${filename} — error: ${err}` });
         }
       }
       console.log(`[ApkInjector]   Media injection summary: ${injected} injected, ${skipped} skipped`);
+      onProgress?.({ stage: 'media_summary', message: `Media: ${injected} injected, ${skipped} skipped` });
 
       // Log what's in the media dir
       const mediaFiles = await fs.readdir(mediaDir).catch(() => []);
       console.log('[ApkInjector]   Files in mediaDir:', mediaFiles.join(', '));
     } else {
       console.log('[ApkInjector]   No media assets to inject');
+      onProgress?.({ stage: 'media_none', message: 'No media assets to inject' });
     }
 
     onProgress?.({ stage: 'injected', progress: 50, message: 'Assets injected' });

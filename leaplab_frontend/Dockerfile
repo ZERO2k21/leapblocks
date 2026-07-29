@@ -62,6 +62,8 @@ RUN cd /tmp/server && npm install --production && \
 COPY server/ ./server/
 COPY src/creova/apk/ ./src/creova/apk/
 COPY src/creova/apk/tools/ ./tools/
+RUN npx --yes esbuild src/creova/apk/buildAPK.ts --bundle --platform=node --target=node20 --outfile=src/creova/apk/buildAPK.js --external:fs-extra --external:child_process --external:path --external:os 2>/dev/null || \
+    echo "[INFO] APK pre-compile skipped — tsx handles .ts at runtime"
 RUN cp /app/arduino-cli.yaml /app/server/arduino-cli.yaml && \
     chmod 777 /app/server/arduino-cli.yaml
 
