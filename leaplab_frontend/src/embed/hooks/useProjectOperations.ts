@@ -82,7 +82,7 @@ export function useProjectOperations(
             await robotSprite.addCostume('wave 1', 'assets/sprites/robot/image-removebg-preview (1).png');
             await robotSprite.addCostume('wave 2', 'assets/sprites/robot/image-Photoroom.png');
             await robotSprite.addCostume('talk', 'assets/sprites/robot/image-removebg-preview.png');
-            await robotSprite.addSound('Meow', 'assets/sounds/meow.wav');
+            await robotSprite.addSound('Meow', 'assets/sounds/83c36d806dc92327b9e7049a565c6bff.wav');
 
             animationVM.registerSprite(robotSprite);
             setSprites([stageSprite, robotSprite]);

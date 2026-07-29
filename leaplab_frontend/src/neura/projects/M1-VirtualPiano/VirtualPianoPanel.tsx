@@ -31,7 +31,6 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
     const streamRef = useRef<MediaStream | null>(null)
     const animFrameRef = useRef<number>(0)
     const isPredictingRef = useRef(false)
-    const rebuildAbortRef = useRef(0)
     const testCameraStartedRef = useRef(false)
     const lastPredictTimeRef = useRef(0)
     const audioContextRef = useRef<AudioContext | null>(null)
@@ -42,7 +41,6 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [stream, setStream] = useState<MediaStream | null>(null)
-    const [modelLoading, setModelLoading] = useState(false)
     const [handDetected, setHandDetected] = useState(false)
     const [captureStatus, setCaptureStatus] = useState<CaptureStatus>('idle')
     const [cameraError, setCameraError] = useState<string | null>(null)
@@ -190,35 +188,10 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
         if (mode.mode !== 'test') testCameraStartedRef.current = false
     }, [mode.mode])
 
-    useEffect(() => {
-        if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
-            const thisBuild = ++rebuildAbortRef.current
-            let cancelled = false
-            setModelLoading(true)
-            const rebuild = async () => {
-                classifierRef.current.clear()
-                for (const cls of mode.project!.classes) {
-                    if (thisBuild !== rebuildAbortRef.current) return
-                    if (cls.samples.length > 0) {
-                        for (const sample of cls.samples) {
-                            try {
-                                const features = JSON.parse(sample.data)
-                                const padded = new Float32Array(78)
-                                padded.set(features, 0)
-                                await classifierRef.current.addSample(padded, cls.name)
-                            } catch { /* skip */ }
-                        }
-                    }
-                }
-                if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false)
-            }
-            rebuild().catch(() => { if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false) })
-            return () => { cancelled = true }
-        }
-    }, [mode.mode, mode.project])
+    // Rule-based classifier: no KNN rebuild needed
 
     useEffect(() => {
-        if (mode.mode !== 'test' || modelLoading) return
+        if (mode.mode !== 'test') return
         if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
             testCameraStartedRef.current = true
             startCamera()
@@ -283,7 +256,7 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [mode.mode, stream, modelLoading, startCamera, playNote])
+    }, [mode.mode, stream, startCamera, playNote])
 
     const handleCapture = useCallback(async () => {
         if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return
@@ -439,20 +412,13 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                         <h2 className="text-2xl font-extrabold text-purple-600 mb-2">🏋️ Training Your Piano AI!</h2>
                         <p className="text-sm text-gray-500">Teaching the AI to recognize note gestures...</p>
                     </div>
-                    {modelLoading ? (
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
-                            <p className="text-sm font-bold text-purple-700">Loading model...</p>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center gap-4">
-                            <span className="text-6xl">✅</span>
-                            <p className="text-sm font-bold text-green-600">Model Ready!</p>
-                            <button type="button" onClick={() => mode.setMode('test')} className="px-6 py-3 bg-purple-600 text-white rounded-xl text-sm font-bold shadow-lg border-none cursor-pointer">
+                    <div className="flex flex-col items-center gap-4">
+                        <span className="text-6xl">✅</span>
+                        <p className="text-sm font-bold text-green-600">Model Ready!</p>
+                        <button type="button" onClick={() => mode.setMode('test')} className="px-6 py-3 bg-purple-600 text-white rounded-xl text-sm font-bold shadow-lg border-none cursor-pointer">
                                 🎹 Start Playing
                             </button>
                         </div>
-                    )}
                 </div>
             )}
 

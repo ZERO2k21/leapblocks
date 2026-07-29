@@ -4,10 +4,8 @@ import { AudioClassifier } from '../../ml/classifiers/AudioClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import { useIsMobile } from '../../hooks/useResponsive'
 import WorkflowIndicator from '../components/WorkflowIndicator'
-import StatsBar from '../components/StatsBar'
 import SampleGrid from '../components/SampleGrid'
 import TrainPanel from '../components/TrainPanel'
-import TestPanel from '../components/TestPanel'
 
 interface AudioClassifierPanelProps {
     mode: UseNeuraProjectReturn
@@ -22,6 +20,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
     const animFrameRef = useRef<number>(0)
     const isPredictingRef = useRef(false)
     const canvasRef = useRef<HTMLCanvasElement>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
     const [isRecording, setIsRecording] = useState(false)
     const [isTraining, setIsTraining] = useState(false)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
@@ -30,6 +29,9 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
     const [modelLoading, setModelLoading] = useState(false)
     const [currentEpoch, setCurrentEpoch] = useState(0)
     const [totalEpochs, setTotalEpochs] = useState(50)
+    const [isImporting, setIsImporting] = useState(false)
+    const [importError, setImportError] = useState<string | null>(null)
+    const [isMicOn, setIsMicOn] = useState(false)
 
     useEffect(() => {
         if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
@@ -65,6 +67,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             source.connect(analyser)
             audioContextRef.current = ctx
             analyserRef.current = analyser
+            setIsMicOn(true)
             const draw = () => {
                 if (!analyserRef.current) return
                 const data = new Uint8Array(analyserRef.current.frequencyBinCount)
@@ -122,12 +125,13 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
         micStreamRef.current?.getTracks().forEach(t => t.stop())
         micStreamRef.current = null
         setWaveform([])
+        setIsMicOn(false)
     }, [])
 
     useEffect(() => { return () => { stopAudio() } }, [])
 
     useEffect(() => {
-        if (mode.mode === 'collect') { startAudio() } else { stopAudio() }
+        if (mode.mode !== 'collect') { stopAudio() }
     }, [mode.mode])
 
     useEffect(() => {
@@ -135,54 +139,58 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
         let cancelled = false
         const runPrediction = async () => {
             if (isPredictingRef.current || cancelled) return
-            const ctx = audioContextRef.current; const analyser = analyserRef.current
-            if (!ctx || !analyser) return
+            if (!micStreamRef.current) return
             isPredictingRef.current = true; setIsProcessing(true)
             try {
-                if (ctx.state === 'suspended') await ctx.resume()
-                const sampleData: number[] = []
-                for (let i = 0; i < 40; i++) {
-                    if (cancelled) break
-                    const data = new Uint8Array(analyser.frequencyBinCount)
-                    analyser.getByteFrequencyData(data)
-                    sampleData.push(...Array.from(data))
-                    await new Promise(r => setTimeout(r, 50))
-                }
-                if (!cancelled && sampleData.length > 0) {
-                    const result = await classifierRef.current.predict(sampleData, 5)
-                    if (result && !cancelled) setPrediction(result)
-                }
+                const blob = await classifierRef.current.captureFromStream(micStreamRef.current, 2000)
+                const features = await classifierRef.current.extractFeaturesFromRecording(blob)
+                const result = await classifierRef.current.predict(features, 5)
+                if (result && !cancelled) setPrediction(result)
             } catch (err) { console.error('Audio prediction error:', err) }
             setIsProcessing(false); isPredictingRef.current = false
         }
-        startAudio()
         const interval = setInterval(runPrediction, 3000)
         return () => { cancelled = true; clearInterval(interval) }
     }, [mode.mode, modelLoading])
 
     const handleCapture = async () => {
-        if (!mode.selectedClassId) return
+        if (!mode.selectedClassId || !micStreamRef.current) return
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) return
         if (isRecording) return
         setIsRecording(true)
         try {
-            const ctx = audioContextRef.current
-            if (ctx && ctx.state === 'suspended') await ctx.resume()
-            const analyser = analyserRef.current
-            const sampleData: number[] = []
-            if (analyser) {
-                for (let i = 0; i < 40; i++) {
-                    const data = new Uint8Array(analyser.frequencyBinCount)
-                    analyser.getByteFrequencyData(data)
-                    sampleData.push(...Array.from(data))
-                    await new Promise(r => setTimeout(r, 50))
-                }
-            }
-            mode.addSample(mode.selectedClassId, { type: 'audio', data: JSON.stringify(sampleData) })
-            classifierRef.current.addSample(sampleData, mode.getSelectedClass()?.name || '').catch(() => {})
+            const blob = await classifierRef.current.captureFromStream(micStreamRef.current, 2000)
+            const features = await classifierRef.current.extractFeaturesFromRecording(blob)
+            await classifierRef.current.addSample(features, mode.getSelectedClass()?.name || '')
+            mode.addSample(mode.selectedClassId, { type: 'audio', data: JSON.stringify(features) })
         } catch (err) { console.warn('[Neura] Audio capture failed:', err) }
         finally { setTimeout(() => setIsRecording(false), 300) }
+    }
+
+    const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files
+        if (!files || files.length === 0 || !mode.selectedClassId) return
+
+        const selectedClass = mode.getSelectedClass()
+        if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
+            setImportError('Sample limit reached for this class')
+            return
+        }
+
+        setIsImporting(true)
+        setImportError(null)
+
+        try {
+            const file = files[0]
+            const features = await classifierRef.current.importFromFile(file, mode.getSelectedClass()?.name || '')
+            mode.addSample(mode.selectedClassId, { type: 'audio', data: JSON.stringify(features) })
+        } catch (err) {
+            setImportError(err instanceof Error ? err.message : 'Failed to import audio file')
+        } finally {
+            setIsImporting(false)
+            if (fileInputRef.current) fileInputRef.current.value = ''
+        }
     }
 
     const handleTrain = async (epochsToTrain: number = 50) => {
@@ -239,6 +247,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
     }
 
     const selectedClass = mode.getSelectedClass()
+    const hasClasses = mode.project ? mode.project.classes.length > 0 : false
     const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
     const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
     const canAddSamples = selectedClass && !atSampleLimit
@@ -269,10 +278,14 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                         <div className="flex-1 rounded-2xl overflow-hidden bg-[#0f0e26] border border-[#3b2f63] shadow-[0_4px_20px_rgba(0,0,0,0.15)] relative">
                             <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-70" />
 
-                            {/* LIVE indicator */}
-                            <div className="absolute top-2.5 left-2.5 flex items-center gap-1.25 py-1 px-2.5 bg-black/50 backdrop-blur-md rounded-md z-10">
-                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]" />
-                                <span className="text-white text-[10px] font-bold">LIVE</span>
+                            {/* LIVE / OFF indicator */}
+                            <div className={`absolute top-2.5 left-2.5 flex items-center gap-1.25 py-1 px-2.5 backdrop-blur-md rounded-md z-10 ${
+                                isMicOn ? 'bg-black/50' : 'bg-gray-800/70'
+                            }`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${
+                                    isMicOn ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]' : 'bg-gray-500'
+                                }`} />
+                                <span className="text-white text-[10px] font-bold">{isMicOn ? 'LIVE' : 'OFF'}</span>
                             </div>
 
                             {/* Class name badge */}
@@ -297,15 +310,21 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                     className={`w-[72px] h-[72px] rounded-full flex items-center justify-center transition-transform duration-75 mb-2.5 ${
                                         isRecording
                                             ? 'bg-red-500/15 border-2 border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.4)]'
-                                            : 'bg-white/10 border-2 border-white/25 shadow-[0_0_16px_rgba(255,255,255,0.05)]'
+                                            : isMicOn
+                                                ? 'bg-white/10 border-2 border-white/25 shadow-[0_0_16px_rgba(255,255,255,0.05)]'
+                                                : 'bg-gray-500/10 border-2 border-gray-500/30 shadow-none'
                                     }`}
-                                    style={{ transform: `scale(${micScale})` }}
+                                    style={{ transform: `scale(${isMicOn ? micScale : 1})` }}
                                 >
-                                    <span className="text-3xl">{isRecording ? '🎙️' : '🎤'}</span>
+                                    <span className="text-3xl">{isRecording ? '🎙️' : isMicOn ? '🎤' : '🔇'}</span>
                                 </div>
-                                <div className="py-1 px-3 bg-black/50 backdrop-blur-md rounded-full border border-white/10">
-                                    <span className="text-white text-[10px] font-bold tracking-wider">
-                                        {isRecording ? '🔴 Recording...' : '🎤 Listening...'}
+                                <div className={`py-1 px-3 backdrop-blur-md rounded-full border ${
+                                    isMicOn ? 'bg-black/50 border-white/10' : 'bg-gray-800/60 border-gray-600/30'
+                                }`}>
+                                    <span className={`text-[10px] font-bold tracking-wider ${
+                                        isMicOn ? 'text-white' : 'text-gray-400'
+                                    }`}>
+                                        {isRecording ? '🔴 Recording...' : isMicOn ? '🎤 Listening...' : '🔇 Mic Off — Create a class & click Mic On'}
                                     </span>
                                 </div>
                             </div>
@@ -319,7 +338,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                             <div className="flex items-center gap-1.5">
                                 <div className="w-5 h-5 rounded-md bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-[10px] shrink-0">💡</div>
                                 <div className="flex flex-wrap gap-x-2.5 gap-y-0.5">
-                                    {['Record in quiet environment', 'Speak clearly', 'Try different volumes', 'Record 5+ samples'].map((tip) => (
+                                    {['Create a class first', 'Click Mic On', 'Record in quiet environment', 'Record 5+ samples'].map((tip) => (
                                         <span key={tip} className="flex items-center gap-1 text-[9px] text-gray-600">
                                             <span className="w-0.75 h-0.75 rounded-full bg-[#630ed4] shrink-0" />
                                             {tip}
@@ -332,27 +351,66 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                         {/* Controls */}
                         <div className="flex items-center gap-2">
                             <button
-                                onClick={startAudio}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-br from-[#630ed4] to-[#8b5cf6] text-white shadow-[0_4px_14px_rgba(99,14,212,0.35)] transition-all"
+                                onClick={isMicOn ? stopAudio : startAudio}
+                                disabled={!hasClasses}
+                                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none transition-all ${
+                                    !hasClasses
+                                        ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white cursor-not-allowed'
+                                        : isMicOn
+                                            ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-[0_4px_14px_rgba(239,68,68,0.4)]'
+                                            : 'bg-gradient-to-br from-[#630ed4] to-[#8b5cf6] text-white shadow-[0_4px_14px_rgba(99,14,212,0.35)]'
+                                } ${hasClasses ? 'opacity-100 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                             >
-                                <span className="text-base">🎙️</span>
-                                Mic On
+                                <span className="text-base">{isMicOn ? '🔴' : '🎙️'}</span>
+                                {isMicOn ? 'Mic Off' : 'Mic On'}
                             </button>
                             <button
                                 onClick={handleCapture}
-                                disabled={!canAddSamples || isRecording}
+                                disabled={!canAddSamples || !isMicOn || isRecording}
                                 className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none transition-all ${
                                     isRecording
                                         ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-[0_4px_14px_rgba(239,68,68,0.4)]'
-                                        : atSampleLimit
+                                        : atSampleLimit || !isMicOn
                                             ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white cursor-not-allowed'
                                             : 'bg-gradient-to-br from-[#630ed4] to-[#8b5cf6] text-white shadow-[0_4px_14px_rgba(99,14,212,0.35)]'
-                                } ${canAddSamples || isRecording ? 'opacity-100 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                                } ${canAddSamples && isMicOn || isRecording ? 'opacity-100 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                             >
                                 <span className="text-base">{isRecording ? '⏹️' : '🔴'}</span>
                                 {isRecording ? 'Stop' : 'Record'}
                             </button>
                         </div>
+
+                        {/* File Import */}
+                        <div className="flex items-center gap-2">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".wav,.mp3,audio/wav,audio/mpeg"
+                                onChange={handleFileImport}
+                                className="hidden"
+                            />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={!canAddSamples || isImporting}
+                                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none transition-all ${
+                                    isImporting
+                                        ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-white'
+                                        : atSampleLimit
+                                            ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white cursor-not-allowed'
+                                            : 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-[0_4px_14px_rgba(16,185,129,0.35)]'
+                                } ${canAddSamples && !isImporting ? 'opacity-100 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                            >
+                                <span className="text-base">{isImporting ? '⏳' : '📁'}</span>
+                                {isImporting ? 'Importing...' : 'Import .wav/.mp3'}
+                            </button>
+                        </div>
+
+                        {/* Import Error */}
+                        {importError && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-2 px-3">
+                                <span className="text-[10px] text-red-600 font-medium">{importError}</span>
+                            </div>
+                        )}
 
                         {/* Stats */}
                         <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200 shadow-sm">
@@ -412,9 +470,8 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             {/* TEST MODE */}
             {mode.mode === 'test' && (
                 <div className="w-full flex-1 min-h-0 mt-4 flex flex-col">
-                    {/* Horizontal split */}
                     <div className={`w-full flex flex-1 min-h-0 gap-4 ${isMobile ? 'flex-col' : 'flex-row'}`}>
-                        {/* Left half - Waveform visualizer */}
+                        {/* Left half - Waveform visualizer + Controls */}
                         <div className={`flex-1 min-w-0 flex flex-col ${isMobile ? 'min-h-[30vh]' : 'min-h-0'}`}>
                             <div className="flex-1 rounded-2xl overflow-hidden bg-[#0f0e26] border border-[#3b2f63] shadow-[0_4px_20px_rgba(0,0,0,0.15)] relative">
                                 <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-70" />
@@ -423,6 +480,16 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                 <div className="absolute top-2.5 left-2.5 flex items-center gap-1.25 py-1 px-2.5 bg-[#006c44]/80 backdrop-blur-md rounded-md z-10">
                                     <div className="w-1.5 h-1.5 rounded-full bg-white" />
                                     <span className="text-white text-[10px] font-bold">TESTING</span>
+                                </div>
+
+                                {/* LIVE / OFF indicator */}
+                                <div className={`absolute top-2.5 right-2.5 flex items-center gap-1.25 py-1 px-2.5 backdrop-blur-md rounded-md z-10 ${
+                                    isMicOn ? 'bg-black/50' : 'bg-gray-800/70'
+                                }`}>
+                                    <div className={`w-1.5 h-1.5 rounded-full ${
+                                        isMicOn ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]' : 'bg-gray-500'
+                                    }`} />
+                                    <span className="text-white text-[10px] font-bold">{isMicOn ? 'LIVE' : 'OFF'}</span>
                                 </div>
 
                                 {/* Center content */}
@@ -435,10 +502,16 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                     )}
 
                                     <div
-                                        className="w-[72px] h-[72px] rounded-full bg-white/10 border-2 border-white/25 flex items-center justify-center transition-transform duration-75 shadow-[0_0_16px_rgba(255,255,255,0.05)] mb-2.5"
-                                        style={{ transform: `scale(${micScale})` }}
+                                        className={`w-[72px] h-[72px] rounded-full flex items-center justify-center transition-transform duration-75 mb-2.5 ${
+                                            isProcessing
+                                                ? 'bg-amber-500/15 border-2 border-amber-500 shadow-[0_0_24px_rgba(245,158,11,0.4)]'
+                                                : isMicOn
+                                                    ? 'bg-white/10 border-2 border-white/25 shadow-[0_0_16px_rgba(255,255,255,0.05)]'
+                                                    : 'bg-gray-500/10 border-2 border-gray-500/30 shadow-none'
+                                        }`}
+                                        style={{ transform: `scale(${isMicOn ? micScale : 1})` }}
                                     >
-                                        <span className="text-3xl">🎤</span>
+                                        <span className="text-3xl">{isProcessing ? '⏳' : isMicOn ? '🎤' : '🔇'}</span>
                                     </div>
 
                                     {prediction && (
@@ -452,13 +525,190 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                             </div>
                                         </div>
                                     )}
+
+                                    {!prediction && !modelLoading && !isProcessing && (
+                                        <div className="py-1 px-3 bg-black/50 backdrop-blur-md rounded-full border border-white/10">
+                                            <span className={`text-[10px] font-bold tracking-wider ${isMicOn ? 'text-white' : 'text-gray-400'}`}>
+                                                {isMicOn ? '🎤 Speak or import a file to test' : '🔇 Turn on mic or import a file'}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Right half - Test results */}
+                        {/* Right half - Test controls + Results */}
                         <div className={`shrink-0 flex flex-col gap-2.5 ${isMobile ? 'w-full h-auto' : 'w-[280px] h-full'}`}>
-                            <TestPanel prediction={prediction} isProcessing={isProcessing}><div /></TestPanel>
+                            {/* Test Controls */}
+                            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200 shadow-sm">
+                                <div className="flex items-center gap-1.5 mb-2.5">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Test Controls</span>
+                                </div>
+
+                                {/* Mic Toggle */}
+                                <button
+                                    onClick={isMicOn ? stopAudio : startAudio}
+                                    className={`w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none transition-all mb-2 ${
+                                        isMicOn
+                                            ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-[0_4px_14px_rgba(239,68,68,0.4)]'
+                                            : 'bg-gradient-to-br from-[#630ed4] to-[#8b5cf6] text-white shadow-[0_4px_14px_rgba(99,14,212,0.35)]'
+                                    } cursor-pointer`}
+                                >
+                                    <span className="text-base">{isMicOn ? '🔴' : '🎙️'}</span>
+                                    {isMicOn ? 'Mic Off' : 'Mic On'}
+                                </button>
+
+                                {/* Record & Test Button */}
+                                <button
+                                    onClick={async () => {
+                                        if (!micStreamRef.current || isProcessing) return
+                                        setIsProcessing(true)
+                                        try {
+                                            const blob = await classifierRef.current.captureFromStream(micStreamRef.current, 2000)
+                                            const features = await classifierRef.current.extractFeaturesFromRecording(blob)
+                                            const result = await classifierRef.current.predict(features, 5)
+                                            if (result) setPrediction(result)
+                                        } catch (err) { console.error('Test capture error:', err) }
+                                        setIsProcessing(false)
+                                    }}
+                                    disabled={!isMicOn || isProcessing}
+                                    className={`w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none transition-all mb-2 ${
+                                        isProcessing
+                                            ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-white cursor-wait'
+                                            : !isMicOn
+                                                ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white cursor-not-allowed'
+                                                : 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-[0_4px_14px_rgba(16,185,129,0.35)] cursor-pointer'
+                                    } ${!isMicOn || isProcessing ? 'opacity-50' : 'opacity-100'}`}
+                                >
+                                    <span className="text-base">{isProcessing ? '⏳' : '🎯'}</span>
+                                    {isProcessing ? 'Analyzing...' : 'Record & Test'}
+                                </button>
+
+                                {/* File Import for Testing */}
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".wav,.mp3,audio/wav,audio/mpeg"
+                                    onChange={async (e) => {
+                                        const files = e.target.files
+                                        if (!files || files.length === 0) return
+                                        setIsProcessing(true)
+                                        setImportError(null)
+                                        try {
+                                            const file = files[0]
+                                            const result = await classifierRef.current.predictFromFile(file, 5)
+                                            if (result) setPrediction(result)
+                                        } catch (err) {
+                                            setImportError(err instanceof Error ? err.message : 'Failed to test file')
+                                        } finally {
+                                            setIsProcessing(false)
+                                            if (fileInputRef.current) fileInputRef.current.value = ''
+                                        }
+                                    }}
+                                    className="hidden"
+                                />
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isProcessing}
+                                    className={`w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none transition-all ${
+                                        isProcessing
+                                            ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-white cursor-wait'
+                                            : 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-[0_4px_14px_rgba(59,130,246,0.35)] cursor-pointer'
+                                    } ${isProcessing ? 'opacity-50' : 'opacity-100'}`}
+                                >
+                                    <span className="text-base">{isProcessing ? '⏳' : '📁'}</span>
+                                    {isProcessing ? 'Analyzing...' : 'Test with File (.wav/.mp3)'}
+                                </button>
+
+                                {/* Import Error */}
+                                {importError && (
+                                    <div className="bg-red-50 border border-red-200 rounded-lg p-2 px-3 mt-2">
+                                        <span className="text-[10px] text-red-600 font-medium">{importError}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Prediction Results */}
+                            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200 shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
+                                {prediction ? (
+                                    <div className="flex flex-col h-full">
+                                        <div className="flex items-center justify-between mb-2.5">
+                                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Results</span>
+                                            <button
+                                                onClick={() => setPrediction(null)}
+                                                className="text-[9px] font-bold text-[#630ed4] bg-[#f5f3ff] py-0.5 px-1.5 rounded border-none cursor-pointer"
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
+
+                                        {/* Top Prediction */}
+                                        <div className="bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl p-3 mb-3 border border-[#630ed4]/10">
+                                            <div className="flex items-center gap-2 mb-1.5">
+                                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#630ed4] to-[#7c3aed] flex items-center justify-center text-white font-bold text-sm">
+                                                    {prediction.label.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <span className="text-[9px] text-gray-500 uppercase font-bold tracking-widest block">Prediction</span>
+                                                    <span className="text-sm font-extrabold text-[#131b2e] capitalize">{prediction.label}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-[10px] text-gray-500">Confidence</span>
+                                                <span className={`text-sm font-extrabold ${
+                                                    Object.values(prediction.confidences).reduce((a, b) => Math.max(a, b), 0) >= 0.7
+                                                        ? 'text-emerald-600'
+                                                        : Object.values(prediction.confidences).reduce((a, b) => Math.max(a, b), 0) >= 0.4
+                                                            ? 'text-amber-600'
+                                                            : 'text-red-600'
+                                                }`}>
+                                                    {Math.round(Object.values(prediction.confidences).reduce((a, b) => Math.max(a, b), 0) * 100)}%
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* All Classes Breakdown */}
+                                        <div className="flex-1 min-h-0 overflow-y-auto neura-scrollbar">
+                                            <span className="text-[9px] font-extrabold text-gray-500 uppercase tracking-wider block mb-1.5">All Classes</span>
+                                            <div className="flex flex-col gap-1.5">
+                                                {Object.entries(prediction.confidences)
+                                                    .sort(([, a], [, b]) => b - a)
+                                                    .map(([label, confidence]) => {
+                                                        const val = Math.round(confidence * 100)
+                                                        return (
+                                                            <div key={label}>
+                                                                <div className="flex justify-between mb-0.5">
+                                                                    <span className="text-[10px] font-bold text-gray-700 capitalize">{label}</span>
+                                                                    <span className="text-[10px] font-bold text-gray-500">{val}%</span>
+                                                                </div>
+                                                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className={`h-full rounded-full transition-[width] duration-500 ease-out ${
+                                                                            confidence >= 0.7
+                                                                                ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
+                                                                                : confidence >= 0.4
+                                                                                    ? 'bg-gradient-to-r from-amber-400 to-amber-600'
+                                                                                    : 'bg-gradient-to-r from-red-300 to-red-500'
+                                                                        }`}
+                                                                        style={{ width: `${val}%` }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full py-5">
+                                        <div className="w-12 h-12 rounded-full bg-[#f5f3ff] flex items-center justify-center mb-2.5 border-2 border-dashed border-purple-300">
+                                            <span className="text-xl">🤔</span>
+                                        </div>
+                                        <p className="text-xs font-bold text-gray-500 text-center">No prediction yet</p>
+                                        <p className="text-[10px] text-gray-400 mt-0.5 text-center">Record audio or import a file to test</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

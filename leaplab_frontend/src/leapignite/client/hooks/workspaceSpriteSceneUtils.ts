@@ -1,5 +1,6 @@
 import Blockly from "@blockly-runtime";
 import { showToast } from "../components/Toast";
+import { showConfirm } from "../components/ConfirmDialog";
 import type { SpriteEntry } from "../../../components/SpriteLibrary";
 
 interface CostumeMap {
@@ -218,7 +219,7 @@ export function addScene(
     setCurrentSceneId(newId);
 }
 
-export function deleteSprite(
+export async function deleteSprite(
     sprites: SpriteData[],
     workspaceRef: React.RefObject<any>,
     activeSpriteIdRef: React.MutableRefObject<string>,
@@ -228,12 +229,12 @@ export function deleteSprite(
     setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>,
     setActiveSpriteId: (id: string) => void,
     spriteId: string
-): void {
+): Promise<void> {
     if (sprites.length <= 1) {
         showToast("Cannot delete the last sprite!", 'warning');
         return;
     }
-    if (!confirm(`Delete sprite?`)) return;
+    if (!await showConfirm('Delete sprite?', { title: 'Delete Sprite', confirmText: 'Delete' })) return;
 
     if (workspaceRef && workspaceRef.current && activeSpriteIdRef && activeSpriteIdRef.current && !isLoadingWorkspaceRef?.current) {
         const json = cloneWorkspaceData(Blockly.serialization.workspaces.save(workspaceRef.current));
@@ -283,18 +284,18 @@ export function deleteSprite(
     }
 }
 
-export function deleteScene(
+export async function deleteScene(
     scenes: SceneData[],
     setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>,
     setCurrentSceneId: (id: string) => void,
     setActiveSpriteId: (id: string | null) => void,
     sceneId: string
-): void {
+): Promise<void> {
     if (scenes.length <= 1) {
         showToast("Cannot delete the last scene!", 'warning');
         return;
     }
-    if (!confirm(`Delete scene?`)) return;
+    if (!await showConfirm('Delete scene?', { title: 'Delete Scene', confirmText: 'Delete' })) return;
 
     setScenes(prev => prev.filter(s => s.id !== sceneId));
 

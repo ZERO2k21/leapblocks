@@ -113,9 +113,17 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     })
     const [inferenceTime, setInferenceTime] = useState(0)
     const [modelLoadError, setModelLoadError] = useState<string | null>(null)
-    const [customModelTrained, setCustomModelTrained] = useState(false)
-    const [useCustomModel, setUseCustomModel] = useState(false)
+    const [customModelTrained, setCustomModelTrained] = useState(() => mode.project?.modelTrained ?? false)
+    const [useCustomModel, setUseCustomModel] = useState(() => mode.project?.modelTrained ?? false)
     const [isDragging, setIsDragging] = useState(false)
+
+    // Sync model state when project changes (e.g., navigating back to test mode)
+    useEffect(() => {
+        if (mode.project?.modelTrained) {
+            setCustomModelTrained(true)
+            setUseCustomModel(true)
+        }
+    }, [mode.project?.modelTrained])
     const [isCapturing, setIsCapturing] = useState(false)
     const [collectTab, setCollectTab] = useState<'camera' | 'upload' | 'download'>('camera')
     const [downloadSource, setDownloadSource] = useState<'local' | 'kaggle'>('local')
@@ -239,15 +247,22 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             const start = performance.now()
             let result: { class: string; score: number; bbox: [number, number, number, number] }[] = []
 
-            if (useCustomModel && customModelTrained && trainerRef.current.canClassify) {
+            // Prioritize canClassify (actual KNN state) over UI flags
+            if (trainerRef.current.canClassify) {
                 // Use custom trained model
                 const customResult = await trainerRef.current.detect(video)
                 result = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
+            } else if (useCustomModel && customModelTrained) {
+                // Model was trained but KNN not ready (e.g., not enough samples per class)
+                // Show empty rather than misleading COCO labels
+                result = []
             } else {
-                // Fall back to COCO-SSD — map labels to user classes
+                // Fall back to COCO-SSD — map labels to user classes, filter unmapped
                 const cocoResult = await classifierRef.current.detect(video)
                 const userClasses = mode.project?.classes || []
-                result = cocoResult.objects.map(o => ({ class: mapToUserClass(o.class, userClasses), score: o.confidence, bbox: o.bbox }))
+                result = cocoResult.objects
+                    .map(o => ({ class: mapToUserClass(o.class, userClasses), score: o.confidence, bbox: o.bbox }))
+                    .filter(o => userClasses.length === 0 || userClasses.some(c => c.name === o.class))
             }
 
             const elapsed = Math.round(performance.now() - start)
@@ -257,7 +272,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             console.warn('[ObjectDetector] Detection error:', e)
             return []
         }
-    }, [useCustomModel, customModelTrained])
+    }, [useCustomModel, customModelTrained, mode.project?.classes])
 
     const drawDetections = useCallback((dets: { class: string; score: number; bbox: [number, number, number, number] }[], canvas: HTMLCanvasElement, video: HTMLVideoElement) => {
         canvas.width = video.videoWidth

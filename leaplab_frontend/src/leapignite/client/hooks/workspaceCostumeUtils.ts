@@ -1,4 +1,5 @@
 import { showToast } from "../components/Toast";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface CostumeEntry {
     id: string;
@@ -149,7 +150,7 @@ export function handlePaintSave(paintEditor: PaintEditor, setPaintEditor: (edito
     setPaintEditor({ ...paintEditor, isOpen: false });
 }
 
-export function handleDeleteCostume(paintEditor: PaintEditor, sprites: SpriteData[], currentSceneId: string, setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>, setPaintEditor: (editor: PaintEditor) => void, index: number): void {
+export async function handleDeleteCostume(paintEditor: PaintEditor, sprites: SpriteData[], currentSceneId: string, setScenes: React.Dispatch<React.SetStateAction<SceneData[]>>, setPaintEditor: (editor: PaintEditor) => void, index: number): Promise<void> {
     if (paintEditor.type !== 'sprite' || !paintEditor.targetId) return;
 
     const sprite = sprites.find(s => s.id === paintEditor.targetId);
@@ -162,7 +163,7 @@ export function handleDeleteCostume(paintEditor: PaintEditor, sprites: SpriteDat
     }
 
     const keyToDelete = costumeKeys[index];
-    if (!confirm(`Delete costume?`)) return;
+    if (!await showConfirm('Delete costume?', { title: 'Delete Costume', confirmText: 'Delete' })) return;
 
     setScenes(prev => prev.map(scene => {
         if (scene.id !== currentSceneId) return scene;

@@ -33,22 +33,28 @@ const CATEGORIES = [
     { id: 'Wacky', color: '#FF6680' },
 ];
 
-const mappedSounds: SoundEntry[] = (soundsData as any[]).map((sound: any) => {
-    const tags = Array.isArray(sound.tags) ? sound.tags.map((t: string) => t.toLowerCase()) : [];
+const mappedSounds: SoundEntry[] = (() => {
+    const seen = new Set<string>();
+    return (soundsData as any[]).reduce<SoundEntry[]>((acc, sound: any) => {
+        if (seen.has(sound.md5ext)) return acc;
+        seen.add(sound.md5ext);
+        const tags = Array.isArray(sound.tags) ? sound.tags.map((t: string) => t.toLowerCase()) : [];
 
-    let category = 'Effects'; // Default
+        let category = 'Effects'; // Default
 
-    if (tags.includes('animals') || tags.includes('animal')) category = 'Animals';
-    else if (tags.includes('loops') || tags.includes('loop')) category = 'Loops';
-    else if (tags.includes('notes') || tags.includes('note') || tags.includes('instruments')) category = 'Notes';
-    else if (tags.includes('percussion') || tags.includes('drum')) category = 'Percussion';
-    else if (tags.includes('space') || tags.includes('alien')) category = 'Space';
-    else if (tags.includes('sports') || tags.includes('sport')) category = 'Sports';
-    else if (tags.includes('voice') || tags.includes('human')) category = 'Voice';
-    else if (tags.includes('wacky') || tags.includes('cartoon')) category = 'Wacky';
+        if (tags.includes('animals') || tags.includes('animal')) category = 'Animals';
+        else if (tags.includes('loops') || tags.includes('loop')) category = 'Loops';
+        else if (tags.includes('notes') || tags.includes('note') || tags.includes('instruments')) category = 'Notes';
+        else if (tags.includes('percussion') || tags.includes('drum')) category = 'Percussion';
+        else if (tags.includes('space') || tags.includes('alien')) category = 'Space';
+        else if (tags.includes('sports') || tags.includes('sport')) category = 'Sports';
+        else if (tags.includes('voice') || tags.includes('human')) category = 'Voice';
+        else if (tags.includes('wacky') || tags.includes('cartoon')) category = 'Wacky';
 
-    return { ...sound, category } as SoundEntry;
-});
+        acc.push({ ...sound, category } as SoundEntry);
+        return acc;
+    }, []);
+})();
 
 interface SoundLibraryProps {
     isOpen: boolean;

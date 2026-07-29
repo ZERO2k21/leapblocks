@@ -43,24 +43,42 @@ export function classifyFingerCount(features: Float32Array): ClassificationResul
 
 /**
  * M1-4: Rule-based drawing mode detection.
- * Checks if index finger is extended (drawing mode) or all fingers curled (erase mode).
- * Returns 'draw' or 'erase' based on finger configuration.
+ * Detects 4 gestures: draw, erase, move, color-select.
+ * - Draw: only index finger extended (pointing)
+ * - Erase: closed fist (no fingers extended)
+ * - Move: peace sign (index + middle extended)
+ * - Color Select: open hand (3+ fingers extended)
  */
 export function classifyDrawErase(features: Float32Array): ClassificationResult {
     const indexExtended = features.length > 63 && features[63] > 0.5
     const middleExtended = features.length > 64 && features[64] > 0.5
     const ringExtended = features.length > 65 && features[65] > 0.5
+    const pinkyExtended = features.length > 66 && features[66] > 0.5
+    const thumbExtended = features.length > 67 && features[67] > 0.5
 
-    // Draw: only index finger extended
-    // Erase: multiple fingers or no fingers
-    const isDrawing = indexExtended && !middleExtended && !ringExtended
+    const fingerCount = [indexExtended, middleExtended, ringExtended, pinkyExtended, thumbExtended].filter(Boolean).length
+
+    let label: string
+    if (fingerCount === 0) {
+        label = 'erase'
+    } else if (indexExtended && middleExtended && !ringExtended && !pinkyExtended) {
+        label = 'move'
+    } else if (fingerCount >= 3) {
+        label = 'color-select'
+    } else if (indexExtended && !middleExtended) {
+        label = 'draw'
+    } else {
+        label = 'erase'
+    }
 
     return {
-        label: isDrawing ? 'draw' : 'erase',
+        label,
         confidence: 0.9,
         details: {
-            'draw': isDrawing ? 1 : 0,
-            'erase': isDrawing ? 0 : 1
+            'draw': label === 'draw' ? 1 : 0,
+            'erase': label === 'erase' ? 1 : 0,
+            'move': label === 'move' ? 1 : 0,
+            'color-select': label === 'color-select' ? 1 : 0,
         }
     }
 }
@@ -71,13 +89,15 @@ export function classifyDrawErase(features: Float32Array): ClassificationResult 
  * @param features HandPoseClassifier 78-d features
  * @param videoWidth Width of video frame
  * @param videoHeight Height of video frame
- * @param numKeys Number of piano keys (default 8)
+ * @param numKeys Number of piano keys (default 7)
  */
+const PIANO_NOTE_NAMES = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si']
+
 export function classifyPianoKey(
     features: Float32Array,
     videoWidth: number,
     videoHeight: number,
-    numKeys: number = 8
+    numKeys: number = 7
 ): ClassificationResult {
     // Index fingertip is landmark 8, normalized coordinates are in features[24-25] (index tip x,y)
     // features[24] = index_tip.x normalized, features[25] = index_tip.y normalized
@@ -96,11 +116,12 @@ export function classifyPianoKey(
 
     // Map x position to key index (0 to numKeys-1)
     const keyIndex = Math.min(numKeys - 1, Math.max(0, Math.floor(tipX * numKeys)))
-    const keyName = `key_${keyIndex}`
+    const keyName = PIANO_NOTE_NAMES[keyIndex] || `key_${keyIndex}`
 
     const details: Record<string, number> = {}
     for (let i = 0; i < numKeys; i++) {
-        details[`key_${i}`] = i === keyIndex ? 1 : 0
+        const name = PIANO_NOTE_NAMES[i] || `key_${i}`
+        details[name] = i === keyIndex ? 1 : 0
     }
 
     return {

@@ -100,6 +100,93 @@ export class AudioClassifier {
         await this.addSampleFromBuffer(audioBuffer, label)
     }
 
+    async extractFeaturesFromRecording(audioBlob: Blob): Promise<number[]> {
+        const ctx = this.getAudioContext()
+        const arrayBuffer = await audioBlob.arrayBuffer()
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+        const features = await this.extractFeatures(audioBuffer)
+        return Array.from(features)
+    }
+
+    async captureFromStream(stream: MediaStream, durationMs = 2000): Promise<Blob> {
+        const ctx = this.getAudioContext()
+        if (ctx.state === 'suspended') await ctx.resume()
+        const source = ctx.createMediaStreamSource(stream)
+        const processor = ctx.createScriptProcessor(4096, 1, 1)
+
+        const chunks: Float32Array[] = []
+        processor.onaudioprocess = (e) => {
+            const data = new Float32Array(e.inputBuffer.getChannelData(0))
+            chunks.push(data)
+        }
+
+        source.connect(processor)
+        processor.connect(ctx.destination)
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                processor.disconnect()
+                source.disconnect()
+
+                const totalLength = chunks.reduce((acc, c) => acc + c.length, 0)
+                const merged = new Float32Array(totalLength)
+                let offset = 0
+                for (const chunk of chunks) {
+                    merged.set(chunk, offset)
+                    offset += chunk.length
+                }
+
+                const buffer = ctx.createBuffer(1, merged.length, ctx.sampleRate)
+                buffer.getChannelData(0).set(merged)
+
+                const wavBlob = this.audioBufferToWav(buffer)
+                resolve(wavBlob)
+            }, durationMs)
+        })
+    }
+
+    async importFromFile(file: File, label: string): Promise<number[]> {
+        const validTypes = ['audio/wav', 'audio/mpeg', 'audio/mp3', 'audio/wave', 'audio/x-wav']
+        const validExtensions = ['.wav', '.mp3']
+        const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+
+        if (!validTypes.includes(file.type) && !validExtensions.includes(ext)) {
+            throw new Error('Unsupported file format. Please use .wav or .mp3 files.')
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            throw new Error('File too large. Maximum size is 10MB.')
+        }
+
+        const ctx = this.getAudioContext()
+        const arrayBuffer = await file.arrayBuffer()
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+        const features = await this.extractFeatures(audioBuffer)
+        const featuresArray = Array.from(features)
+
+        await this.addSample(featuresArray, label)
+
+        return featuresArray
+    }
+
+    async predictFromFile(file: File, k = 5): Promise<AudioPrediction | null> {
+        const validTypes = ['audio/wav', 'audio/mpeg', 'audio/mp3', 'audio/wave', 'audio/x-wav']
+        const validExtensions = ['.wav', '.mp3']
+        const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+
+        if (!validTypes.includes(file.type) && !validExtensions.includes(ext)) {
+            throw new Error('Unsupported file format. Please use .wav or .mp3 files.')
+        }
+
+        const ctx = this.getAudioContext()
+        const arrayBuffer = await file.arrayBuffer()
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+        const features = await this.extractFeatures(audioBuffer)
+        const featuresArray = Array.from(features)
+
+        return this.predict(featuresArray, k)
+    }
+
     async predict(features: number[], k = 5): Promise<AudioPrediction | null> {
         const tf = await ensureTf()
         const embedding = tf.tensor1d(new Float32Array(features))

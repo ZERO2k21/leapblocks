@@ -328,7 +328,6 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const currentSoundPlayer = useRef<AudioBufferSourceNode | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const activeSound = sounds[activeSoundIndex];
 
@@ -347,8 +346,11 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
 
     const fetchBuffer = async (urlOrName: string) => {
         try {
-            if (urlOrName.startsWith('http') || urlOrName.startsWith('blob:') || urlOrName.startsWith('data:') || urlOrName.startsWith('/')) {
-                const response = await fetch(urlOrName);
+            const isAbsoluteUrl = urlOrName.startsWith('http') || urlOrName.startsWith('blob:') || urlOrName.startsWith('data:') || urlOrName.startsWith('/');
+            const isAssetPath = urlOrName.includes('/') || urlOrName.match(/\.(wav|mp3|ogg|m4a|adpcm)$/i);
+            if (isAbsoluteUrl || isAssetPath) {
+                const url = urlOrName.startsWith('/') ? urlOrName : `/${urlOrName}`;
+                const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const arrayBuffer = await response.arrayBuffer();
                 const decoder = new ADPCMSoundDecoder(audioContext);
@@ -592,49 +594,12 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
         onSoundChange?.();
     };
 
-    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !onAddSound) return;
-
-        const arrayBuffer = await file.arrayBuffer();
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const buffer = await audioContext.decodeAudioData(arrayBuffer);
-
-        const wavData = await WavEncoder.encode({
-            sampleRate: buffer.sampleRate,
-            channelData: [buffer.getChannelData(0)]
-        });
-        const blob = new Blob([wavData], { type: 'audio/wav' });
-        const url = URL.createObjectURL(blob);
-
-        const name = file.name.replace(/\.[^/.]+$/, '');
-        await onAddSound(name, url);
-        onSoundChange?.();
-
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    };
-
-    const triggerUpload = () => {
-        fileInputRef.current?.click();
-    };
-
     const hasSelection = selectionStart !== selectionEnd;
     const durationSec = audioBuffer ? audioBuffer.duration : 0;
     const selectionDuration = hasSelection ? (selectionEnd - selectionStart) * durationSec : 0;
 
     return (
         <div className="flex flex-1 w-full h-full bg-slate-50/50 select-none overflow-hidden font-sans text-slate-800 border-t border-slate-200/80">
-            {/* Hidden file input for sound upload */}
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept="audio/*"
-                onChange={handleUpload}
-                className="hidden"
-            />
-
             <SoundLibrary
                 isOpen={isLibraryOpen}
                 onClose={() => setIsLibraryOpen(false)}
@@ -717,7 +682,7 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                         color="#855CD6"
                         tooltipLabel="Choose a Sound"
                         actions={[
-                            { id: 'upload', icon: '📁', label: 'Upload Sound', onClick: triggerUpload },
+                            { id: 'library', icon: '🔍', label: 'Choose a Sound', onClick: () => setIsLibraryOpen(true) },
                             {
                                 id: 'surprise', icon: '✨', label: 'Surprise', onClick: () => {
                                     const surprises = ['meow', 'bark', 'grunt', 'pop', 'boing'];
@@ -727,7 +692,6 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
                                 }
                             },
                             { id: 'record', icon: '🎤', label: 'Record', onClick: () => console.log('Record Sound') },
-                            { id: 'search', icon: '🔍', label: 'Choose a Sound', onClick: () => setIsLibraryOpen(true) },
                         ]}
                     />
                 </div>

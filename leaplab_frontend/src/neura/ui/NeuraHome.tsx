@@ -173,6 +173,19 @@ const PROJECT_TEMPLATES = [
         bg: 'from-[#630ed4]/10 to-[#3b82f6]/10',
         tag: '🎯 Detection',
         projectType: 'object-detection' as ProjectType
+    },
+    // Virtual Drawing Canvas (Hand Pose)
+    {
+        name: 'Virtual Drawing Canvas',
+        description: 'Draw on a whiteboard with hand gestures!',
+        icon: '🎨',
+        icon2: '✋',
+        icon3: '🖌️',
+        classes: ['Draw', 'Erase', 'Move', 'Color Select'],
+        color: '#10b981',
+        bg: 'from-[#10b981]/10 to-[#34d399]/10',
+        tag: '✋ Hand Gesture',
+        projectType: 'drawing-canvas' as ProjectType
     }
 ]
 

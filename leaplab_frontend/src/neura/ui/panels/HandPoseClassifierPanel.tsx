@@ -130,7 +130,6 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                             limitReached = true
                             break
                         }
-                        classifierRef.current.addSample(features, mode.getSelectedClass()?.name || '').catch(() => {})
                         successCount++
                     } else {
                         noHandCount++
@@ -335,7 +334,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
             })
             return () => { cancelled = true }
         }
-    }, [mode.mode, mode.project])
+    }, [mode.mode, mode.project, augmentMode])
 
     // Test mode: auto-start camera and run throttled predictions
     useEffect(() => {
@@ -445,9 +444,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                 setCaptureStatus('success')
                 const features = classifierRef.current.extractFeatures(keypoints)
                 const added = mode.addSample(mode.selectedClassId, { type: 'keypoints', data: JSON.stringify(Array.from(features)) })
-                if (added) {
-                    classifierRef.current.addSample(features, mode.getSelectedClass()?.name || '').catch(() => {})
-                } else {
+                if (!added) {
                     console.warn('[HandPose] Failed to add sample - limit reached?')
                     setCaptureStatus('error')
                 }
@@ -510,25 +507,22 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         mode.removeSample(classId, sampleId)
         // Debounce rebuilds when removing multiple samples quickly
         if (removeDebounceRef.current) clearTimeout(removeDebounceRef.current)
-        removeDebounceRef.current = setTimeout(() => {
+        removeDebounceRef.current = setTimeout(async () => {
             const project = mode.project
             if (project) {
-                const cls = project.classes.find(c => c.id === classId)
-                if (cls) {
-                    classifierRef.current.clear()
-                    for (const c of project.classes) {
-                        for (const sample of c.samples) {
-                            try {
-                                const data = JSON.parse(sample.data)
-                                const features = new Float32Array(data)
-                                classifierRef.current.addSample(features, c.name)
-                            } catch { /* skip */ }
-                        }
+                classifierRef.current.clear()
+                for (const cls of project.classes) {
+                    if (cls.samples.length > 0) {
+                        await classifierRef.current.rebuildClass(
+                            cls.name,
+                            cls.samples.map(s => s.data),
+                            augmentMode
+                        )
                     }
                 }
             }
         }, 300)
-    }, [mode.project, mode.removeSample])
+    }, [mode.project, mode.removeSample, augmentMode])
 
     const handleBatchCapture = useCallback(async () => {
         if (!videoRef.current || !mode.selectedClassId || !stream || batchCapturing) return
