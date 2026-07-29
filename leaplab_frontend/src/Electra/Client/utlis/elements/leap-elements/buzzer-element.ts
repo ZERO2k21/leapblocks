@@ -109,6 +109,108 @@ export class BuzzerElement extends LitElement {
     </svg>`;
   }
 
+  private audioFile: HTMLAudioElement | null = null;
+  private audioCtx: AudioContext | null = null;
+  private oscillator: OscillatorNode | null = null;
+  private gainNode: GainNode | null = null;
+
+  updated(changedProperties: Map<string, any>) {
+    if (
+      changedProperties.has('hasSignal') ||
+      changedProperties.has('damaged') ||
+      changedProperties.has('volume') ||
+      changedProperties.has('intensity')
+    ) {
+      this.syncAudio();
+    }
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.stopAudio();
+  }
+
+  private syncAudio() {
+    const buzzerOn = this.hasSignal && !this.damaged;
+    if (buzzerOn) {
+      const vol = Math.min(1.0, Math.max(0.05, (this.volume || 1.0) * (this.intensity || 1.0)));
+      if (!this.audioFile) {
+        const audioUrl = new URL('/assets/electronic_buzzer_continuous.wav', window.location.origin).href;
+        this.audioFile = new Audio(audioUrl);
+        this.audioFile.loop = true;
+      }
+      this.audioFile.volume = vol;
+
+      if (this.audioFile.paused) {
+        const playPromise = this.audioFile.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            console.warn('[leap-buzzer] Audio file play delayed/blocked, activating synth fallback:', err);
+            this.startWebAudioSynth(vol);
+
+            const unlock = () => {
+              if (this.hasSignal && !this.damaged && this.audioFile) {
+                this.stopWebAudioSynth();
+                this.audioFile.play().catch(() => this.startWebAudioSynth(vol));
+              }
+              window.removeEventListener('pointerdown', unlock);
+              window.removeEventListener('keydown', unlock);
+            };
+            window.addEventListener('pointerdown', unlock, { once: true });
+            window.addEventListener('keydown', unlock, { once: true });
+          });
+        }
+      }
+    } else {
+      this.stopAudio();
+    }
+  }
+
+  private startWebAudioSynth(volume: number) {
+    try {
+      if (!this.audioCtx) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        this.audioCtx = new AudioContextClass();
+      }
+      if (this.audioCtx.state === 'suspended') {
+        this.audioCtx.resume();
+      }
+      if (!this.oscillator) {
+        this.oscillator = this.audioCtx.createOscillator();
+        this.gainNode = this.audioCtx.createGain();
+        this.oscillator.type = 'square';
+        this.oscillator.frequency.value = 2400;
+        this.oscillator.connect(this.gainNode);
+        this.gainNode.connect(this.audioCtx.destination);
+        this.oscillator.start();
+      }
+      if (this.gainNode) {
+        this.gainNode.gain.setValueAtTime(volume * 0.15, this.audioCtx.currentTime);
+      }
+    } catch (e) {
+      console.warn('[leap-buzzer] Web Audio synth error:', e);
+    }
+  }
+
+  private stopWebAudioSynth() {
+    if (this.oscillator) {
+      try {
+        this.oscillator.stop();
+        this.oscillator.disconnect();
+      } catch {}
+      this.oscillator = null;
+    }
+    this.gainNode = null;
+  }
+
+  private stopAudio() {
+    if (this.audioFile) {
+      this.audioFile.pause();
+      this.audioFile.currentTime = 0;
+    }
+    this.stopWebAudioSynth();
+  }
+
   render() {
     const buzzerOn = this.hasSignal && !this.damaged;
     // Animation speed scales with intensity AND user-defined volume
