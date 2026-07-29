@@ -347,8 +347,11 @@ export const SoundEditor: React.FC<SoundEditorProps> = ({
 
     const fetchBuffer = async (urlOrName: string) => {
         try {
-            if (urlOrName.startsWith('http') || urlOrName.startsWith('blob:') || urlOrName.startsWith('data:') || urlOrName.startsWith('/')) {
-                const response = await fetch(urlOrName);
+            const isAbsoluteUrl = urlOrName.startsWith('http') || urlOrName.startsWith('blob:') || urlOrName.startsWith('data:') || urlOrName.startsWith('/');
+            const isAssetPath = urlOrName.includes('/') || urlOrName.match(/\.(wav|mp3|ogg|m4a|adpcm)$/i);
+            if (isAbsoluteUrl || isAssetPath) {
+                const url = urlOrName.startsWith('/') ? urlOrName : `/${urlOrName}`;
+                const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const arrayBuffer = await response.arrayBuffer();
                 const decoder = new ADPCMSoundDecoder(audioContext);
