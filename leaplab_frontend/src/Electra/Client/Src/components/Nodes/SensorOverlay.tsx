@@ -622,16 +622,16 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     const config = isDistance
       ? { label: 'DIST', unit: 'cm', min: 2, max: 400, step: 0.1, key: 'distance', default: 100, color: '#BEF264' }
       : type === 'potentiometer'
-        ? { label: 'POS', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 0, color: '#BEF264' }
+        ? { label: 'POS', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 100, color: '#BEF264' }
         : type === 'slide-potentiometer'
-          ? { label: 'POS', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 0, color: '#BEF264' }
+          ? { label: 'POS', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 100, color: '#BEF264' }
           : type === 'resistor'
             ? { label: 'RES', unit: 'Ω', min: 0, max: 1000000, step: 100, key: 'value', default: 1000, color: '#BEF264' }
             : type === 'photoresistor'
               ? { label: 'LIGHT', unit: 'lux', min: 0, max: 1000, step: 1, key: 'value', default: 500, color: '#fbbf24' }
               : type === 'ntc-temperature-sensor'
                 ? { label: 'TEMP', unit: '°C', min: -40, max: 125, step: 0.1, key: 'value', default: 25, color: '#f97316' }
-                : { label: 'VAL', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 512, color: '#BEF264' };
+                : { label: 'VAL', unit: '', min: 0, max: 1023, step: 1, key: 'value', default: 100, color: '#BEF264' };
 
     const currentValue = currentValues?.[config.key] ?? config.default ?? config.min;
 

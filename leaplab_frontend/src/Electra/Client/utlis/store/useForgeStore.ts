@@ -477,10 +477,26 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   addNode: (type, position, data = {}) => {
     const state = useForgeStore.getState();
+
+    // Smart position adjustment to guarantee components never overlap
+    let targetX = position.x;
+    let targetY = position.y;
+
+    const hasOverlap = (x: number, y: number) => {
+      return state.nodes.some(n => Math.abs(n.position.x - x) < 60 && Math.abs(n.position.y - y) < 60);
+    };
+
+    let attempts = 0;
+    while (hasOverlap(targetX, targetY) && attempts < 20) {
+      targetX += 160;
+      targetY += 60;
+      attempts++;
+    }
+
     const newNode = {
       id: uuidv4(),
       type: 'leap',
-      position,
+      position: { x: targetX, y: targetY },
       data: { ...data, type, rotation: data.rotation || 0 }
     };
     const newNodes = [...state.nodes, newNode];
@@ -489,10 +505,10 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     const boardId = BOARD_NODE_TO_BOARD_ID[type];
     if (boardId && boardId !== state.board) {
       console.log(`[FORGE STORE] Board node "${type}" added → switching to "${boardId}"`);
-      set({ nodes: newNodes, board: boardId });
+      set({ nodes: newNodes, board: boardId, selectedNodeId: newNode.id });
       if (simulationRunner) simulationRunner.setBoard(boardId);
     } else {
-      set({ nodes: newNodes });
+      set({ nodes: newNodes, selectedNodeId: newNode.id });
     }
   },
 

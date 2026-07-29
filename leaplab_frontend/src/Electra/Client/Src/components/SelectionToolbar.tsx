@@ -5,7 +5,7 @@
  */
 import React from 'react';
 import { useForgeStore } from '../../utlis/store/useForgeStore';
-import { Trash2, Sliders, Radio, Zap, ChevronDown, Cpu, Sparkles, Power } from 'lucide-react';
+import { Trash2, Sliders, Radio, Zap, ChevronDown, Cpu, Sparkles, Power, Copy, Clipboard, MoreVertical, CopyPlus } from 'lucide-react';
 
 interface CustomSelectProps {
   value: string;
@@ -204,12 +204,12 @@ export const SelectionToolbar: React.FC = () => {
     if (!isDistanceSensor && !isAnalogSensor && !isBuzzer) return null;
     let config: any;
     if (isDistanceSensor) config = { label: 'Distance', unit: 'cm', min: 2, max: 400, step: 0.1, default: 100, key: 'distance' };
-    else if (nodeType === 'potentiometer' || nodeType === 'slide-potentiometer') config = { label: 'Resistance', unit: '', min: 0, max: 1023, step: 1, default: 0, key: 'value' };
+    else if (nodeType === 'potentiometer' || nodeType === 'slide-potentiometer') config = { label: 'Resistance', unit: '', min: 0, max: 1023, step: 1, default: 100, key: 'value' };
     else if (nodeType === 'resistor') config = { label: 'Resistance', unit: 'Ω', min: 0, max: 1000000, step: 100, default: 1000, key: 'value' };
     else if (nodeType === 'photoresistor') config = { label: 'Light', unit: 'lux', min: 0, max: 1000, step: 1, default: 500, key: 'value' };
     else if (nodeType === 'ntc-temperature-sensor') config = { label: 'Temp', unit: '°C', min: -40, max: 125, step: 0.5, default: 25, key: 'value' };
     else if (isBuzzer) config = { label: 'Volume', unit: '', min: 0.01, max: 1.0, step: 0.01, default: 1.0, key: 'volume', isTopLevel: true };
-    else config = { label: 'Value', unit: '', min: 0, max: 1023, step: 1, default: 512, key: 'value' };
+    else config = { label: 'Value', unit: '', min: 0, max: 1023, step: 1, default: 100, key: 'value' };
 
     const currentValue = config.isTopLevel ? (selectedNode?.data?.[config.key] ?? config.default ?? config.min) : (currentValues?.[config.key] ?? config.default ?? config.min);
 
@@ -416,16 +416,33 @@ export const SelectionToolbar: React.FC = () => {
         </>
       )}
 
-      {!(selectedNode && ['esp32-c3', 'esp32', 'arduino-uno'].includes(nodeType)) && (
+      {selectedNode && !['esp32-c3', 'esp32', 'arduino-uno'].includes(nodeType) && (
         <>
-          <div className="w-0.5 h-6 bg-slate-200 rounded-full self-center mx-2.5" />
-          <div className="flex items-center">
+          <div className="w-0.5 h-6 bg-slate-200 rounded-full self-center mx-2" />
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => {
+                const { addNode } = useForgeStore.getState();
+                addNode(
+                  selectedNode.data.type,
+                  { x: selectedNode.position.x + 160, y: selectedNode.position.y + 60 },
+                  { ...selectedNode.data }
+                );
+              }}
+              title="Duplicate Component"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg cursor-pointer border border-purple-200 bg-purple-50 text-purple-600 text-xs font-semibold hover:bg-purple-100 hover:border-purple-300 transition-all duration-150"
+            >
+              <CopyPlus size={13} />
+              <span>Duplicate</span>
+            </button>
+
             <button
               onClick={handleDelete}
-              title="Remove"
-              className="group relative flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer border border-red-200 bg-red-50 transition-all duration-200 hover:bg-red-100 hover:border-red-300 hover:scale-105 active:scale-95"
+              title="Delete"
+              className="group relative flex items-center gap-1 px-2.5 py-1.5 rounded-lg cursor-pointer border border-red-200 bg-red-50 text-red-600 text-xs font-semibold transition-all duration-200 hover:bg-red-100 hover:border-red-300 hover:scale-105 active:scale-95"
             >
-              <Trash2 size={15} className="text-red-500 transition-transform duration-200 group-hover:scale-110" />
+              <Trash2 size={13} className="text-red-500 transition-transform duration-200 group-hover:scale-110" />
+              <span>Delete</span>
             </button>
           </div>
         </>

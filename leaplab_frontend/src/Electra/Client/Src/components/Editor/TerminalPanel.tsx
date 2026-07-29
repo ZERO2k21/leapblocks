@@ -24,13 +24,53 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
   clearWiFiLog,
   isSimulating,
 }) => {
+  const [height, setHeight] = React.useState<number>(240);
+  const isDragging = React.useRef(false);
+  const startY = React.useRef(0);
+  const startHeight = React.useRef(240);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    startY.current = e.clientY;
+    startHeight.current = height;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!isDragging.current) return;
+      const deltaY = startY.current - moveEvent.clientY;
+      const newHeight = Math.max(100, Math.min(650, startHeight.current + deltaY));
+      setHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      isDragging.current = false;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   // If libraries tab is active, we don't display the terminal panel
   if (activeTab === 'libraries') return null;
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-950 min-h-0">
+    <div
+      style={{ height: `${height}px` }}
+      className="flex flex-col bg-slate-950 shrink-0 min-h-0 relative select-none border-t border-slate-800/80"
+    >
+      {/* Resizable handle at the top edge */}
+      <div
+        onMouseDown={handleMouseDown}
+        title="Drag to resize panel"
+        className="absolute -top-1.5 left-0 right-0 h-3 cursor-ns-resize z-30 group flex items-center justify-center"
+      >
+        <div className="w-12 h-1 bg-slate-700/60 rounded-full group-hover:bg-cyan-400 group-hover:shadow-[0_0_8px_#22d3ee] transition-all duration-150" />
+      </div>
+
       {/* Tab Header Bar */}
-      <div className="flex items-center gap-1.5 px-4 h-8 bg-slate-950/40 border-t border-slate-800/80 backdrop-blur-md transition-all duration-300">
+      <div className="flex items-center gap-1.5 px-4 h-8 bg-slate-950/40 backdrop-blur-md transition-all duration-300 shrink-0">
         <button
           type="button"
           className={`bg-transparent border-0 px-2.5 h-6 cursor-pointer text-[10px] font-bold flex items-center gap-1.5 uppercase tracking-wider transition-all duration-200 ${
