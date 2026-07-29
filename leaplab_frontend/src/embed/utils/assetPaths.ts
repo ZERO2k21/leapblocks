@@ -9,8 +9,8 @@ export function normalizeAssetPath(src: string): string {
         return src;
     }
     let normalized = src;
-    normalized = normalized.replace('assets/sprites/scratch/', 'assets/sprites/leap/');
-    normalized = normalized.replace('/assets/sprites/scratch/', '/assets/sprites/leap/');
+    normalized = normalized.replace('assets/sprites/leap/', 'assets/sprites/leap/');
+    normalized = normalized.replace('/assets/sprites/leap/', '/assets/sprites/leap/');
     return normalized;
 }
 
@@ -25,8 +25,8 @@ export function resolveAssetPath(src: string): string {
         return src;
     }
     let resolved = src;
-    resolved = resolved.replace('assets/sprites/scratch/', 'assets/sprites/leap/');
-    resolved = resolved.replace('/assets/sprites/scratch/', '/assets/sprites/leap/');
+    resolved = resolved.replace('assets/sprites/leap/', 'assets/sprites/leap/');
+    resolved = resolved.replace('/assets/sprites/leap/', '/assets/sprites/leap/');
 
     const NAMING_FIXES: Record<string, string> = {
         'cat_cat-a.svg': 'cat_cat_a.svg',
