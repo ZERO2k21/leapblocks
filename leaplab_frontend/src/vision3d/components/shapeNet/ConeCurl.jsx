@@ -1,8 +1,9 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { getFaceShades } from './netDefinitions';
 
-const ConeCurl = ({ radius, height, t }) => {
+const ConeCurl = ({ radius, height, color, t }) => {
   const sideRef = useRef();
   const baseRef = useRef();
   const slant = Math.sqrt(radius * radius + height * height);
@@ -10,6 +11,8 @@ const ConeCurl = ({ radius, height, t }) => {
   const origPos = useRef(null);
   const segments = 48;
   const rows = 20;
+
+  const shades = useMemo(() => getFaceShades(color || '#fb923c', 2), [color]);
 
   const sideGeo = useMemo(() => {
     const positions = [];
@@ -79,11 +82,11 @@ const ConeCurl = ({ radius, height, t }) => {
   return (
     <group>
       <mesh ref={sideRef} geometry={sideGeo}>
-        <meshStandardMaterial color="#fb923c" side={THREE.DoubleSide} roughness={0.35} />
+        <meshStandardMaterial color={shades[0]} side={THREE.DoubleSide} roughness={0.35} />
       </mesh>
       <mesh ref={baseRef} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[radius, 48]} />
-        <meshStandardMaterial color="#f97316" side={THREE.DoubleSide} />
+        <meshStandardMaterial color={shades[1]} side={THREE.DoubleSide} />
       </mesh>
     </group>
   );

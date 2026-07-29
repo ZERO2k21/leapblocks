@@ -34,13 +34,13 @@ const NetScene = ({ data, t, shapeType }) => {
           <SphereFold data={data} t={t} />
         )}
         {data.tube && (
-          <CylinderCurl radius={data.tube.radius} height={data.tube.height} t={t} />
+          <CylinderCurl radius={data.tube.radius} height={data.tube.height} color={data.tube.color} t={t} />
         )}
         {data.cone && (
-          <ConeCurl radius={data.cone.radius} height={data.cone.height} t={t} />
+          <ConeCurl radius={data.cone.radius} height={data.cone.height} color={data.cone.color} t={t} />
         )}
         {data.pyramid && (
-          <PyramidFold base={data.pyramid.base} height={data.pyramid.height} t={t} />
+          <PyramidFold base={data.pyramid.base} height={data.pyramid.height} color={data.pyramid.color} t={t} />
         )}
       </group>
       <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>

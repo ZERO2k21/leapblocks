@@ -25,7 +25,7 @@ export const PropertiesPanel = () => {
 
   const selectedShape = shapes.find((s) => s.id === selectedIds[0]);
 
-  const inputClass = "w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-900 bg-slate-50 outline-none transition-all duration-150 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15";
+  const inputClass = "w-full min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[12px] font-bold text-slate-900 bg-slate-50 outline-none transition-all duration-150 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
   const labelClass = "block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2";
 
   if (!selectedShape) {
