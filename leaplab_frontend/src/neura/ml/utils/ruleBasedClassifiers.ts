@@ -43,24 +43,42 @@ export function classifyFingerCount(features: Float32Array): ClassificationResul
 
 /**
  * M1-4: Rule-based drawing mode detection.
- * Checks if index finger is extended (drawing mode) or all fingers curled (erase mode).
- * Returns 'draw' or 'erase' based on finger configuration.
+ * Detects 4 gestures: draw, erase, move, color-select.
+ * - Draw: only index finger extended (pointing)
+ * - Erase: closed fist (no fingers extended)
+ * - Move: peace sign (index + middle extended)
+ * - Color Select: open hand (3+ fingers extended)
  */
 export function classifyDrawErase(features: Float32Array): ClassificationResult {
     const indexExtended = features.length > 63 && features[63] > 0.5
     const middleExtended = features.length > 64 && features[64] > 0.5
     const ringExtended = features.length > 65 && features[65] > 0.5
+    const pinkyExtended = features.length > 66 && features[66] > 0.5
+    const thumbExtended = features.length > 67 && features[67] > 0.5
 
-    // Draw: only index finger extended
-    // Erase: multiple fingers or no fingers
-    const isDrawing = indexExtended && !middleExtended && !ringExtended
+    const fingerCount = [indexExtended, middleExtended, ringExtended, pinkyExtended, thumbExtended].filter(Boolean).length
+
+    let label: string
+    if (fingerCount === 0) {
+        label = 'erase'
+    } else if (indexExtended && middleExtended && !ringExtended && !pinkyExtended) {
+        label = 'move'
+    } else if (fingerCount >= 3) {
+        label = 'color-select'
+    } else if (indexExtended && !middleExtended) {
+        label = 'draw'
+    } else {
+        label = 'erase'
+    }
 
     return {
-        label: isDrawing ? 'draw' : 'erase',
+        label,
         confidence: 0.9,
         details: {
-            'draw': isDrawing ? 1 : 0,
-            'erase': isDrawing ? 0 : 1
+            'draw': label === 'draw' ? 1 : 0,
+            'erase': label === 'erase' ? 1 : 0,
+            'move': label === 'move' ? 1 : 0,
+            'color-select': label === 'color-select' ? 1 : 0,
         }
     }
 }

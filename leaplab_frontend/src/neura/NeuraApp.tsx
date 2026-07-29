@@ -20,6 +20,7 @@ const TextClassifierPanel = lazy(() => import('./ui/panels/TextClassifierPanel')
 const NumberClassifierPanel = lazy(() => import('./ui/panels/NumberClassifierPanel'))
 const ObjectDetectorPanel = lazy(() => import('./ui/panels/ObjectDetectorPanel'))
 const VirtualPianoPanel = lazy(() => import('./projects/M1-VirtualPiano/VirtualPianoPanel'))
+const DrawingCanvasPanel = lazy(() => import('./projects/M1-DrawingCanvas/DrawingCanvasPanel'))
 
 interface NeuraAppProps {
     onBack?: () => void
@@ -44,8 +45,9 @@ function getClassifierPanel(type: ProjectType) {
         case 'hand-pose-classifier':
         case 'finger-counter':
         case 'volume-controller':
-        case 'drawing-canvas':
             return HandPoseClassifierPanel
+        case 'drawing-canvas':
+            return DrawingCanvasPanel
         case 'text-classifier':
             return TextClassifierPanel
         case 'numbers-cr':

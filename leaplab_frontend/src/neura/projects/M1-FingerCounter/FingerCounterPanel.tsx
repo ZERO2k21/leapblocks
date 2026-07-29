@@ -30,7 +30,6 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
     const streamRef = useRef<MediaStream | null>(null)
     const animFrameRef = useRef<number>(0)
     const isPredictingRef = useRef(false)
-    const rebuildAbortRef = useRef(0)
     const testCameraStartedRef = useRef(false)
     const lastDetectTimeRef = useRef(0)
     const lastPredictTimeRef = useRef(0)
@@ -41,7 +40,6 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [stream, setStream] = useState<MediaStream | null>(null)
-    const [modelLoading, setModelLoading] = useState(false)
     const [handDetected, setHandDetected] = useState(false)
     const [captureStatus, setCaptureStatus] = useState<CaptureStatus>('idle')
     const [cameraError, setCameraError] = useState<string | null>(null)
@@ -153,32 +151,9 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
         if (mode.mode !== 'test') testCameraStartedRef.current = false
     }, [mode.mode])
 
+    // Rule-based classifier: no KNN rebuild needed
     useEffect(() => {
-        if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
-            const thisBuild = ++rebuildAbortRef.current
-            let cancelled = false
-            setModelLoading(true)
-            const rebuild = async () => {
-                classifierRef.current.clear()
-                for (const cls of mode.project!.classes) {
-                    if (thisBuild !== rebuildAbortRef.current) return
-                    if (cls.samples.length > 0) {
-                        await classifierRef.current.rebuildClass(
-                            cls.name,
-                            cls.samples.map(s => s.data),
-                            true
-                        )
-                    }
-                }
-                if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false)
-            }
-            rebuild().catch(() => { if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false) })
-            return () => { cancelled = true }
-        }
-    }, [mode.mode, mode.project])
-
-    useEffect(() => {
-        if (mode.mode !== 'test' || modelLoading) return
+        if (mode.mode !== 'test') return
         if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
             testCameraStartedRef.current = true
             startCamera()
@@ -241,7 +216,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [mode.mode, stream, modelLoading, startCamera, playCountSound])
+    }, [mode.mode, stream, startCamera, playCountSound])
 
     const handleCapture = useCallback(async () => {
         if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return
@@ -355,10 +330,10 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                             </div>
 
                             <div className="flex items-center justify-center gap-2">
-                                <button onClick={toggleCamera} disabled={modelLoading} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1]">
+                                <button onClick={toggleCamera} disabled={false} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1]">
                                     {cameraOn ? '📷 Stop' : '📷 Start'}
                                 </button>
-                                <button onClick={handleCapture} disabled={!cameraOn || isCapturing || modelLoading || !selectedClass || selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS}
+                                <button onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass || selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS}
                                     className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-[#0ea5e9]'}`}>
                                     {isCapturing ? '⏳ Capturing...' : '📸 Capture'}
                                 </button>
@@ -421,20 +396,13 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                         <h2 className="text-2xl font-extrabold text-[#0ea5e9] mb-2">🏋️ Training Your AI!</h2>
                         <p className="text-sm text-gray-500">Teaching the AI to recognize your finger counts...</p>
                     </div>
-                    {modelLoading ? (
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 border-4 border-[#0ea5e9] border-t-transparent rounded-full animate-spin" />
-                            <p className="text-sm font-bold text-[#0369a1]">Loading model...</p>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center gap-4">
-                            <span className="text-6xl">✅</span>
-                            <p className="text-sm font-bold text-green-600">Model Ready!</p>
-                            <button onClick={() => mode.setMode('test')} className="px-6 py-3 bg-[#0ea5e9] text-white rounded-xl text-sm font-bold shadow-lg">
-                                🧪 Start Testing
+                    <div className="flex flex-col items-center gap-4">
+                        <span className="text-6xl">✅</span>
+                        <p className="text-sm font-bold text-green-600">Model Ready!</p>
+                        <button onClick={() => mode.setMode('test')} className="px-6 py-3 bg-[#0ea5e9] text-white rounded-xl text-sm font-bold shadow-lg">
+                            🧪 Start Testing
                             </button>
                         </div>
-                    )}
                 </div>
             )}
 
@@ -484,18 +452,10 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                                     </div>
                                 )}
 
-                                {modelLoading && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                                        <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl">
-                                            <div className="w-4 h-4 border-2 border-[#0ea5e9] border-t-transparent rounded-full animate-spin" />
-                                            <span className="text-xs font-bold">Loading model...</span>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
 
                             <div className="flex items-center justify-center gap-2 mt-2">
-                                <button onClick={toggleCamera} disabled={modelLoading} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1]">
+                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1]">
                                     {cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
                                 </button>
                             </div>
