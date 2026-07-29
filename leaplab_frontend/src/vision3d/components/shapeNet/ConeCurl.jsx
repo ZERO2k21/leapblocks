@@ -3,17 +3,19 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { getFaceShades } from './netDefinitions';
 
-const ConeCurl = ({ radius, height, color, t }) => {
+const ConeCurl = ({ radius = 1, height = 2, color, t }) => {
   const sideRef = useRef();
   const baseRef = useRef();
+
   const slant = Math.sqrt(radius * radius + height * height);
   const sectorAngle = (2 * Math.PI * radius) / slant;
   const origPos = useRef(null);
-  const segments = 48;
-  const rows = 20;
+  const segments = 64;
+  const rows = 24;
 
   const shades = useMemo(() => getFaceShades(color || '#fb923c', 2), [color]);
 
+  // Create sector geometry flat on XZ plane initially
   const sideGeo = useMemo(() => {
     const positions = [];
     const indices = [];
@@ -22,7 +24,7 @@ const ConeCurl = ({ radius, height, color, t }) => {
       const d = (j / rows) * slant;
       for (let i = 0; i <= segments; i++) {
         const alpha = (i / segments - 0.5) * sectorAngle;
-        positions.push(d * Math.sin(alpha), 0, d * Math.cos(alpha));
+        positions.push(d * Math.sin(alpha), 0, -slant + d * Math.cos(alpha));
       }
     }
     for (let j = 0; j < rows; j++) {
@@ -40,53 +42,56 @@ const ConeCurl = ({ radius, height, color, t }) => {
     geo.computeVertexNormals();
     origPos.current = geo.attributes.position.array.slice();
     return geo;
-  }, [radius, height]);
+  }, [radius, height, slant, sectorAngle]);
 
   useFrame(() => {
     if (!sideRef.current || !origPos.current) return;
     const posAttr = sideRef.current.geometry.attributes.position;
-    const src = origPos.current;
+
+    // Continuous sector curling around Y axis centered over base circle (0,0,0)
+    const angleFactor = 1 + t * ((Math.PI * 2) / sectorAngle - 1);
+    const rFactor = (1 - t) + t * (radius / slant);
+    const centerZ = -(1 - t) * (radius + slant);
 
     for (let j = 0; j <= rows; j++) {
       const d = (j / rows) * slant;
+      const currentRadius = d * rFactor;
+      const currentHeight = height * t * (1 - d / slant);
 
       for (let i = 0; i <= segments; i++) {
         const idx = j * (segments + 1) + i;
         const alpha = (i / segments - 0.5) * sectorAngle;
+        const beta = alpha * angleFactor;
 
-        if (t < 0.001) {
-          posAttr.setXYZ(idx, src[idx * 3], 0, src[idx * 3 + 2]);
-        } else {
-          const angleFactor = 1 + (Math.PI * 2 / sectorAngle - 1) * t;
-          const radiusFactor = 1 + (radius / slant - 1) * t;
-          const theta = alpha * angleFactor;
-          const r = d * radiusFactor;
-          const nx = r * Math.sin(theta);
-          const nz = r * Math.cos(theta);
-          const ny = height * (1 - d / slant) * t;
-          posAttr.setXYZ(idx, nx, ny, nz);
-        }
+        const nx = currentRadius * Math.sin(beta);
+        const nz = centerZ + currentRadius * Math.cos(beta);
+        const ny = currentHeight;
+
+        posAttr.setXYZ(idx, nx, ny, nz);
       }
     }
     posAttr.needsUpdate = true;
+    sideRef.current.geometry.computeVertexNormals();
     sideRef.current.geometry.computeBoundingSphere();
 
+    // Base circle stays anchored flat on floor at (0,0,0)
     if (baseRef.current) {
-      const flatX = slant + radius + 0.5;
-      const bx = flatX * (1 - t);
-      baseRef.current.position.set(bx, 0, 0);
-      baseRef.current.rotation.x = -Math.PI / 2;
+      baseRef.current.position.set(0, 0, 0);
+      baseRef.current.rotation.set(-Math.PI / 2, 0, 0);
     }
   });
 
   return (
-    <group>
-      <mesh ref={sideRef} geometry={sideGeo}>
+    <group position={[0, 0, 0]}>
+      {/* Curved Sector Surface */}
+      <mesh ref={sideRef} geometry={sideGeo} castShadow receiveShadow>
         <meshStandardMaterial color={shades[0]} side={THREE.DoubleSide} roughness={0.35} />
       </mesh>
-      <mesh ref={baseRef} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[radius, 48]} />
-        <meshStandardMaterial color={shades[1]} side={THREE.DoubleSide} />
+
+      {/* Circular Base Cap (Anchored at origin) */}
+      <mesh ref={baseRef} position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} castShadow receiveShadow>
+        <circleGeometry args={[radius, 64]} />
+        <meshStandardMaterial color={shades[1]} side={THREE.DoubleSide} roughness={0.35} />
       </mesh>
     </group>
   );
