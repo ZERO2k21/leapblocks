@@ -978,12 +978,12 @@ export const leapSprites: any[] = [
     "category": "leap"
   },
   {
-    "id": "leap_convertible",
-    "name": "Convertible",
+    "id": "leap_Car",
+    "name": "Car",
     "emoji": "🤖",
-    "image": "assets/sprites/leap/convertible_convertible.png",
+    "image": "assets/sprites/leap/Car_Car.png",
     "costumes": [
-      "assets/sprites/leap/convertible_convertible.png"
+      "assets/sprites/leap/Car_Car.png"
     ],
     "tags": [
       "car",
@@ -992,12 +992,12 @@ export const leapSprites: any[] = [
     "category": "leap"
   },
   {
-    "id": "leap_convertible_2",
-    "name": "Convertible 2",
+    "id": "leap_Car_2",
+    "name": "Car 2",
     "emoji": "🤖",
-    "image": "assets/sprites/leap/convertible_2_convertible_3.svg",
+    "image": "assets/sprites/leap/Car_2_Car_3.svg",
     "costumes": [
-      "assets/sprites/leap/convertible_2_convertible_3.svg"
+      "assets/sprites/leap/Car_2_Car_3.svg"
     ],
     "tags": [
       "transportation",
