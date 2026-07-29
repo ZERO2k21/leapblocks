@@ -338,8 +338,8 @@ html, body {
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  font-size: 14px;
-  color: #1f2937;
+  font-size: var(--comp-fs, 14px);
+  color: var(--comp-clr, #1f2937);
   padding: 2px 4px;
 }
 
@@ -359,8 +359,8 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
-  color: #1f2937;
+  font-size: var(--comp-fs, 14px);
+  color: var(--comp-clr, #1f2937);
   padding: 2px 4px;
   cursor: pointer;
 }
@@ -375,8 +375,8 @@ html, body {
   flex-shrink: 0;
 }
 
-.comp-switch-track.on { background-color: #2563eb; }
-.comp-switch-track.off { background-color: #cbd5e1; }
+.comp-switch-track.on { background-color: var(--track-on, #2563eb); }
+.comp-switch-track.off { background-color: var(--track-off, #cbd5e1); }
 
 .comp-switch-thumb {
   width: 16px;
@@ -400,8 +400,8 @@ html, body {
 .comp-listview-item {
   padding: 8px 12px;
   border-bottom: 1px solid #e2e8f0;
-  font-size: 14px;
-  color: #1f2937;
+  font-size: var(--comp-fs, 14px);
+  color: var(--comp-clr, #1f2937);
   cursor: pointer;
 }
 
@@ -413,7 +413,7 @@ html, body {
   min-height: 32px;
   padding: 6px 8px;
   border: 1px solid #cbd5e1;
-  font-size: 14px;
+  font-size: var(--comp-fs, 14px);
   outline: none;
   background: #ffffff;
   cursor: pointer;
@@ -535,7 +535,7 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     TableArrangement: 'div'
   };
 
-  const tag = tagMap[type] || 'div';
+  const tag = (type === 'TextBox' && props.MultiLine) ? 'textarea' : (tagMap[type] || 'div');
   const compClassMap: Record<string, string> = {
     Button: 'comp-button', Label: 'comp-label', TextBox: 'comp-textbox',
     PasswordTextBox: 'comp-textbox', Image: 'comp-image', ListView: 'comp-listview',
@@ -586,17 +586,38 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
   }
 
   if (type === 'TextBox') {
-    js += `  ${id}_el.type = 'text';\n`;
-    js += `  ${id}_el.style.width = '100%';\n`;
+    if (!props.MultiLine) {
+      js += `  ${id}_el.type = 'text';\n`;
+      if (props.NumbersOnly) {
+        js += `  ${id}_el.inputMode = 'numeric';\n`;
+        js += `  ${id}_el.pattern = '[0-9]*';\n`;
+      }
+    } else {
+      js += `  ${id}_el.rows = 3;\n`;
+    }
   } else if (type === 'PasswordTextBox') {
     js += `  ${id}_el.type = 'password';\n`;
-    js += `  ${id}_el.style.width = '100%';\n`;
   } else if (type === 'Slider') {
     js += `  ${id}_el.type = 'range';\n`;
     if (props.MinValue !== undefined) js += `  ${id}_el.min = '${props.MinValue}';\n`;
     if (props.MaxValue !== undefined) js += `  ${id}_el.max = '${props.MaxValue}';\n`;
+    if (props.ThumbPosition !== undefined) js += `  ${id}_el.value = '${props.ThumbPosition}';\n`;
     if (props.ThumbEnabled === false) js += `  ${id}_el.style.pointerEvents = 'none';\n`;
+    if (props.ColorLeft || props.ColorRight) {
+      const cl = props.ColorLeft || '#FFC107';
+      const cr = props.ColorRight || '#888888';
+      js += `  ${id}_el.style.background = 'linear-gradient(to right, ${cl} 0%, ${cl} 50%, ${cr} 50%, ${cr} 100%)';\n`;
+      js += `  ${id}_el.style.accentColor = '${cl}';\n`;
+    }
   } else if (type === 'Spinner') {
+    if (props.Prompt) {
+      js += `  var ${id}_prompt = document.createElement('option');\n`;
+      js += `  ${id}_prompt.textContent = '${escapeHtml(props.Prompt)}';\n`;
+      js += `  ${id}_prompt.value = '';\n`;
+      js += `  ${id}_prompt.selected = true;\n`;
+      js += `  ${id}_prompt.disabled = true;\n`;
+      js += `  ${id}_el.appendChild(${id}_prompt);\n`;
+    }
     if (props.ElementsFromString) {
       js += `  (${JSON.stringify(props.ElementsFromString)}).split(',').forEach(function(item) {\n`;
       js += `    var opt = document.createElement('option');\n`;
@@ -610,6 +631,12 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
       js += `    ${id}_el.appendChild(opt);\n`;
       js += `  });\n`;
     }
+    if (props.SelectionIndex !== undefined) {
+      js += `  ${id}_el.selectedIndex = ${props.SelectionIndex};\n`;
+    } else if (props.Selection) {
+      js += `  for (var i = 0; i < ${id}_el.options.length; i++) { if (${id}_el.options[i].textContent === '${escapeHtml(props.Selection)}') { ${id}_el.selectedIndex = i; break; } }\n`;
+    }
+    js += `  ${id}_el.addEventListener('change', function() { state['${id}'] = state['${id}'] || {}; state['${id}']['Selection'] = this.value; if (typeof window['${id}_AfterPicking'] === 'function') window['${id}_AfterPicking'](); });\n`;
   } else if (type === 'Canvas') {
     js += `  ${id}_el.width = ${props.Width || 320};\n`;
     js += `  ${id}_el.height = ${props.Height || 320};\n`;
@@ -617,6 +644,18 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     js += `  ${id}_el.style.width = '${(props.Width || 320)}px';\n`;
     js += `  ${id}_el.style.height = '${(props.Height || 320)}px';\n`;
   } else if (type === 'ListView') {
+    if (props.ShowFilterBar) {
+      js += `  var ${id}_filter = document.createElement('input');\n`;
+      js += `  ${id}_filter.type = 'text';\n`;
+      js += `  ${id}_filter.placeholder = 'Search...';\n`;
+      js += `  ${id}_filter.style.cssText = 'width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px;margin-bottom:4px;box-sizing:border-box;font-size:14px;';\n`;
+      js += `  ${id}_filter.addEventListener('input', function() {\n`;
+      js += `    var q = this.value.toLowerCase();\n`;
+      js += `    var items = ${id}_el.querySelectorAll('.comp-listview-item');\n`;
+      js += `    for (var i = 0; i < items.length; i++) { items[i].style.display = items[i].textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none'; }\n`;
+      js += `  });\n`;
+      js += `  ${id}_el.insertBefore(${id}_filter, ${id}_el.firstChild);\n`;
+    }
     if (props.ElementsFromString) {
       js += `  (${JSON.stringify(props.ElementsFromString)}).split(',').forEach(function(item) {\n`;
       js += `    var itemDiv = document.createElement('div');\n`;
@@ -645,8 +684,13 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     const isOn = props.On ? 'on' : 'off';
     js += `  var ${id}_track = document.createElement('div');\n`;
     js += `  ${id}_track.className = 'comp-switch-track ${isOn}';\n`;
+    if (props.TrackColorActive) js += `  ${id}_track.style.setProperty('--track-on', '${props.TrackColorActive}');\n`;
+    if (props.TrackColorInactive) js += `  ${id}_track.style.setProperty('--track-off', '${props.TrackColorInactive}');\n`;
     js += `  var ${id}_thumb = document.createElement('div');\n`;
     js += `  ${id}_thumb.className = 'comp-switch-thumb';\n`;
+    if (props.ThumbColorActive || props.ThumbColorInactive) {
+      js += `  ${id}_thumb.style.background = (this._state && this._state.on) ? '${props.ThumbColorActive || '#ffffff'}' : '${props.ThumbColorInactive || '#ffffff'}';\n`;
+    }
     js += `  ${id}_track.appendChild(${id}_thumb);\n`;
     js += `  var ${id}_label = document.createElement('span');\n`;
     js += `  ${id}_label.textContent = '${escapeHtml(props.Text || '')}';\n`;
@@ -658,6 +702,10 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     js += `    ${id}_track.className = 'comp-switch-track ' + (this._state.on ? 'on' : 'off');\n`;
     js += `    if (typeof window['${id}_Changed'] === 'function') window['${id}_Changed']();\n`;
     js += `  });\n`;
+    if (props.Enabled === false) {
+      js += `  ${id}_el.style.opacity = '0.5';\n`;
+      js += `  ${id}_el.style.pointerEvents = 'none';\n`;
+    }
   }
 
   if (type === 'Image' || type === 'ImagePicker' || type === 'FilePicker' || type === 'ContactPicker') {
@@ -679,14 +727,21 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
   }
 
   if (type === 'Image') {
+    const imgBg = props.BackgroundColor || '#f0f0f0';
     if (props.Picture || props.Image) {
       const pic = String(props.Picture || props.Image);
       js += `  ${id}_el.src = '${escapeHtml(mediaUrl(pic))}';\n`;
-      js += `  ${id}_el.onerror = function() { this.style.background='#f0f0f0'; this.alt=''; };\n`;
+      js += `  ${id}_el.onerror = function() { this.style.background='${imgBg}'; this.alt=''; };\n`;
     } else {
       js += `  ${id}_el.removeAttribute('src');\n`;
       js += `  ${id}_el.alt = '';\n`;
-      js += `  ${id}_el.style.background = '#f0f0f0';\n`;
+      js += `  ${id}_el.style.background = '${imgBg}';\n`;
+    }
+    if (props.ScalePictureToFit) {
+      js += `  ${id}_el.style.objectFit = 'contain';\n`;
+    }
+    if (props.RotationAngle) {
+      js += `  ${id}_el.style.transform = 'rotate(${props.RotationAngle}deg)';\n`;
     }
   }
   if (type === 'VideoPlayer' && (props.Source || props.source)) {
@@ -709,9 +764,11 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
   if (props.FontSize) {
     const fs = typeof props.FontSize === 'number' ? props.FontSize + 'px' : props.FontSize;
     js += `  ${id}_el.style.fontSize = '${fs}';\n`;
+    js += `  ${id}_el.style.setProperty('--comp-fs', '${fs}');\n`;
   }
   if (props.TextColor) {
     js += `  ${id}_el.style.color = '${props.TextColor}';\n`;
+    js += `  ${id}_el.style.setProperty('--comp-clr', '${props.TextColor}');\n`;
   }
   if (props.BackgroundColor && props.BackgroundColor !== 'none') {
     js += `  ${id}_el.style.backgroundColor = '${props.BackgroundColor}';\n`;
@@ -721,6 +778,11 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
   }
   if (props.FontItalic) {
     js += `  ${id}_el.style.fontStyle = 'italic';\n`;
+  }
+  if (props.FontTypeface !== undefined && props.FontTypeface !== null && props.FontTypeface !== 0) {
+    const typefaceMap: Record<number, string> = { 1: 'serif', 2: 'monospace', 3: 'cursive' };
+    const tf = typefaceMap[Number(props.FontTypeface)];
+    if (tf) js += `  ${id}_el.style.fontFamily = '${tf}';\n`;
   }
   if (props.TextAlignment) {
     const ta = props.TextAlignment;
@@ -797,6 +859,18 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     if (hAlign !== undefined || vAlign !== undefined) {
       js += `  ${id}_el.style.display = 'flex';\n`;
     }
+    const arrangementMinHeight = arrangementClass === 'arrangement-table' ? '100px' : arrangementClass === 'arrangement-absolute' ? '80px' : '60px';
+    if (props.Height !== undefined && props.Height !== null) {
+      if (props.Height === -1) {
+        js += `  ${id}_el.style.minHeight = '0';\n`;
+      } else if (props.Height === -2) {
+        js += `  ${id}_el.style.minHeight = '0';\n`;
+      } else if (typeof props.Height === 'number' && props.Height > 0) {
+        js += `  ${id}_el.style.minHeight = '${props.Height}px';\n`;
+      }
+    } else {
+      js += `  ${id}_el.style.minHeight = '${arrangementMinHeight}';\n`;
+    }
     if (arrangementClass === 'arrangement-horizontal' || arrangementClass === 'arrangement-horizontal-scroll') {
       const hCenter = hAlign === 2 || hAlign === 'Center' || hAlign === 'center';
       const hEnd = hAlign === 3 || hAlign === 'Right' || hAlign === 'right';
@@ -813,7 +887,9 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
       js += `  ${id}_el.style.justifyContent = ${vCenter2 ? "'center'" : vEnd2 ? "'flex-end'" : "'flex-start'"};\n`;
     } else if (arrangementClass === 'arrangement-table') {
       const numCols = props.Columns || 2;
+      const numRows = props.Rows || 2;
       js += `  ${id}_el.style.gridTemplateColumns = 'repeat(${Number(numCols)}, 1fr)';\n`;
+      js += `  ${id}_el.style.gridTemplateRows = 'repeat(${Number(numRows)}, auto)';\n`;
     }
   }
 
@@ -1623,7 +1699,18 @@ function generateAppJs(appState: any): string {
     else if (prop === 'BackgroundColor') el.style.backgroundColor = value || '';
     else if (prop === 'TextColor') el.style.color = value || '';
     else if (prop === 'Visible') el.style.display = value ? '' : 'none';
-    else if (prop === 'Enabled') { if (el.tagName === 'BUTTON') el.disabled = !value; }
+    else if (prop === 'Enabled') { el.disabled = !value; el.style.opacity = value ? '1' : '0.5'; }
+    else if (prop === 'FontTypeface') {
+      var tfMap = { 1: 'serif', 2: 'monospace', 3: 'cursive' };
+      el.style.fontFamily = tfMap[Number(value)] || '';
+    }
+    else if (prop === 'TextAlignment') {
+      var a = value === 2 || value === 'center' || value === 'Center' ? 'center' : value === 3 || value === 'right' || value === 'Right' ? 'right' : 'left';
+      el.style.textAlign = a;
+      if (el.tagName === 'BUTTON') el.style.justifyContent = a === 'center' ? 'center' : a === 'right' ? 'flex-end' : 'flex-start';
+    }
+    else if (prop === 'NumbersOnly') { el.inputMode = value ? 'numeric' : 'text'; }
+    else if (prop === 'ReadOnly') { el.readOnly = !!value; }
     else if (prop === 'Width') el.style.width = typeof value === 'number' ? value + 'px' : value;
     else if (prop === 'Height') el.style.height = typeof value === 'number' ? value + 'px' : value;
     else if (prop === 'FontSize') el.style.fontSize = typeof value === 'number' ? value + 'px' : value;

@@ -211,7 +211,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         </div>
 
         {/* TOPBAR */}
-        <nav className="shrink-0 h-[64px] flex items-center justify-between px-6 bg-[#F8FAFC]/85 backdrop-blur-[16px] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] border-b border-[rgba(0,0,0,0.06)] sm:px-4 sm:h-[56px] relative z-[200]">
+        <nav className="shrink-0 h-[110px] pt-4 pb-4 flex items-center justify-between px-6 bg-[#F8FAFC]/85 backdrop-blur-[16px] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] border-b border-[rgba(0,0,0,0.06)] sm:px-4 sm:h-[68px] relative z-[200]">
           <div className="flex items-center gap-[32px] sm:gap-[16px]">
             <a href="#" className="flex items-center gap-[10px] no-underline filter drop-shadow-[0_2px_8px_rgba(99,102,241,0.15)]" onClick={() => {
               setActiveTab('modules');
@@ -219,7 +219,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               sessionStorage.removeItem('myProjectsSelectedMode');
               setMenuOpen(false);
             }}>
-              <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="h-[52px] w-auto object-contain sm:h-[42px]" />
+              <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="h-[76px] w-auto object-contain sm:h-[60px]" />
             </a>
             <div className="hidden md:flex gap-6 ml-3 items-center">
               <button className="bg-transparent border-none text-[#0f172a] no-underline font-semibold text-[0.95rem] cursor-pointer py-1.5 px-3 rounded-full transition-all duration-200 ease-out hover:text-[#4f46e5] hover:bg-[#4f46e5]/[0.06]" onClick={() => (window as any).showComingSoon('Tutorials')}>
@@ -244,7 +244,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
             <LeapLabAuthButton variant="light" size="md" />
             <div className="hidden md:block w-[1.5px] h-6 bg-[rgba(15,23,42,0.15)]"></div>
             <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="hidden md:block h-[clamp(40px,5vw,50px)]" />
-            
+
             {/* Hamburger button for Mobile */}
             <button
               className="md:hidden flex items-center justify-center p-2 rounded-xl text-[#0F172A] hover:bg-slate-100 focus:outline-none transition-colors"
@@ -328,10 +328,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                       className="bg-[#100051] border-none text-white text-[0.95rem] font-semibold cursor-pointer font-inherit py-4 px-8 rounded-xl transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_8px_12px_-3px_rgba(99,102,241,0.3)] hover:bg-[#4F46E5] hover:scale-[1.05] hover:rotate-2 hover:shadow-[0_16px_20px_-5px_rgba(99,102,241,0.4)] max-[640px]:w-full max-[640px]:py-3.5 max-[640px]:px-5 max-[640px]:text-md max-[480px]:py-3 max-[480px]:px-4 max-[480px]:text-[0.9rem]"
                       onClick={() => {
                         if (highlightCards) {
-                           stopCardScan();
+                          stopCardScan();
                         } else {
-                           startCardScan();
-                           document.querySelector('.cards-wrap')?.scrollIntoView({ behavior: 'smooth' });
+                          startCardScan();
+                          document.querySelector('.cards-wrap')?.scrollIntoView({ behavior: 'smooth' });
                         }
                       }}
                     >

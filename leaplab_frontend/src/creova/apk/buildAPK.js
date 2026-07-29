@@ -3738,8 +3738,8 @@ html, body {
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  font-size: 14px;
-  color: #1f2937;
+  font-size: var(--comp-fs, 14px);
+  color: var(--comp-clr, #1f2937);
   padding: 2px 4px;
 }
 
@@ -3759,8 +3759,8 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
-  color: #1f2937;
+  font-size: var(--comp-fs, 14px);
+  color: var(--comp-clr, #1f2937);
   padding: 2px 4px;
   cursor: pointer;
 }
@@ -3775,8 +3775,8 @@ html, body {
   flex-shrink: 0;
 }
 
-.comp-switch-track.on { background-color: #2563eb; }
-.comp-switch-track.off { background-color: #cbd5e1; }
+.comp-switch-track.on { background-color: var(--track-on, #2563eb); }
+.comp-switch-track.off { background-color: var(--track-off, #cbd5e1); }
 
 .comp-switch-thumb {
   width: 16px;
@@ -3800,8 +3800,8 @@ html, body {
 .comp-listview-item {
   padding: 8px 12px;
   border-bottom: 1px solid #e2e8f0;
-  font-size: 14px;
-  color: #1f2937;
+  font-size: var(--comp-fs, 14px);
+  color: var(--comp-clr, #1f2937);
   cursor: pointer;
 }
 
@@ -3813,7 +3813,7 @@ html, body {
   min-height: 32px;
   padding: 6px 8px;
   border: 1px solid #cbd5e1;
-  font-size: 14px;
+  font-size: var(--comp-fs, 14px);
   outline: none;
   background: #ffffff;
   cursor: pointer;
@@ -3948,7 +3948,7 @@ function generateComponentCreation(comp, parentVar, parentType) {
     VerticalScrollArrangement: "div",
     TableArrangement: "div"
   };
-  const tag = tagMap[type] || "div";
+  const tag = type === "TextBox" && props.MultiLine ? "textarea" : tagMap[type] || "div";
   const compClassMap = {
     Button: "comp-button",
     Label: "comp-label",
@@ -4019,14 +4019,21 @@ function generateComponentCreation(comp, parentVar, parentType) {
 `;
   }
   if (type === "TextBox") {
-    js += `  ${id}_el.type = 'text';
+    if (!props.MultiLine) {
+      js += `  ${id}_el.type = 'text';
 `;
-    js += `  ${id}_el.style.width = '100%';
+      if (props.NumbersOnly) {
+        js += `  ${id}_el.inputMode = 'numeric';
 `;
+        js += `  ${id}_el.pattern = '[0-9]*';
+`;
+      }
+    } else {
+      js += `  ${id}_el.rows = 3;
+`;
+    }
   } else if (type === "PasswordTextBox") {
     js += `  ${id}_el.type = 'password';
-`;
-    js += `  ${id}_el.style.width = '100%';
 `;
   } else if (type === "Slider") {
     js += `  ${id}_el.type = 'range';
@@ -4035,9 +4042,33 @@ function generateComponentCreation(comp, parentVar, parentType) {
 `;
     if (props.MaxValue !== void 0) js += `  ${id}_el.max = '${props.MaxValue}';
 `;
+    if (props.ThumbPosition !== void 0) js += `  ${id}_el.value = '${props.ThumbPosition}';
+`;
     if (props.ThumbEnabled === false) js += `  ${id}_el.style.pointerEvents = 'none';
 `;
+    if (props.ColorLeft || props.ColorRight) {
+      const cl = props.ColorLeft || "#FFC107";
+      const cr = props.ColorRight || "#888888";
+      js += `  ${id}_el.style.background = 'linear-gradient(to right, ${cl} 0%, ${cl} 50%, ${cr} 50%, ${cr} 100%)';
+`;
+      js += `  ${id}_el.style.accentColor = '${cl}';
+`;
+    }
   } else if (type === "Spinner") {
+    if (props.Prompt) {
+      js += `  var ${id}_prompt = document.createElement('option');
+`;
+      js += `  ${id}_prompt.textContent = '${escapeHtml(props.Prompt)}';
+`;
+      js += `  ${id}_prompt.value = '';
+`;
+      js += `  ${id}_prompt.selected = true;
+`;
+      js += `  ${id}_prompt.disabled = true;
+`;
+      js += `  ${id}_el.appendChild(${id}_prompt);
+`;
+    }
     if (props.ElementsFromString) {
       js += `  (${JSON.stringify(props.ElementsFromString)}).split(',').forEach(function(item) {
 `;
@@ -4061,6 +4092,15 @@ function generateComponentCreation(comp, parentVar, parentType) {
       js += `  });
 `;
     }
+    if (props.SelectionIndex !== void 0) {
+      js += `  ${id}_el.selectedIndex = ${props.SelectionIndex};
+`;
+    } else if (props.Selection) {
+      js += `  for (var i = 0; i < ${id}_el.options.length; i++) { if (${id}_el.options[i].textContent === '${escapeHtml(props.Selection)}') { ${id}_el.selectedIndex = i; break; } }
+`;
+    }
+    js += `  ${id}_el.addEventListener('change', function() { state['${id}'] = state['${id}'] || {}; state['${id}']['Selection'] = this.value; if (typeof window['${id}_AfterPicking'] === 'function') window['${id}_AfterPicking'](); });
+`;
   } else if (type === "Canvas") {
     js += `  ${id}_el.width = ${props.Width || 320};
 `;
@@ -4072,6 +4112,28 @@ function generateComponentCreation(comp, parentVar, parentType) {
     js += `  ${id}_el.style.height = '${props.Height || 320}px';
 `;
   } else if (type === "ListView") {
+    if (props.ShowFilterBar) {
+      js += `  var ${id}_filter = document.createElement('input');
+`;
+      js += `  ${id}_filter.type = 'text';
+`;
+      js += `  ${id}_filter.placeholder = 'Search...';
+`;
+      js += `  ${id}_filter.style.cssText = 'width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px;margin-bottom:4px;box-sizing:border-box;font-size:14px;';
+`;
+      js += `  ${id}_filter.addEventListener('input', function() {
+`;
+      js += `    var q = this.value.toLowerCase();
+`;
+      js += `    var items = ${id}_el.querySelectorAll('.comp-listview-item');
+`;
+      js += `    for (var i = 0; i < items.length; i++) { items[i].style.display = items[i].textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none'; }
+`;
+      js += `  });
+`;
+      js += `  ${id}_el.insertBefore(${id}_filter, ${id}_el.firstChild);
+`;
+    }
     if (props.ElementsFromString) {
       js += `  (${JSON.stringify(props.ElementsFromString)}).split(',').forEach(function(item) {
 `;
@@ -4122,10 +4184,18 @@ function generateComponentCreation(comp, parentVar, parentType) {
 `;
     js += `  ${id}_track.className = 'comp-switch-track ${isOn}';
 `;
+    if (props.TrackColorActive) js += `  ${id}_track.style.setProperty('--track-on', '${props.TrackColorActive}');
+`;
+    if (props.TrackColorInactive) js += `  ${id}_track.style.setProperty('--track-off', '${props.TrackColorInactive}');
+`;
     js += `  var ${id}_thumb = document.createElement('div');
 `;
     js += `  ${id}_thumb.className = 'comp-switch-thumb';
 `;
+    if (props.ThumbColorActive || props.ThumbColorInactive) {
+      js += `  ${id}_thumb.style.background = (this._state && this._state.on) ? '${props.ThumbColorActive || "#ffffff"}' : '${props.ThumbColorInactive || "#ffffff"}';
+`;
+    }
     js += `  ${id}_track.appendChild(${id}_thumb);
 `;
     js += `  var ${id}_label = document.createElement('span');
@@ -4148,6 +4218,12 @@ function generateComponentCreation(comp, parentVar, parentType) {
 `;
     js += `  });
 `;
+    if (props.Enabled === false) {
+      js += `  ${id}_el.style.opacity = '0.5';
+`;
+      js += `  ${id}_el.style.pointerEvents = 'none';
+`;
+    }
   }
   if (type === "Image" || type === "ImagePicker" || type === "FilePicker" || type === "ContactPicker") {
     js += `  ${id}_el.alt = '${escapeHtml(props.Text || id)}';
@@ -4170,18 +4246,27 @@ function generateComponentCreation(comp, parentVar, parentType) {
 `;
   }
   if (type === "Image") {
+    const imgBg = props.BackgroundColor || "#f0f0f0";
     if (props.Picture || props.Image) {
       const pic = String(props.Picture || props.Image);
       js += `  ${id}_el.src = '${escapeHtml(mediaUrl(pic))}';
 `;
-      js += `  ${id}_el.onerror = function() { this.style.background='#f0f0f0'; this.alt=''; };
+      js += `  ${id}_el.onerror = function() { this.style.background='${imgBg}'; this.alt=''; };
 `;
     } else {
       js += `  ${id}_el.removeAttribute('src');
 `;
       js += `  ${id}_el.alt = '';
 `;
-      js += `  ${id}_el.style.background = '#f0f0f0';
+      js += `  ${id}_el.style.background = '${imgBg}';
+`;
+    }
+    if (props.ScalePictureToFit) {
+      js += `  ${id}_el.style.objectFit = 'contain';
+`;
+    }
+    if (props.RotationAngle) {
+      js += `  ${id}_el.style.transform = 'rotate(${props.RotationAngle}deg)';
 `;
     }
   }
@@ -4204,9 +4289,13 @@ function generateComponentCreation(comp, parentVar, parentType) {
     const fs2 = typeof props.FontSize === "number" ? props.FontSize + "px" : props.FontSize;
     js += `  ${id}_el.style.fontSize = '${fs2}';
 `;
+    js += `  ${id}_el.style.setProperty('--comp-fs', '${fs2}');
+`;
   }
   if (props.TextColor) {
     js += `  ${id}_el.style.color = '${props.TextColor}';
+`;
+    js += `  ${id}_el.style.setProperty('--comp-clr', '${props.TextColor}');
 `;
   }
   if (props.BackgroundColor && props.BackgroundColor !== "none") {
@@ -4219,6 +4308,12 @@ function generateComponentCreation(comp, parentVar, parentType) {
   }
   if (props.FontItalic) {
     js += `  ${id}_el.style.fontStyle = 'italic';
+`;
+  }
+  if (props.FontTypeface !== void 0 && props.FontTypeface !== null && props.FontTypeface !== 0) {
+    const typefaceMap = { 1: "serif", 2: "monospace", 3: "cursive" };
+    const tf = typefaceMap[Number(props.FontTypeface)];
+    if (tf) js += `  ${id}_el.style.fontFamily = '${tf}';
 `;
   }
   if (props.TextAlignment) {
@@ -4307,6 +4402,22 @@ function generateComponentCreation(comp, parentVar, parentType) {
       js += `  ${id}_el.style.display = 'flex';
 `;
     }
+    const arrangementMinHeight = arrangementClass === "arrangement-table" ? "100px" : arrangementClass === "arrangement-absolute" ? "80px" : "60px";
+    if (props.Height !== void 0 && props.Height !== null) {
+      if (props.Height === -1) {
+        js += `  ${id}_el.style.minHeight = '0';
+`;
+      } else if (props.Height === -2) {
+        js += `  ${id}_el.style.minHeight = '0';
+`;
+      } else if (typeof props.Height === "number" && props.Height > 0) {
+        js += `  ${id}_el.style.minHeight = '${props.Height}px';
+`;
+      }
+    } else {
+      js += `  ${id}_el.style.minHeight = '${arrangementMinHeight}';
+`;
+    }
     if (arrangementClass === "arrangement-horizontal" || arrangementClass === "arrangement-horizontal-scroll") {
       const hCenter = hAlign === 2 || hAlign === "Center" || hAlign === "center";
       const hEnd = hAlign === 3 || hAlign === "Right" || hAlign === "right";
@@ -4327,7 +4438,10 @@ function generateComponentCreation(comp, parentVar, parentType) {
 `;
     } else if (arrangementClass === "arrangement-table") {
       const numCols = props.Columns || 2;
+      const numRows = props.Rows || 2;
       js += `  ${id}_el.style.gridTemplateColumns = 'repeat(${Number(numCols)}, 1fr)';
+`;
+      js += `  ${id}_el.style.gridTemplateRows = 'repeat(${Number(numRows)}, auto)';
 `;
     }
   }
@@ -5287,7 +5401,18 @@ function generateAppJs(appState) {
     else if (prop === 'BackgroundColor') el.style.backgroundColor = value || '';
     else if (prop === 'TextColor') el.style.color = value || '';
     else if (prop === 'Visible') el.style.display = value ? '' : 'none';
-    else if (prop === 'Enabled') { if (el.tagName === 'BUTTON') el.disabled = !value; }
+    else if (prop === 'Enabled') { el.disabled = !value; el.style.opacity = value ? '1' : '0.5'; }
+    else if (prop === 'FontTypeface') {
+      var tfMap = { 1: 'serif', 2: 'monospace', 3: 'cursive' };
+      el.style.fontFamily = tfMap[Number(value)] || '';
+    }
+    else if (prop === 'TextAlignment') {
+      var a = value === 2 || value === 'center' || value === 'Center' ? 'center' : value === 3 || value === 'right' || value === 'Right' ? 'right' : 'left';
+      el.style.textAlign = a;
+      if (el.tagName === 'BUTTON') el.style.justifyContent = a === 'center' ? 'center' : a === 'right' ? 'flex-end' : 'flex-start';
+    }
+    else if (prop === 'NumbersOnly') { el.inputMode = value ? 'numeric' : 'text'; }
+    else if (prop === 'ReadOnly') { el.readOnly = !!value; }
     else if (prop === 'Width') el.style.width = typeof value === 'number' ? value + 'px' : value;
     else if (prop === 'Height') el.style.height = typeof value === 'number' ? value + 'px' : value;
     else if (prop === 'FontSize') el.style.fontSize = typeof value === 'number' ? value + 'px' : value;
