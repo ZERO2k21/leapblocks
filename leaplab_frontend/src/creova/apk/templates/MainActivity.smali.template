@@ -18,16 +18,16 @@
     .registers 8
     invoke-super {p0, p1}, Landroid/app/Activity;->onCreate(Landroid/os/Bundle;)V
 {{permissionCode}}
-    const/4 v2, 0x1
+    const/4 v2, 0x0
     invoke-static {v2}, Landroid/webkit/WebView;->setWebContentsDebuggingEnabled(Z)V
 
     new-instance v0, Landroid/webkit/WebView;
     invoke-direct {v0, p0}, Landroid/webkit/WebView;-><init>(Landroid/content/Context;)V
     iput-object v0, p0, {{smaliPkg}}MainActivity;->webView:Landroid/webkit/WebView;
 
-    new-instance v2, {{smaliPkg}}LeapWebViewClient;
-    invoke-direct {v2, p0}, {{smaliPkg}}LeapWebViewClient;-><init>(Landroid/app/Activity;)V
-    invoke-virtual {v0, v2}, Landroid/webkit/WebView;->setWebViewClient(Landroid/webkit/WebViewClient;)V
+    new-instance v5, {{smaliPkg}}LeapWebViewClient;
+    invoke-direct {v5, p0}, {{smaliPkg}}LeapWebViewClient;-><init>(Landroid/app/Activity;)V
+    invoke-virtual {v0, v5}, Landroid/webkit/WebView;->setWebViewClient(Landroid/webkit/WebViewClient;)V
 
     new-instance v2, {{smaliPkg}}LeapChromeClient;
     invoke-direct {v2, p0}, {{smaliPkg}}LeapChromeClient;-><init>(Landroid/app/Activity;)V
@@ -39,12 +39,13 @@
     const/4 v2, 0x1
     invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setJavaScriptEnabled(Z)V
     invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setDomStorageEnabled(Z)V
-    invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setAllowFileAccess(Z)V
-    invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setAllowContentAccess(Z)V
-    invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setAllowFileAccessFromFileURLs(Z)V
-    invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setAllowUniversalAccessFromFileURLs(Z)V
 
+    invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setAllowFileAccess(Z)V
     const/4 v3, 0x0
+    invoke-virtual {v1, v3}, Landroid/webkit/WebSettings;->setAllowContentAccess(Z)V
+    invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setAllowFileAccessFromFileURLs(Z)V
+    invoke-virtual {v1, v3}, Landroid/webkit/WebSettings;->setAllowUniversalAccessFromFileURLs(Z)V
+
     invoke-virtual {v1, v3}, Landroid/webkit/WebSettings;->setMediaPlaybackRequiresUserGesture(Z)V
 
     # Register native Bluetooth bridge as window.Android
@@ -179,12 +180,12 @@
 .method public run()V
     .registers 6
 
-    # Check SDK version
+    # Check SDK version — runtime permissions needed on API 23+
     sget v0, Landroid/os/Build$VERSION;->SDK_INT:I
     const/16 v1, 0x17 # API 23
-    if-ge v0, v1, :cond_start_intent
+    if-lt v0, v1, :cond_start_intent
 
-    # Check RECORD_AUDIO permission
+    # Check RECORD_AUDIO permission (API 23+ only)
     const-string v0, "android.permission.RECORD_AUDIO"
     invoke-virtual {p0, v0}, Landroid/app/Activity;->checkSelfPermission(Ljava/lang/String;)I
     move-result v0

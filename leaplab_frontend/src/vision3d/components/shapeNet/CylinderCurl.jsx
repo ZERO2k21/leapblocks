@@ -1,13 +1,16 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { getFaceShades } from './netDefinitions';
 
-const CylinderCurl = ({ radius, height, t }) => {
+const CylinderCurl = ({ radius, height, color, t }) => {
   const sideRef = useRef();
   const bottomRef = useRef();
   const topRef = useRef();
   const halfH = height / 2;
   const origPos = useRef(null);
+
+  const shades = useMemo(() => getFaceShades(color || '#22d3ee', 3), [color]);
 
   const sideGeo = useMemo(() => {
     const geo = new THREE.PlaneGeometry(2 * Math.PI * radius, height, 64, 1);
@@ -59,15 +62,15 @@ const CylinderCurl = ({ radius, height, t }) => {
   return (
     <group>
       <mesh ref={sideRef} geometry={sideGeo}>
-        <meshStandardMaterial color="#22d3ee" side={THREE.DoubleSide} roughness={0.35} />
+        <meshStandardMaterial color={shades[0]} side={THREE.DoubleSide} roughness={0.35} />
       </mesh>
       <mesh ref={bottomRef} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[radius, 48]} />
-        <meshStandardMaterial color="#06b6d4" side={THREE.DoubleSide} />
+        <meshStandardMaterial color={shades[1]} side={THREE.DoubleSide} />
       </mesh>
       <mesh ref={topRef} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[radius, 48]} />
-        <meshStandardMaterial color="#67e8f9" side={THREE.DoubleSide} />
+        <meshStandardMaterial color={shades[2]} side={THREE.DoubleSide} />
       </mesh>
     </group>
   );

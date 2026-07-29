@@ -5,14 +5,11 @@ import fs from 'fs';
 import os from 'os';
 import { spawn } from 'child_process';
 import crypto from 'crypto';
-import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
+import { fileURLToPath, pathToFileURL } from 'url';
 import http from 'http';
 import https from 'https';
 import { v4 as uuidv4 } from 'uuid';
 import { transpileArduinoToJS } from './transpiler.js';
-
-const _require = createRequire(import.meta.url);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -389,21 +386,33 @@ function binToIntelHex(buf: Buffer): string {
 // ─── POST /build-apk ──────────────────────────────────────────
 app.post('/build-apk', async (req: Request, res: Response) => {
   const project = req.body;
+  const reqTime = Date.now();
+  console.log('[APK] ==================== /build-apk REQUEST ====================');
+  console.log('[APK] Timestamp:', new Date().toISOString());
+  console.log('[APK] appName:', project?.appName, '| packageName:', project?.packageName);
+  console.log('[APK] screens:', project?.screens?.length, '| media:', project?.media?.length);
   if (!project || typeof project !== 'object') {
+    console.log('[APK] ERROR: No project data');
     return res.status(400).json({ success: false, error: 'No project data provided' });
   }
 
   try {
-    const buildPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.js');
-    console.log(`[APK] buildPath: ${buildPath}`);
+    const jsPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.js');
+    const tsPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.ts');
+    const buildPath = fs.existsSync(jsPath) ? jsPath : (fs.existsSync(tsPath) ? tsPath : null);
+    console.log('[APK] jsPath:', jsPath, 'exists:', fs.existsSync(jsPath));
+    console.log('[APK] tsPath:', tsPath, 'exists:', fs.existsSync(tsPath));
 
     let builder: any;
-    if (fs.existsSync(buildPath)) {
-      const ApkBuilder = _require(buildPath);
+    if (buildPath) {
+      const ApkModule = await import(pathToFileURL(buildPath).href);
+      const ApkBuilder = ApkModule.default || ApkModule;
       builder = new ApkBuilder();
+      console.log('[APK] Builder instance created from:', buildPath);
     }
 
     if (!builder || typeof builder.build !== 'function') {
+      console.log('[APK] Builder not available');
       const logs = [
         '[10%] Cloud APK builder not available on this server.',
         '[30%] APK builds require the local LeapBlocks server or Electron app.',
@@ -419,22 +428,31 @@ app.post('/build-apk', async (req: Request, res: Response) => {
     }
 
     const logs: string[] = [];
-    const outputPath = await builder.build(project, ({ progress, message }: { progress?: number; message?: string }) => {
+    console.log('[APK] Calling builder.build()...');
+    const outputPath = await builder.build(project, ({ stage, progress, message }: { stage?: string; progress?: number; message?: string }) => {
       if (message) {
         const prefix = progress !== undefined ? `[${progress}%] ` : '';
-        logs.push(`${prefix}${message}`);
-        console.log(`[APK] ${prefix}${message}`);
+        const entry = `${prefix}${message}`;
+        logs.push(entry);
+        console.log(`[APK] ${entry}`);
       }
     });
+
+    const elapsed = ((Date.now() - reqTime) / 1000).toFixed(1);
+    console.log('[APK] build() returned:', outputPath, '| elapsed:', elapsed + 's');
 
     const apkName = `${sanitizeApkName(project.appName)}.apk`;
     const publicPath = path.join(APK_PUBLIC_DIR, apkName);
     fs.mkdirSync(APK_PUBLIC_DIR, { recursive: true });
 
     if (fs.existsSync(outputPath)) {
+      console.log('[APK] Copying APK to public:', publicPath);
       fs.copyFileSync(outputPath, publicPath);
+    } else {
+      console.log('[APK] WARNING: outputPath does not exist:', outputPath);
     }
 
+    console.log('[APK] ==================== /build-apk COMPLETE ====================');
     return res.json({
       success: true,
       downloadUrl: `/apks/${apkName}`,
@@ -442,7 +460,8 @@ app.post('/build-apk', async (req: Request, res: Response) => {
       logs,
     });
   } catch (err: any) {
-    console.error('[APK] build failed:', err);
+    console.error('[APK] ==================== /build-apk FAILED ====================');
+    console.error('[APK] Error:', err.message, '| Stack:', err.stack);
     return res.status(500).json({
       success: false,
       error: err.message || String(err),
@@ -488,9 +507,14 @@ setInterval(() => {
 let builderModule: any = null;
 async function getBuilder(): Promise<any> {
   if (!builderModule) {
-    const bPath = path.join(__dirname, '..', 'src', 'studio', 'engine', 'localBuilder.js');
-    if (fs.existsSync(bPath)) {
-      builderModule = await import(`file://${bPath.replace(/\\/g, '/')}`);
+    const jsPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.js');
+    const tsPath = path.join(__dirname, '..', 'src', 'creova', 'apk', 'buildAPK.ts');
+    const bPath = fs.existsSync(jsPath) ? jsPath : (fs.existsSync(tsPath) ? tsPath : null);
+    if (bPath) {
+      const mod = await import(pathToFileURL(bPath).href);
+      const Builder = mod.default || mod;
+      builderModule = new Builder();
+      console.log('[APK-BUILDER] Loaded from:', bPath);
     }
   }
   return builderModule;
@@ -515,12 +539,31 @@ app.post('/build', async (req: Request, res: Response) => {
 
     const builder = await getBuilder();
     if (builder && typeof builder.build === 'function') {
-      builder.build(jobId, project).catch((err: any) => {
-        const j = jobs.get(jobId);
-        if (j) { j.status = 'error'; j.error = err.message; }
+      job.status = 'building';
+      const apkName = sanitizeApkName(project.appName);
+      const finalPath = path.join(APK_PUBLIC_DIR, `${apkName}.apk`);
+
+      builder.build(project, (event: { stage?: string; progress?: number; message?: string }) => {
+        if (event.progress !== undefined) job.progress = event.progress;
+        if (event.message) {
+          job.logs.push({ message: event.message, type: event.stage === 'complete' ? 'success' : 'info' });
+        }
+      }).then((outputPath: string) => {
+        fs.mkdirSync(APK_PUBLIC_DIR, { recursive: true });
+        if (fs.existsSync(outputPath)) {
+          fs.copyFileSync(outputPath, finalPath);
+          try { fs.rmSync(outputPath, { force: true }); } catch {}
+        }
+        job.status = 'done';
+        job.progress = 100;
+        job.apkPath = finalPath;
+        job.logs.push({ message: `Build complete: ${finalPath}`, type: 'success' });
+      }).catch((err: any) => {
+        job.status = 'error';
+        job.error = err.message;
+        job.logs.push({ message: `Build failed: ${err.message}`, type: 'error' });
       });
     } else {
-      job.status = 'building';
       simulateBuild(job, project);
     }
 

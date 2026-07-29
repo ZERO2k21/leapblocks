@@ -611,6 +611,16 @@ export default function PhoneCanvasEnhanced({ appState }) {
             return 'auto';
         };
 
+        const getProp = (name) => {
+            if (comp.props[name] !== undefined) return comp.props[name];
+            const lower = name.toLowerCase();
+            const found = Object.keys(comp.props).find(k => k.toLowerCase() === lower);
+            return found ? comp.props[found] : undefined;
+        };
+
+        const alignHVal = getProp('AlignHorizontal') || 'Left';
+        const alignVVal = getProp('AlignVertical') || 'Top';
+
         // Dynamic styles from props
         const style = {
             backgroundColor: comp.props.BackgroundColor || comp.props.backgroundColor,
@@ -846,10 +856,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             flexDirection: 'row',
                             gap: '5px',
                             minHeight: '60px',
-                            justifyContent: comp.props.AlignHorizontal === 'Center' || comp.props.AlignHorizontal === '2' || comp.props.AlignHorizontal === 2 ? 'center' :
-                                comp.props.AlignHorizontal === 'Right' || comp.props.AlignHorizontal === '3' || comp.props.AlignHorizontal === 3 ? 'flex-end' : 'flex-start',
-                            alignItems: comp.props.AlignVertical === 'Center' || comp.props.AlignVertical === '2' || comp.props.AlignVertical === 2 ? 'center' :
-                                comp.props.AlignVertical === 'Bottom' || comp.props.AlignVertical === '3' || comp.props.AlignVertical === 3 ? 'flex-end' : 'flex-start'
+                            justifyContent: alignHVal === 'Center' || alignHVal === '2' || alignHVal === 2 ? 'center' :
+                                alignHVal === 'Right' || alignHVal === '3' || alignHVal === 3 ? 'flex-end' : 'flex-start',
+                            alignItems: alignVVal === 'Center' || alignVVal === '2' || alignVVal === 2 ? 'center' :
+                                alignVVal === 'Bottom' || alignVVal === '3' || alignVVal === 3 ? 'flex-end' : 'flex-start'
                         }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
@@ -886,10 +896,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             flexDirection: 'column',
                             gap: '5px',
                             minHeight: '60px',
-                            alignItems: comp.props.AlignHorizontal === 'Center' || comp.props.AlignHorizontal === '2' || comp.props.AlignHorizontal === 2 ? 'center' :
-                                comp.props.AlignHorizontal === 'Right' || comp.props.AlignHorizontal === '3' || comp.props.AlignHorizontal === 3 ? 'flex-end' : 'flex-start',
-                            justifyContent: comp.props.AlignVertical === 'Center' || comp.props.AlignVertical === '2' || comp.props.AlignVertical === 2 ? 'center' :
-                                comp.props.AlignVertical === 'Bottom' || comp.props.AlignVertical === '3' || comp.props.AlignVertical === 3 ? 'flex-end' : 'flex-start'
+                            alignItems: alignHVal === 'Center' || alignHVal === '2' || alignHVal === 2 ? 'center' :
+                                alignHVal === 'Right' || alignHVal === '3' || alignHVal === 3 ? 'flex-end' : 'flex-start',
+                            justifyContent: alignVVal === 'Center' || alignVVal === '2' || alignVVal === 2 ? 'center' :
+                                alignVVal === 'Bottom' || alignVVal === '3' || alignVVal === 3 ? 'flex-end' : 'flex-start'
                         }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
@@ -926,10 +936,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
                             gridTemplateColumns: `repeat(${numCols}, 1fr)`,
                             gap: '5px',
                             minHeight: '100px',
-                            justifyContent: comp.props.AlignHorizontal === 'Center' || comp.props.AlignHorizontal === '2' || comp.props.AlignHorizontal === 2 ? 'center' :
-                                comp.props.AlignHorizontal === 'Right' || comp.props.AlignHorizontal === '3' || comp.props.AlignHorizontal === 3 ? 'flex-end' : 'flex-start',
-                            alignItems: comp.props.AlignVertical === 'Center' || comp.props.AlignVertical === '2' || comp.props.AlignVertical === 2 ? 'center' :
-                                comp.props.AlignVertical === 'Bottom' || comp.props.AlignVertical === '3' || comp.props.AlignVertical === 3 ? 'flex-end' : 'flex-start'
+                            justifyContent: alignHVal === 'Center' || alignHVal === '2' || alignHVal === 2 ? 'center' :
+                                alignHVal === 'Right' || alignHVal === '3' || alignHVal === 3 ? 'flex-end' : 'flex-start',
+                            alignItems: alignVVal === 'Center' || alignVVal === '2' || alignVVal === 2 ? 'center' :
+                                alignVVal === 'Bottom' || alignVVal === '3' || alignVVal === 3 ? 'flex-end' : 'flex-start'
                         }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}
@@ -962,10 +972,10 @@ export default function PhoneCanvasEnhanced({ appState }) {
                         style={{
                             ...style,
                             minHeight: '80px',
-                            justifyContent: comp.props.AlignHorizontal === 'Center' || comp.props.AlignHorizontal === '2' || comp.props.AlignHorizontal === 2 ? 'center' :
-                                comp.props.AlignHorizontal === 'Right' || comp.props.AlignHorizontal === '3' || comp.props.AlignHorizontal === 3 ? 'flex-end' : 'flex-start',
-                            alignItems: comp.props.AlignVertical === 'Center' || comp.props.AlignVertical === '2' || comp.props.AlignVertical === 2 ? 'center' :
-                                comp.props.AlignVertical === 'Bottom' || comp.props.AlignVertical === '3' || comp.props.AlignVertical === 3 ? 'flex-end' : 'flex-start'
+                            justifyContent: alignHVal === 'Center' || alignHVal === '2' || alignHVal === 2 ? 'center' :
+                                alignHVal === 'Right' || alignHVal === '3' || alignHVal === 3 ? 'flex-end' : 'flex-start',
+                            alignItems: alignVVal === 'Center' || alignVVal === '2' || alignVVal === 2 ? 'center' :
+                                alignVVal === 'Bottom' || alignVVal === '3' || alignVVal === 3 ? 'flex-end' : 'flex-start'
                         }}
                         onClick={handleClick}
                         onDrop={(e) => handleDrop(e, comp.id)}

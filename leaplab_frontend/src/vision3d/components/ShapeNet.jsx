@@ -8,9 +8,12 @@ import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { getNetFaces, SHAPE_NAMES, NET_HAS } from './shapeNet/netDefinitions';
 import { NetScene } from './shapeNet/NetScene';
+import { use3DStore } from '../store/use3DStore';
 
 
-const ShapeNet = ({ shape, onClose }) => {
+const ShapeNet = ({ shape: initialShape, onClose }) => {
+  const liveShape = use3DStore((s) => s.shapes.find((sh) => sh.id === initialShape?.id)) || initialShape;
+  const shape = liveShape;
   const data = useMemo(function () { return getNetFaces(shape); }, [shape]);
   const label = SHAPE_NAMES[shape.type] || shape.type;
   const has = NET_HAS[shape.type] || { f: 0, e: 0, v: 0 };

@@ -1,8 +1,9 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { getFaceShades } from './netDefinitions';
 
-const PyramidFold = ({ base, height, t }) => {
+const PyramidFold = ({ base, height, color, t }) => {
   const baseRef = useRef();
   const frontRef = useRef();
   const backRef = useRef();
@@ -10,6 +11,8 @@ const PyramidFold = ({ base, height, t }) => {
   const rightRef = useRef();
   const slant = Math.sqrt(height * height + (base / 2) * (base / 2));
   const halfB = base / 2;
+
+  const shades = useMemo(() => getFaceShades(color || '#eab308', 5), [color]);
 
   const baseGeo = useMemo(() => new THREE.PlaneGeometry(base, base), [base]);
 
@@ -104,19 +107,19 @@ const PyramidFold = ({ base, height, t }) => {
   return (
     <group>
       <mesh ref={baseRef} geometry={baseGeo} rotation={[-Math.PI / 2, 0, 0]}>
-        <meshStandardMaterial color="#eab308" side={THREE.DoubleSide} roughness={0.35} />
+        <meshStandardMaterial color={shades[0]} side={THREE.DoubleSide} roughness={0.35} />
       </mesh>
       <mesh ref={frontRef} geometry={frontGeo}>
-        <meshStandardMaterial color="#facc15" side={THREE.DoubleSide} roughness={0.35} />
+        <meshStandardMaterial color={shades[1]} side={THREE.DoubleSide} roughness={0.35} />
       </mesh>
       <mesh ref={backRef} geometry={backGeo}>
-        <meshStandardMaterial color="#fde047" side={THREE.DoubleSide} roughness={0.35} />
+        <meshStandardMaterial color={shades[2]} side={THREE.DoubleSide} roughness={0.35} />
       </mesh>
       <mesh ref={leftRef} geometry={leftGeo}>
-        <meshStandardMaterial color="#fef08a" side={THREE.DoubleSide} roughness={0.35} />
+        <meshStandardMaterial color={shades[3]} side={THREE.DoubleSide} roughness={0.35} />
       </mesh>
       <mesh ref={rightRef} geometry={rightGeo}>
-        <meshStandardMaterial color="#fef9c3" side={THREE.DoubleSide} roughness={0.35} />
+        <meshStandardMaterial color={shades[4]} side={THREE.DoubleSide} roughness={0.35} />
       </mesh>
     </group>
   );

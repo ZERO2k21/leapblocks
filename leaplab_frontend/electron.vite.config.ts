@@ -104,6 +104,7 @@ export default defineConfig({
 
     // Development server optimizations
     server: {
+      port: 3000,
       hmr: {
         overlay: false, // Disable error overlay for faster HMR
       },

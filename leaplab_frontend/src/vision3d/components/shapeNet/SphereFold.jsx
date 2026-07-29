@@ -14,33 +14,35 @@ const SphereFold = ({ data, t }) => {
   const r = topFace.geo?.parameters?.radius || 1;
 
   useFrame(() => {
-    // d is the flat offset distance matching netDefinitions.js
-    const d = r * 1.5;
-    const arcY = d * Math.sin(t * Math.PI) * 0.5;
+    // Top hemisphere hinges 180 degrees over the shared back rim edge (Z = -r)
+    // angle transitions from -180 deg (flat net at t=0) to 0 deg (closed sphere at t=1)
+    const angle = -Math.PI * (1 - t);
 
     if (topRef.current) {
-      // Top hemisphere: translate in arc from -d to 0, rotate X from -90 deg to 0
-      topRef.current.position.set(-d * (1 - t), arcY, 0);
-      topRef.current.rotation.set(-Math.PI / 2 * (1 - t), 0, 0);
+      // Rotate in a 180-degree overhead arc around pivot at (0, 0, -r)
+      const posY = -r * Math.sin(angle);
+      const posZ = -r + r * Math.cos(angle);
+      topRef.current.position.set(0, posY, posZ);
+      topRef.current.rotation.set(angle, 0, 0);
     }
 
     if (bottomRef.current) {
-      // Bottom hemisphere: translate in arc from +d to 0, rotate X from +90 deg to 0
-      bottomRef.current.position.set(d * (1 - t), arcY, 0);
-      bottomRef.current.rotation.set(Math.PI / 2 * (1 - t), 0, 0);
+      // Bottom hemisphere remains stationary on the floor
+      bottomRef.current.position.set(0, 0, 0);
+      bottomRef.current.rotation.set(0, 0, 0);
     }
   });
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Top Hemisphere */}
-      <mesh ref={topRef} geometry={topFace.geo} castShadow receiveShadow>
-        <meshStandardMaterial color={topFace.color} roughness={0.35} side={THREE.DoubleSide} />
-      </mesh>
-
-      {/* Bottom Hemisphere */}
+      {/* Bottom Hemisphere (Stationary Base) */}
       <mesh ref={bottomRef} geometry={bottomFace.geo} castShadow receiveShadow>
         <meshStandardMaterial color={bottomFace.color} roughness={0.35} side={THREE.DoubleSide} />
+      </mesh>
+
+      {/* Top Hemisphere (180-Degree Hinge Lid) */}
+      <mesh ref={topRef} geometry={topFace.geo} castShadow receiveShadow>
+        <meshStandardMaterial color={topFace.color} roughness={0.35} side={THREE.DoubleSide} />
       </mesh>
     </group>
   );
