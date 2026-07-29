@@ -269,8 +269,8 @@ html, body {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 16px 16px 64px 16px;
-  gap: 10px;
+  padding: 8px;
+  gap: 5px;
   background: #ffffff;
 }
 
@@ -278,16 +278,15 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  min-height: 48px;
-  padding: 12px 24px;
-  background: #4285f4;
-  color: #ffffff;
-  border: none;
+  min-height: 36px;
+  padding: 8px 12px;
+  background: #E0E0E0;
+  color: #000000;
+  border: 1px solid #BDBDBD;
   border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  font-weight: normal;
+  font-family: sans-serif;
   cursor: pointer;
   outline: none;
   -webkit-appearance: none;
@@ -295,136 +294,138 @@ html, body {
   user-select: none;
   text-align: center;
   white-space: nowrap;
-  letter-spacing: 0.3px;
-  box-shadow: 0 2px 8px rgba(66,133,244,0.3);
-  transition: opacity 0.15s ease, transform 0.1s ease;
 }
 
 .comp-button:active {
   opacity: 0.85;
   transform: scale(0.98);
-  box-shadow: 0 1px 4px rgba(66,133,244,0.2);
 }
 
 .comp-label {
   display: block;
-  font-size: 16px;
   color: #1f2937;
-  line-height: 1.5;
+  padding: 2px 0;
   word-wrap: break-word;
-  letter-spacing: 0.15px;
 }
 
 .comp-textbox {
   display: block;
   width: 100%;
-  min-height: 48px;
-  padding: 12px 16px;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 12px;
-  font-size: 16px;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
   color: #1f2937;
-  background: #fafafa;
+  background: #FFFFFF;
   outline: none;
   -webkit-appearance: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  font-family: 'Roboto', sans-serif;
+  font-family: sans-serif;
 }
 
 .comp-textbox:focus {
   border-color: #4285f4;
-  box-shadow: 0 0 0 3px rgba(66,133,244,0.15);
-  background: #ffffff;
 }
 
 .comp-image {
   display: block;
   max-width: 100%;
   height: auto;
-  object-fit: contain;
-  border-radius: 8px;
+  object-fit: cover;
+}
+.comp-image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f0f0;
+  color: #999;
+  font-size: 24px;
 }
 
 .comp-checkbox {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
   color: #1f2937;
-  padding: 4px 0;
+  padding: 2px 4px;
 }
 
 .comp-checkbox input[type="checkbox"] {
-  width: 22px;
-  height: 22px;
-  accent-color: #4285f4;
+  width: 16px;
+  height: 16px;
   cursor: pointer;
 }
 
 .comp-slider {
   display: block;
   width: 100%;
-  -webkit-appearance: none;
-  height: 6px;
-  border-radius: 3px;
-  background: #e0e0e0;
-  outline: none;
-}
-
-.comp-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #4285f4;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(66,133,244,0.35);
 }
 
 .comp-switch {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 16px;
+  gap: 6px;
+  font-size: 14px;
   color: #1f2937;
-  padding: 4px 0;
+  padding: 2px 4px;
+  cursor: pointer;
 }
+
+.comp-switch-track {
+  width: 40px;
+  height: 20px;
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.comp-switch-track.on { background-color: #2563eb; }
+.comp-switch-track.off { background-color: #cbd5e1; }
+
+.comp-switch-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.2s ease;
+}
+
+.comp-switch-track.on .comp-switch-thumb { transform: translateX(20px); }
+.comp-switch-track.off .comp-switch-thumb { transform: translateX(2px); }
 
 .comp-listview {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  border: 1px solid #e8e8e8;
-  border-radius: 12px;
-  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  min-height: 100px;
 }
 
 .comp-listview-item {
-  padding: 14px 18px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 16px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
   color: #1f2937;
   cursor: pointer;
-  transition: background 0.15s ease;
 }
 
 .comp-listview-item:last-child { border-bottom: none; }
-.comp-listview-item:active { background: #e8f0fe; }
 
 .comp-spinner {
   display: block;
   width: 100%;
-  min-height: 48px;
-  padding: 12px 16px;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 12px;
-  font-size: 16px;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
   outline: none;
-  -webkit-appearance: none;
-  background: #fafafa;
+  background: #ffffff;
   cursor: pointer;
-  font-family: 'Roboto', sans-serif;
+  font-family: sans-serif;
 }
 
 .comp-datepicker, .comp-timepicker {
@@ -432,27 +433,27 @@ html, body {
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 48px;
-  padding: 12px 24px;
-  border: 1.5px solid #e0e0e0;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid #BDBDBD;
   border-radius: 12px;
-  background: #fafafa;
-  font-size: 16px;
+  background: #E0E0E0;
+  font-size: 14px;
   cursor: pointer;
-  font-family: 'Roboto', sans-serif;
+  font-family: sans-serif;
 }
 
-.comp-webviewer { border: none; display: block; border-radius: 12px; overflow: hidden; }
-.comp-canvas { display: block; touch-action: none; border-radius: 8px; }
-.comp-videoplayer { display: block; max-width: 100%; border-radius: 12px; overflow: hidden; }
-.comp-map { display: block; border-radius: 12px; overflow: hidden; }
+.comp-webviewer { border: 1px solid #cbd5e1; display: block; min-height: 180px; }
+.comp-canvas { display: block; touch-action: none; }
+.comp-videoplayer { display: block; max-width: 100%; }
+.comp-map { display: block; }
 
-.arrangement-horizontal { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 8px; align-items: stretch; }
-.arrangement-vertical { display: flex; flex-direction: column; gap: 8px; }
-.arrangement-horizontal-scroll { display: flex; flex-direction: row; overflow-x: auto; flex-wrap: nowrap; gap: 8px; }
-.arrangement-vertical-scroll { display: flex; flex-direction: column; overflow-y: auto; gap: 8px; }
-.arrangement-table { display: grid; gap: 8px; }
-.arrangement-absolute { position: relative; }
+.arrangement-horizontal { display: flex; flex-direction: row; flex-wrap: nowrap; gap: 5px; align-items: stretch; min-height: 60px; padding: 4px; }
+.arrangement-vertical { display: flex; flex-direction: column; gap: 5px; min-height: 60px; padding: 4px; }
+.arrangement-horizontal-scroll { display: flex; flex-direction: row; overflow-x: auto; flex-wrap: nowrap; gap: 5px; min-height: 60px; padding: 4px; }
+.arrangement-vertical-scroll { display: flex; flex-direction: column; overflow-y: auto; gap: 5px; min-height: 60px; padding: 4px; }
+.arrangement-table { display: grid; gap: 5px; }
+.arrangement-absolute { position: relative; min-height: 60px; padding: 4px; }
 
 .toast-notification {
   position: fixed;
@@ -561,13 +562,25 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     js += `  ${id}_el.className = '${cssClass}';\n`;
   }
 
-  if (props.Width && props.Width !== 'auto' && type !== 'Canvas') {
-    const w = typeof props.Width === 'number' || /^\d+$/.test(String(props.Width)) ? props.Width + 'px' : props.Width;
-    js += `  ${id}_el.style.width = '${w}';\n`;
+  if (props.Width !== undefined && props.Width !== null && type !== 'Canvas') {
+    const LENGTH_AUTO = -1;
+    const LENGTH_FILL = -2;
+    let w;
+    if (props.Width === LENGTH_FILL) w = '100%';
+    else if (props.Width === LENGTH_AUTO) w = 'auto';
+    else if (typeof props.Width === 'number' && props.Width > 0) w = props.Width + 'px';
+    else if (props.WidthPercent != null) w = props.WidthPercent + '%';
+    if (w) js += `  ${id}_el.style.width = '${w}';\n`;
   }
-  if (props.Height && props.Height !== 'auto' && type !== 'Canvas') {
-    const h = typeof props.Height === 'number' || /^\d+$/.test(String(props.Height)) ? props.Height + 'px' : props.Height;
-    js += `  ${id}_el.style.height = '${h}';\n`;
+  if (props.Height !== undefined && props.Height !== null && type !== 'Canvas') {
+    const LENGTH_AUTO = -1;
+    const LENGTH_FILL = -2;
+    let h;
+    if (props.Height === LENGTH_FILL) h = '100%';
+    else if (props.Height === LENGTH_AUTO) h = 'auto';
+    else if (typeof props.Height === 'number' && props.Height > 0) h = props.Height + 'px';
+    else if (props.HeightPercent != null) h = props.HeightPercent + '%';
+    if (h) js += `  ${id}_el.style.height = '${h}';\n`;
   }
   if (props.Visible === false) {
     js += `  ${id}_el.style.display = 'none';\n`;
@@ -637,14 +650,22 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     js += `  ${id}_el.appendChild(${id}_cb);\n`;
     js += `  ${id}_el.appendChild(${id}_label);\n`;
   } else if (type === 'Switch') {
-    js += `  var ${id}_cb = document.createElement('input');\n`;
-    js += `  ${id}_cb.type = 'checkbox';\n`;
-    js += `  ${id}_cb.id = 'comp-${id}-input';\n`;
-    if (props.Checked) js += `  ${id}_cb.checked = true;\n`;
+    const isOn = props.On ? 'on' : 'off';
+    js += `  var ${id}_track = document.createElement('div');\n`;
+    js += `  ${id}_track.className = 'comp-switch-track ${isOn}';\n`;
+    js += `  var ${id}_thumb = document.createElement('div');\n`;
+    js += `  ${id}_thumb.className = 'comp-switch-thumb';\n`;
+    js += `  ${id}_track.appendChild(${id}_thumb);\n`;
     js += `  var ${id}_label = document.createElement('span');\n`;
     js += `  ${id}_label.textContent = '${escapeHtml(props.Text || '')}';\n`;
-    js += `  ${id}_el.appendChild(${id}_cb);\n`;
+    js += `  ${id}_el.appendChild(${id}_track);\n`;
     js += `  ${id}_el.appendChild(${id}_label);\n`;
+    js += `  ${id}_el._state = { on: ${props.On ? 'true' : 'false'} };\n`;
+    js += `  ${id}_el.addEventListener('click', function() {\n`;
+    js += `    this._state.on = !this._state.on;\n`;
+    js += `    ${id}_track.className = 'comp-switch-track ' + (this._state.on ? 'on' : 'off');\n`;
+    js += `    if (typeof window['${id}_Changed'] === 'function') window['${id}_Changed']();\n`;
+    js += `  });\n`;
   }
 
   if (type === 'Image' || type === 'ImagePicker' || type === 'FilePicker' || type === 'ContactPicker') {
@@ -661,13 +682,20 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
   if (props.ReadOnly) {
     js += `  ${id}_el.readOnly = true;\n`;
   }
-  if (props.Enabled === false && tag === 'button') {
+  if (props.Enabled === false) {
     js += `  ${id}_el.disabled = true;\n`;
   }
 
-  if (type === 'Image' && (props.Picture || props.Image)) {
-    const pic = String(props.Picture || props.Image);
-    js += `  ${id}_el.src = '${escapeHtml(mediaUrl(pic))}';\n`;
+  if (type === 'Image') {
+    if (props.Picture || props.Image) {
+      const pic = String(props.Picture || props.Image);
+      js += `  ${id}_el.src = '${escapeHtml(mediaUrl(pic))}';\n`;
+      js += `  ${id}_el.onerror = function() { this.style.display='none'; var p=document.createElement('div'); p.className='comp-image-placeholder'; p.textContent='🖼️'; p.style.width='100%'; p.style.height='100%'; this.parentNode.replaceChild(p, this); };\n`;
+    } else {
+      js += `  ${id}_el.removeAttribute('src');\n`;
+      js += `  ${id}_el.style.background = '#f0f0f0';\n`;
+      js += `  ${id}_el.style.objectFit = 'contain';\n`;
+    }
   }
   if (type === 'VideoPlayer' && (props.Source || props.source)) {
     const src = String(props.Source || props.source);
@@ -702,8 +730,27 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
   if (props.FontItalic) {
     js += `  ${id}_el.style.fontStyle = 'italic';\n`;
   }
+  if (props.TextAlignment) {
+    const ta = props.TextAlignment;
+    const align = ta === 2 || ta === 'center' || ta === 'Center' ? 'center' : ta === 3 || ta === 'right' || ta === 'Right' ? 'right' : 'left';
+    js += `  ${id}_el.style.textAlign = '${align}';\n`;
+    if (type === 'Button' || type === 'ListPicker' || type === 'ContactPicker' || type === 'PhoneNumberPicker' || type === 'EmailPicker' || type === 'FilePicker' || type === 'ImagePicker' || type === 'DatePicker' || type === 'TimePicker') {
+      js += `  ${id}_el.style.justifyContent = ${align === 'center' ? "'center'" : align === 'right' ? "'flex-end'" : "'flex-start'"};\n`;
+    }
+  }
   if (props.Radius !== undefined) {
     js += `  ${id}_el.style.borderRadius = '${props.Radius}px';\n`;
+  }
+  if (props.Shape && ['Button', 'ListPicker', 'ContactPicker', 'PhoneNumberPicker', 'EmailPicker', 'FilePicker', 'ImagePicker', 'DatePicker', 'TimePicker'].includes(type)) {
+    const shape = props.Shape;
+    const br = shape === 'rounded' ? '9999px' : shape === 'rectangular' ? '0px' : shape === 'oval' ? '50%' : '12px';
+    js += `  ${id}_el.style.borderRadius = '${br}';\n`;
+  }
+  if (props.Enabled === false) {
+    js += `  ${id}_el.disabled = true;\n`;
+  }
+  if (type === 'CheckBox' && props.Text) {
+    js += `  ${id}_el.querySelector('span').textContent = '${escapeHtml(props.Text)}';\n`;
   }
 
   const clickTypes = ['Button', 'ListPicker', 'ContactPicker', 'PhoneNumberPicker', 'EmailPicker', 'FilePicker', 'ImagePicker', 'DatePicker', 'TimePicker'];
@@ -717,7 +764,7 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
       js += `  state['${id}'] = state['${id}'] || {}; state['${id}']['Text'] = '${escapeHtml(String(props.Text))}';\n`;
     }
   }
-  if (type === 'CheckBox' || type === 'Switch') {
+  if (type === 'CheckBox') {
     js += `  ${id}_el.querySelector('input').addEventListener('change', function() { if (typeof window['${id}_Changed'] === 'function') window['${id}_Changed'](); });\n`;
   }
   if (type === 'Slider') {
@@ -747,25 +794,34 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
   }
 
   if (arrangementClass && arrangementClass.startsWith('arrangement-')) {
-    const hAlign = props.AlignHorizontal;
-    const vAlign = props.AlignVertical;
+    const getAlign = (name: string) => {
+      if (props[name] !== undefined) return props[name];
+      const lower = name.toLowerCase();
+      const found = Object.keys(props).find(k => k.toLowerCase() === lower);
+      return found ? props[found] : undefined;
+    };
+    const hAlign = getAlign('AlignHorizontal');
+    const vAlign = getAlign('AlignVertical');
     if (hAlign !== undefined || vAlign !== undefined) {
       js += `  ${id}_el.style.display = 'flex';\n`;
     }
     if (arrangementClass === 'arrangement-horizontal' || arrangementClass === 'arrangement-horizontal-scroll') {
-      if (hAlign === 2) js += `  ${id}_el.style.justifyContent = 'center';\n`;
-      else if (hAlign === 3) js += `  ${id}_el.style.justifyContent = 'flex-end';\n`;
-      else js += `  ${id}_el.style.justifyContent = 'flex-start';\n`;
-      if (vAlign === 2) js += `  ${id}_el.style.alignItems = 'center';\n`;
-      else if (vAlign === 3) js += `  ${id}_el.style.alignItems = 'flex-end';\n`;
-      else js += `  ${id}_el.style.alignItems = 'stretch';\n`;
+      const hCenter = hAlign === 2 || hAlign === 'Center' || hAlign === 'center';
+      const hEnd = hAlign === 3 || hAlign === 'Right' || hAlign === 'right';
+      js += `  ${id}_el.style.justifyContent = ${hCenter ? "'center'" : hEnd ? "'flex-end'" : "'flex-start'"};\n`;
+      const vCenter = vAlign === 2 || vAlign === 'Center' || vAlign === 'center';
+      const vEnd = vAlign === 3 || vAlign === 'Bottom' || vAlign === 'bottom';
+      js += `  ${id}_el.style.alignItems = ${vCenter ? "'center'" : vEnd ? "'flex-end'" : "'flex-start'"};\n`;
     } else if (arrangementClass === 'arrangement-vertical' || arrangementClass === 'arrangement-vertical-scroll') {
-      if (vAlign === 2) js += `  ${id}_el.style.alignItems = 'center';\n`;
-      else if (vAlign === 3) js += `  ${id}_el.style.alignItems = 'flex-end';\n`;
-      else js += `  ${id}_el.style.alignItems = 'stretch';\n`;
-      if (hAlign === 2) js += `  ${id}_el.style.justifyContent = 'center';\n`;
-      else if (hAlign === 3) js += `  ${id}_el.style.justifyContent = 'flex-end';\n`;
-      else js += `  ${id}_el.style.justifyContent = 'flex-start';\n`;
+      const hCenter2 = hAlign === 2 || hAlign === 'Center' || hAlign === 'center';
+      const hEnd2 = hAlign === 3 || hAlign === 'Right' || hAlign === 'right';
+      js += `  ${id}_el.style.alignItems = ${hCenter2 ? "'center'" : hEnd2 ? "'flex-end'" : "'flex-start'"};\n`;
+      const vCenter2 = vAlign === 2 || vAlign === 'Center' || vAlign === 'center';
+      const vEnd2 = vAlign === 3 || vAlign === 'Bottom' || vAlign === 'bottom';
+      js += `  ${id}_el.style.justifyContent = ${vCenter2 ? "'center'" : vEnd2 ? "'flex-end'" : "'flex-start'"};\n`;
+    } else if (arrangementClass === 'arrangement-table') {
+      const numCols = props.Columns || 2;
+      js += `  ${id}_el.style.gridTemplateColumns = 'repeat(${Number(numCols)}, 1fr)';\n`;
     }
   }
 
@@ -1651,7 +1707,22 @@ function generateAppJs(appState: any): string {
     viewport.className = 'screen-viewport';
     var inner = document.createElement('div');
     inner.className = 'screen-inner';
+    inner.style.display = 'flex';
+    inner.style.flexDirection = 'column';
 `;
+
+    const screenAlignH = screen.alignHorizontal;
+    const screenAlignV = screen.alignVertical;
+    if (screenAlignH !== undefined) {
+      const hCenter = screenAlignH === 'Center' || screenAlignH === '2' || screenAlignH === 2;
+      const hEnd = screenAlignH === 'Right' || screenAlignH === '3' || screenAlignH === 3;
+      js += `    inner.style.alignItems = ${hCenter ? "'center'" : hEnd ? "'flex-end'" : "'flex-start'"};\n`;
+    }
+    if (screenAlignV !== undefined) {
+      const vCenter = screenAlignV === 'Center' || screenAlignV === '2' || screenAlignV === 2;
+      const vEnd = screenAlignV === 'Bottom' || screenAlignV === '3' || screenAlignV === 3;
+      js += `    inner.style.justifyContent = ${vCenter ? "'center'" : vEnd ? "'flex-end'" : "'flex-start'"};\n`;
+    }
 
     if (screen.backgroundColor && screen.backgroundColor !== '#ffffff') {
       js += `    viewport.style.backgroundColor = '${screen.backgroundColor}';\n`;

@@ -203,6 +203,16 @@ export default function PropertiesPanel({ appState }) {
     if (metadata?.properties) {
       metadata.properties.forEach(propDef => {
         const name = propDef.name;
+        // Check for case variant already in props (e.g. 'visible' vs 'Visible')
+        const lower = name.toLowerCase();
+        const existingKey = Object.keys(fullProps).find(k => k.toLowerCase() === lower);
+        if (existingKey !== undefined) {
+          if (existingKey !== name) {
+            fullProps[name] = fullProps[existingKey];
+            delete fullProps[existingKey];
+          }
+          return;
+        }
         // Don't overwrite existing values
         if (fullProps[name] !== undefined) return;
 
@@ -318,6 +328,11 @@ export default function PropertiesPanel({ appState }) {
         else categories['Other'].push([key, value]);
       });
 
+      // Sort each category alphabetically by key for stable ordering
+      Object.keys(categories).forEach(cat => {
+        categories[cat].sort((a, b) => a[0].localeCompare(b[0]));
+      });
+
       // Remove empty categories
       return Object.fromEntries(
         Object.entries(categories).filter(([, items]) => items.length > 0)
@@ -386,14 +401,16 @@ export default function PropertiesPanel({ appState }) {
         return (
           <div
             key={key}
-            className="flex items-center justify-between py-3.5 px-5 border-b border-slate-100 bg-white hover:bg-slate-50/50 transition-all duration-200"
+            className="flex items-center justify-between py-3.5 px-5 border-b border-slate-100 bg-white hover:bg-slate-50/50 transition-all duration-200 cursor-pointer select-none"
+            onClick={() => updateProp(id, key, !value)}
+            role="switch"
+            aria-checked={value}
           >
             <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
               {key.replace(/([A-Z])/g, ' $1').trim()}
             </span>
             <div
-              className={`w-9 h-5 rounded-full transition-all relative shrink-0 cursor-pointer ${value ? 'bg-blue-600 shadow-md shadow-blue-500/25' : 'bg-slate-200'}`}
-              onClick={() => updateProp(id, key, !value)}
+              className={`w-9 h-5 rounded-full transition-all relative shrink-0 ${value ? 'bg-blue-600 shadow-md shadow-blue-500/25' : 'bg-slate-200'}`}
             >
               <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${value ? 'left-5' : 'left-1'}`} />
             </div>

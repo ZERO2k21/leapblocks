@@ -109,14 +109,13 @@ const getKeyVariants = (key: string): string[] => {
 
 const setPropNormalized = (props: Record<string, any>, key: string, value: any): Record<string, any> => {
   const next = { ...props };
-  let targetKey = key;
-  for (const candidate of getKeyVariants(key)) {
-    if (Object.prototype.hasOwnProperty.call(next, candidate)) {
-      targetKey = candidate;
-      break;
+  const lower = key.toLowerCase();
+  for (const existingKey of Object.keys(next)) {
+    if (existingKey.toLowerCase() === lower && existingKey !== key) {
+      delete next[existingKey];
     }
   }
-  next[targetKey] = value;
+  next[key] = value;
   return next;
 };
 
