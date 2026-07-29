@@ -191,7 +191,7 @@ html, body {
   overflow: hidden;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
-  background: #0f172a;
+  background: #ffffff;
 }
 
 #app-root {
@@ -199,10 +199,7 @@ html, body {
   height: 100%;
   position: relative;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #0f172a;
+  background: #ffffff;
 }
 
 .startup-loading,
@@ -238,26 +235,21 @@ html, body {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  align-items: center;
-  justify-content: center;
-  background: #0f172a;
+  background: #ffffff;
 }
 
 .screen.active {
-  display: flex;
+  display: block;
 }
 
 .screen-viewport {
-  width: ${designViewport.width}px;
-  height: ${designViewport.height}px;
-  flex: 0 0 auto;
+  width: 100%;
+  height: 100%;
+  flex: 1 1 auto;
   position: relative;
   overflow: hidden;
   background: #ffffff;
-  transform-origin: center center;
   -webkit-font-smoothing: antialiased;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2);
-  border-radius: 16px;
 }
 
 .screen-inner {
@@ -690,11 +682,11 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     if (props.Picture || props.Image) {
       const pic = String(props.Picture || props.Image);
       js += `  ${id}_el.src = '${escapeHtml(mediaUrl(pic))}';\n`;
-      js += `  ${id}_el.onerror = function() { this.style.display='none'; var p=document.createElement('div'); p.className='comp-image-placeholder'; p.textContent='🖼️'; p.style.width='100%'; p.style.height='100%'; this.parentNode.replaceChild(p, this); };\n`;
+      js += `  ${id}_el.onerror = function() { this.style.background='#f0f0f0'; this.alt=''; };\n`;
     } else {
       js += `  ${id}_el.removeAttribute('src');\n`;
+      js += `  ${id}_el.alt = '';\n`;
       js += `  ${id}_el.style.background = '#f0f0f0';\n`;
-      js += `  ${id}_el.style.objectFit = 'contain';\n`;
     }
   }
   if (type === 'VideoPlayer' && (props.Source || props.source)) {
