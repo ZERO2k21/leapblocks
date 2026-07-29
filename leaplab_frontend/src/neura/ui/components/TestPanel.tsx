@@ -292,28 +292,16 @@ export default function TestPanel({
                                     </div>
                                 </div>
 
-                                {/* Class breakdown */}
-                                {sortedConfidences.length > 1 && (
-                                    <div className="w-full mb-3.5">
-                                        <span className="text-[9px] font-extrabold text-gray-500 uppercase tracking-wider block mb-1.5">All Classes</span>
-                                        <div className="flex flex-col gap-1.5">
-                                            {sortedConfidences.slice(0, 4).map(([label, confidence]) => {
-                                                const val = Math.round(confidence * 100)
-                                                return (
-                                                    <div key={label}>
-                                                        <div className="flex justify-between mb-0.5">
-                                                            <span className="text-[10px] font-bold text-gray-700 capitalize">{label}</span>
-                                                            <span className="text-[10px] font-bold text-gray-500">{val}%</span>
-                                                        </div>
-                                                        <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
-                                                            <div className="h-full rounded-full bg-gradient-to-r from-[#630ed4] to-[#7c3aed] transition-[width] duration-500 ease-out" style={{ width: `${val}%` }} />
-                                                        </div>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
+                                {/* Top predicted result only */}
+                                <div className="w-full mb-3.5">
+                                    <div className="rounded-xl border border-[#630ed4]/10 bg-[#f5f3ff] p-3 text-center">
+                                        <span className="text-[9px] font-extrabold text-[#630ed4] uppercase tracking-wider block mb-1">
+                                            Top Predicted Class
+                                        </span>
+                                        <p className="text-sm font-extrabold text-[#131b2e] capitalize">{getPredictionLabel()}</p>
+                                        <p className="text-xs font-bold text-gray-500 mt-1">{displayConfidence}% accuracy</p>
                                     </div>
-                                )}
+                                </div>
 
                                 {/* Action buttons */}
                                 <div className="flex gap-2 w-full">
@@ -412,29 +400,11 @@ function LegacyTestPanel({ prediction, isProcessing, children }: { prediction: {
                         </div>
                     </div>
                     <div className="flex flex-col gap-2">
-                        {sortedConfidences.map(([label, confidence]) => {
-                            const val = Math.round(confidence * 100)
-                            return (
-                                <div key={label}>
-                                    <div className="flex justify-between mb-0.5">
-                                        <span className="text-xs font-bold text-gray-700 capitalize">{label}</span>
-                                        <span className="text-xs font-bold text-gray-500">{val}%</span>
-                                    </div>
-                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full rounded-full transition-[width] duration-500 ease-out ${
-                                                confidence >= 0.7
-                                                    ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
-                                                    : confidence >= 0.4
-                                                    ? 'bg-gradient-to-r from-amber-400 to-amber-600'
-                                                    : 'bg-gradient-to-r from-red-300 to-red-500'
-                                            }`}
-                                            style={{ width: `${val}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            )
-                        })}
+                        <div className="rounded-xl border border-[#630ed4]/10 bg-[#f5f3ff] p-3 text-center">
+                            <p className="text-[9px] font-extrabold text-[#630ed4] uppercase tracking-wider mb-1">Top Predicted Class</p>
+                            <p className="text-base font-bold text-[#131b2e] capitalize">{prediction.label}</p>
+                            <p className="text-xs font-bold text-gray-500 mt-1">{Math.round(maxConfidence * 100)}% accuracy</p>
+                        </div>
                     </div>
                 </div>
             )}

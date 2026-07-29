@@ -774,27 +774,6 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                                     </div>
                                 </div>
                             )}
-
-                            {/* All Confidences */}
-                            {prediction && (
-                                <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
-                                    <p className="text-[10px] font-bold text-gray-700 mb-2">All Confidences</p>
-                                    <div className="flex flex-col gap-1.5">
-                                        {Object.entries(prediction.confidences)
-                                            .sort(([, a], [, b]) => b - a)
-                                            .map(([label, conf]) => (
-                                                <div key={label} className="flex items-center gap-2">
-                                                    <span className="text-[9px] font-bold text-gray-600 w-20 truncate">{label}</span>
-                                                    <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                                        <div className="h-full rounded-full transition-all bg-indigo-600" style={{ width: `${conf * 100}%` }} />
-                                                    </div>
-                                                    <span className="text-[9px] font-bold text-indigo-600">{Math.round(conf * 100)}%</span>
-                                                </div>
-                                            ))
-                                        }
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>

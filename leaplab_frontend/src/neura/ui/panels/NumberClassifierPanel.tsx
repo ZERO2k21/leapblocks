@@ -876,17 +876,6 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                             <h3 className="text-base font-extrabold text-[#131b2e]">It's {prediction.label}! 🎉</h3>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col gap-1.5">
-                                        {Object.entries(prediction.confidences).sort(([, a], [, b]) => b - a).map(([label, confidence]) => (
-                                            <div key={label} className="flex items-center gap-2">
-                                                <span className="text-[11px] font-bold text-[#131b2e] w-6 text-center">{label}</span>
-                                                <div className="flex-1 h-2 bg-[#ede9fe] rounded-full overflow-hidden">
-                                                    <div className="h-full rounded-full bg-gradient-to-r from-[#630ed4] to-[#7c3aed] transition-[width] duration-500 ease-out" style={{ width: `${confidence * 100}%` }} />
-                                                </div>
-                                                <span className="text-[11px] font-bold text-[#630ed4] min-w-[36px] text-right">{Math.round(confidence * 100)}%</span>
-                                            </div>
-                                        ))}
-                                    </div>
                                 </div>
                             )}
 

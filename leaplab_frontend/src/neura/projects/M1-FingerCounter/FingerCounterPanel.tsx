@@ -520,26 +520,6 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                                     </div>
                                 </div>
                             )}
-
-                            {/* Class Confidences */}
-                            {prediction && Object.keys(prediction.confidences).length > 1 && (
-                                <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
-                                    <p className="text-[10px] font-bold text-gray-700 mb-2">📊 All Classes</p>
-                                    <div className="flex flex-col gap-1.5">
-                                        {Object.entries(prediction.confidences).sort(([,a],[,b]) => b - a).slice(0, 5).map(([label, conf]) => (
-                                            <div key={label}>
-                                                <div className="flex justify-between mb-0.5">
-                                                    <span className="text-[9px] font-bold text-gray-600">{label}</span>
-                                                    <span className="text-[9px] font-bold text-gray-400">{Math.round(conf * 100)}%</span>
-                                                </div>
-                                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                    <div className="h-full rounded-full" style={{ width: `${conf * 100}%`, background: FINGER_LABELS[label] ? COUNT_COLORS[FINGER_LABELS[label]] : '#0ea5e9' }} />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>

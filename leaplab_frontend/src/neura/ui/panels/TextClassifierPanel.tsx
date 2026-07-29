@@ -236,22 +236,6 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="flex-1 overflow-auto flex flex-col gap-2">
-                                        {Object.entries(prediction.confidences).sort(([, a], [, b]) => b - a).map(([label, confidence]) => {
-                                            const val = Math.round(confidence * 100)
-                                            return (
-                                                <div key={label}>
-                                                    <div className="flex justify-between mb-0.5">
-                                                        <span className="text-[11px] font-bold text-gray-700 capitalize">{label}</span>
-                                                        <span className="text-[11px] font-bold text-gray-500">{val}%</span>
-                                                    </div>
-                                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                        <div className={`h-full rounded-full transition-[width] duration-500 ease-out ${confidence >= 0.7 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : confidence >= 0.4 ? 'bg-gradient-to-r from-amber-400 to-amber-600' : 'bg-gradient-to-r from-red-300 to-red-500'}`} style={{ width: `${val}%` }} />
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
                                 </div>
                             )}
                             {!isProcessing && !prediction && (

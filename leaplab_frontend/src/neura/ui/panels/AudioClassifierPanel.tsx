@@ -666,38 +666,6 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                                 </span>
                                             </div>
                                         </div>
-
-                                        {/* All Classes Breakdown */}
-                                        <div className="flex-1 min-h-0 overflow-y-auto neura-scrollbar">
-                                            <span className="text-[9px] font-extrabold text-gray-500 uppercase tracking-wider block mb-1.5">All Classes</span>
-                                            <div className="flex flex-col gap-1.5">
-                                                {Object.entries(prediction.confidences)
-                                                    .sort(([, a], [, b]) => b - a)
-                                                    .map(([label, confidence]) => {
-                                                        const val = Math.round(confidence * 100)
-                                                        return (
-                                                            <div key={label}>
-                                                                <div className="flex justify-between mb-0.5">
-                                                                    <span className="text-[10px] font-bold text-gray-700 capitalize">{label}</span>
-                                                                    <span className="text-[10px] font-bold text-gray-500">{val}%</span>
-                                                                </div>
-                                                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                                    <div
-                                                                        className={`h-full rounded-full transition-[width] duration-500 ease-out ${
-                                                                            confidence >= 0.7
-                                                                                ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
-                                                                                : confidence >= 0.4
-                                                                                    ? 'bg-gradient-to-r from-amber-400 to-amber-600'
-                                                                                    : 'bg-gradient-to-r from-red-300 to-red-500'
-                                                                        }`}
-                                                                        style={{ width: `${val}%` }}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        )
-                                                    })}
-                                            </div>
-                                        </div>
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-center justify-center h-full py-5">

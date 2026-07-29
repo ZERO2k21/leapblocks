@@ -180,7 +180,10 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
             })
             if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
                 const start = performance.now()
-                const result = await classifierRef.current.predictFromImage(img, 3)
+                const result = await Promise.race([
+                    classifierRef.current.predictFromImage(img, 3),
+                    new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Prediction timeout')), 12000))
+                ])
                 const elapsed = Math.round(performance.now() - start)
                 if (result) {
                     setPrediction(result)
@@ -306,7 +309,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
 
     // Rebuild KNN classifier from saved samples (with abort pattern and augmentation)
     useEffect(() => {
-        if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
+        if (mode.mode === 'train' && mode.project) {
             const thisBuild = ++rebuildAbortRef.current
             let cancelled = false
             setModelLoading(true)
@@ -338,7 +341,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
 
     // Test mode: auto-start camera and run throttled predictions
     useEffect(() => {
-        if (mode.mode !== 'test' || modelLoading) return
+        if (mode.mode !== 'test') return
         // Auto-start camera when entering test mode
         if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
             testCameraStartedRef.current = true
@@ -356,7 +359,10 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         canvasRef.current.width = 640
                         canvasRef.current.height = 480
                         ctx.drawImage(videoRef.current, 0, 0, 640, 480)
-                        const result = await classifierRef.current.predictFromImage(canvasRef.current, 3)
+                        const result = await Promise.race([
+                            classifierRef.current.predictFromImage(canvasRef.current, 3),
+                            new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Prediction timeout')), 12000))
+                        ])
                         const elapsed = Math.round(performance.now() - start)
                         if (result && result.confidences[result.label] >= confidenceThreshold) {
                             setPrediction(result)
@@ -367,12 +373,14 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                             setHandDetected(false)
                         }
                     }
-                } catch (e) { console.warn('[HandPose] Prediction error:', e) }
-                setIsProcessing(false)
-                isPredictingRef.current = false
+                } catch (e) { console.warn('[HandPose] Prediction error:', e) } finally {
+                    setIsProcessing(false)
+                    isPredictingRef.current = false
+                }
             }
         }
         if (streamStateRef.current || stream) {
+            setIsProcessing(false)
             lastPredictTimeRef.current = performance.now()
             const tick = () => {
                 const now = performance.now()
@@ -385,7 +393,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
             animFrameRef.current = requestAnimationFrame(tick)
             return () => cancelAnimationFrame(animFrameRef.current)
         }
-    }, [mode.mode, stream, modelLoading, startCamera, confidenceThreshold])
+    }, [mode.mode, stream, startCamera, confidenceThreshold])
 
     // Collect mode: throttled hand detection loop for overlay drawing
     useEffect(() => {
