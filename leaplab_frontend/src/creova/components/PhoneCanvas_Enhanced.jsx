@@ -683,11 +683,11 @@ export default function PhoneCanvasEnhanced({ appState }) {
                     <div
                         key={comp.id}
                         className={`${baseClasses} text-slate-900`}
-                        style={{
-                            ...style,
-                            padding: '2px 0',
-                            display: 'inline'
-                        }}
+                            style={{
+                                ...style,
+                                padding: '2px 0',
+                                display: 'inline'
+                            }}
                         onClick={handleClick}
                     >
                         {comp.props.Text || 'Label'}

@@ -70,4 +70,4 @@ const jobManager = {
   }
 };
 
-export = jobManager;
+export default jobManager;

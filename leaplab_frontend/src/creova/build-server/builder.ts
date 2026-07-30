@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import { exec } from 'child_process';
-import * as jobManager from './jobManager';
+import jobManager from './jobManager';
 
 const PROJECT_ROOT = path.join(__dirname, '..', '..', '..');
 const TOOLS = {
@@ -137,4 +137,4 @@ const builder = {
   }
 };
 
-export = builder;
+export default builder;

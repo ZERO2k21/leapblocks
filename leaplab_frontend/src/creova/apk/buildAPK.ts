@@ -1,4 +1,4 @@
-import ApkInjector = require('./apkInjector');
+import ApkInjector from './apkInjector';
 import { generateWebApp } from './htmlGenerator';
 import path from 'path';
 import fs from 'fs-extra';
@@ -453,4 +453,4 @@ versionInfo:
   }
 }
 
-export = ApkBuilder;
+export default ApkBuilder;

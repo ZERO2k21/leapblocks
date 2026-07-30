@@ -41,22 +41,43 @@ function walkComponentTree(components: any[], fn: (comp: any) => void): void {
 
 function generateComponentCss(comp: any): string {
   const { id, type, props = {} } = comp;
+  if (props.Visible === false) return '';
   let css = '';
   const selector = cssIdSelector('comp-' + id);
   const styles: Record<string, string> = {};
 
-  if (props.Width && props.Width !== 'auto') {
-    styles.width = typeof props.Width === 'number' || /^\d+$/.test(props.Width) ? (props.Width + 'px') : props.Width;
+  console.log(`[CSS] ${id} (${type}) props:`, JSON.parse(JSON.stringify(props)));
+
+  const LENGTH_AUTO = -1;
+  const LENGTH_FILL = -2;
+
+  if (props.Width !== undefined && props.Width !== null) {
+    if (props.Width === LENGTH_FILL) styles.width = '100%';
+    else if (props.Width === LENGTH_AUTO) styles.width = 'auto';
+    else if (typeof props.Width === 'number' && props.Width > 0) styles.width = props.Width + 'px';
+    else if (props.WidthPercent != null) styles.width = props.WidthPercent + '%';
+    else if (props.Width !== 'auto' && props.Width !== 0) {
+      styles.width = typeof props.Width === 'number' || /^\d+$/.test(props.Width) ? (props.Width + 'px') : props.Width;
+    }
   }
-  if (props.Height && props.Height !== 'auto') {
-    styles.height = typeof props.Height === 'number' || /^\d+$/.test(props.Height) ? (props.Height + 'px') : props.Height;
+  if (props.Height !== undefined && props.Height !== null) {
+    if (props.Height === LENGTH_FILL) styles.height = '100%';
+    else if (props.Height === LENGTH_AUTO) styles.height = 'auto';
+    else if (typeof props.Height === 'number' && props.Height > 0) styles.height = props.Height + 'px';
+    else if (props.HeightPercent != null) styles.height = props.HeightPercent + '%';
+    else if (props.Height !== 'auto' && props.Height !== 0) {
+      styles.height = typeof props.Height === 'number' || /^\d+$/.test(props.Height) ? (props.Height + 'px') : props.Height;
+    }
   }
   if (props.BackgroundColor && props.BackgroundColor !== 'none') styles.backgroundColor = props.BackgroundColor;
   if (props.TextColor) styles.color = props.TextColor;
   if (props.FontSize) styles.fontSize = typeof props.FontSize === 'number' ? props.FontSize + 'px' : props.FontSize;
   if (props.FontBold) styles.fontWeight = 'bold';
   if (props.FontItalic) styles.fontStyle = 'italic';
-  if (props.Visible === false) styles.display = 'none';
+  if (props.TextAlignment || type === "Label") {
+    const ta = props.TextAlignment;
+    styles.textAlign = ta === 2 || ta === 'center' || ta === 'Center' ? 'center' : ta === 3 || ta === 'right' || ta === 'Right' ? 'right' : 'center';
+  }
   if (props.Image || props.Picture) {
     styles.backgroundImage = `url("${encodeURI(mediaUrl(props.Image || props.Picture))}")`;
     styles.backgroundSize = '100% 100%';
@@ -69,6 +90,7 @@ function generateComponentCss(comp: any): string {
       css += `  ${camelToKebab(prop)}: ${val};\n`;
     }
     css += '}\n';
+    console.log(`[CSS-OUTPUT] ${id} generated CSS:\n${css}`);
   }
 
   if (type === 'Canvas' && props.PaintColor) {
@@ -505,6 +527,9 @@ html, body {
     });
   }
 
+  console.log('[CSS-FINAL] Generated CSS length:', css.length);
+  console.log('[CSS-FINAL] CSS preview (first 3000 chars):', css.substring(0, 3000));
+
   return css;
 }
 
@@ -523,6 +548,10 @@ function validateComponentIdentifiers(screens: any[]): void {
 
 function generateComponentCreation(comp: any, parentVar: string, parentType?: string): string {
   const { id, type, props = {} } = comp;
+
+  console.log(`[GENERATE] ${id} (${type}) parent=${parentVar} parentType=${parentType || 'none'}`);
+  console.log(`[GENERATE] ${id} props:`, JSON.parse(JSON.stringify(props)));
+
   const tagMap: Record<string, string> = {
     Button: 'button', Label: 'span', TextBox: 'input', PasswordTextBox: 'input',
     Image: 'img', ListView: 'div', CheckBox: 'div', Switch: 'div', Slider: 'input',
@@ -562,6 +591,7 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     else if (props.Width === LENGTH_AUTO) w = 'auto';
     else if (typeof props.Width === 'number' && props.Width > 0) w = props.Width + 'px';
     else if (props.WidthPercent != null) w = props.WidthPercent + '%';
+    console.log(`[WIDTH] ${id} raw=${JSON.stringify(props.Width)} computed=${w || 'none'}`);
     if (w) js += `  ${id}_el.style.width = '${w}';\n`;
   }
   if (props.Height !== undefined && props.Height !== null && type !== 'Canvas') {
@@ -759,6 +789,8 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
   if (type === 'Label') {
     const text = props.Text || '';
     js += `  ${id}_el.textContent = '${escapeHtml(text)}';\n`;
+    js += `  ${id}_el.style.display = 'inline';\n`;
+    console.log(`[LABEL] ${id} Text="${text}" TextAlignment=${JSON.stringify(props.TextAlignment)} display=inline`);
   }
 
   if (props.FontSize) {
@@ -784,9 +816,10 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     const tf = typefaceMap[Number(props.FontTypeface)];
     if (tf) js += `  ${id}_el.style.fontFamily = '${tf}';\n`;
   }
-  if (props.TextAlignment) {
+  if (props.TextAlignment || type === "Label") {
     const ta = props.TextAlignment;
-    const align = ta === 2 || ta === 'center' || ta === 'Center' ? 'center' : ta === 3 || ta === 'right' || ta === 'Right' ? 'right' : 'left';
+    const align = ta === 2 || ta === 'center' || ta === 'Center' ? 'center' : ta === 3 || ta === 'right' || ta === 'Right' ? 'right' : 'center';
+    console.log(`[TEXT-ALIGN] ${id} raw=${JSON.stringify(ta)} resolved=${align}`);
     js += `  ${id}_el.style.textAlign = '${align}';\n`;
     if (type === 'Button' || type === 'ListPicker' || type === 'ContactPicker' || type === 'PhoneNumberPicker' || type === 'EmailPicker' || type === 'FilePicker' || type === 'ImagePicker' || type === 'DatePicker' || type === 'TimePicker') {
       js += `  ${id}_el.style.justifyContent = ${align === 'center' ? "'center'" : align === 'right' ? "'flex-end'" : "'flex-start'"};\n`;
@@ -856,6 +889,12 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     };
     const hAlign = getAlign('AlignHorizontal');
     const vAlign = getAlign('AlignVertical');
+
+    console.log(`[ARRANGEMENT] ${id} (${arrangementClass}) hAlign=${JSON.stringify(hAlign)} vAlign=${JSON.stringify(vAlign)}`);
+    console.log(`[ARRANGEMENT] ${id} all prop keys:`, Object.keys(props));
+    console.log(`[ARRANGEMENT] ${id} AlignHorizontal raw:`, props['AlignHorizontal'], 'AlignVertical raw:', props['AlignVertical']);
+    console.log(`[ARRANGEMENT] ${id} alignHorizontal raw:`, props['alignHorizontal'], 'alignVertical raw:', props['alignVertical']);
+
     if (hAlign !== undefined || vAlign !== undefined) {
       js += `  ${id}_el.style.display = 'flex';\n`;
     }
@@ -881,6 +920,8 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
     } else if (arrangementClass === 'arrangement-vertical' || arrangementClass === 'arrangement-vertical-scroll') {
       const hCenter2 = hAlign === 2 || hAlign === 'Center' || hAlign === 'center';
       const hEnd2 = hAlign === 3 || hAlign === 'Right' || hAlign === 'right';
+      console.log(`[VERT-ARR] ${id} hAlign=${JSON.stringify(hAlign)} hCenter2=${hCenter2} hEnd2=${hEnd2}`);
+      console.log(`[VERT-ARR] ${id} alignItems will be: ${hCenter2 ? "'center'" : hEnd2 ? "'flex-end'" : "'flex-start'"}`);
       js += `  ${id}_el.style.alignItems = ${hCenter2 ? "'center'" : hEnd2 ? "'flex-end'" : "'flex-start'"};\n`;
       const vCenter2 = vAlign === 2 || vAlign === 'Center' || vAlign === 'center';
       const vEnd2 = vAlign === 3 || vAlign === 'Bottom' || vAlign === 'bottom';
@@ -894,6 +935,7 @@ function generateComponentCreation(comp: any, parentVar: string, parentType?: st
   }
 
   js += `  ${parentVar}.appendChild(${id}_el);\n`;
+  console.log(`[GENERATE-END] ${id} (${type}) final JS:\n${js}`);
   return js;
 }
 
@@ -907,11 +949,15 @@ function getArrangementClass(arrangement: string): string {
     'table': 'arrangement-table',
     'absolute': 'arrangement-absolute'
   };
-  return map[arrangement.toLowerCase()] || '';
+  const result = map[arrangement.toLowerCase()] || '';
+  console.log(`[ARR-CLASS] arrangement="${arrangement}" resolved="${result}"`);
+  return result;
 }
 
 function generateComponentProxy(comp: any): string {
   const { id, type, props = {} } = comp;
+
+  console.log(`[PROXY] ${id} (${type}) props for proxy:`, JSON.parse(JSON.stringify(props)));
 
   if (type === 'Clock') {
     return `  var ${id} = new ClockShim('${id}', ${JSON.stringify(props)});\n`;
@@ -1691,9 +1737,13 @@ function generateAppJs(appState: any): string {
   var ScreenClasses = {};
 
   function getComponentValue(id, prop) { try { var v = (state[id] || {})[prop]; if (v === undefined) { console.log('[LeapApp] getComponentValue("' + id + '", "' + prop + '") — state missing, state keys:', Object.keys(state)); } return v; } catch(e) { console.log('[LeapApp] getComponentValue error:', e); return undefined; } }
-  function setComponentProperty(id, prop, value) { try { if (!state[id]) state[id] = {}; state[id][prop] = value; applyComponentProperty(id, prop, value); } catch(e) {} }
+  function setComponentProperty(id, prop, value) {
+    console.log('[LeapApp] setComponentProperty("' + id + '", "' + prop + '",', value, ')');
+    try { if (!state[id]) state[id] = {}; state[id][prop] = value; applyComponentProperty(id, prop, value); } catch(e) {}
+  }
   function applyComponentProperty(id, prop, value) {
     var el = document.getElementById('comp-' + id);
+    console.log('[LeapApp] applyComponentProperty("' + id + '", "' + prop + '",', value, ') el exists:', !!el);
     if (!el) return;
     if (prop === 'Text') { if (el.tagName === 'INPUT' || el.tagName === 'SELECT') { el.value = String(value || ''); } else { el.textContent = String(value || ''); } }
     else if (prop === 'BackgroundColor') el.style.backgroundColor = value || '';
@@ -1706,12 +1756,16 @@ function generateAppJs(appState: any): string {
     }
     else if (prop === 'TextAlignment') {
       var a = value === 2 || value === 'center' || value === 'Center' ? 'center' : value === 3 || value === 'right' || value === 'Right' ? 'right' : 'left';
+      console.log('[LeapApp] TextAlignment: raw=' + JSON.stringify(value) + ' resolved=' + a + ' tagName=' + el.tagName);
       el.style.textAlign = a;
       if (el.tagName === 'BUTTON') el.style.justifyContent = a === 'center' ? 'center' : a === 'right' ? 'flex-end' : 'flex-start';
     }
     else if (prop === 'NumbersOnly') { el.inputMode = value ? 'numeric' : 'text'; }
     else if (prop === 'ReadOnly') { el.readOnly = !!value; }
-    else if (prop === 'Width') el.style.width = typeof value === 'number' ? value + 'px' : value;
+    else if (prop === 'Width') {
+      console.log('[LeapApp] Width: raw=' + JSON.stringify(value) + ' computed=' + (typeof value === 'number' ? value + 'px' : value));
+      el.style.width = typeof value === 'number' ? value + 'px' : value;
+    }
     else if (prop === 'Height') el.style.height = typeof value === 'number' ? value + 'px' : value;
     else if (prop === 'FontSize') el.style.fontSize = typeof value === 'number' ? value + 'px' : value;
     else if (prop === 'FontBold') el.style.fontWeight = value ? 'bold' : '';
@@ -1777,6 +1831,11 @@ function generateAppJs(appState: any): string {
   for (const screen of screens) {
     const screenId = screen.id || 'Screen1';
     const title = screen.title || screenId;
+
+    console.log(`[SCREEN] ${screenId} alignHorizontal=${JSON.stringify(screen.alignHorizontal)} alignVertical=${JSON.stringify(screen.alignVertical)}`);
+    console.log(`[SCREEN] ${screenId} all keys:`, Object.keys(screen));
+    console.log(`[SCREEN] ${screenId} screens[0] =`, JSON.parse(JSON.stringify(screen)));
+
     js += `
   (function() {
     var screenEl = document.createElement('div');
@@ -1792,6 +1851,10 @@ function generateAppJs(appState: any): string {
 
     const screenAlignH = screen.alignHorizontal;
     const screenAlignV = screen.alignVertical;
+
+    console.log(`[SCREEN-ALIGN] ${screenId} screenAlignH=${JSON.stringify(screenAlignH)} screenAlignV=${JSON.stringify(screenAlignV)}`);
+    console.log(`[SCREEN-ALIGN] ${screenId} hCenter=${screenAlignH === 'Center'} hEnd=${screenAlignH === 'Right'}`);
+
     if (screenAlignH !== undefined) {
       const hCenter = screenAlignH === 'Center' || screenAlignH === '2' || screenAlignH === 2;
       const hEnd = screenAlignH === 'Right' || screenAlignH === '3' || screenAlignH === 3;
@@ -1845,6 +1908,8 @@ function generateAppJs(appState: any): string {
   // ── Init ──
   function init() {
     try {
+      console.log('[LeapApp] init() called');
+      console.log('[LeapApp] screens:', ${JSON.stringify(screens.map(s => ({ id: s.id, alignHorizontal: s.alignHorizontal, alignVertical: s.alignVertical, components: (s.components || []).map(c => ({ id: c.id, type: c.type, props: c.props })) })))});
       resizeScreens();
       navigateTo('${firstScreenId}');
       setTimeout(function() {
@@ -1865,6 +1930,24 @@ function generateAppJs(appState: any): string {
 }
 
 function generateWebApp(appState: any): Record<string, string> {
+  console.log('[WEBAPP] generateWebApp called with screens:', appState.screens?.map((s: any) => ({ id: s.id, alignHorizontal: s.alignHorizontal, alignVertical: s.alignVertical })));
+  console.log('[WEBAPP] Full appState:', JSON.parse(JSON.stringify(appState)));
+
+  // Summary log for debugging alignment
+  console.log('='.repeat(80));
+  console.log('=== ALIGNMENT DEBUG SUMMARY ===');
+  console.log('='.repeat(80));
+  for (const screen of (appState.screens || [])) {
+    console.log(`SCREEN: ${screen.id} alignH=${JSON.stringify(screen.alignHorizontal)} alignV=${JSON.stringify(screen.alignVertical)}`);
+    function logComp(comp: any, indent: string) {
+      const p = comp.props || {};
+      console.log(`${indent}${comp.id} (${comp.type}) Width=${JSON.stringify(p.Width)} TextAlignment=${JSON.stringify(p.TextAlignment)} AlignHorizontal=${JSON.stringify(p.AlignHorizontal)} AlignVertical=${JSON.stringify(p.AlignVertical)}`);
+      if (comp.children) comp.children.forEach((c: any) => logComp(c, indent + '  '));
+    }
+    (screen.components || []).forEach((c: any) => logComp(c, '  '));
+  }
+  console.log('='.repeat(80));
+
   return {
     'index.html': generateIndexHtml(appState),
     'styles.css': generateStylesCss(appState),
