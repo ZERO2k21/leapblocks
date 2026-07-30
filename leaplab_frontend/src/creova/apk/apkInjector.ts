@@ -1333,4 +1333,5 @@ class ApkInjector {
   }
 }
 
-export = ApkInjector;
+export default ApkInjector;
+

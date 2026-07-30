@@ -131,7 +131,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
                                 htmlFor="leaplab-username"
                                 className="block text-[11px] font-extrabold uppercase tracking-wider text-[#100051] mb-1.5"
                             >
-                                Email
+                                Email/Username
                             </label>
                             <div className="relative">
                                 <div className="absolute top-0 bottom-0 left-3.5 flex items-center pointer-events-none z-10">

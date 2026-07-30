@@ -61,4 +61,4 @@ async function buildApk(appState: any, appRoot: string, onLog: (msg: string) => 
   }
 }
 
-export = buildApk;
+export default buildApk;

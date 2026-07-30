@@ -36,10 +36,6 @@
     "ws:build:electra": "npm run build -w electra-compiler-server 2>/dev/null || true"
   },
   "keywords": [],
-  "author": {
-    "name": "chris jaron",
-    "email": "chrisjaron99@gmail.com"
-  },
   "license": "UNLICENSED",
   "devDependencies": {
     "@chromatic-com/storybook": "^5.1.1",

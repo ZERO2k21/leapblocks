@@ -1,4 +1,4 @@
-import ApkInjector = require('./apkInjector');
-import ApkBuilder = require('./buildAPK');
+import ApkInjector from './apkInjector';
+import ApkBuilder from './buildAPK';
 
 export { ApkInjector, ApkBuilder };
