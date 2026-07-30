@@ -28,6 +28,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
     const videoRef = useRef<HTMLVideoElement>(null)
     const hiddenCanvasRef = useRef<HTMLCanvasElement>(null)
     const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
+    const previewCanvasRef = useRef<HTMLCanvasElement>(null)
     const drawingCanvasRef = useRef<HTMLCanvasElement>(null)
     const classifierRef = useRef(new HandPoseClassifier())
     const streamRef = useRef<MediaStream | null>(null)
@@ -46,6 +47,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
     const streamStateRef = useRef<MediaStream | null>(null)
     const [inferenceTime, setInferenceTime] = useState(0)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
+    const [modelError, setModelError] = useState<string | null>(null)
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
     const [activeTool, setActiveTool] = useState<string | null>(null)
@@ -58,7 +60,17 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
     const lastColorCycleTimeRef = useRef(0)
     const undoStackRef = useRef<ImageData[]>([])
     const isPanningRef = useRef(false)
+    const handDetectedRef = useRef(false)
     const panStartRef = useRef<{ x: number; y: number; cx: number; cy: number } | null>(null)
+    const [smoothingAlpha, setSmoothingAlpha] = useState(0.35)
+    const smoothingAlphaRef = useRef(smoothingAlpha)
+    smoothingAlphaRef.current = smoothingAlpha
+    const smoothedIndexTipRef = useRef<{ x: number; y: number } | null>(null)
+    const activeToolRef = useRef<string | null>(null)
+    const currentColorIndexRef = useRef(currentColorIndex)
+    const brushSizeRef = useRef(brushSize)
+    const handDetectionEverWorkedRef = useRef(false)
+    const modelErrorShownRef = useRef(false)
 
     const showSaved = useCallback((msg: string) => {
         setSavedMessage(msg)
@@ -143,10 +155,18 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
         }
     }, [currentColorIndex, brushSize])
 
-    const handleToolAction = useCallback((tool: string, keypoints: { x: number; y: number; score: number }[]) => {
-        const pos = getFingerPosition(keypoints)
+    const handleToolAction = useCallback((tool: string, _keypoints: { x: number; y: number; score: number }[]) => {
+        const canvas = drawingCanvasRef.current
+        let pos: { x: number; y: number } | null = null
+        if (canvas && smoothedIndexTipRef.current) {
+            pos = {
+                x: (1 - smoothedIndexTipRef.current.x / CANVAS_WIDTH) * canvas.width,
+                y: (smoothedIndexTipRef.current.y / CANVAS_HEIGHT) * canvas.height,
+            }
+        }
         setFingerPos(pos)
         if (!pos) {
+            if (isDragging) console.debug('[DrawingCanvas] Drag stop — finger lost')
             setIsDragging(false)
             lastDragPosRef.current = null
             return
@@ -157,6 +177,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                 if (!isDragging) {
                     saveUndoState()
                     setIsDragging(true)
+                    console.debug('[DrawingCanvas] Draw start at', Math.round(pos.x), Math.round(pos.y))
                 }
                 drawAtPosition(pos.x, pos.y, false)
                 lastDragPosRef.current = pos
@@ -166,6 +187,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                 if (!isDragging) {
                     saveUndoState()
                     setIsDragging(true)
+                    console.debug('[DrawingCanvas] Erase start at', Math.round(pos.x), Math.round(pos.y))
                 }
                 drawAtPosition(pos.x, pos.y, true)
                 lastDragPosRef.current = pos
@@ -188,6 +210,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                     lastColorCycleTimeRef.current = now
                     setCurrentColorIndex(prev => {
                         const next = (prev + 1) % COLORS.length
+                        console.log('[DrawingCanvas] Color changed to', COLORS[next])
                         showSaved(`🎨 Color: ${COLORS[next]}`)
                         return next
                     })
@@ -196,10 +219,11 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                 break
             }
         }
-    }, [isDragging, getFingerPosition, drawAtPosition, saveUndoState, showSaved])
+    }, [isDragging, drawAtPosition, saveUndoState, showSaved])
 
     const startCamera = useCallback(async () => {
         try {
+            console.log('[DrawingCanvas] Starting webcam (640x480)')
             const mediaStream = await navigator.mediaDevices.getUserMedia({
                 video: { width: 640, height: 480, facingMode: 'user' }
             })
@@ -212,23 +236,31 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream
                 await videoRef.current.play()
+                console.log('[DrawingCanvas] Webcam started')
             }
-        } catch {
+        } catch (err) {
+            console.warn('[DrawingCanvas] Camera start failed:', err)
             setCameraOn(false)
         }
     }, [])
 
     const stopCamera = useCallback(() => {
+        console.log('[DrawingCanvas] Stopping camera')
         const s = streamRef.current
         if (s) { s.getTracks().forEach(t => t.stop()); streamRef.current = null }
         setStream(null)
         setCameraOn(false)
         setHandDetected(false)
+        handDetectedRef.current = false
         setPrediction(null)
         setFingerPos(null)
         setIsDragging(false)
         lastDragPosRef.current = null
         isPanningRef.current = false
+        if (previewCanvasRef.current) {
+            const pctx = previewCanvasRef.current.getContext('2d')
+            if (pctx) pctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+        }
     }, [])
 
     const toggleCamera = useCallback(() => {
@@ -237,6 +269,8 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
 
     useEffect(() => { cameraOnRef.current = cameraOn }, [cameraOn])
     useEffect(() => { streamStateRef.current = stream }, [stream])
+    useEffect(() => { currentColorIndexRef.current = currentColorIndex }, [currentColorIndex])
+    useEffect(() => { brushSizeRef.current = brushSize }, [brushSize])
 
     useEffect(() => {
         if (stream && videoRef.current && videoRef.current.srcObject !== stream) {
@@ -266,6 +300,8 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
             if (streamStateRef.current && videoRef.current && hiddenCanvasRef.current) {
                 isPredictingRef.current = true
                 setIsProcessing(true)
+                let keypoints: any[] = []
+                let elapsed = 0
                 try {
                     const start = performance.now()
                     const ctx = hiddenCanvasRef.current.getContext('2d')
@@ -273,57 +309,184 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                         hiddenCanvasRef.current.width = CANVAS_WIDTH
                         hiddenCanvasRef.current.height = CANVAS_HEIGHT
                         ctx.drawImage(videoRef.current, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
-                        const keypoints = await classifierRef.current.detectHand(hiddenCanvasRef.current)
-                        const elapsed = Math.round(performance.now() - start)
-
-                        if (keypoints.length > 0) {
-                            setHandDetected(true)
-                            setInferenceTime(elapsed)
-
-                            if (overlayCanvasRef.current) {
-                                overlayCanvasRef.current.width = CANVAS_WIDTH
-                                overlayCanvasRef.current.height = CANVAS_HEIGHT
-                                classifierRef.current.drawHand(overlayCanvasRef.current, keypoints)
+                        try {
+                            keypoints = await classifierRef.current.detectHand(hiddenCanvasRef.current)
+                            if (keypoints.length > 0) {
+                                handDetectionEverWorkedRef.current = true
+                                if (modelErrorShownRef.current) {
+                                    modelErrorShownRef.current = false
+                                    setModelError(null)
+                                }
                             }
+                        } catch (detectErr) {
+                            console.warn('[DrawingCanvas] detectHand error:', detectErr)
+                            if (!handDetectionEverWorkedRef.current && !modelErrorShownRef.current) {
+                                modelErrorShownRef.current = true
+                                setModelError('Hand model failed with WebGL; tried CPU fallback — still failed. For best results use a regular browser (Chrome/Edge).')
+                            }
+                        }
+                        elapsed = Math.round(performance.now() - start)
+                    }
 
-                            // Rule-based classification: detect draw/erase/move/color-select gestures
+                    if (keypoints.length > 0) {
+                        const wasDetected = handDetectedRef.current
+                        if (!wasDetected) console.log('[DrawingCanvas] Hand detected —', keypoints.length, 'keypoints')
+                        handDetectedRef.current = true
+                        setHandDetected(true)
+                        setInferenceTime(elapsed)
+                        console.debug('[DrawingCanvas] detect:', elapsed + 'ms, ' + keypoints.length + 'kp')
+
+                        // Smooth index fingertip position (landmark 8)
+                        const indexTip = keypoints[8]
+                        if (indexTip && typeof indexTip.score === 'number' && indexTip.score > 0.3) {
+                            const sa = smoothingAlphaRef.current
+                            if (smoothedIndexTipRef.current) {
+                                smoothedIndexTipRef.current = {
+                                    x: sa * indexTip.x + (1 - sa) * smoothedIndexTipRef.current.x,
+                                    y: sa * indexTip.y + (1 - sa) * smoothedIndexTipRef.current.y,
+                                }
+                            } else {
+                                smoothedIndexTipRef.current = { x: indexTip.x, y: indexTip.y }
+                            }
+                            console.debug('[DrawingCanvas] indexTip raw:', Math.round(indexTip.x) + ',' + Math.round(indexTip.y), '→ sm:', Math.round(smoothedIndexTipRef.current.x) + ',' + Math.round(smoothedIndexTipRef.current.y))
+                        } else {
+                            smoothedIndexTipRef.current = null
+                            if (indexTip) console.debug('[DrawingCanvas] Index tip low confidence:', typeof indexTip.score === 'number' ? indexTip.score.toFixed(2) : indexTip.score)
+                        }
+
+                        // Rule-based classification
+                        let toolName = 'Draw'
+                        try {
                             const features = classifierRef.current.extractFeatures(keypoints)
                             const result = classifyDrawErase(features)
                             const smoothedTool = stateMachineRef.current.update(result.label)
-                            
-                            // Map label to tool name
                             const labelToTool: Record<string, string> = {
-                                'draw': 'Draw',
-                                'erase': 'Erase',
-                                'move': 'Move',
-                                'color-select': 'Color Select',
+                                'draw': 'Draw', 'erase': 'Erase', 'move': 'Move', 'color-select': 'Color Select',
                             }
-                            const toolName = labelToTool[smoothedTool] || 'Draw'
-                            setPrediction({ label: toolName, confidences: result.details })
-                            setActiveTool(toolName)
-                            handleToolAction(toolName, keypoints)
-                        } else {
-                            setHandDetected(false)
-                            setPrediction(null)
-                            setActiveTool(null)
-                            setFingerPos(null)
-                            setIsDragging(false)
-                            lastDragPosRef.current = null
-                            isPanningRef.current = false
-                            stateMachineRef.current.clear()
-                            if (overlayCanvasRef.current) {
+                            toolName = labelToTool[smoothedTool] || 'Draw'
+                        } catch (classifyErr) {
+                            console.warn('[DrawingCanvas] Classification error:', classifyErr)
+                        }
+                        const prevTool = activeToolRef.current
+                        if (prevTool !== toolName) console.log('[DrawingCanvas] Tool switch:', prevTool || '(none)', '→', toolName)
+                        activeToolRef.current = toolName
+                        setPrediction({ label: toolName, confidences: { [toolName]: 1 } })
+                        setActiveTool(toolName)
+
+                        // Draw overlay: skeleton + tool pointer
+                        if (overlayCanvasRef.current && smoothedIndexTipRef.current) {
+                            try {
+                                overlayCanvasRef.current.width = CANVAS_WIDTH
+                                overlayCanvasRef.current.height = CANVAS_HEIGHT
+                                classifierRef.current.drawHand(overlayCanvasRef.current, keypoints)
                                 const octx = overlayCanvasRef.current.getContext('2d')
-                                if (octx) octx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+                                if (octx) {
+                                    const px = smoothedIndexTipRef.current.x
+                                    const py = smoothedIndexTipRef.current.y
+                                    const isErase = toolName === 'Erase'
+                                    const color = isErase ? '#ef4444' : COLORS[currentColorIndexRef.current]
+                                    const brushPx = BRUSH_SIZES[brushSizeRef.current]
+                                    const ringRadius = isErase ? 24 : Math.max(10, brushPx * 1.8)
+                                    octx.save()
+                                    octx.scale(-1, 1)
+                                    octx.translate(-overlayCanvasRef.current.width, 0)
+                                    octx.beginPath()
+                                    octx.arc(px, py, ringRadius, 0, Math.PI * 2)
+                                    octx.strokeStyle = color
+                                    octx.lineWidth = isErase ? 4 : 3
+                                    octx.shadowColor = color
+                                    octx.shadowBlur = 20
+                                    octx.stroke()
+                                    if (isErase) {
+                                        octx.beginPath()
+                                        octx.arc(px, py, ringRadius - 2, 0, Math.PI * 2)
+                                        octx.fillStyle = 'rgba(239,68,68,0.15)'
+                                        octx.shadowBlur = 0
+                                        octx.fill()
+                                    }
+                                    octx.beginPath()
+                                    octx.arc(px, py, 3, 0, Math.PI * 2)
+                                    octx.fillStyle = '#ffffff'
+                                    octx.shadowColor = '#ffffff'
+                                    octx.shadowBlur = 12
+                                    octx.fill()
+                                    octx.shadowBlur = 0
+                                    const ch = Math.max(8, ringRadius * 0.6)
+                                    octx.strokeStyle = 'rgba(255,255,255,0.7)'
+                                    octx.lineWidth = 1
+                                    octx.beginPath()
+                                    octx.moveTo(px - ch, py)
+                                    octx.lineTo(px - ringRadius * 0.5, py)
+                                    octx.moveTo(px + ringRadius * 0.5, py)
+                                    octx.lineTo(px + ch, py)
+                                    octx.moveTo(px, py - ch)
+                                    octx.lineTo(px, py - ringRadius * 0.5)
+                                    octx.moveTo(px, py + ringRadius * 0.5)
+                                    octx.lineTo(px, py + ch)
+                                    octx.stroke()
+                                    const toolEmoji = isErase ? '🧹' : (toolName === 'Color Select' ? '🎨' : (toolName === 'Move' ? '✋' : '✏️'))
+                                    octx.font = 'bold 12px system-ui, sans-serif'
+                                    octx.textAlign = 'center'
+                                    const labelText = `${toolEmoji} ${toolName}`
+                                    const tw = octx.measureText(labelText).width
+                                    octx.fillStyle = 'rgba(0,0,0,0.65)'
+                                    octx.beginPath()
+                                    octx.roundRect(px - tw / 2 - 8, py - ringRadius - 27, tw + 16, 22, 6)
+                                    octx.fill()
+                                    octx.fillStyle = '#ffffff'
+                                    octx.fillText(labelText, px, py - ringRadius - 13)
+                                    octx.restore()
+                                }
+                            } catch (drawErr) {
+                                console.warn('[DrawingCanvas] Overlay draw error:', drawErr)
                             }
                         }
+
+                        handleToolAction(toolName, keypoints)
+                    } else {
+                        if (handDetectedRef.current) console.log('[DrawingCanvas] Hand lost')
+                        handDetectedRef.current = false
+                        setHandDetected(false)
+                        smoothedIndexTipRef.current = null
+                        setPrediction(null)
+                        setActiveTool(null)
+                        activeToolRef.current = null
+                        setFingerPos(null)
+                        setIsDragging(false)
+                        lastDragPosRef.current = null
+                        isPanningRef.current = false
+                        stateMachineRef.current.clear()
+                        if (overlayCanvasRef.current) {
+                            const octx = overlayCanvasRef.current.getContext('2d')
+                            if (octx) octx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+                        }
                     }
-                } catch { /* ignore */ }
+                } catch (e) {
+                    console.warn('[DrawingCanvas] Prediction error:', e)
+                }
                 setIsProcessing(false)
                 isPredictingRef.current = false
             }
         }
+        // Draw drawing preview on webcam (mirrored, semi-transparent)
+        const drawPreview = () => {
+            if (!previewCanvasRef.current || !drawingCanvasRef.current || !cameraOnRef.current) return
+            previewCanvasRef.current.width = CANVAS_WIDTH
+            previewCanvasRef.current.height = CANVAS_HEIGHT
+            const pctx = previewCanvasRef.current.getContext('2d')
+            if (!pctx) return
+            pctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+            pctx.save()
+            pctx.scale(-1, 1)
+            pctx.translate(-CANVAS_WIDTH, 0)
+            pctx.globalAlpha = 0.35
+            pctx.drawImage(drawingCanvasRef.current, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+            pctx.globalAlpha = 1.0
+            pctx.restore()
+        }
         lastPredictTimeRef.current = performance.now()
         const tick = () => {
+            drawPreview()
             const now = performance.now()
             if (now - lastPredictTimeRef.current >= PREDICT_THROTTLE_MS) {
                 lastPredictTimeRef.current = now
@@ -359,6 +522,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                         <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] min-h-[200px] max-h-[280px]">
                             <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                             <canvas ref={hiddenCanvasRef} className="hidden" />
+                            <canvas ref={previewCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                             <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                             {cameraOn && (
                                 <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
@@ -370,6 +534,12 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                                 <div className="absolute top-2 right-2 px-3 py-1.5 rounded-xl backdrop-blur-md text-white text-xs font-bold bg-emerald-500/85">
                                     <span className="mr-1">{TOOL_CONFIG[activeTool]?.emoji}</span>
                                     {activeTool}
+                                </div>
+                            )}
+                            {modelError && (
+                                <div className="absolute inset-x-2 bottom-2 px-3 py-2 bg-red-600/80 backdrop-blur-md rounded-xl text-white text-[10px] font-bold leading-relaxed z-10">
+                                    ⚠️ {modelError}
+                                    <button type="button" onClick={() => { setModelError(null); modelErrorShownRef.current = false }} className="ml-2 text-white/70 hover:text-white text-xs">✕</button>
                                 </div>
                             )}
                             {!cameraOn && (
@@ -475,6 +645,25 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                                         {name}
                                     </button>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* Smoothing Control */}
+                        <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
+                            <p className="text-[10px] font-bold text-gray-700 mb-2">
+                                Smoothing <span className="text-emerald-500">{Math.round(smoothingAlpha * 100)}%</span>
+                            </p>
+                            <input
+                                type="range"
+                                min="5"
+                                max="80"
+                                value={Math.round(smoothingAlpha * 100)}
+                                onChange={e => { const v = Number(e.target.value) / 100; console.log('[DrawingCanvas] Smoothing:', Math.round(v * 100) + '%'); setSmoothingAlpha(v) }}
+                                className="w-full accent-emerald-500 cursor-pointer"
+                            />
+                            <div className="flex justify-between text-[8px] text-gray-400 mt-0.5">
+                                <span>Smooth</span>
+                                <span>Responsive</span>
                             </div>
                         </div>
 

@@ -61,18 +61,34 @@ export class HandPoseClassifier {
         this.modelPromise = (async () => {
             try {
                 const handPoseDetection = await ensureHandPose()
-                await ensureTf()
-                const detector = await handPoseDetection.createDetector(
-                    handPoseDetection.SupportedModels.MediaPipeHands,
-                    {
-                        runtime: 'tfjs',
-                        maxNumHands: 1,
-                        modelComplexity: 1
+                const tf = await ensureTf()
+                try {
+                    const detector = await handPoseDetection.createDetector(
+                        handPoseDetection.SupportedModels.MediaPipeHands,
+                        { runtime: 'tfjs', maxNumHands: 1, modelComplexity: 1 }
+                    )
+                    this.handModel = detector
+                    this.modelPromise = null
+                    return detector
+                } catch (firstErr) {
+                    console.warn('[HandPose] WebGL createDetector failed, trying CPU backend:', firstErr)
+                    try {
+                        await tf.setBackend('cpu')
+                        await tf.ready()
+                        const detector = await handPoseDetection.createDetector(
+                            handPoseDetection.SupportedModels.MediaPipeHands,
+                            { runtime: 'tfjs', maxNumHands: 1, modelComplexity: 0 }
+                        )
+                        this.handModel = detector
+                        this.modelPromise = null
+                        return detector
+                    } catch (cpuErr) {
+                        console.warn('[HandPose] CPU fallback also failed:', cpuErr)
+                        this.modelPromise = null
+                        this.handModel = null
+                        throw firstErr
                     }
-                )
-                this.handModel = detector
-                this.modelPromise = null
-                return detector
+                }
             } catch (e) {
                 this.modelPromise = null
                 this.handModel = null
