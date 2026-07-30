@@ -1,4 +1,5 @@
 import { KNNClassifier, ensureTf } from '../KNNClassifier'
+import { ensureSpeechCommands } from '../loadScript'
 
 export interface AudioPrediction {
     label: string
@@ -8,6 +9,8 @@ export interface AudioPrediction {
 export class AudioClassifier {
     private knn = new KNNClassifier()
     private audioContext: AudioContext | null = null
+    private recognizer: any = null
+    private recognizerLoaded = false
 
     private getAudioContext(): AudioContext {
         if (!this.audioContext) {
@@ -16,9 +19,23 @@ export class AudioClassifier {
         return this.audioContext
     }
 
+    private async ensureRecognizer(): Promise<any> {
+        if (this.recognizerLoaded && this.recognizer) return this.recognizer
+        const sc = await ensureSpeechCommands()
+        this.recognizer = sc.create('BROWSER_FFT')
+        await this.recognizer.ensureModelLoaded()
+        this.recognizerLoaded = true
+        return this.recognizer
+    }
+
     private async extractFeatures(audioBuffer: AudioBuffer): Promise<Float32Array> {
         const rawData = audioBuffer.getChannelData(0)
-        const targetLength = 22050
+        const recognizer = await this.ensureRecognizer()
+        const fftSize = recognizer.params().fftSize || 1024
+        const numFrames = recognizer.params().spectrogramLength || 232
+        const numFreqBins = fftSize / 2 + 1
+        const targetLength = numFrames * fftSize
+
         let samples: Float32Array
         if (rawData.length > targetLength) {
             samples = rawData.slice(0, targetLength)
@@ -27,55 +44,48 @@ export class AudioClassifier {
             samples.set(rawData)
         }
 
-        const fftSize = 1024
-        const numFrames = Math.floor((samples.length - fftSize) / (fftSize / 2))
-        const numMelBands = 13
-        const melFeatures: number[] = []
+        const hann = new Float32Array(fftSize)
+        for (let i = 0; i < fftSize; i++) {
+            hann[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (fftSize - 1)))
+        }
 
-        for (let i = 0; i < Math.min(numFrames, 40); i++) {
+        const features = new Float32Array(numFreqBins)
+        for (let i = 0; i < numFrames; i++) {
             const start = i * (fftSize / 2)
-            const frame = samples.slice(start, start + fftSize)
-
-            const windowed = new Float32Array(fftSize)
+            const real = new Float64Array(fftSize)
+            const imag = new Float64Array(fftSize)
             for (let j = 0; j < fftSize; j++) {
-                windowed[j] = frame[j] * (0.54 - 0.46 * Math.cos(2 * Math.PI * j / (fftSize - 1)))
+                real[j] = (samples[start + j] ?? 0) * hann[j]
             }
 
-            const magnitudes: number[] = []
-            for (let k = 0; k < fftSize / 2; k++) {
-                let real = 0, imag = 0
-                for (let n = 0; n < fftSize; n++) {
-                    const angle = (2 * Math.PI * k * n) / fftSize
-                    real += windowed[n] * Math.cos(angle)
-                    imag -= windowed[n] * Math.sin(angle)
+            const n = fftSize
+            for (let len = 2; len <= n; len *= 2) {
+                const halfLen = len / 2
+                const angleStep = -2 * Math.PI / len
+                for (let i2 = 0; i2 < n; i2 += len) {
+                    for (let j2 = 0; j2 < halfLen; j2++) {
+                        const wRe = Math.cos(angleStep * j2)
+                        const wIm = Math.sin(angleStep * j2)
+                        const tRe = real[i2 + j2 + halfLen] * wRe - imag[i2 + j2 + halfLen] * wIm
+                        const tIm = real[i2 + j2 + halfLen] * wIm + imag[i2 + j2 + halfLen] * wRe
+                        real[i2 + j2 + halfLen] = real[i2 + j2] - tRe
+                        imag[i2 + j2 + halfLen] = imag[i2 + j2] - tIm
+                        real[i2 + j2] = real[i2 + j2] + tRe
+                        imag[i2 + j2] = imag[i2 + j2] + tIm
+                    }
                 }
-                magnitudes.push(Math.sqrt(real * real + imag * imag))
             }
 
-            const energies: number[] = []
-            for (let m = 0; m < numMelBands; m++) {
-                const lowFreq = Math.floor(m * (fftSize / 2) / numMelBands)
-                const highFreq = Math.floor((m + 1) * (fftSize / 2) / numMelBands)
-                let energy = 0
-                for (let f = lowFreq; f < highFreq; f++) {
-                    energy += magnitudes[f] * magnitudes[f]
-                }
-                energies.push(Math.log(energy + 1e-10))
+            for (let j = 0; j < numFreqBins; j++) {
+                features[j] += Math.sqrt(real[j] * real[j] + imag[j] * imag[j])
             }
-
-            melFeatures.push(...energies)
         }
 
-        const featureVector = new Float32Array(numMelBands)
-        for (let i = 0; i < numMelBands; i++) {
-            let sum = 0
-            for (let j = 0; j < Math.min(melFeatures.length / numMelBands, 40); j++) {
-                sum += melFeatures[j * numMelBands + i]
-            }
-            featureVector[i] = sum / Math.min(melFeatures.length / numMelBands, 40)
+        for (let j = 0; j < numFreqBins; j++) {
+            features[j] = Math.log(features[j] / numFrames + 1e-10)
         }
 
-        return featureVector
+        return features
     }
 
     async addSample(features: number[], label: string) {
@@ -310,6 +320,9 @@ export class AudioClassifier {
 
     dispose(): void {
         this.knn.dispose()
+        if (this.recognizer && this.recognizer.dispose) {
+            try { this.recognizer.dispose() } catch {}
+        }
         if (this.audioContext) {
             this.audioContext.close()
             this.audioContext = null
