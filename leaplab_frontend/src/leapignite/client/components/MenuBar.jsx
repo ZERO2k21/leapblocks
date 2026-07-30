@@ -145,15 +145,17 @@ export default function MenuBar({
                                         onToggle={() => toggleMenu('edit')}
                                         onClose={closeMenu}
                                     />
-                                    <button
-                                        onClick={onOpenBoardModal}
-                                        className="flex items-center gap-1.5 px-4 py-2 text-white text-sm font-semibold rounded-full transition-all tracking-wide cursor-pointer bg-transparent hover:bg-white/10"
-                                        title="Select board"
-                                    >
-                                        <Cpu size={16} strokeWidth={2.2} className="opacity-90" />
-                                        <span>{boardName}</span>
-                                        <ChevronDown size={14} strokeWidth={2.5} className="opacity-50" />
-                                    </button>
+                                    {mode !== 'stage' && (
+                                        <button
+                                            onClick={onOpenBoardModal}
+                                            className="flex items-center gap-1.5 px-4 py-2 text-white text-sm font-semibold rounded-full transition-all tracking-wide cursor-pointer bg-transparent hover:bg-white/10"
+                                            title="Select board"
+                                        >
+                                            <Cpu size={16} strokeWidth={2.2} className="opacity-90" />
+                                            <span>{boardName}</span>
+                                            <ChevronDown size={14} strokeWidth={2.5} className="opacity-50" />
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -284,16 +286,20 @@ export default function MenuBar({
                             </button>
                         ))}
 
-                        <div className="h-px bg-white/10 my-1" />
+                        {mode !== 'stage' && (
+                            <>
+                                <div className="h-px bg-white/10 my-1" />
 
-                        <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Board Selection</div>
-                        <button onClick={() => { setMobileMenuOpen(false); onOpenBoardModal?.(); }}
-                            className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg text-[13px] font-medium cursor-pointer text-left transition-all bg-transparent text-gray-200 hover:bg-white/10 hover:text-white"
-                        >
-                            <Cpu size={15} color="#a78bfa" strokeWidth={2} />
-                            <span className="flex-1">Select Board</span>
-                            <span className="text-xs text-sky-300 font-semibold">{boardName}</span>
-                        </button>
+                                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Board Selection</div>
+                                <button onClick={() => { setMobileMenuOpen(false); onOpenBoardModal?.(); }}
+                                    className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg text-[13px] font-medium cursor-pointer text-left transition-all bg-transparent text-gray-200 hover:bg-white/10 hover:text-white"
+                                >
+                                    <Cpu size={15} color="#a78bfa" strokeWidth={2} />
+                                    <span className="flex-1">Select Board</span>
+                                    <span className="text-xs text-sky-300 font-semibold">{boardName}</span>
+                                </button>
+                            </>
+                        )}
 
                         <div className="h-px bg-white/10 my-1" />
 

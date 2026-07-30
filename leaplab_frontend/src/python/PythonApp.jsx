@@ -2714,7 +2714,7 @@ function PythonApp({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchToCos
                         </div>
                     </div>
 
-                    <div className="h-[244px] border-t border-gray-200 bg-[#F8F9FB] flex flex-col shrink-0">
+                    <div className="flex-1 min-h-[200px] border-t border-gray-200 bg-[#F8F9FB] flex flex-col">
                         <div className="flex items-center justify-between p-3 pb-0 gap-2.5">
                             <div className="flex gap-2">
                                 {[

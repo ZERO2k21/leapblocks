@@ -135,6 +135,7 @@ const styles = {
         display: 'flex',
         flexDirection: 'column' as const,
         height: '100%',
+        flex: 1,
         backgroundColor: '#fff',
         border: '1px solid #eee',
         borderRadius: '8px',

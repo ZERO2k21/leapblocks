@@ -69,7 +69,7 @@ export default function BoardSelectionModal({ isOpen, onClose, onSelect, current
     const selectedBoardName = currentBoard ? getBoards().find(b => b.id === currentBoard)?.name : null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999]" onClick={onClose}>
             <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden shadow-2xl mx-4" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-b from-emerald-500 to-teal-600 text-white">
                     <h2 className="m-0 text-base font-semibold">Select Board</h2>

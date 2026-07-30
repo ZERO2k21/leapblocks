@@ -45,7 +45,7 @@ export const BoardSelectionModal: React.FC<BoardSelectionModalProps> = ({ onSele
 
     return (
         <div
-            className={`fixed inset-0 z-[10000] flex items-center justify-center p-4 backdrop-blur-xl animate-[fadeIn_0.3s_ease-out] ${
+            className={`fixed inset-0 z-[99999] flex items-center justify-center p-4 backdrop-blur-xl animate-[fadeIn_0.3s_ease-out] ${
                 isDark ? 'bg-slate-950/90' : 'bg-slate-900/60'
             }`}
         >

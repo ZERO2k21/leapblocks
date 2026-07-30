@@ -17,7 +17,7 @@ export default function InstrumentPicker({ onPick, onClose, position }) {
     if (!position) return null;
 
     return (
-        <div className="fixed inset-0 w-screen h-screen z-50" onClick={onClose}>
+        <div className="fixed inset-0 w-screen h-screen z-[99999]" onClick={onClose}>
             <div
                 className="bg-fuchsia-500 rounded-xl p-2.5 grid grid-cols-3 gap-2 shadow-2xl min-w-[180px]"
                 style={{

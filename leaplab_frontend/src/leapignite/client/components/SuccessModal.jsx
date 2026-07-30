@@ -8,7 +8,7 @@ import { Trophy, Check, RefreshCw } from 'lucide-react';
 
 export default function SuccessModal({ message, onRestart, onNext }) {
     return (
-        <div className="absolute inset-0 bg-black/60 flex justify-center items-center z-50 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-[99999] backdrop-blur-sm">
             <div className="bg-white p-10 rounded-3xl text-center shadow-2xl animate-[popIn_0.5s_cubic-bezier(0.175,0.885,0.32,1.275)] max-w-md mx-4">
                 <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-amber-400 flex items-center justify-center">
                     <Trophy size={48} className="text-white" />

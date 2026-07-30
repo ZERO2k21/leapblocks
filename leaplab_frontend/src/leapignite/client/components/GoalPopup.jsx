@@ -4,7 +4,7 @@ const GoalPopup = ({ isOpen, goalText, onClose }) => {
     if (!isOpen || !goalText) return null;
 
     return (
-        <div className="fixed inset-0 w-screen h-screen bg-indigo-950/60 backdrop-blur-md flex items-center justify-center z-50 animate-[goalFadeIn_0.25s_ease-out]">
+        <div className="fixed inset-0 w-screen h-screen bg-indigo-950/60 backdrop-blur-md flex items-center justify-center z-[99999] animate-[goalFadeIn_0.25s_ease-out]">
             <style>{`
                 @keyframes goalFadeIn {
                     from { opacity: 0; }

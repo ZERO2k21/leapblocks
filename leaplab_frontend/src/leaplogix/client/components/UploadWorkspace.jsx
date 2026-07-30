@@ -222,7 +222,7 @@ export default function UploadWorkspace() {
                         </div>
                     </div>
 
-                    <div className="h-61 border-t border-gray-200 bg-[#F8F9FB] flex flex-col shrink-0">
+                    <div className="flex-1 min-h-[200px] border-t border-gray-200 bg-[#F8F9FB] flex flex-col">
                         <div className="flex items-center justify-between pt-2.5 px-3 gap-2.5">
                             <div className="flex gap-2">
                                 {[{ id: "terminal", label: "Terminal", icon: TerminalSquare }, { id: "log", label: "Log", icon: ClipboardList }, { id: "serial", label: "Serial Monitor", icon: Plug }].map((tab) => {

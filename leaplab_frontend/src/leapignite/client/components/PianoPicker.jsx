@@ -52,7 +52,7 @@ export default function PianoPicker({ onPick, onClose, onPreview, position, init
     const blackKeyLeftPositions = { 1: '45px', 3: '87px', 6: '171px', 8: '213px', 10: '255px' };
 
     return (
-        <div className="fixed inset-0 w-screen h-screen z-50" onClick={onClose}>
+        <div className="fixed inset-0 w-screen h-screen z-[99999]" onClick={onClose}>
             <div
                 className="bg-fuchsia-500 rounded-xl p-2.5 shadow-2xl select-none min-w-[320px]"
                 style={{
