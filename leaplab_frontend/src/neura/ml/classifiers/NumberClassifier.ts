@@ -1,22 +1,11 @@
-/**
- * Number/Digit Classifier using raw 28x28 grayscale pixel features + KNN.
- * Uses isolateDigit preprocessing to center and normalize the digit,
- * producing MNIST-style 784-d feature vectors for reliable classification
- * even with only 5-10 samples per class.
- */
-
 import { KNNClassifier, ensureTf } from '../KNNClassifier'
+import { ensureMobileNet } from '../loadScript'
 
 export interface NumberPrediction {
     label: string
     confidences: Record<string, number>
 }
 
-/**
- * Isolate the digit from background by detecting the bounding box of dark pixels,
- * centering the digit, and adding padding. Returns a clean canvas with the digit
- * centered on a white background at 224x224.
- */
 function isolateDigit(sourceCanvas: HTMLCanvasElement): HTMLCanvasElement {
     const ctx = sourceCanvas.getContext('2d')
     if (!ctx) return sourceCanvas
@@ -72,32 +61,9 @@ function isolateDigit(sourceCanvas: HTMLCanvasElement): HTMLCanvasElement {
     return outCanvas
 }
 
-/**
- * Convert a canvas to a normalized 28x28 grayscale feature vector (784-d).
- * The digit is isolated, resized to 28x28, converted to grayscale,
- * and normalized to [0, 1] range.
- */
-async function canvasToFeatureVector(sourceCanvas: HTMLCanvasElement): Promise<number[]> {
-    const tf = await ensureTf()
-
-    const isolated = isolateDigit(sourceCanvas)
-
-    return tf.tidy(() => {
-        // Convert to tensor and resize to 28x28 (MNIST standard)
-        let tensor = tf.browser.fromPixels(isolated, 1) // grayscale
-        tensor = tf.image.resizeBilinear(tensor, [28, 28])
-        // Normalize to [0, 1]
-        const normalized = tensor.toFloat().div(255.0)
-        return Array.from(normalized.dataSync())
-    })
-}
-
-/**
- * Convert an input element to a feature vector.
- */
-async function inputToFeatureVector(
+async function inputToIsolatedCanvas(
     input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement
-): Promise<number[]> {
+): Promise<HTMLCanvasElement> {
     const tempCanvas = document.createElement('canvas')
     const w = input instanceof HTMLCanvasElement
         ? input.width
@@ -109,42 +75,53 @@ async function inputToFeatureVector(
     tempCanvas.height = h
     const tempCtx = tempCanvas.getContext('2d')!
     tempCtx.drawImage(input as CanvasImageSource, 0, 0, w, h)
-    return canvasToFeatureVector(tempCanvas)
+    return isolateDigit(tempCanvas)
+}
+
+async function extractMobileNetEmbedding(isolatedCanvas: HTMLCanvasElement): Promise<any> {
+    const tf = await ensureTf()
+    const mobilenet = await ensureMobileNet()
+    const model = await mobilenet.load()
+
+    return tf.tidy(() => {
+        let tensor = tf.browser.fromPixels(isolatedCanvas).toFloat()
+        tensor = tf.image.resizeBilinear(tensor, [224, 224])
+        tensor = tensor.div(127.5).sub(1)
+        const embedding = model.infer(tensor, true)
+        const norm = tf.norm(embedding)
+        return tf.div(embedding, tf.maximum(norm, 1e-10))
+    })
 }
 
 export class NumberClassifier {
     private knn = new KNNClassifier()
 
-    /**
-     * Add a single sample to the classifier.
-     */
     async addSample(
         imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement,
         label: string
     ) {
-        const fv = await inputToFeatureVector(imageElement)
-        await this.knn.addExampleFromData(fv, label)
+        const isolated = await inputToIsolatedCanvas(imageElement)
+        const embedding = await extractMobileNetEmbedding(isolated)
+        await this.knn.addExample(embedding, label)
+        embedding.dispose()
     }
 
-    /**
-     * Predict the class of an input using KNN with k neighbors.
-     */
     async predict(
         input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement,
         k = 3
     ): Promise<NumberPrediction | null> {
         try {
-            const fv = await inputToFeatureVector(input)
-            return await this.knn.predictFromData(fv, k)
+            const isolated = await inputToIsolatedCanvas(input)
+            const embedding = await extractMobileNetEmbedding(isolated)
+            const result = await this.knn.predictClass(embedding, k)
+            embedding.dispose()
+            return result
         } catch (err) {
             console.warn('[NumberClassifier] Prediction failed:', err)
             return null
         }
     }
 
-    /**
-     * Rebuild a class from an array of image data URLs.
-     */
     async rebuildClass(
         label: string,
         imageDataUrls: string[],
@@ -176,16 +153,8 @@ export class NumberClassifier {
         return loaded
     }
 
-    /**
-     * Data augmentation for digits — operates in pixel space before feature extraction:
-     * - Original
-     * - Horizontal flip (some digits are symmetric)
-     * - Slight rotation (-6 to +6 degrees)
-     * - Brightness variation
-     * - Scale variation (0.9x to 1.1x)
-     */
     static augmentations = [
-        (_ctx: CanvasRenderingContext2D, _w: number, _h: number) => { /* no-op */ },
+        (_ctx: CanvasRenderingContext2D, _w: number, _h: number) => {},
         (_ctx: CanvasRenderingContext2D, w: number, _h: number) => {
             _ctx.translate(w, 0)
             _ctx.scale(-1, 1)
@@ -243,7 +212,7 @@ export class NumberClassifier {
                 await this.addSample(canvas, label)
                 added++
                 await new Promise(r => setTimeout(r, 0))
-            } catch { /* skip failed augmentation */ }
+            } catch {}
         }
         return added
     }

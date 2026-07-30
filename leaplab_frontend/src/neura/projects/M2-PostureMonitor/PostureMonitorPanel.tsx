@@ -43,7 +43,6 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
     const streamRef = useRef<MediaStream | null>(null)
     const animFrameRef = useRef<number>(0)
     const isPredictingRef = useRef(false)
-    const rebuildAbortRef = useRef(0)
     const testCameraStartedRef = useRef(false)
     const lastPredictTimeRef = useRef(0)
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -148,29 +147,10 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
     }, [mode.mode])
 
     useEffect(() => {
-        if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
-            const thisBuild = ++rebuildAbortRef.current
-            let cancelled = false
-            setModelLoading(true)
-            const rebuild = async () => {
-                classifierRef.current.clear()
-                for (const cls of mode.project!.classes) {
-                    if (thisBuild !== rebuildAbortRef.current) return
-                    if (cls.samples.length > 0) {
-                        for (const sample of cls.samples) {
-                            try {
-                                const keypoints = JSON.parse(sample.data)
-                                await classifierRef.current.addSampleFromKeypoints(keypoints, cls.name)
-                            } catch { /* skip */ }
-                        }
-                    }
-                }
-                if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false)
-            }
-            rebuild().catch(() => { if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false) })
-            return () => { cancelled = true }
+        if (mode.mode === 'train' || mode.mode === 'test') {
+            setModelLoading(false)
         }
-    }, [mode.mode, mode.project])
+    }, [mode.mode])
 
     useEffect(() => {
         if (mode.mode !== 'test') {
@@ -410,7 +390,6 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                     setIsCapturing(false)
                     return
                 }
-                classifierRef.current.addSampleFromKeypoints(keypoints, mode.getSelectedClass()?.name || '').catch(() => {})
                 setCaptureStatus('success')
                 showSaved(`Saved to ${mode.getSelectedClass()?.name}!`)
             } else {

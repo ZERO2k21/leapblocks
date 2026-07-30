@@ -44,7 +44,6 @@ function getClassifierPanel(type: ProjectType) {
             return VirtualPianoPanel
         case 'hand-pose-classifier':
         case 'finger-counter':
-        case 'volume-controller':
             return HandPoseClassifierPanel
         case 'drawing-canvas':
             return DrawingCanvasPanel

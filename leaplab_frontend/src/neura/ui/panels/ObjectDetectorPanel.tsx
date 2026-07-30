@@ -16,7 +16,7 @@ import KaggleDatasetBrowser from '../components/KaggleDatasetBrowser'
 import KaggleSettings from '../components/KaggleSettings'
 import { getStoredCredentials, hasCredentials, type KaggleCredentials } from '../../ml/KaggleDatasetProvider'
 import EvaluatePanel from './EvaluatePanel'
-import { exportJSON, exportTFJS, exportONNX, exportTFLite, getExportSizeEstimate } from '../../ml/ModelExporter'
+import { exportJSON, getExportSizeEstimate } from '../../ml/ModelExporter'
 
 interface ObjectDetectorPanelProps {
     mode: UseNeuraProjectReturn
@@ -1040,7 +1040,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     <span className="text-sm">🧠</span>
                                     <div>
                                         <p className="text-[9px] font-bold text-[#006c44]">Custom Model Trained!</p>
-                                        <p className="text-[8px] text-[#006c44]/70">{Object.keys(trainerRef.current.getState().classCounts).length} classes</p>
+                                        <p className="text-[8px] text-[#006c44]/70">{trainerRef.current.getState().metrics.totalClasses} classes</p>
                                     </div>
                                 </div>
                                 <button onClick={() => setUseCustomModel(!useCustomModel)} className={`py-1 px-2 rounded-md text-[8px] font-bold cursor-pointer ${useCustomModel ? 'bg-[#006c44] text-white border-none' : 'bg-white text-[#006c44] border border-[#006c44]/30'}`}>
@@ -1183,30 +1183,19 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                 <h3 className="text-[11px] font-bold text-[#131b2e]">📦 Export</h3>
                                 <span className="text-[8px] font-bold bg-[#f5f3ff] text-[#630ed4] py-0.5 px-1.5 rounded">Trained</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-1.5">
-                                {[
-                                    { label: 'JSON', emoji: '📄', format: 'json' },
-                                    { label: 'TF.js', emoji: '🌐', format: 'tfjs' },
-                                    { label: 'ONNX', emoji: '⚡', format: 'onnx' },
-                                    { label: 'TFLite', emoji: '📱', format: 'tflite' }
-                                ].map(exp => {
+                            <div className="grid gap-1.5">
+                                {(() => {
                                     const sizes = getExportSizeEstimate(mode.project!)
                                     return (
-                                        <button key={exp.format} onClick={() => {
-                                            const state = trainerRef.current.getState()
-                                            if (exp.format === 'json') exportJSON(mode.project!, state)
-                                            else if (exp.format === 'tfjs') exportTFJS(mode.project!, state)
-                                            else if (exp.format === 'onnx') exportONNX(mode.project!, state)
-                                            else if (exp.format === 'tflite') exportTFLite(mode.project!, state)
-                                        }} className="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 bg-white cursor-pointer text-left">
-                                            <span className="text-sm">{exp.emoji}</span>
+                                        <button onClick={() => { const state = trainerRef.current.getState(); exportJSON(mode.project!, state) }} className="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 bg-white cursor-pointer text-left">
+                                            <span className="text-sm">📄</span>
                                             <div>
-                                                <p className="text-[9px] font-bold text-[#131b2e]">{exp.label}</p>
-                                                <p className="text-[7px] text-gray-500">{sizes[exp.label]}</p>
+                                                <p className="text-[9px] font-bold text-[#131b2e]">JSON</p>
+                                                <p className="text-[7px] text-gray-500">{sizes['JSON']}</p>
                                             </div>
                                         </button>
                                     )
-                                })}
+                                })()}
                             </div>
                         </div>
                     )}
@@ -1284,7 +1273,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             ) : mode.mode === 'annotate' ? (
                 <AnnotatePanel mode={mode} />
             ) : mode.mode === 'evaluate' ? (
-                <EvaluatePanel mode={mode} metrics={trainerRef.current.getState().metrics} />
+                <EvaluatePanel mode={mode} trainer={trainerRef.current} />
             ) : mode.mode === 'test' ? (
                 renderTestMode()
             ) : (

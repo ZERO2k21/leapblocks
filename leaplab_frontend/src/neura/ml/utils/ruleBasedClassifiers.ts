@@ -132,30 +132,6 @@ export function classifyPianoKey(
 }
 
 /**
- * M1-3: Rule-based volume controller.
- * Measures thumb-index pinch distance for volume control.
- * Returns normalized volume level (0-1).
- */
-export function classifyVolumeLevel(features: Float32Array): ClassificationResult {
-    // features[73] = thumb-index distance normalized
-    if (features.length < 74) {
-        return { label: 'volume', confidence: 0, details: { volume: 0 } }
-    }
-
-    const pinchDistance = features[73]
-
-    // Map pinch distance to volume (closer = louder)
-    // Typical range: 0.05 (pinched) to 0.4 (spread)
-    const normalizedVolume = Math.max(0, Math.min(1, (pinchDistance - 0.05) / 0.35))
-
-    return {
-        label: 'volume',
-        confidence: 0.85,
-        details: { volume: normalizedVolume }
-    }
-}
-
-/**
  * M2-2: Rule-based rep counter for exercises.
  * Uses PoseClassifier angle features to detect squat/standing positions.
  * @param features PoseClassifier 61-d features
@@ -333,38 +309,6 @@ export class HoldTimeBuffer {
     clear(): void {
         this.currentLabel = ''
         this.holdStartTime = 0
-    }
-}
-
-/**
- * EMA (Exponential Moving Average) for continuous values.
- */
-export class EMABuffer {
-    private currentValue: number = 0
-    private alpha: number
-    private initialized: boolean = false
-
-    constructor(alpha: number = 0.3) {
-        this.alpha = alpha
-    }
-
-    update(value: number): number {
-        if (!this.initialized) {
-            this.currentValue = value
-            this.initialized = true
-        } else {
-            this.currentValue = this.alpha * value + (1 - this.alpha) * this.currentValue
-        }
-        return this.currentValue
-    }
-
-    getCurrent(): number {
-        return this.currentValue
-    }
-
-    clear(): void {
-        this.currentValue = 0
-        this.initialized = false
     }
 }
 

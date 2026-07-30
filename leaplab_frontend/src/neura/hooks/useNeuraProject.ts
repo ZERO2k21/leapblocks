@@ -383,7 +383,6 @@ function getDefaultName(type: ProjectType): string {
         'hand-pose-classifier': 'My Hand Pose Classifier',
         'finger-counter': 'AI Finger Counter',
         'virtual-piano': 'Virtual Piano',
-        'volume-controller': 'Gesture Volume Controller',
         'drawing-canvas': 'Virtual Drawing Canvas',
         'yoga-checker': 'Yoga Pose Checker',
         'rep-counter': 'Exercise Rep Counter',

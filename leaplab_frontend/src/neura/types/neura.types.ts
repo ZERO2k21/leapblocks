@@ -13,7 +13,6 @@ export type ProjectType =
     | 'text-classifier'
     | 'finger-counter'
     | 'virtual-piano'
-    | 'volume-controller'
     | 'drawing-canvas'
     | 'yoga-checker'
     | 'rep-counter'

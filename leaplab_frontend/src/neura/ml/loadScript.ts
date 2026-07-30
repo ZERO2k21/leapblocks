@@ -11,6 +11,8 @@ declare const window: Window & {
     poseDetection?: any
     handPoseDetection?: any
     use?: any
+    speechCommands?: any
+    yamnet?: any
 }
 
 const TF_VERSION = '4.20.0'
@@ -19,6 +21,7 @@ const COCO_SSD_VERSION = '2.2.3'
 const POSE_DETECTION_VERSION = '2.1.3'
 const HAND_POSE_VERSION = '2.0.1'
 const USE_VERSION = '1.3.3'
+const SPEECH_COMMANDS_VERSION = '0.6.0'
 
 function loadScript(src: string, retries = 2): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -165,4 +168,48 @@ export async function ensureUSE(): Promise<any> {
     })()
 
     return usePromise
+}
+
+let speechCommandsPromise: Promise<any> | null = null
+
+export async function ensureSpeechCommands(): Promise<any> {
+    await ensureTf()
+    if (window.speechCommands) return window.speechCommands
+    if (speechCommandsPromise) return speechCommandsPromise
+
+    speechCommandsPromise = (async () => {
+        try {
+            await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@${SPEECH_COMMANDS_VERSION}/dist/speech-commands.min.js`)
+            return window.speechCommands
+        } catch (e) {
+            speechCommandsPromise = null
+            throw e
+        }
+    })()
+
+    return speechCommandsPromise
+}
+
+let yamnetModelPromise: Promise<any> | null = null
+
+export async function ensureYamNet(): Promise<any> {
+    const tf = await ensureTf()
+    if (window.yamnet) return window.yamnet
+    if (yamnetModelPromise) return yamnetModelPromise
+
+    yamnetModelPromise = (async () => {
+        try {
+            const model = await tf.loadGraphModel(
+                'https://tfhub.dev/google/tfjs-model/yamnet/1/default/1',
+                { fromTFHub: true }
+            )
+            window.yamnet = model
+            return model
+        } catch (e) {
+            yamnetModelPromise = null
+            throw e
+        }
+    })()
+
+    return yamnetModelPromise
 }
