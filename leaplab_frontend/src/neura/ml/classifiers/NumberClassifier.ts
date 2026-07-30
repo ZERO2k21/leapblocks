@@ -78,30 +78,68 @@ async function inputToIsolatedCanvas(
     return isolateDigit(tempCanvas)
 }
 
-async function extractMobileNetEmbedding(isolatedCanvas: HTMLCanvasElement): Promise<any> {
-    const tf = await ensureTf()
-    const mobilenet = await ensureMobileNet()
-    const model = await mobilenet.load()
-
-    return tf.tidy(() => {
-        let tensor = tf.browser.fromPixels(isolatedCanvas).toFloat()
-        tensor = tf.image.resizeBilinear(tensor, [224, 224])
-        tensor = tensor.div(127.5).sub(1)
-        const embedding = model.infer(tensor, true)
-        const norm = tf.norm(embedding)
-        return tf.div(embedding, tf.maximum(norm, 1e-10))
-    })
-}
-
 export class NumberClassifier {
     private knn = new KNNClassifier()
+    private mobilenetModule: any = null
+    private mobilenetModel: any = null
+
+    private async ensureModel() {
+        if (this.mobilenetModel) return this.mobilenetModel
+        const mobilenet = await ensureMobileNet()
+        const tf = await ensureTf()
+        try {
+            this.mobilenetModel = await mobilenet.load({
+                version: 2,
+                alpha: 1.0,
+                modelUrl: 'https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json'
+            })
+        } catch (err) {
+            console.warn('[NumberClassifier] mobilenet.load() failed, loading model directly:', err)
+            const rawModel = await tf.loadGraphModel(
+                'https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json'
+            )
+            rawModel.predict(tf.zeros([1, 224, 224, 3])).dispose()
+            this.mobilenetModel = {
+                infer: (img: any, embedding = false) => tf.tidy(() => {
+                    if (!(img instanceof tf.Tensor)) img = tf.browser.fromPixels(img)
+                    let input = tf.image.resizeBilinear(img, [224, 224]).toFloat()
+                    input = input.div(127.5).sub(1)
+                    input = tf.reshape(input, [-1, 224, 224, 3])
+                    if (embedding) {
+                        try {
+                            const pool = rawModel.execute(input, 'module_apply_default/MobilenetV2/Logits/AvgPool')
+                            return tf.squeeze(pool, [1, 2])
+                        } catch {
+                            return rawModel.predict(input)
+                        }
+                    }
+                    const output = rawModel.predict(input)
+                    return tf.slice(output, [0, 1], [-1, 1000])
+                })
+            }
+        }
+        return this.mobilenetModel
+    }
+
+    private async extractMobileNetEmbedding(isolatedCanvas: HTMLCanvasElement): Promise<any> {
+        const tf = await ensureTf()
+        const model = await this.ensureModel()
+        return tf.tidy(() => {
+            let tensor = tf.browser.fromPixels(isolatedCanvas).toFloat()
+            tensor = tf.image.resizeBilinear(tensor, [224, 224])
+            tensor = tensor.div(127.5).sub(1)
+            const embedding = model.infer(tensor, true)
+            const norm = tf.norm(embedding)
+            return tf.div(embedding, tf.maximum(norm, 1e-10))
+        })
+    }
 
     async addSample(
         imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement,
         label: string
     ) {
         const isolated = await inputToIsolatedCanvas(imageElement)
-        const embedding = await extractMobileNetEmbedding(isolated)
+        const embedding = await this.extractMobileNetEmbedding(isolated)
         await this.knn.addExample(embedding, label)
         embedding.dispose()
     }
@@ -112,7 +150,7 @@ export class NumberClassifier {
     ): Promise<NumberPrediction | null> {
         try {
             const isolated = await inputToIsolatedCanvas(input)
-            const embedding = await extractMobileNetEmbedding(isolated)
+            const embedding = await this.extractMobileNetEmbedding(isolated)
             const result = await this.knn.predictClass(embedding, k)
             embedding.dispose()
             return result
@@ -164,26 +202,8 @@ export class NumberClassifier {
             _ctx.rotate(6 * Math.PI / 180)
             _ctx.translate(-w / 2, -h / 2)
         },
-        (_ctx: CanvasRenderingContext2D, w: number, h: number) => {
-            _ctx.translate(w / 2, h / 2)
-            _ctx.rotate(-6 * Math.PI / 180)
-            _ctx.translate(-w / 2, -h / 2)
-        },
         (_ctx: CanvasRenderingContext2D, _w: number, _h: number) => {
             _ctx.filter = 'brightness(1.3)'
-        },
-        (_ctx: CanvasRenderingContext2D, _w: number, _h: number) => {
-            _ctx.filter = 'brightness(0.8)'
-        },
-        (_ctx: CanvasRenderingContext2D, w: number, h: number) => {
-            _ctx.translate(w / 2, h / 2)
-            _ctx.scale(1.1, 1.1)
-            _ctx.translate(-w / 2, -h / 2)
-        },
-        (_ctx: CanvasRenderingContext2D, w: number, h: number) => {
-            _ctx.translate(w / 2, h / 2)
-            _ctx.scale(0.9, 0.9)
-            _ctx.translate(-w / 2, -h / 2)
         },
     ]
 
