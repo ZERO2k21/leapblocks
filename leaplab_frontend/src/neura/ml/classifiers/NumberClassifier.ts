@@ -89,7 +89,8 @@ async function getMobileNetModel(): Promise<any> {
 
 async function extractMobileNetEmbedding(isolatedCanvas: HTMLCanvasElement): Promise<any> {
     const tf = await ensureTf()
-    const model = await getMobileNetModel()
+    const mobilenet = await ensureMobileNet()
+    const model = await mobilenet.load()
 
     return tf.tidy(() => {
         let tensor = tf.browser.fromPixels(isolatedCanvas).toFloat()
@@ -109,7 +110,7 @@ export class NumberClassifier {
         label: string
     ) {
         const isolated = await inputToIsolatedCanvas(imageElement)
-        const embedding = await extractMobileNetEmbedding(isolated)
+        const embedding = await this.extractMobileNetEmbedding(isolated)
         await this.knn.addExample(embedding, label)
         embedding.dispose()
     }
@@ -120,7 +121,7 @@ export class NumberClassifier {
     ): Promise<NumberPrediction | null> {
         try {
             const isolated = await inputToIsolatedCanvas(input)
-            const embedding = await extractMobileNetEmbedding(isolated)
+            const embedding = await this.extractMobileNetEmbedding(isolated)
             const result = await this.knn.predictClass(embedding, k)
             embedding.dispose()
             return result
@@ -172,26 +173,8 @@ export class NumberClassifier {
             _ctx.rotate(6 * Math.PI / 180)
             _ctx.translate(-w / 2, -h / 2)
         },
-        (_ctx: CanvasRenderingContext2D, w: number, h: number) => {
-            _ctx.translate(w / 2, h / 2)
-            _ctx.rotate(-6 * Math.PI / 180)
-            _ctx.translate(-w / 2, -h / 2)
-        },
         (_ctx: CanvasRenderingContext2D, _w: number, _h: number) => {
             _ctx.filter = 'brightness(1.3)'
-        },
-        (_ctx: CanvasRenderingContext2D, _w: number, _h: number) => {
-            _ctx.filter = 'brightness(0.8)'
-        },
-        (_ctx: CanvasRenderingContext2D, w: number, h: number) => {
-            _ctx.translate(w / 2, h / 2)
-            _ctx.scale(1.1, 1.1)
-            _ctx.translate(-w / 2, -h / 2)
-        },
-        (_ctx: CanvasRenderingContext2D, w: number, h: number) => {
-            _ctx.translate(w / 2, h / 2)
-            _ctx.scale(0.9, 0.9)
-            _ctx.translate(-w / 2, -h / 2)
         },
     ]
 

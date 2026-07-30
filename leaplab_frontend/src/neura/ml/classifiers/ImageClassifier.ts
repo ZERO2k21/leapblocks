@@ -53,8 +53,38 @@ export class ImageClassifier {
         if (this.mobilenetModel) return this.mobilenetModel
         setupContextLossListener()
         const mobilenet = await ensureMobileNet()
-        this.mobilenetModule = mobilenet
-        this.mobilenetModel = await mobilenet.load()
+        const tf = await ensureTf()
+        try {
+            this.mobilenetModel = await mobilenet.load({
+                version: 2,
+                alpha: 1.0,
+                modelUrl: 'https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json'
+            })
+        } catch (err) {
+            console.warn('[ImageClassifier] mobilenet.load() failed, loading model directly:', err)
+            const rawModel = await tf.loadGraphModel(
+                'https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json'
+            )
+            rawModel.predict(tf.zeros([1, 224, 224, 3])).dispose()
+            this.mobilenetModel = {
+                infer: (img: any, embedding = false) => tf.tidy(() => {
+                    if (!(img instanceof tf.Tensor)) img = tf.browser.fromPixels(img)
+                    let input = tf.image.resizeBilinear(img, [224, 224]).toFloat()
+                    input = input.div(127.5).sub(1)
+                    input = tf.reshape(input, [-1, 224, 224, 3])
+                    if (embedding) {
+                        try {
+                            const pool = rawModel.execute(input, 'module_apply_default/MobilenetV2/Logits/AvgPool')
+                            return tf.squeeze(pool, [1, 2])
+                        } catch {
+                            return rawModel.predict(input)
+                        }
+                    }
+                    const output = rawModel.predict(input)
+                    return tf.slice(output, [0, 1], [-1, 1000])
+                })
+            }
+        }
         return this.mobilenetModel
     }
 
