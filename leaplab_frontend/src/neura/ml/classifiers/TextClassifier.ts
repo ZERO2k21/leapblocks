@@ -6,6 +6,32 @@ export interface TextPrediction {
     confidences: Record<string, number>
 }
 
+const STOP_WORDS = new Set([
+    'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'be',
+    'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will',
+    'would', 'can', 'could', 'shall', 'should', 'may', 'might', 'it',
+    'its', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she',
+    'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your',
+    'his', 'their', 'our', 'not', 'no', 'nor', 'so', 'very', 'just',
+    'about', 'up', 'down', 'out', 'over', 'under', 'again', 'further',
+    'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how',
+    'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other',
+    'some', 'such', 'only', 'own', 'same', 'too', 'very', 's', 't',
+    're', 've', 'll', 'don', 'didn', 'isn', 'aren', 'won', 'can',
+])
+
+function preprocessText(text: string): string {
+    let cleaned = text.toLowerCase()
+    cleaned = cleaned.replace(/<[^>]*>/g, ' ')
+    cleaned = cleaned.replace(/[^a-z0-9\s']/g, ' ')
+    cleaned = cleaned.replace(/\s+/g, ' ').trim()
+    const words = cleaned.split(' ')
+        .filter(w => w.length > 0 && !STOP_WORDS.has(w))
+        .slice(0, 50)
+    return words.join(' ')
+}
+
 export class TextClassifier {
     private knn = new KNNClassifier()
     private useModel: any = null
@@ -19,7 +45,8 @@ export class TextClassifier {
 
     private async embedText(text: string) {
         const use = await this.ensureModel()
-        const embeddings = await use.embed([text])
+        const cleaned = preprocessText(text)
+        const embeddings = await use.embed([cleaned || ' '])
         return embeddings
     }
 
@@ -33,7 +60,8 @@ export class TextClassifier {
 
     async addSampleBatch(texts: string[], label: string) {
         const use = await this.ensureModel()
-        const embeddings = await use.embed(texts)
+        const cleanedTexts = texts.map(t => preprocessText(t) || ' ')
+        const embeddings = await use.embed(cleanedTexts)
         const numSamples = texts.length
         for (let i = 0; i < numSamples; i++) {
             const singleEmbedding = embeddings.slice([i, 0], [1, -1]).squeeze([0])
@@ -54,7 +82,8 @@ export class TextClassifier {
 
     async predictBatch(texts: string[], k = 5): Promise<(TextPrediction | null)[]> {
         const use = await this.ensureModel()
-        const embeddings = await use.embed(texts)
+        const cleanedTexts = texts.map(t => preprocessText(t) || ' ')
+        const embeddings = await use.embed(cleanedTexts)
         const results: (TextPrediction | null)[] = []
         for (let i = 0; i < texts.length; i++) {
             const singleEmbedding = embeddings.slice([i, 0], [1, -1]).squeeze([0])

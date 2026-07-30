@@ -90,6 +90,78 @@
 
 ---
 
+## Platform Support Matrix (Web vs .exe)
+
+> All Neura models and projects use browser-native Web APIs + CDN-loaded TF.js models.
+> The .exe (Electron) version runs the identical code in its Chromium renderer.
+> No Node.js or Electron-specific APIs are used in the Neura module — everything is pure browser JS.
+
+| # | Feature / Project | Web Browser | .exe (Electron) | Notes |
+|---|-------------------|-------------|-----------------|-------|
+| | **Runtime Requirements** | | | |
+| R1 | Camera (getUserMedia) | ✅ Works | ✅ Works | Requires HTTPS in web (or localhost); Electron uses file:///localhost — always allowed |
+| R2 | Microphone (getUserMedia) | ✅ Works | ✅ Works | Same HTTPS requirement as camera |
+| R3 | Audio playback (Web Audio API) | ✅ Works | ✅ Works | Identical in both |
+| R4 | TF.js CDN model loading | ✅ Works | ✅ Works | Both need internet on first load; Electron could bundle models offline — not implemented |
+| R5 | Canvas 2D rendering | ✅ Works | ✅ Works | Identical in both |
+| R6 | Browser Blob file download | ✅ Works | ✅ Works | Both use `a.download` — same behavior |
+| R7 | localStorage persistence | ✅ Works | ✅ Works | Identical in both (Electron uses same Chromium storage) |
+| R8 | HTTP fetch (Kaggle API) | ✅ Works | ✅ Works | Subject to CORS in both |
+| R9 | Media key system control | ❌ Fails | ❌ Fails | `document.dispatchEvent(KeyboardEvent)` creates untrusted events — both browsers/Electron ignore programmatic media keys |
+| | | | | |
+| | **ML Engine** | | | |
+| 1 | Image Classifier (MobileNet + KNN) | ✅ Real | ✅ Real | CDN MobileNetV2 feature extractor + TF.js KNN — identical in both |
+| 2 | Pose Classifier (MoveNet + KNN) | ✅ Real | ✅ Real | CDN MoveNet SINGLEPOSE_LIGHTNING + KNN |
+| 3 | HandPose Classifier (MediaPipe + KNN) | ✅ Real | ✅ Real | CDN hand-pose-detection + KNN |
+| 4 | Audio Classifier (FFT + speech-commands + KNN) | ✅ Real | ✅ Real | Web Audio API capture + FFT + CDN speech-commands + KNN |
+| 5 | Text Classifier (USE + KNN) | ✅ Real | ✅ Real | CDN Universal Sentence Encoder + KNN |
+| 6 | Number Classifier (TF.js pixel features + KNN) | ✅ Real | ✅ Real | Canvas-to-tensor digit isolation + KNN |
+| 7 | Object Detector (COCO-SSD) | ✅ Real | ✅ Real | CDN @tensorflow-models/coco-ssd — real 90-class detection |
+| 8 | Custom Object Detector (MobileNet + sliding window + NMS + KNN) | ✅ Real | ✅ Real | Multi-scale sliding window proposals → MobileNet embeddings → KNN cosine-similarity → IoU NMS |
+| 9 | KNN Classifier | ✅ Real | ✅ Real | TF.js cosine-similarity with adaptive k, distance-weighted voting, softmax |
+| 10 | Object Detection Trainer (annotation → KNN) | ✅ Real | ✅ Real | Real annotation processing + MobileNet embedding extraction + KN N addExample |
+| | | | | |
+| | **UI Panels** | | | |
+| 11 | Annotate Panel (bounding boxes + COCO-SSD auto-detect) | ✅ Real | ✅ Real | Canvas mouse/touch handlers + real COCO-SSD inference |
+| 12 | Train Panel (progress display) | ✅ Real | ✅ Real | Honest progress bar from event-driven trainer callbacks |
+| 13 | Evaluate Panel (metric estimates) | ⚠️ Estimate | ⚠️ Estimate | Deterministic formula from real sample counts + `mode.accuracy`; subtitle says "estimates" |
+| | | | | |
+| | **M1 Projects (MediaPipe Hands + rule-based)** | | | |
+| 14 | Finger Counter | ✅ Real | ✅ Real | Real HandPose detection + deterministic finger counting + Web Audio oscillator tones |
+| 15 | Virtual Piano | ✅ Real | ✅ Real | Real HandPose detection + zone-based key mapping + real oscillator synthesis |
+| 16 | Volume Controller | ⚠️ Partial | ⚠️ Partial | Real HandPose detection works; media key dispatch (item R9) fails in both modes — gestures detected but no system volume change |
+| 17 | Drawing Canvas | ✅ Real | ✅ Real | Real HandPose detection + Canvas2D drawing with gesture-based tool switching |
+| | | | | |
+| | **M2 Projects (MoveNet + rule-based)** | | | |
+| 18 | Dance Pose | ✅ Real | ✅ Real | Real MoveNet + real KNN `predictFromImage()` pose classification |
+| 19 | Yoga Checker | ✅ Real | ✅ Real | Real MoveNet + real KNN `predict(features, 5)` with 2s hold validation |
+| 20 | Posture Monitor | ✅ Real | ✅ Real | Real MoveNet + real `classifyPosture()` angle-threshold rules; unused KNN rebuild removed |
+| 21 | Rep Counter | ✅ Real | ✅ Real | Real MoveNet + real `classifyRepState()` state machine; unused KNN rebuild removed |
+| | | | | |
+| | **Utilities** | | | |
+| 22 | Kaggle Dataset Provider | ✅ Real | ✅ Real | HTTP fetch + JSZip extraction — files stored in memory (not written to disk) |
+| 23 | Model Exporter (JSON metadata) | ✅ Real | ✅ Real | Blob download of JSON summary; no model weights serialized (KNN tensors stay in memory) |
+| 24 | Rule-based classifiers utility | ✅ Real (by design) | ✅ Real (by design) | Deterministic heuristics for finger count, posture, rep state, piano key, volume level, draw/erase |
+
+### Key
+
+| Symbol | Meaning |
+|--------|---------|
+| ✅ Real | Full real ML inference or functional UI — works identically in both modes |
+| ⚠️ Estimate | Deterministic heuristics (not random); labeled honestly as estimates |
+| ❌ Fails | Does not function as intended in the given mode |
+| Partial | Functionality partially works (e.g., gesture detection works but action doesn't) |
+
+### Summary
+
+- **22 of 24 features** work identically and realistically in both web and .exe
+- Volume Controller's media key dispatch (R9) is the only broken feature — gestures are detected correctly but system volume won't change because programmatic `KeyboardEvent` is untrusted in both modes
+- Evaluate Panel shows honest estimates (not real LOO cross-validation), but is transparently labeled as such
+- No feature is "web-only" or "Electron-only" — all code is pure browser JS with no platform-specific branches
+- All 15 project types + all 6 classifier types + all utilities work the same in both modes
+
+---
+
 ## ✅ All Fixes Applied
 
 | Priority | File | Issue | Fix |

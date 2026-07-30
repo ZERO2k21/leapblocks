@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import type { ObjectDetectionTrainer } from '../../ml/ObjectDetectionTrainer'
 
@@ -16,31 +16,87 @@ interface ClassMetric {
     f1: number
 }
 
-function calculateClassMetrics(mode: UseNeuraProjectReturn, trainer?: ObjectDetectionTrainer): ClassMetric[] {
+function calculateClassMetrics(mode: UseNeuraProjectReturn): ClassMetric[] {
     const classes = mode.project?.classes || []
     if (classes.length === 0) return []
 
-    const trainerCounts = trainer?.getSampleCounts() ?? {}
     const totalSamples = classes.reduce((s, c) => s + c.samples.length, 0)
     const accuracy = mode.accuracy ?? 0
 
     return classes.map(cls => {
-        const sampleCount = trainerCounts[cls.name] ?? cls.samples.length
-        const quality = Math.min(sampleCount / 15, 0.95)
+        const sampleCount = cls.samples.length
+        const classWeight = totalSamples > 0 ? sampleCount / totalSamples : 0
+        const estimatedPrecision = accuracy > 0
+            ? Math.min(0.98, Math.max(0.2, accuracy * (0.5 + classWeight * 0.5)))
+            : Math.min(0.85, Math.max(0.2, (sampleCount / 15) * 0.8))
 
-        const precision = accuracy > 0
-            ? Math.min(0.98, Math.max(0.2, accuracy * quality))
-            : Math.min(0.85, Math.max(0.2, quality * 0.8))
-        const recall = precision * (0.85 + quality * 0.15)
+        const recall = estimatedPrecision * (0.85 + (sampleCount / Math.max(totalSamples, 1)) * 0.15)
+        const precision = estimatedPrecision
         const f1 = precision + recall > 0 ? (2 * precision * recall) / (precision + recall) : 0
 
         return { name: cls.name, color: cls.color, sampleCount, precision, recall, f1 }
     })
 }
 
+function LOOEvaluation({ trainer }: { trainer: ObjectDetectionTrainer }) {
+    const [evaluating, setEvaluating] = useState(false)
+    const [results, setResults] = useState<{
+        overallAccuracy: number
+        classMetrics: ClassMetric[]
+    } | null>(null)
+
+    const runLOO = useCallback(async () => {
+        setEvaluating(true)
+        try {
+            const loo = await trainer.evaluateLOO()
+            const classes = loo.classMetrics.map(m => ({
+                name: m.name,
+                color: '#7C3AED',
+                sampleCount: m.sampleCount,
+                precision: m.precision,
+                recall: m.recall,
+                f1: m.f1
+            }))
+            setResults({ overallAccuracy: loo.overallAccuracy, classMetrics: classes })
+        } catch (err) {
+            console.error('[EvaluatePanel] LOO failed:', err)
+        }
+        setEvaluating(false)
+    }, [trainer])
+
+    useEffect(() => {
+        if (trainer && !results) runLOO()
+    }, [trainer])
+
+    return (
+        <div className="mb-4">
+            <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-sm font-extrabold text-[#131b2e]">Leave-One-Out Cross-Validation</h3>
+                <button
+                    onClick={runLOO}
+                    disabled={evaluating}
+                    className="px-3 py-1.5 bg-purple-50 text-[#630ed4] rounded-lg text-[10px] font-bold border-none cursor-pointer hover:bg-purple-100 transition-colors disabled:opacity-50"
+                >
+                    {evaluating ? 'Evaluating...' : results ? '↻ Re-evaluate' : 'Run Evaluation'}
+                </button>
+            </div>
+            {results && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-white/85 backdrop-blur-md rounded-xl p-4 border border-gray-200 text-center">
+                        <div className="text-2xl mb-1">🎯</div>
+                        <p className="text-lg font-extrabold text-[#630ed4]">{Math.round(results.overallAccuracy * 100)}%</p>
+                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">LOO Accuracy</p>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
 export default function EvaluatePanel({ mode, trainer }: EvaluatePanelProps) {
     const [showConfusion, setShowConfusion] = useState(false)
-    const classMetrics = useMemo(() => calculateClassMetrics(mode, trainer), [mode.project?.classes, mode.accuracy, trainer])
+    const [looMode, setLooMode] = useState<'estimate' | 'loo'>(trainer ? 'loo' : 'estimate')
+    const classMetrics = useMemo(() => calculateClassMetrics(mode), [mode.project?.classes, mode.accuracy])
     const classes = mode.project?.classes || []
 
     const meanPrecision = classMetrics.length > 0
@@ -54,6 +110,7 @@ export default function EvaluatePanel({ mode, trainer }: EvaluatePanelProps) {
         : 0
     const totalDetections = classMetrics.reduce((s, c) => s + c.sampleCount, 0)
     const weakClasses = classMetrics.filter(c => c.f1 < 0.5)
+    const realAccuracy = mode.accuracy ?? 0
 
     if (!mode.project?.modelTrained) {
         return (
@@ -73,33 +130,64 @@ export default function EvaluatePanel({ mode, trainer }: EvaluatePanelProps) {
             <div className="flex items-center justify-between p-4 px-5 shrink-0">
                 <div>
                     <h1 className="text-lg font-extrabold text-[#131b2e]">📊 Model Evaluation</h1>
-                    <p className="text-[11px] text-gray-500 mt-0.5">Performance estimates based on training data</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                        {trainer ? 'Leave-one-out cross-validation on trained KNN' : `Real training accuracy: ${Math.round(realAccuracy * 100)}%`}
+                    </p>
                 </div>
-                <button onClick={() => mode.setMode('train')} className="px-4 py-2 bg-purple-50 text-[#630ed4] rounded-xl text-[11px] font-bold border-none cursor-pointer hover:bg-purple-100 transition-colors">🔄 Re-train</button>
+                <div className="flex items-center gap-2">
+                    {trainer && (
+                        <div className="flex items-center rounded-xl bg-gray-100 p-0.5 gap-0.5">
+                            <button
+                                onClick={() => setLooMode('loo')}
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border-none cursor-pointer transition-all ${looMode === 'loo' ? 'bg-white text-[#630ed4] shadow-sm' : 'bg-transparent text-gray-500'}`}
+                            >
+                                LOO CV
+                            </button>
+                            <button
+                                onClick={() => setLooMode('estimate')}
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border-none cursor-pointer transition-all ${looMode === 'estimate' ? 'bg-white text-[#630ed4] shadow-sm' : 'bg-transparent text-gray-500'}`}
+                            >
+                                Estimate
+                            </button>
+                        </div>
+                    )}
+                    <button onClick={() => mode.setMode('train')} className="px-4 py-2 bg-purple-50 text-[#630ed4] rounded-xl text-[11px] font-bold border-none cursor-pointer hover:bg-purple-100 transition-colors">🔄 Re-train</button>
+                </div>
             </div>
 
             <div className="flex-1 overflow-auto p-5 pt-0">
+
+            {looMode === 'loo' && trainer && <LOOEvaluation trainer={trainer} />}
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                 <div className="bg-white/85 backdrop-blur-md rounded-xl p-4 border border-gray-200 text-center">
                     <div className="text-2xl mb-1">🎯</div>
                     <p className="text-lg font-extrabold text-[#630ed4]">{Math.round(meanPrecision * 100)}%</p>
-                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Precision</p>
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Precision (est.)</p>
                 </div>
                 <div className="bg-white/85 backdrop-blur-md rounded-xl p-4 border border-gray-200 text-center">
                     <div className="text-2xl mb-1">🔍</div>
                     <p className="text-lg font-extrabold text-[#006c44]">{Math.round(meanRecall * 100)}%</p>
-                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Recall</p>
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Recall (est.)</p>
                 </div>
                 <div className="bg-white/85 backdrop-blur-md rounded-xl p-4 border border-gray-200 text-center">
                     <div className="text-2xl mb-1">⚡</div>
                     <p className="text-lg font-extrabold text-blue-500">{Math.round(meanF1 * 100)}%</p>
-                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">F1 Score</p>
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">F1 Score (est.)</p>
                 </div>
                 <div className="bg-white/85 backdrop-blur-md rounded-xl p-4 border border-gray-200 text-center">
                     <div className="text-2xl mb-1">📦</div>
                     <p className="text-lg font-extrabold text-amber-500">{totalDetections}</p>
                     <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Samples</p>
                 </div>
+            </div>
+
+            <div className="flex items-center gap-2 mb-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5">
+                <span className="text-sm">ℹ️</span>
+                <p className="text-[10px] font-medium text-blue-700">
+                    Real training accuracy: <strong>{Math.round(realAccuracy * 100)}%</strong>
+                    {trainer && looMode === 'estimate' && ' — switch to LOO CV for per-class metrics from real leave-one-out evaluation'}
+                </p>
             </div>
 
             {weakClasses.length > 0 && (

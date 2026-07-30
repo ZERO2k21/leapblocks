@@ -143,6 +143,60 @@ export class ObjectDetectionTrainer {
         return this.detector.getObjectsByLabel(result)
     }
 
+    async evaluateLOO(): Promise<{
+        overallAccuracy: number
+        classMetrics: { name: string; tp: number; fp: number; fn: number; precision: number; recall: number; f1: number; sampleCount: number }[]
+    }> {
+        const knn = this.detector.getKNN()
+        const counts = knn.getSampleCounts()
+        const classNames = Object.keys(counts)
+        const classConfusion: Record<string, { tp: number; fp: number; fn: number }> = {}
+        for (const name of classNames) {
+            classConfusion[name] = { tp: 0, fp: 0, fn: 0 }
+        }
+
+        let totalCorrect = 0
+        let totalSamples = 0
+
+        for (const label of classNames) {
+            const count = counts[label]
+            for (let i = 0; i < count; i++) {
+                const removedData = await knn.removeExampleByIndex(label, i)
+                if (!removedData) continue
+
+                const prediction = await knn.predictFromData(removedData, 3)
+
+                await knn.addExampleFromDataArray(Array.from(removedData), label)
+
+                if (!prediction) continue
+
+                totalSamples++
+                if (prediction.label === label) {
+                    totalCorrect++
+                    classConfusion[label].tp++
+                } else {
+                    classConfusion[label].fn++
+                    if (classConfusion[prediction.label]) {
+                        classConfusion[prediction.label].fp++
+                    }
+                }
+            }
+        }
+
+        const classMetrics = classNames.map(name => {
+            const { tp, fp, fn } = classConfusion[name]
+            const precision = tp + fp > 0 ? tp / (tp + fp) : 0
+            const recall = tp + fn > 0 ? tp / (tp + fn) : 0
+            const f1 = precision + recall > 0 ? 2 * precision * recall / (precision + recall) : 0
+            return { name, tp, fp, fn, precision, recall, f1, sampleCount: counts[name] }
+        })
+
+        return {
+            overallAccuracy: totalSamples > 0 ? totalCorrect / totalSamples : 0,
+            classMetrics
+        }
+    }
+
     getState(): DetectionTrainingState {
         return { ...this.state }
     }

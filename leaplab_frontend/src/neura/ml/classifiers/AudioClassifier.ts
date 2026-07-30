@@ -1,16 +1,17 @@
 import { KNNClassifier, ensureTf } from '../KNNClassifier'
-import { ensureSpeechCommands } from '../loadScript'
+import { ensureYamNet } from '../loadScript'
 
 export interface AudioPrediction {
     label: string
     confidences: Record<string, number>
 }
 
+const YAMNET_SAMPLE_RATE = 16000
+const YAMNET_FRAME_LENGTH = 15600
+
 export class AudioClassifier {
     private knn = new KNNClassifier()
     private audioContext: AudioContext | null = null
-    private recognizer: any = null
-    private recognizerLoaded = false
 
     private getAudioContext(): AudioContext {
         if (!this.audioContext) {
@@ -19,73 +20,31 @@ export class AudioClassifier {
         return this.audioContext
     }
 
-    private async ensureRecognizer(): Promise<any> {
-        if (this.recognizerLoaded && this.recognizer) return this.recognizer
-        const sc = await ensureSpeechCommands()
-        this.recognizer = sc.create('BROWSER_FFT')
-        await this.recognizer.ensureModelLoaded()
-        this.recognizerLoaded = true
-        return this.recognizer
-    }
+    private async extractEmbedding(audioBuffer: AudioBuffer): Promise<Float32Array> {
+        const tf = await ensureTf()
+        const yamnet = await ensureYamNet()
 
-    private async extractFeatures(audioBuffer: AudioBuffer): Promise<Float32Array> {
         const rawData = audioBuffer.getChannelData(0)
-        const recognizer = await this.ensureRecognizer()
-        const fftSize = recognizer.params().fftSize || 1024
-        const numFrames = recognizer.params().spectrogramLength || 232
-        const numFreqBins = fftSize / 2 + 1
-        const targetLength = numFrames * fftSize
-
-        let samples: Float32Array
-        if (rawData.length > targetLength) {
-            samples = rawData.slice(0, targetLength)
-        } else {
-            samples = new Float32Array(targetLength)
-            samples.set(rawData)
+        const targetLength = YAMNET_FRAME_LENGTH
+        const midStart = Math.max(0, Math.floor((rawData.length - targetLength) / 2))
+        const samples = new Float32Array(targetLength)
+        for (let i = 0; i < targetLength; i++) {
+            samples[i] = rawData[Math.min(midStart + i, rawData.length - 1)] ?? 0
         }
 
-        const hann = new Float32Array(fftSize)
-        for (let i = 0; i < fftSize; i++) {
-            hann[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (fftSize - 1)))
-        }
+        const inputTensor = tf.tensor3d(samples, [1, targetLength, 1])
+        const result = await yamnet.executeAsync(inputTensor)
+        const emb = result[1] as any
+        const meanEmb = tf.mean(emb, 0) as any
+        inputTensor.dispose()
+        tf.dispose(emb)
 
-        const features = new Float32Array(numFreqBins)
-        for (let i = 0; i < numFrames; i++) {
-            const start = i * (fftSize / 2)
-            const real = new Float64Array(fftSize)
-            const imag = new Float64Array(fftSize)
-            for (let j = 0; j < fftSize; j++) {
-                real[j] = (samples[start + j] ?? 0) * hann[j]
-            }
+        const embData = Array.from(await meanEmb.data()) as number[]
+        tf.dispose(meanEmb)
 
-            const n = fftSize
-            for (let len = 2; len <= n; len *= 2) {
-                const halfLen = len / 2
-                const angleStep = -2 * Math.PI / len
-                for (let i2 = 0; i2 < n; i2 += len) {
-                    for (let j2 = 0; j2 < halfLen; j2++) {
-                        const wRe = Math.cos(angleStep * j2)
-                        const wIm = Math.sin(angleStep * j2)
-                        const tRe = real[i2 + j2 + halfLen] * wRe - imag[i2 + j2 + halfLen] * wIm
-                        const tIm = real[i2 + j2 + halfLen] * wIm + imag[i2 + j2 + halfLen] * wRe
-                        real[i2 + j2 + halfLen] = real[i2 + j2] - tRe
-                        imag[i2 + j2 + halfLen] = imag[i2 + j2] - tIm
-                        real[i2 + j2] = real[i2 + j2] + tRe
-                        imag[i2 + j2] = imag[i2 + j2] + tIm
-                    }
-                }
-            }
-
-            for (let j = 0; j < numFreqBins; j++) {
-                features[j] += Math.sqrt(real[j] * real[j] + imag[j] * imag[j])
-            }
-        }
-
-        for (let j = 0; j < numFreqBins; j++) {
-            features[j] = Math.log(features[j] / numFrames + 1e-10)
-        }
-
-        return features
+        const norm = Math.sqrt(embData.reduce((s, v) => s + v * v, 0))
+        const normalized = new Float32Array(embData.map(v => v / Math.max(norm, 1e-10)))
+        return normalized
     }
 
     async addSample(features: number[], label: string) {
@@ -96,11 +55,11 @@ export class AudioClassifier {
     }
 
     async addSampleFromBuffer(audioBuffer: AudioBuffer, label: string) {
-        const features = await this.extractFeatures(audioBuffer)
+        const embedding = await this.extractEmbedding(audioBuffer)
         const tf = await ensureTf()
-        const embedding = tf.tensor1d(features)
-        await this.knn.addExample(embedding, label)
-        embedding.dispose()
+        const tensor = tf.tensor1d(embedding)
+        await this.knn.addExample(tensor, label)
+        tensor.dispose()
     }
 
     async addSampleFromRecording(audioBlob: Blob, label: string) {
@@ -114,7 +73,7 @@ export class AudioClassifier {
         const ctx = this.getAudioContext()
         const arrayBuffer = await audioBlob.arrayBuffer()
         const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
-        const features = await this.extractFeatures(audioBuffer)
+        const features = await this.extractEmbedding(audioBuffer)
         return Array.from(features)
     }
 
@@ -171,12 +130,36 @@ export class AudioClassifier {
         const ctx = this.getAudioContext()
         const arrayBuffer = await file.arrayBuffer()
         const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
-        const features = await this.extractFeatures(audioBuffer)
+        const features = await this.extractEmbedding(audioBuffer)
         const featuresArray = Array.from(features)
 
         await this.addSample(featuresArray, label)
 
         return featuresArray
+    }
+
+    async predict(features: number[], k = 5): Promise<AudioPrediction | null> {
+        const tf = await ensureTf()
+        const embedding = tf.tensor1d(new Float32Array(features))
+        const result = await this.knn.predictClass(embedding, k)
+        embedding.dispose()
+        return result
+    }
+
+    async predictFromBuffer(audioBuffer: AudioBuffer, k = 5): Promise<AudioPrediction | null> {
+        const features = await this.extractEmbedding(audioBuffer)
+        const tf = await ensureTf()
+        const embedding = tf.tensor1d(features)
+        const result = await this.knn.predictClass(embedding, k)
+        embedding.dispose()
+        return result
+    }
+
+    async predictFromRecording(audioBlob: Blob, k = 5): Promise<AudioPrediction | null> {
+        const ctx = this.getAudioContext()
+        const arrayBuffer = await audioBlob.arrayBuffer()
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+        return this.predictFromBuffer(audioBuffer, k)
     }
 
     async predictFromFile(file: File, k = 5): Promise<AudioPrediction | null> {
@@ -190,33 +173,6 @@ export class AudioClassifier {
 
         const ctx = this.getAudioContext()
         const arrayBuffer = await file.arrayBuffer()
-        const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
-        const features = await this.extractFeatures(audioBuffer)
-        const featuresArray = Array.from(features)
-
-        return this.predict(featuresArray, k)
-    }
-
-    async predict(features: number[], k = 5): Promise<AudioPrediction | null> {
-        const tf = await ensureTf()
-        const embedding = tf.tensor1d(new Float32Array(features))
-        const result = await this.knn.predictClass(embedding, k)
-        embedding.dispose()
-        return result
-    }
-
-    async predictFromBuffer(audioBuffer: AudioBuffer, k = 5): Promise<AudioPrediction | null> {
-        const features = await this.extractFeatures(audioBuffer)
-        const tf = await ensureTf()
-        const embedding = tf.tensor1d(features)
-        const result = await this.knn.predictClass(embedding, k)
-        embedding.dispose()
-        return result
-    }
-
-    async predictFromRecording(audioBlob: Blob, k = 5): Promise<AudioPrediction | null> {
-        const ctx = this.getAudioContext()
-        const arrayBuffer = await audioBlob.arrayBuffer()
         const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
         return this.predictFromBuffer(audioBuffer, k)
     }
@@ -320,9 +276,6 @@ export class AudioClassifier {
 
     dispose(): void {
         this.knn.dispose()
-        if (this.recognizer && this.recognizer.dispose) {
-            try { this.recognizer.dispose() } catch {}
-        }
         if (this.audioContext) {
             this.audioContext.close()
             this.audioContext = null

@@ -67,7 +67,7 @@ export class HandPoseClassifier {
                     {
                         runtime: 'tfjs',
                         maxNumHands: 1,
-                        modelComplexity: 0
+                        modelComplexity: 1
                     }
                 )
                 this.handModel = detector

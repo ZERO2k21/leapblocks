@@ -212,19 +212,30 @@ export class ImageClassifier {
      * Generate augmented versions of an image for training data diversity.
      * Returns an array of canvas elements with random transforms applied.
      */
-    // Reduced from 6 to 3 augmentations to prevent GPU memory exhaustion.
-    // Each augmentation runs a full MobileNet inference; fewer = less GPU pressure.
     static augmentations = [
-        // Original (no transform)
         (ctx: CanvasRenderingContext2D, w: number, h: number) => {},
-        // Horizontal flip
         (ctx: CanvasRenderingContext2D, w: number, h: number) => {
             ctx.translate(w, 0)
             ctx.scale(-1, 1)
         },
-        // Brightness adjustment
         (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-            ctx.filter = 'brightness(1.2)'
+            ctx.filter = 'brightness(1.3)'
+        },
+        (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+            ctx.filter = 'brightness(0.8)'
+        },
+        (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+            ctx.translate(w / 2, h / 2)
+            ctx.rotate(8 * Math.PI / 180)
+            ctx.translate(-w / 2, -h / 2)
+        },
+        (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+            ctx.translate(w / 2, h / 2)
+            ctx.rotate(-8 * Math.PI / 180)
+            ctx.translate(-w / 2, -h / 2)
+        },
+        (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+            ctx.filter = 'contrast(1.3)'
         },
     ]
 

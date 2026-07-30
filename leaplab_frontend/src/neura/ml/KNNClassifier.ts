@@ -13,6 +13,18 @@ export interface KNNPrediction {
 export class KNNClassifier {
     private examples: Record<string, any> = {}
     private disposed = false
+    private minSimilarityThreshold = 0.1
+    private plattScaleA = 1.0
+    private plattScaleB = 0.0
+
+    setOutlierThreshold(threshold: number): void {
+        this.minSimilarityThreshold = Math.max(0, Math.min(1, threshold))
+    }
+
+    calibrateConfidence(scaleA: number, scaleB: number): void {
+        this.plattScaleA = scaleA
+        this.plattScaleB = scaleB
+    }
 
     /**
      * Add an example embedding for a given class label.
@@ -57,18 +69,15 @@ export class KNNClassifier {
         const emb = flat.expandDims(0)
         flat.dispose()
 
-        // Adaptive k: clamp to smallest class size to avoid bias toward larger classes
         const minClassSize = Math.min(...labels.map(l => (this.examples[l] as any).shape[0]))
         const adaptiveK = Math.min(k, minClassSize, 7)
         const effectiveK = Math.max(1, adaptiveK)
 
         const weightedScores: Record<string, number> = {}
-        const rawSimilarities: Record<string, number[]> = {}
+        let maxSimilarity = -Infinity
 
         for (const label of labels) {
             const examples = this.examples[label]
-            // For L2-normalized embeddings: cos(a,b) = dot(a,b) = 1 - ||a-b||²/2
-            // This maps squared distance [0,4] to cosine similarity [-1,1] where 1=identical
             const sim = tf.tidy(() => {
                 const dot = tf.sum(tf.mul(emb, examples), 1)
                 return dot.squeeze()
@@ -76,15 +85,15 @@ export class KNNClassifier {
             const vals = await sim.data() as Float32Array
             sim.dispose()
 
-            // Sort by similarity descending, take top-k
             const sorted = Array.from(vals).sort((a: number, b: number) => b - a)
             const topK = sorted.slice(0, effectiveK)
-            rawSimilarities[label] = topK
 
-            // Distance-weighted voting: weight each vote by its cosine similarity
-            // Use softmax-like weighting to amplify confident matches
+            if (topK.length > 0 && topK[0] > maxSimilarity) {
+                maxSimilarity = topK[0]
+            }
+
             const weightedSum = topK.reduce((s, v) => {
-                const weight = Math.exp(v * 2) // exponential weighting favors high similarity
+                const weight = Math.exp(v * 2)
                 return s + v * weight
             }, 0)
             const weightTotal = topK.reduce((s, v) => s + Math.exp(v * 2), 0) || 1
@@ -93,7 +102,10 @@ export class KNNClassifier {
 
         emb.dispose()
 
-        // Softmax-style confidence normalization for crisp predictions
+        if (maxSimilarity < this.minSimilarityThreshold) {
+            return null
+        }
+
         const temperature = 0.8
         const scores = Object.values(weightedScores)
         const minScore = Math.min(...scores)
@@ -102,7 +114,6 @@ export class KNNClassifier {
 
         const expScores: Record<string, number> = {}
         for (const l of labels) {
-            // Map to [0,1] range then apply temperature-scaled softmax
             const normalized = (weightedScores[l] - minScore) / range
             expScores[l] = Math.exp(normalized / temperature)
         }
@@ -110,6 +121,13 @@ export class KNNClassifier {
 
         const confidences: Record<string, number> = {}
         labels.forEach(l => { confidences[l] = expScores[l] / expTotal })
+
+        if (this.plattScaleA !== 1.0 || this.plattScaleB !== 0.0) {
+            for (const l of labels) {
+                const logit = Math.log(confidences[l] / Math.max(1 - confidences[l], 1e-10))
+                confidences[l] = 1 / (1 + Math.exp(-(this.plattScaleA * logit + this.plattScaleB)))
+            }
+        }
 
         const winner = labels.reduce((a, b) => confidences[a] > confidences[b] ? a : b)
 

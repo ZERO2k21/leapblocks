@@ -12,6 +12,7 @@ declare const window: Window & {
     handPoseDetection?: any
     use?: any
     speechCommands?: any
+    yamnet?: any
 }
 
 const TF_VERSION = '4.20.0'
@@ -187,4 +188,28 @@ export async function ensureSpeechCommands(): Promise<any> {
     })()
 
     return speechCommandsPromise
+}
+
+let yamnetModelPromise: Promise<any> | null = null
+
+export async function ensureYamNet(): Promise<any> {
+    const tf = await ensureTf()
+    if (window.yamnet) return window.yamnet
+    if (yamnetModelPromise) return yamnetModelPromise
+
+    yamnetModelPromise = (async () => {
+        try {
+            const model = await tf.loadGraphModel(
+                'https://tfhub.dev/google/tfjs-model/yamnet/1/default/1',
+                { fromTFHub: true }
+            )
+            window.yamnet = model
+            return model
+        } catch (e) {
+            yamnetModelPromise = null
+            throw e
+        }
+    })()
+
+    return yamnetModelPromise
 }

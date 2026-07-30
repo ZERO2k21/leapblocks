@@ -1,18 +1,10 @@
-/**
- * Custom Object Detection classifier using MobileNet feature extraction + KNN.
- * Unlike the pre-trained COCO-SSD ObjectDetector, this supports user-trained
- * custom classes via bounding-box annotated training data.
- *
- * Detection approach: multi-scale sliding window with KNN classification.
- */
-
 import { KNNClassifier, ensureTf } from '../KNNClassifier'
-import { ensureMobileNet } from '../loadScript'
+import { ensureMobileNet, ensureCocoSsd } from '../loadScript'
 
 export interface CustomDetection {
     label: string
     confidence: number
-    bbox: [number, number, number, number] // [x, y, width, height] in pixels
+    bbox: [number, number, number, number]
 }
 
 export interface CustomDetectionResult {
@@ -20,15 +12,6 @@ export interface CustomDetectionResult {
     timestamp: number
 }
 
-interface RegionProposal {
-    x: number
-    y: number
-    width: number
-    height: number
-    scale: number
-}
-
-// WebGL context loss handling (singleton)
 let contextLossHandled = false
 function setupContextLossListener() {
     if (contextLossHandled || typeof document === 'undefined') return
@@ -66,71 +49,56 @@ function setupContextLossListener() {
 export class CustomObjectDetector {
     private knn = new KNNClassifier()
     private mobilenetModel: any = null
-    private mobilenetModule: any = null
+    private cocoSsdModel: any = null
     private isTraining = false
     private trainingProgress = 0
     private totalRegionsProcessed = 0
     private onProgressCallback: ((progress: number, message: string) => void) | null = null
 
-    // Detection parameters
-    private readonly SCALES = [0.5, 0.75, 1.0, 1.25]
-    private readonly WINDOW_SIZES = [64, 96, 128, 176, 240, 320]
-    private readonly ASPECT_RATIOS = [1.0, 1.5, 1.8, 0.67, 0.55]
-    private readonly STEP_RATIO = 0.3
-    private readonly CONFIDENCE_THRESHOLD = 0.15
+    private readonly COCO_CONFIDENCE_THRESHOLD = 0.1
+    private readonly KNN_CONFIDENCE_THRESHOLD = 0.2
     private readonly NMS_IOU_THRESHOLD = 0.5
 
-    private async ensureModel() {
-        if (this.mobilenetModel) return this.mobilenetModel
-        setupContextLossListener()
-        const mobilenet = await ensureMobileNet()
-        this.mobilenetModule = mobilenet
-        this.mobilenetModel = await mobilenet.load()
-        return this.mobilenetModel
+    private async ensureModels() {
+        if (!this.mobilenetModel) {
+            setupContextLossListener()
+            const mobilenet = await ensureMobileNet()
+            this.mobilenetModel = await mobilenet.load()
+        }
+        if (!this.cocoSsdModel) {
+            const cocoSsd = await ensureCocoSsd()
+            this.cocoSsdModel = await cocoSsd.load()
+        }
+        return { mobilenet: this.mobilenetModel, cocoSsd: this.cocoSsdModel }
     }
 
-    /**
-     * Preprocess a cropped region for MobileNet embedding.
-     * Resizes to 224x224 and normalizes to [-1, 1].
-     */
     private async preprocessRegion(
         source: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement,
-        cropX: number,
-        cropY: number,
-        cropW: number,
-        cropH: number
+        cropX: number, cropY: number, cropW: number, cropH: number
     ): Promise<any> {
         const tf = await ensureTf()
         return tf.tidy(() => {
             let tensor = tf.browser.fromPixels(source).toFloat()
-            // Crop the region
             const clampedX = Math.max(0, Math.floor(cropX))
             const clampedY = Math.max(0, Math.floor(cropY))
             const clampedW = Math.min(Math.floor(cropW), tensor.shape[1] - clampedX)
             const clampedH = Math.min(Math.floor(cropH), tensor.shape[0] - clampedY)
             if (clampedW <= 0 || clampedH <= 0) return null
             tensor = tf.slice(tensor, [clampedY, clampedX, 0], [clampedH, clampedW, 3])
-            // Resize to 224x224
             tensor = tf.image.resizeBilinear(tensor, [224, 224])
             return tensor.div(127.5).sub(1)
         })
     }
 
-    /**
-     * Extract MobileNet embedding for a cropped region.
-     */
     private async extractRegionEmbedding(
         source: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement,
-        cropX: number,
-        cropY: number,
-        cropW: number,
-        cropH: number
+        cropX: number, cropY: number, cropW: number, cropH: number
     ): Promise<any | null> {
         const tf = await ensureTf()
-        const model = await this.ensureModel()
+        const { mobilenet } = await this.ensureModels()
         const tensor = await this.preprocessRegion(source, cropX, cropY, cropW, cropH)
         if (!tensor) return null
-        const embedding = model.infer(tensor, true)
+        const embedding = mobilenet.infer(tensor, true)
         tensor.dispose()
         const normalized = tf.tidy(() => {
             const norm = tf.norm(embedding)
@@ -141,14 +109,11 @@ export class CustomObjectDetector {
         return normalized
     }
 
-    /**
-     * Extract embedding from a full image (for whole-image classification).
-     */
     private async extractFullEmbedding(
         input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement
     ): Promise<any> {
         const tf = await ensureTf()
-        const model = await this.ensureModel()
+        const { mobilenet } = await this.ensureModels()
         return tf.tidy(() => {
             let tensor = tf.browser.fromPixels(input).toFloat()
             const [h, w] = tensor.shape
@@ -158,7 +123,7 @@ export class CustomObjectDetector {
             tensor = tf.slice(tensor, [top, left, 0], [size, size, 3])
             tensor = tf.image.resizeBilinear(tensor, [224, 224])
             tensor = tensor.div(127.5).sub(1)
-            const embedding = model.infer(tensor, true)
+            const embedding = mobilenet.infer(tensor, true)
             tensor.dispose()
             const norm = tf.norm(embedding)
             const normalized = tf.div(embedding, tf.maximum(norm, 1e-10))
@@ -167,57 +132,8 @@ export class CustomObjectDetector {
         })
     }
 
-    /**
-     * Generate region proposals using a multi-scale sliding window with multiple aspect ratios.
-     */
-    private generateRegionProposals(
-        imageWidth: number,
-        imageHeight: number
-    ): RegionProposal[] {
-        const proposals: RegionProposal[] = []
-        const ASPECT_RATIOS = this.ASPECT_RATIOS || [1.0, 1.8, 0.55]
-
-        for (const scale of this.SCALES) {
-            const scaledW = Math.floor(imageWidth * scale)
-            const scaledH = Math.floor(imageHeight * scale)
-
-            for (const windowSize of this.WINDOW_SIZES) {
-                for (const aspectRatio of ASPECT_RATIOS) {
-                    const wFactor = Math.sqrt(aspectRatio)
-                    const hFactor = 1 / wFactor
-
-                    const winW = Math.round(windowSize * wFactor)
-                    const winH = Math.round(windowSize * hFactor)
-
-                    // Ensure window fits within the scaled image
-                    if (winW > scaledW || winH > scaledH) continue
-
-                    const stepX = Math.max(20, Math.floor(winW * this.STEP_RATIO))
-                    const stepY = Math.max(20, Math.floor(winH * this.STEP_RATIO))
-
-                    for (let y = 0; y + winH <= scaledH; y += stepY) {
-                        for (let x = 0; x + winW <= scaledW; x += stepX) {
-                            proposals.push({
-                                x: x / scale,
-                                y: y / scale,
-                                width: winW / scale,
-                                height: winH / scale,
-                                scale
-                            })
-                        }
-                    }
-                }
-            }
-        }
-        return proposals
-    }
-
-    /**
-     * Non-Maximum Suppression to remove overlapping detections.
-     */
     private nonMaxSuppression(detections: CustomDetection[], iouThreshold: number): CustomDetection[] {
         if (detections.length === 0) return []
-        // Sort by confidence descending
         const sorted = [...detections].sort((a, b) => b.confidence - a.confidence)
         const result: CustomDetection[] = []
         const suppressed = new Set<number>()
@@ -229,17 +145,12 @@ export class CustomObjectDetector {
                 if (suppressed.has(j)) continue
                 if (sorted[i].label !== sorted[j].label) continue
                 const iou = this.calculateIoU(sorted[i].bbox, sorted[j].bbox)
-                if (iou > iouThreshold) {
-                    suppressed.add(j)
-                }
+                if (iou > iouThreshold) suppressed.add(j)
             }
         }
         return result
     }
 
-    /**
-     * Calculate Intersection over Union (IoU) between two bounding boxes.
-     */
     private calculateIoU(boxA: [number, number, number, number], boxB: [number, number, number, number]): number {
         const [x1, y1, w1, h1] = boxA
         const [x2, y2, w2, h2] = boxB
@@ -255,10 +166,6 @@ export class CustomObjectDetector {
         return unionArea > 0 ? intersectionArea / unionArea : 0
     }
 
-    /**
-     * Add a training sample: an image region with a known label.
-     * Crops the region from the source image, extracts MobileNet features, and adds to KNN.
-     */
     async addSample(
         source: HTMLImageElement | HTMLCanvasElement,
         label: string,
@@ -267,7 +174,6 @@ export class CustomObjectDetector {
         imageHeight: number
     ): Promise<boolean> {
         try {
-            // Convert percentage-based bbox to pixel coordinates
             const px = (bbox.x / 100) * imageWidth
             const py = (bbox.y / 100) * imageHeight
             const pw = (bbox.width / 100) * imageWidth
@@ -286,9 +192,6 @@ export class CustomObjectDetector {
         }
     }
 
-    /**
-     * Add a training sample from a data URL image.
-     */
     async addSampleFromDataUrl(
         dataUrl: string,
         label: string,
@@ -310,10 +213,6 @@ export class CustomObjectDetector {
         }
     }
 
-    /**
-     * Train from annotated samples.
-     * Each sample's data is a JSON string with { imageUrl, boxes: [{label, x, y, width, height}] }.
-     */
     async trainFromAnnotations(
         samples: { data: string }[],
         onProgress?: (progress: number, message: string) => void
@@ -323,14 +222,12 @@ export class CustomObjectDetector {
         this.onProgressCallback = onProgress || null
         this.totalRegionsProcessed = 0
 
-        // Clear existing KNN data
         this.knn.clear()
 
         let totalRegions = 0
         const classCounts: Record<string, number> = {}
 
         try {
-            // Count total regions first
             const allRegions: { dataUrl: string; label: string; bbox: { x: number; y: number; width: number; height: number } }[] = []
             for (const sample of samples) {
                 try {
@@ -346,9 +243,7 @@ export class CustomObjectDetector {
                             }
                         }
                     }
-                } catch {
-                    // Raw image data URL — skip (no bounding box info)
-                }
+                } catch {}
             }
 
             totalRegions = allRegions.length
@@ -357,16 +252,11 @@ export class CustomObjectDetector {
                 return { success: false, totalRegions: 0, classCounts: {} }
             }
 
-            // Process regions in batches to allow browser breathing room
             const BATCH_SIZE = 5
             for (let i = 0; i < allRegions.length; i += BATCH_SIZE) {
                 const batch = allRegions.slice(i, i + BATCH_SIZE)
                 for (const region of batch) {
-                    const success = await this.addSampleFromDataUrl(
-                        region.dataUrl,
-                        region.label,
-                        region.bbox
-                    )
+                    const success = await this.addSampleFromDataUrl(region.dataUrl, region.label, region.bbox)
                     if (success) {
                         classCounts[region.label] = (classCounts[region.label] || 0) + 1
                         this.totalRegionsProcessed++
@@ -376,7 +266,6 @@ export class CustomObjectDetector {
                 if (this.onProgressCallback) {
                     this.onProgressCallback(this.trainingProgress, `Processing region ${Math.min(i + BATCH_SIZE, allRegions.length)}/${totalRegions}`)
                 }
-                // Yield to browser
                 await new Promise(r => setTimeout(r, 0))
             }
 
@@ -390,10 +279,6 @@ export class CustomObjectDetector {
         }
     }
 
-    /**
-     * Run detection on an image or video frame.
-     * Uses multi-scale sliding window + KNN classification + NMS.
-     */
     async detect(
         input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement,
         maxDetections = 20
@@ -403,20 +288,16 @@ export class CustomObjectDetector {
         }
 
         const tf = await ensureTf()
+        const { cocoSsd } = await this.ensureModels()
+
         const inputTensor = tf.browser.fromPixels(input)
         const [imageHeight, imageWidth] = inputTensor.shape
         inputTensor.dispose()
 
-        // Generate region proposals
-        const proposals = this.generateRegionProposals(imageWidth, imageHeight)
-
-        // Create a canvas for cropping regions
         const cropCanvas = document.createElement('canvas')
         const cropCtx = cropCanvas.getContext('2d')!
         cropCanvas.width = imageWidth
         cropCanvas.height = imageHeight
-
-        // Draw the full image onto the crop canvas
         if (input instanceof HTMLVideoElement) {
             cropCtx.drawImage(input, 0, 0, imageWidth, imageHeight)
         } else if (input instanceof HTMLImageElement) {
@@ -425,59 +306,49 @@ export class CustomObjectDetector {
             cropCtx.drawImage(input, 0, 0, imageWidth, imageHeight)
         }
 
+        const cocoResults = await cocoSsd.detect(cropCanvas)
+        const proposals = cocoResults
+            .filter((r: any) => r.score > this.COCO_CONFIDENCE_THRESHOLD)
+            .map((r: any) => ({
+                x: r.bbox[0],
+                y: r.bbox[1],
+                width: r.bbox[2],
+                height: r.bbox[3]
+            }))
+
         const rawDetections: CustomDetection[] = []
-        const CONFIDENCE_THRESHOLD = this.CONFIDENCE_THRESHOLD
 
-        // Process proposals in batches
-        const BATCH_SIZE = 10
-        for (let i = 0; i < proposals.length; i += BATCH_SIZE) {
-            const batch = proposals.slice(i, i + BATCH_SIZE)
-            for (const proposal of batch) {
-                try {
-                    const embedding = await this.extractRegionEmbedding(
-                        cropCanvas,
-                        proposal.x,
-                        proposal.y,
-                        proposal.width,
-                        proposal.height
-                    )
-                    if (!embedding) continue
+        for (const proposal of proposals) {
+            try {
+                const embedding = await this.extractRegionEmbedding(
+                    cropCanvas, proposal.x, proposal.y, proposal.width, proposal.height
+                )
+                if (!embedding) continue
 
-                    const prediction = await this.knn.predictClass(embedding, 3)
-                    embedding.dispose()
+                const prediction = await this.knn.predictClass(embedding, 3)
+                embedding.dispose()
 
-                    if (prediction && prediction.confidences[prediction.label] > CONFIDENCE_THRESHOLD) {
-                        rawDetections.push({
-                            label: prediction.label,
-                            confidence: prediction.confidences[prediction.label],
-                            bbox: [
-                                Math.max(0, proposal.x),
-                                Math.max(0, proposal.y),
-                                Math.min(proposal.width, imageWidth - proposal.x),
-                                Math.min(proposal.height, imageHeight - proposal.y)
-                            ]
-                        })
-                    }
-                } catch {
-                    // Skip failed regions
+                if (prediction && prediction.confidences[prediction.label] > this.KNN_CONFIDENCE_THRESHOLD) {
+                    rawDetections.push({
+                        label: prediction.label,
+                        confidence: prediction.confidences[prediction.label],
+                        bbox: [
+                            Math.max(0, proposal.x),
+                            Math.max(0, proposal.y),
+                            Math.min(proposal.width, imageWidth - proposal.x),
+                            Math.min(proposal.height, imageHeight - proposal.y)
+                        ]
+                    })
                 }
-            }
-            // Yield to browser every batch
-            await new Promise(r => setTimeout(r, 0))
+            } catch {}
         }
 
-        // Apply Non-Maximum Suppression
         const nmsDetections = this.nonMaxSuppression(rawDetections, this.NMS_IOU_THRESHOLD)
-
-        // Limit total detections
         const result = nmsDetections.slice(0, maxDetections)
 
         return { objects: result, timestamp: Date.now() }
     }
 
-    /**
-     * Run detection on a static image from a data URL.
-     */
     async detectFromDataUrl(dataUrl: string): Promise<CustomDetectionResult> {
         const img = new Image()
         img.src = dataUrl
@@ -492,9 +363,6 @@ export class CustomObjectDetector {
         return this.detect(img)
     }
 
-    /**
-     * Draw detections on a canvas.
-     */
     drawDetections(
         canvas: HTMLCanvasElement,
         result: CustomDetectionResult,
@@ -544,9 +412,6 @@ export class CustomObjectDetector {
         }
     }
 
-    /**
-     * Group detections by label and count objects per class.
-     */
     getObjectsByLabel(result: CustomDetectionResult): Record<string, CustomDetection[]> {
         const grouped: Record<string, CustomDetection[]> = {}
         for (const obj of result.objects) {
@@ -588,9 +453,13 @@ export class CustomObjectDetector {
         this.knn.clearClass(label)
     }
 
+    getKNN(): KNNClassifier {
+        return this.knn
+    }
+
     dispose(): void {
         this.knn.dispose()
         this.mobilenetModel = null
-        this.mobilenetModule = null
+        this.cocoSsdModel = null
     }
 }
