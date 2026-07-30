@@ -4,6 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { memo, useRef, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Handle, Position, NodeProps, useReactFlow } from 'reactflow';
 import { getComponentPins } from '../../lib/PinMap';
 import { useForgeStore, getCircuitEngineSync } from '../../../utlis/store/useForgeStore';
@@ -1043,13 +1044,15 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
 
 
       {/* ── SENSOR OVERLAY (sliders shown below the node — only when selected) ── */}
-      {isSelected && (
+      {isSelected && createPortal(
         <SensorOverlay
           nodeId={id}
           type={data.type}
           currentValues={data.sensorValues}
           rotation={data.rotation || 0}
-        />
+          wrapperRef={wrapperRef}
+        />,
+        document.body
       )}
     </div>
   );
