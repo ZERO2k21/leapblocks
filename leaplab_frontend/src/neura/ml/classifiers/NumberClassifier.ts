@@ -110,7 +110,7 @@ export class NumberClassifier {
         label: string
     ) {
         const isolated = await inputToIsolatedCanvas(imageElement)
-        const embedding = await this.extractMobileNetEmbedding(isolated)
+        const embedding = await extractMobileNetEmbedding(isolated)
         await this.knn.addExample(embedding, label)
         embedding.dispose()
     }
@@ -121,7 +121,7 @@ export class NumberClassifier {
     ): Promise<NumberPrediction | null> {
         try {
             const isolated = await inputToIsolatedCanvas(input)
-            const embedding = await this.extractMobileNetEmbedding(isolated)
+            const embedding = await extractMobileNetEmbedding(isolated)
             const result = await this.knn.predictClass(embedding, k)
             embedding.dispose()
             return result

@@ -129,6 +129,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const [downloadSource, setDownloadSource] = useState<'local' | 'kaggle'>('local')
     const [kaggleCredentials, setKaggleCredentials] = useState<KaggleCredentials | null>(() => getStoredCredentials())
     const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
+    const [scannedFrameUrl, setScannedFrameUrl] = useState<string | null>(null)
 
     const startCamera = useCallback(async () => {
         setCameraError(null)
@@ -331,28 +332,135 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         return () => cancelAnimationFrame(animFrameRef.current)
     }, [cameraOn, realtimeEnabled, isLoadingModel, detectFrame, drawDetections, confidenceThreshold])
 
-    // Test mode: auto-start camera
+    // Test mode: auto-start camera, disable continuous detection, reset scan state
     useEffect(() => {
-        if (mode.mode !== 'test' || isLoadingModel) return
+        if (mode.mode !== 'test') {
+            setScannedFrameUrl(null)
+            setRealtimeEnabled(true)
+            return
+        }
+        setRealtimeEnabled(false)
+        setScannedFrameUrl(null)
+        setUploadedImage(null)
+        setUploadedDetections([])
         if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
             testCameraStartedRef.current = true
             startCamera()
         }
-    }, [mode.mode, isLoadingModel, startCamera])
+    }, [mode.mode, startCamera])
 
-    const handleManualDetect = async () => {
-        if (isLoadingModel || !videoRef.current || !canvasRef.current) return
+    const captureFrameFromVideo = useCallback((video: HTMLVideoElement): string => {
+        const tempCanvas = document.createElement('canvas')
+        tempCanvas.width = video.videoWidth
+        tempCanvas.height = video.videoHeight
+        const ctx = tempCanvas.getContext('2d')!
+        ctx.scale(-1, 1)
+        ctx.translate(-tempCanvas.width, 0)
+        ctx.drawImage(video, 0, 0)
+        return tempCanvas.toDataURL('image/jpeg', 0.92)
+    }, [])
+
+    const annotateImage = useCallback(async (imageUrl: string, dets: { class: string; score: number; bbox: [number, number, number, number] }[], imgWidth: number, imgHeight: number): Promise<string> => {
+        const canvas = document.createElement('canvas')
+        canvas.width = imgWidth
+        canvas.height = imgHeight
+        const ctx = canvas.getContext('2d')!
+        const img = new Image()
+        img.src = imageUrl
+        if (!img.complete) await new Promise<void>((resolve) => { img.onload = () => resolve(); img.onerror = () => resolve() })
+        ctx.drawImage(img, 0, 0, imgWidth, imgHeight)
+        dets.filter(d => d.score >= confidenceThreshold).forEach((det) => {
+            const [x, y, w, h] = det.bbox
+            const color = getColorForObject(det.class)
+            ctx.strokeStyle = color
+            ctx.lineWidth = 3
+            ctx.shadowColor = color
+            ctx.shadowBlur = 8
+            ctx.strokeRect(x, y, w, h)
+            ctx.shadowBlur = 0
+            const label = `${det.class} ${Math.round(det.score * 100)}%`
+            ctx.font = 'bold 14px system-ui, sans-serif'
+            const textWidth = ctx.measureText(label).width
+            const labelY = Math.max(y - 8, 22)
+            ctx.fillStyle = color
+            ctx.beginPath()
+            ctx.roundRect(x, labelY - 20, textWidth + 16, 22, 6)
+            ctx.fill()
+            ctx.fillStyle = '#fff'
+            ctx.textBaseline = 'middle'
+            ctx.fillText(label, x + 8, labelY - 9)
+        })
+        return canvas.toDataURL('image/png')
+    }, [confidenceThreshold])
+
+    const runDetectionOnImage = useCallback(async (imageUrl: string, width: number, height: number): Promise<{ class: string; score: number; bbox: [number, number, number, number] }[]> => {
+        const img = new Image()
+        img.src = imageUrl
+        if (!img.complete) await new Promise<void>((resolve) => { img.onload = () => resolve(); img.onerror = () => resolve() })
+        if (!img.naturalWidth) return []
+        const imgCanvas = document.createElement('canvas')
+        imgCanvas.width = width
+        imgCanvas.height = height
+        imgCanvas.getContext('2d')!.drawImage(img, 0, 0, width, height)
+        try {
+            const start = performance.now()
+            let result: { class: string; score: number; bbox: [number, number, number, number] }[] = []
+            if (trainerRef.current.canClassify) {
+                const customResult = await trainerRef.current.detect(img, 20, false)
+                result = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
+            } else if (useCustomModel && customModelTrained) {
+                result = []
+            } else {
+                const cocoResult = await classifierRef.current.detect(imgCanvas as any)
+                const userClasses = mode.project?.classes || []
+                result = cocoResult.objects
+                    .map(o => ({ class: mapToUserClass(o.class, userClasses), score: o.confidence, bbox: o.bbox }))
+                    .filter(o => userClasses.length === 0 || userClasses.some(c => c.name === o.class))
+            }
+            setInferenceTime(Math.round(performance.now() - start))
+            return result
+        } catch {
+            return []
+        }
+    }, [useCustomModel, customModelTrained, mode.project?.classes])
+
+    const handleScan = useCallback(async () => {
+        if (isLoadingModel || isDetecting) return
         setIsDetecting(true)
         try {
-            const dets = await detectFrame(true)
-            setDetections(dets)
-            const filteredDets = dets.filter(det => det.score >= confidenceThreshold)
-            if (canvasRef.current && videoRef.current) drawDetections(filteredDets, canvasRef.current, videoRef.current)
+            if (cameraOn && videoRef.current && videoRef.current.readyState >= 2) {
+                const frameUrl = captureFrameFromVideo(videoRef.current)
+                setScannedFrameUrl(frameUrl)
+                const dets = await runDetectionOnImage(frameUrl, videoRef.current.videoWidth, videoRef.current.videoHeight)
+                setDetections(dets)
+                const annotatedUrl = await annotateImage(frameUrl, dets, videoRef.current.videoWidth, videoRef.current.videoHeight)
+                setUploadedImage({ originalUrl: frameUrl, annotatedUrl, width: videoRef.current.videoWidth, height: videoRef.current.videoHeight })
+                setUploadedDetections(dets)
+                setShowOriginal(true)
+            } else if (scannedFrameUrl) {
+                const dets = await runDetectionOnImage(scannedFrameUrl, uploadedImage?.width || 640, uploadedImage?.height || 480)
+                setDetections(dets)
+                setUploadedDetections(dets)
+                if (uploadedImage) {
+                    const annotatedUrl = await annotateImage(scannedFrameUrl, dets, uploadedImage.width, uploadedImage.height)
+                    setUploadedImage({ ...uploadedImage, annotatedUrl })
+                }
+            }
+            showFlash()
         } catch (e) {
-            console.warn('[ObjectDetector] Manual detection error:', e)
+            console.warn('[ObjectDetector] Scan error:', e)
+            showSaved('⚠️ Detection failed. Please try again.')
         }
         setIsDetecting(false)
-    }
+    }, [isLoadingModel, isDetecting, cameraOn, isLoadingModel, scannedFrameUrl, uploadedImage, captureFrameFromVideo, runDetectionOnImage, annotateImage, showFlash, showSaved])
+
+    const resetScan = useCallback(() => {
+        setScannedFrameUrl(null)
+        setDetections([])
+        setUploadedImage(null)
+        setUploadedDetections([])
+        setShowOriginal(true)
+    }, [])
 
     const handleCapture = async () => {
         if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return
@@ -513,7 +621,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             return
         }
 
-        // In test mode: run detection on the uploaded image
+        // In test mode: store uploaded image, wait for user to click Scan
         setCameraOn(false)
         stopCamera()
         const img = new Image()
@@ -524,54 +632,9 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             setTimeout(() => resolve(), 5000)
         })
         if (img.complete && img.naturalWidth > 0) {
-            try {
-                const start = performance.now()
-                let dets: { class: string; score: number; bbox: [number, number, number, number] }[] = []
-
-                if (useCustomModel && customModelTrained && trainerRef.current.canClassify) {
-                    const customResult = await trainerRef.current.detect(img, 20, false)
-                    dets = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
-                } else {
-                    const result = await classifierRef.current.detect(img as any)
-                    const userClasses = mode.project?.classes || []
-                    dets = result.objects.map(o => ({ class: mapToUserClass(o.class, userClasses), score: o.confidence, bbox: o.bbox }))
-                }
-
-                const elapsed = Math.round(performance.now() - start)
-                setInferenceTime(elapsed)
-                setUploadedDetections(dets)
-                const filteredDets = dets.filter(det => det.score >= confidenceThreshold)
-                const canvas = document.createElement('canvas')
-                canvas.width = img.naturalWidth
-                canvas.height = img.naturalHeight
-                const ctx = canvas.getContext('2d')!
-                ctx.drawImage(img, 0, 0)
-                filteredDets.forEach((det) => {
-                    const [x, y, w, h] = det.bbox
-                    const color = getColorForObject(det.class)
-                    ctx.strokeStyle = color
-                    ctx.lineWidth = 3
-                    ctx.shadowColor = color
-                    ctx.shadowBlur = 8
-                    ctx.strokeRect(x, y, w, h)
-                    ctx.shadowBlur = 0
-                    const label = `${det.class} ${Math.round(det.score * 100)}%`
-                    ctx.font = 'bold 14px system-ui, sans-serif'
-                    const textWidth = ctx.measureText(label).width
-                    const labelY = Math.max(y - 8, 22)
-                    ctx.fillStyle = color
-                    ctx.beginPath()
-                    ctx.roundRect(x, labelY - 20, textWidth + 16, 22, 6)
-                    ctx.fill()
-                    ctx.fillStyle = '#fff'
-                    ctx.textBaseline = 'middle'
-                    ctx.fillText(label, x + 8, labelY - 9)
-                })
-                setUploadedImage({ originalUrl: dataUrl, annotatedUrl: canvas.toDataURL('image/png'), width: img.naturalWidth, height: img.naturalHeight })
-            } catch (err) {
-                console.error('[ObjectDetector] Upload detection failed:', err)
-                setUploadedImage({ originalUrl: dataUrl, annotatedUrl: null, width: img.naturalWidth, height: img.naturalHeight })
-            }
+            setScannedFrameUrl(dataUrl)
+            setUploadedImage({ originalUrl: dataUrl, annotatedUrl: null, width: img.naturalWidth, height: img.naturalHeight })
+            setShowOriginal(true)
         }
         if (fileInputRef.current) fileInputRef.current.value = ''; if (testFileInputRef.current) testFileInputRef.current.value = ''
     }
@@ -770,7 +833,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     {cameraOn ? '📷 Stop' : '📷 Start'}
                                 </button>
                                 {cameraOn && !realtimeEnabled && (
-                                    <button onClick={handleManualDetect} disabled={isLoadingModel || isDetecting} className="px-3 py-1.5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-lg text-[10px] font-bold border-none cursor-pointer">
+                                    <button onClick={handleScan} disabled={isLoadingModel || isDetecting} className="px-3 py-1.5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-lg text-[10px] font-bold border-none cursor-pointer">
                                         {isDetecting ? '⏳...' : '🔍 Scan'}
                                     </button>
                                 )}
@@ -953,15 +1016,13 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 <div className={`flex-1 flex flex-col gap-2.5 min-w-0 ${isMobile ? 'min-h-[40vh]' : 'min-h-0'}`}>
                     {/* Camera / Image feed */}
                     <div className="relative rounded-2xl overflow-hidden bg-[#1e1b4b] w-full flex-1 min-h-0">
-                        {/* Live camera feed */}
-                        <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn && !uploadedImage ? 'block' : 'hidden'}`} />
-                        <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full pointer-events-none -scale-x-100 ${cameraOn && !uploadedImage ? 'block' : 'hidden'}`} />
+                        {/* Live camera feed (shown only when camera on and no scan yet) */}
+                        <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn && !scannedFrameUrl ? 'block' : 'hidden'}`} />
 
-                        {/* Uploaded image with annotations */}
-                        {uploadedImage && (
+                        {/* Scanned/Uploaded image with annotations (shown after scan or upload) */}
+                        {uploadedImage && scannedFrameUrl && (
                             <div className="relative w-full h-full">
-                                <img src={showOriginal ? uploadedImage.originalUrl : (uploadedImage.annotatedUrl || uploadedImage.originalUrl)} alt="Uploaded test" className="w-full h-full object-contain" />
-                                {/* Toggle original/annotated */}
+                                <img src={showOriginal ? uploadedImage.originalUrl : (uploadedImage.annotatedUrl || uploadedImage.originalUrl)} alt="Scanned" className="w-full h-full object-contain" />
                                 {uploadedImage.annotatedUrl && (
                                     <button onClick={() => setShowOriginal(!showOriginal)} className="absolute top-2.5 right-2.5 py-1.25 px-2.5 rounded-lg text-[10px] font-bold bg-white text-[#4a4455] border-none cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.15)]">
                                         {showOriginal ? '🎯 Show Detections' : '📷 Original'}
@@ -970,10 +1031,22 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                             </div>
                         )}
 
+                        {/* Uploaded image waiting for scan (no annotatedUrl yet) */}
+                        {uploadedImage && !uploadedImage.annotatedUrl && !cameraOn && (
+                            <div className="relative w-full h-full">
+                                <img src={uploadedImage.originalUrl} alt="Uploaded test" className="w-full h-full object-contain" />
+                                <div className="absolute top-2.5 right-2.5 py-1.25 px-2.5 rounded-lg text-[10px] font-bold bg-amber-500 text-white border-none shadow-[0_2px_8px_rgba(0,0,0,0.15)]">
+                                    ⏳ Tap Scan to detect
+                                </div>
+                            </div>
+                        )}
+
                         {/* Status badge */}
                         <div className={`absolute top-2.5 left-2.5 flex items-center gap-1.5 py-1.25 px-2.5 bg-black/40 backdrop-blur-md rounded-lg ${cameraOn || uploadedImage ? 'visible' : 'invisible'}`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${uploadedImage ? 'bg-emerald-500' : cameraOn ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-gray-500'}`} />
-                            <span className="text-white text-[9px] font-bold">{uploadedImage ? '📸 IMAGE' : cameraOn ? '🔍 LIVE' : '📷 OFF'}</span>
+                            <div className={`w-1.5 h-1.5 rounded-full ${uploadedImage?.annotatedUrl ? 'bg-emerald-500' : scannedFrameUrl ? 'bg-amber-500' : cameraOn ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-gray-500'}`} />
+                            <span className="text-white text-[9px] font-bold">
+                                {uploadedImage?.annotatedUrl ? '🎯 SCANNED' : scannedFrameUrl ? '📸 CAPTURED' : cameraOn ? '🔍 LIVE' : '📷 OFF'}
+                            </span>
                         </div>
 
                         {/* Detection count badge */}
@@ -1012,10 +1085,13 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
                     {/* Controls */}
                     <div className="flex items-center gap-2 flex-wrap justify-center shrink-0">
-                        {uploadedImage ? (
+                        {scannedFrameUrl || (uploadedImage && !cameraOn) ? (
                             <>
-                                <button onClick={() => testFileInputRef.current?.click()} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.2)]">📂 Try Another</button>
-                                <button onClick={() => { setUploadedImage(null); setUploadedDetections([]); setShowOriginal(true) }} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold bg-[#f5f3ff] text-[#4a4455] border-none cursor-pointer">📷 Use Camera</button>
+                                <button onClick={handleScan} disabled={isLoadingModel || isDetecting} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-[11px] font-bold bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.25)]">
+                                    {isDetecting ? '⏳ Scanning...' : uploadedImage?.annotatedUrl ? '🔍 Re-scan' : '🔍 Scan'}
+                                </button>
+                                <button onClick={resetScan} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold bg-[#f5f3ff] text-[#4a4455] border-none cursor-pointer">🔄 Try Again</button>
+                                <button onClick={() => testFileInputRef.current?.click()} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold bg-white text-[#630ed4] border-2 border-[#630ed4] cursor-pointer">📂 New Image</button>
                             </>
                         ) : (
                             <>
@@ -1023,8 +1099,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     {cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
                                 </button>
                                 {cameraOn && (
-                                    <button onClick={handleManualDetect} disabled={isLoadingModel || isDetecting} className="px-4 py-2 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer">
-                                        {isDetecting ? '⏳...' : '🔍 Scan'}
+                                    <button onClick={handleScan} disabled={isLoadingModel || isDetecting} className="px-5 py-2.5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.3)]">
+                                        {isDetecting ? '⏳ Scanning...' : '🔍 Scan'}
                                     </button>
                                 )}
                                 <button onClick={() => testFileInputRef.current?.click()} disabled={isLoadingModel} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold bg-white text-[#630ed4] border-2 border-[#630ed4] cursor-pointer">📂 Upload Image</button>
