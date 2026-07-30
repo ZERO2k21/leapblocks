@@ -25,7 +25,7 @@ import { SelectionToolbar } from './SelectionToolbar';
 import { WireEdge } from './Edges/WireEdge';
 
 import { getComponentPins } from '../lib/PinMap';
-import { Plus, Play, Square, RotateCcw, Code, Sun, Moon, ZoomIn, ZoomOut, Maximize, Hand, Copy, Clipboard, Trash2, CopyPlus } from 'lucide-react';
+import { Plus, Play, Square, RotateCcw, Code, Sun, Moon, ZoomIn, ZoomOut, Maximize, Hand, Copy, Clipboard, Trash2 } from 'lucide-react';
 
 interface ForgeCanvasProps {
   onToggleSimulation?: () => void;
@@ -377,38 +377,17 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     }
   }, [getViewport, setViewport]);
 
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-    node: any | null;
-  } | null>(null);
-
   const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
     event.preventDefault();
     event.stopPropagation();
     store.setSelectedNode(node.id);
-    if (['esp32-c3', 'esp32', 'arduino-uno'].includes(node.data?.type)) {
-      setContextMenu(null);
-      return;
-    }
-    setContextMenu({
-      x: event.clientX,
-      y: event.clientY,
-      node,
-    });
   }, [store]);
 
   const onPaneContextMenu = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
-    setContextMenu({
-      x: event.clientX,
-      y: event.clientY,
-      node: null,
-    });
   }, []);
 
   const onNodeClick = useCallback((_: any, node: Node) => {
-    setContextMenu(null);
     store.setSelectedNode(node.id);
   }, [store]);
 
@@ -433,7 +412,6 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   }, []);
 
   const onPaneClick = useCallback((event: React.MouseEvent) => {
-    setContextMenu(null);
     if (wireDraft) {
       const pos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       addWireWaypoint(pos);
@@ -600,45 +578,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         )}
       </ReactFlow>
 
-      {/* ── Component Context Menu (Right-click / Dropdown actions) ── */}
-      {contextMenu && (
-        <div
-          className="fixed z-[10000] bg-white border-2 border-slate-200 rounded-xl shadow-2xl py-1.5 min-w-[160px] overflow-hidden animate-[logixMenuSlideIn_0.15s_ease-out] select-none"
-          style={{ top: contextMenu.y, left: contextMenu.x }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {contextMenu.node && !['esp32-c3', 'esp32', 'arduino-uno'].includes(contextMenu.node.data?.type) && (
-            <>
-              <button
-                onClick={() => {
-                  addNode(
-                    contextMenu.node.data.type,
-                    { x: contextMenu.node.position.x + 160, y: contextMenu.node.position.y + 60 },
-                    { ...contextMenu.node.data }
-                  );
-                  setContextMenu(null);
-                }}
-                className="flex items-center gap-2.5 w-full px-3.5 py-2 border-0 bg-transparent text-xs font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer text-left"
-              >
-                <CopyPlus size={14} className="text-purple-500" />
-                <span>Duplicate</span>
-              </button>
-              <div className="h-px bg-slate-200/60 my-1" />
-              <button
-                onClick={() => {
-                  store.removeNode(contextMenu.node.id);
-                  store.setSelectedNode(null);
-                  setContextMenu(null);
-                }}
-                className="flex items-center gap-2.5 w-full px-3.5 py-2 border-0 bg-transparent text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer text-left"
-              >
-                <Trash2 size={14} className="text-red-500" />
-                <span>Delete</span>
-              </button>
-            </>
-          )}
-        </div>
-      )}
+
 
       {/* Draft wire overlay (click-to-route) — isolated in its own memoized
           component so the heavy parent (<ReactFlow> + <MiniMap> + toolbar)
