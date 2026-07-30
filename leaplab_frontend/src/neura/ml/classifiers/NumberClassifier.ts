@@ -78,10 +78,18 @@ async function inputToIsolatedCanvas(
     return isolateDigit(tempCanvas)
 }
 
+let cachedMobileNetModel: any = null
+
+async function getMobileNetModel(): Promise<any> {
+    if (cachedMobileNetModel) return cachedMobileNetModel
+    const mobilenet = await ensureMobileNet()
+    cachedMobileNetModel = await mobilenet.load()
+    return cachedMobileNetModel
+}
+
 async function extractMobileNetEmbedding(isolatedCanvas: HTMLCanvasElement): Promise<any> {
     const tf = await ensureTf()
-    const mobilenet = await ensureMobileNet()
-    const model = await mobilenet.load()
+    const model = await getMobileNetModel()
 
     return tf.tidy(() => {
         let tensor = tf.browser.fromPixels(isolatedCanvas).toFloat()
@@ -239,5 +247,6 @@ export class NumberClassifier {
 
     dispose(): void {
         this.knn.dispose()
+        cachedMobileNetModel = null
     }
 }

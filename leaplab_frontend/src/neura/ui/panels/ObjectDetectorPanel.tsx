@@ -239,7 +239,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     }, [])
 
     // Detect from video frame
-    const detectFrame = useCallback(async (): Promise<{ class: string; score: number; bbox: [number, number, number, number] }[]> => {
+    const detectFrame = useCallback(async (manualScan = false): Promise<{ class: string; score: number; bbox: [number, number, number, number] }[]> => {
         if (!videoRef.current || !videoRef.current.srcObject) return []
         const video = videoRef.current
         if (video.readyState < 2) return []
@@ -249,8 +249,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
             // Prioritize canClassify (actual KNN state) over UI flags
             if (trainerRef.current.canClassify) {
-                // Use custom trained model
-                const customResult = await trainerRef.current.detect(video)
+                const customResult = await trainerRef.current.detect(video, 20, !manualScan)
                 result = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
             } else if (useCustomModel && customModelTrained) {
                 // Model was trained but KNN not ready (e.g., not enough samples per class)
@@ -344,10 +343,14 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const handleManualDetect = async () => {
         if (isLoadingModel || !videoRef.current || !canvasRef.current) return
         setIsDetecting(true)
-        const dets = await detectFrame()
-        setDetections(dets)
-        const filteredDets = dets.filter(det => det.score >= confidenceThreshold)
-        if (canvasRef.current && videoRef.current) drawDetections(filteredDets, canvasRef.current, videoRef.current)
+        try {
+            const dets = await detectFrame(true)
+            setDetections(dets)
+            const filteredDets = dets.filter(det => det.score >= confidenceThreshold)
+            if (canvasRef.current && videoRef.current) drawDetections(filteredDets, canvasRef.current, videoRef.current)
+        } catch (e) {
+            console.warn('[ObjectDetector] Manual detection error:', e)
+        }
         setIsDetecting(false)
     }
 
@@ -526,7 +529,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 let dets: { class: string; score: number; bbox: [number, number, number, number] }[] = []
 
                 if (useCustomModel && customModelTrained && trainerRef.current.canClassify) {
-                    const customResult = await trainerRef.current.detect(img)
+                    const customResult = await trainerRef.current.detect(img, 20, false)
                     dets = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
                 } else {
                     const result = await classifierRef.current.detect(img as any)

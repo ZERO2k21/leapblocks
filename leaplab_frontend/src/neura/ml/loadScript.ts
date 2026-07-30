@@ -72,6 +72,9 @@ export async function ensureTf(): Promise<any> {
 
 let mobilenetPromise: Promise<any> | null = null
 
+// Fallback model URL using Google Storage (avoids Kaggle 403 errors)
+const MOBILENET_MODEL_URL = 'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v2_1.0_224/model.json'
+
 export async function ensureMobileNet(): Promise<any> {
     await ensureTf()
     if (window.mobilenet) return window.mobilenet
@@ -80,6 +83,16 @@ export async function ensureMobileNet(): Promise<any> {
     mobilenetPromise = (async () => {
         try {
             await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@${MOBILENET_VERSION}/dist/mobilenet.min.js`)
+            // Patch load() to use fallback URL if Kaggle fails
+            const origLoad = window.mobilenet.load.bind(window.mobilenet)
+            window.mobilenet.load = async (options?: any) => {
+                try {
+                    return await origLoad(options)
+                } catch (err) {
+                    console.warn('[Neura] MobileNet Kaggle load failed, using jsDelivr fallback:', err)
+                    return await origLoad({ ...options, modelUrl: MOBILENET_MODEL_URL })
+                }
+            }
             return window.mobilenet
         } catch (e) {
             mobilenetPromise = null

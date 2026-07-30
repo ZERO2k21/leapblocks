@@ -93,6 +93,8 @@ export class ObjectDetectionTrainer {
             return false
         }
 
+        await this.detector.calibrateConfidence()
+
         this.state.metrics = {
             totalRegions: result.totalRegions,
             totalClasses: Object.keys(result.classCounts).length,
@@ -121,12 +123,12 @@ export class ObjectDetectionTrainer {
         return this.detector.getSampleCounts()
     }
 
-    async detect(input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement): Promise<CustomDetectionResult> {
-        return this.detector.detect(input)
+    async detect(input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, maxDetections = 20, realTime = false): Promise<CustomDetectionResult> {
+        return this.detector.detect(input, maxDetections, realTime)
     }
 
-    async detectFromDataUrl(dataUrl: string): Promise<CustomDetectionResult> {
-        return this.detector.detectFromDataUrl(dataUrl)
+    async detectFromDataUrl(dataUrl: string, realTime = false): Promise<CustomDetectionResult> {
+        return this.detector.detectFromDataUrl(dataUrl, realTime)
     }
 
     drawDetections(

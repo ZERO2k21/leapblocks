@@ -55,15 +55,22 @@ export class CustomObjectDetector {
     private totalRegionsProcessed = 0
     private onProgressCallback: ((progress: number, message: string) => void) | null = null
 
-    private readonly COCO_CONFIDENCE_THRESHOLD = 0.1
-    private readonly KNN_CONFIDENCE_THRESHOLD = 0.2
-    private readonly NMS_IOU_THRESHOLD = 0.5
+    private readonly COCO_CONFIDENCE_THRESHOLD = 0.05
+    private readonly KNN_CONFIDENCE_THRESHOLD = 0.15
+    private readonly NMS_IOU_THRESHOLD = 0.4
+    private readonly SLIDING_WINDOW_MIN_PROPOSALS = 3
+    private readonly MOBILENET_FALLBACK_URL = 'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v2_1.0_224/model.json'
 
     private async ensureModels() {
         if (!this.mobilenetModel) {
             setupContextLossListener()
             const mobilenet = await ensureMobileNet()
-            this.mobilenetModel = await mobilenet.load()
+            try {
+                this.mobilenetModel = await mobilenet.load()
+            } catch (e) {
+                console.warn('[CustomObjectDetector] MobileNet load failed, trying fallback URL:', e)
+                this.mobilenetModel = await mobilenet.load({ modelUrl: this.MOBILENET_FALLBACK_URL })
+            }
         }
         if (!this.cocoSsdModel) {
             const cocoSsd = await ensureCocoSsd()
@@ -279,9 +286,69 @@ export class CustomObjectDetector {
         }
     }
 
+    private generateSlidingWindowProposals(
+        imageWidth: number, imageHeight: number, minSide = 40
+    ): { x: number; y: number; width: number; height: number }[] {
+        const proposals: { x: number; y: number; width: number; height: number }[] = []
+        const shortSide = Math.min(imageWidth, imageHeight)
+        const scales = [0.35, 0.55, 0.8]
+        const strides = [0.55, 0.45, 0.35]
+        const maxWindows = 30
+
+        for (let si = 0; si < scales.length; si++) {
+            if (proposals.length >= maxWindows) break
+            const winSize = Math.round(shortSide * scales[si])
+            if (winSize < minSide) continue
+            const stride = Math.round(winSize * strides[si])
+            for (let y = 0; y + winSize <= imageHeight; y += stride) {
+                if (proposals.length >= maxWindows) break
+                for (let x = 0; x + winSize <= imageWidth; x += stride) {
+                    if (proposals.length >= maxWindows) break
+                    proposals.push({ x, y, width: winSize, height: winSize })
+                }
+            }
+        }
+        return proposals
+    }
+
+    async calibrateConfidence(): Promise<void> {
+        if (!this.knn.canClassify) return
+        const counts = this.knn.getSampleCounts()
+        const classNames = Object.keys(counts)
+        if (classNames.length < 2) return
+
+        let totalConf = 0
+        let totalCorrect = 0
+        let totalSamples = 0
+
+        for (const label of classNames) {
+            const count = counts[label]
+            for (let i = 0; i < Math.min(count, 5); i++) {
+                const removedData = await this.knn.removeExampleByIndex(label, i)
+                if (!removedData) continue
+                const prediction = await this.knn.predictFromData(removedData, 3)
+                await this.knn.addExampleFromDataArray(Array.from(removedData), label)
+                if (!prediction) continue
+                totalSamples++
+                const maxConf = Math.max(...Object.values(prediction.confidences)) as number
+                totalConf += maxConf
+                if (prediction.label === label) totalCorrect++
+            }
+        }
+
+        if (totalSamples > 0) {
+            const avgConf = totalConf / totalSamples
+            const accuracy = totalCorrect / totalSamples
+            const scaleA = accuracy > 0 ? Math.min(2.0, accuracy / Math.max(avgConf, 0.01)) : 0.5
+            const scaleB = Math.log(Math.max(accuracy / Math.max(1 - accuracy, 0.01), 0.01))
+            this.knn.calibrateConfidence(scaleA, scaleB * 0.3)
+        }
+    }
+
     async detect(
         input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement,
-        maxDetections = 20
+        maxDetections = 20,
+        realTime = false
     ): Promise<CustomDetectionResult> {
         if (!this.knn.canClassify) {
             return { objects: [], timestamp: Date.now() }
@@ -298,25 +365,41 @@ export class CustomObjectDetector {
         const cropCtx = cropCanvas.getContext('2d')!
         cropCanvas.width = imageWidth
         cropCanvas.height = imageHeight
-        if (input instanceof HTMLVideoElement) {
-            cropCtx.drawImage(input, 0, 0, imageWidth, imageHeight)
-        } else if (input instanceof HTMLImageElement) {
-            cropCtx.drawImage(input, 0, 0, imageWidth, imageHeight)
-        } else {
-            cropCtx.drawImage(input, 0, 0, imageWidth, imageHeight)
+        cropCtx.drawImage(input as CanvasImageSource, 0, 0, imageWidth, imageHeight)
+
+        let proposals: { x: number; y: number; width: number; height: number }[] = []
+        const maxProposals = realTime ? 15 : 25
+
+        try {
+            const cocoResults = await cocoSsd.detect(cropCanvas)
+            const cocoProps = cocoResults
+                .filter((r: any) => r.score > this.COCO_CONFIDENCE_THRESHOLD)
+                .map((r: any) => ({
+                    x: r.bbox[0],
+                    y: r.bbox[1],
+                    width: r.bbox[2],
+                    height: r.bbox[3]
+                }))
+
+            if (realTime && cocoProps.length >= 1) {
+                proposals = cocoProps.slice(0, maxProposals)
+            } else if (cocoProps.length >= this.SLIDING_WINDOW_MIN_PROPOSALS) {
+                proposals = [...cocoProps].slice(0, maxProposals)
+            } else {
+                proposals = [...cocoProps, ...this.generateSlidingWindowProposals(imageWidth, imageHeight)]
+            }
+        } catch {
+            if (!realTime) {
+                proposals = this.generateSlidingWindowProposals(imageWidth, imageHeight)
+            }
         }
 
-        const cocoResults = await cocoSsd.detect(cropCanvas)
-        const proposals = cocoResults
-            .filter((r: any) => r.score > this.COCO_CONFIDENCE_THRESHOLD)
-            .map((r: any) => ({
-                x: r.bbox[0],
-                y: r.bbox[1],
-                width: r.bbox[2],
-                height: r.bbox[3]
-            }))
-
         const rawDetections: CustomDetection[] = []
+
+        if (proposals.length > maxProposals) {
+            proposals.sort((a, b) => (b.width * b.height) - (a.width * a.height))
+            proposals = proposals.slice(0, maxProposals)
+        }
 
         for (const proposal of proposals) {
             try {
@@ -349,7 +432,7 @@ export class CustomObjectDetector {
         return { objects: result, timestamp: Date.now() }
     }
 
-    async detectFromDataUrl(dataUrl: string): Promise<CustomDetectionResult> {
+    async detectFromDataUrl(dataUrl: string, realTime = false): Promise<CustomDetectionResult> {
         const img = new Image()
         img.src = dataUrl
         await new Promise<void>((resolve) => {
@@ -360,7 +443,7 @@ export class CustomObjectDetector {
         if (!img.complete || img.naturalWidth === 0) {
             return { objects: [], timestamp: Date.now() }
         }
-        return this.detect(img)
+        return this.detect(img, 20, realTime)
     }
 
     drawDetections(
