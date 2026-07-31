@@ -277,8 +277,23 @@ export const Stage: React.FC<StageProps> = ({
         // 1. Backdrop
         ctx.clearRect(0, 0, width, height);
         const backdrop = stageManager.currentBackdrop;
-        if (backdrop?.image) {
+        if (backdrop?.image && backdrop.image.complete && backdrop.image.naturalWidth !== 0) {
             ctx.drawImage(backdrop.image, 0, 0, width, height);
+        } else if (backdrop?.src) {
+            const cachedImg = (backdrop as any)._cachedImg || new Image();
+            if (!(backdrop as any)._cachedImg) {
+                (backdrop as any)._cachedImg = cachedImg;
+                cachedImg.onload = () => {
+                    backdrop.image = cachedImg;
+                };
+                cachedImg.src = backdrop.src;
+            }
+            if (cachedImg.complete && cachedImg.naturalWidth !== 0) {
+                ctx.drawImage(cachedImg, 0, 0, width, height);
+            } else if (!isCameraOn) {
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, width, height);
+            }
         } else if (!isCameraOn) {
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, width, height);

@@ -3623,35 +3623,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     {/* Overlay controls — only visible when blocks tab is active */}
                     {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
                         <>
-                            {/* Add Extension Button - Premium integrated design */}
-                            <div className="absolute bottom-3 left-3 z-[100] add-extension-btn-container">
-                                <button
-                                    onClick={() => setShowExtensionLibrary(true)}
-                                    className="group flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#855CD6] to-[#9B6FE8] hover:from-[#7348C4] hover:to-[#8A5DD6] rounded-xl border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
-                                    style={{
-                                        width: '52px',
-                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        backdropFilter: 'blur(10px)'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.width = '180px';
-                                        e.currentTarget.style.paddingRight = '16px';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.width = '52px';
-                                        e.currentTarget.style.paddingRight = '12px';
-                                    }}
-                                    title="Add Extension"
-                                >
-                                    <div className="w-8 h-8 flex items-center justify-center text-white flex-shrink-0">
-                                        <Library size={20} strokeWidth={2.5} />
-                                    </div>
-                                    <div className="text-left whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75">
-                                        <div className="text-xs font-semibold text-white leading-tight">Extensions</div>
-                                        <div className="text-[10px] text-white/80 leading-tight">Add blocks</div>
-                                    </div>
-                                </button>
-                            </div>
 
                             <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={() => {
                                 const flyout = workspaceRef.current?.getFlyout() as any;
@@ -4142,6 +4113,38 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
             </div>
 
 
+
+            {/* Add Extension Button - Fixed bottom-right corner */}
+            {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
+                <div className="add-extension-btn-container fixed bottom-4 right-4 z-[1000]">
+                    <button
+                        onClick={() => setShowExtensionLibrary(true)}
+                        className="group flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#855CD6] to-[#9B6FE8] hover:from-[#7348C4] hover:to-[#8A5DD6] rounded-xl border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                        style={{
+                            width: '52px',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            backdropFilter: 'blur(10px)'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.width = '180px';
+                            e.currentTarget.style.paddingRight = '16px';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.width = '52px';
+                            e.currentTarget.style.paddingRight = '12px';
+                        }}
+                        title="Add Extension"
+                    >
+                        <div className="w-8 h-8 flex items-center justify-center text-white flex-shrink-0">
+                            <Library size={20} strokeWidth={2.5} />
+                        </div>
+                        <div className="text-left whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75">
+                            <div className="text-xs font-semibold text-white leading-tight">Extensions</div>
+                            <div className="text-[10px] text-white/80 leading-tight">Add blocks</div>
+                        </div>
+                    </button>
+                </div>
+            )}
 
             {/* Custom Prompt Modal */}
 

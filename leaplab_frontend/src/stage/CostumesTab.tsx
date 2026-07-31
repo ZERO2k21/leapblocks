@@ -273,6 +273,9 @@ export const CostumesTab: React.FC<CostumesTabProps> = ({
                     onSwitchCostume={(index: number) => {
                         console.log(LOG_PREFIX, 'BACKDROP onSwitchCostume | index:', index);
                         stageManager.setBackdrop(index);
+                        if (selectedSprite) {
+                            selectedSprite.switchCostume(index);
+                        }
                     }}
                     onSave={async (imageData: string, svgData?: string, name?: string, rotationCenter?: { x: number; y: number }) => {
                         const idx = stageManager.getCurrentBackdropIndex();

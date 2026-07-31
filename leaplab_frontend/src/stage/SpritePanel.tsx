@@ -205,7 +205,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
           {/* Scrollable grid */}
           <div
-            className={`p-4 grid grid-cols-5 gap-3.5 content-start flex-1 max-h-[200px]
+            className={`p-4 grid grid-cols-4 gap-3.5 content-start flex-1 max-h-[220px]
               overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent`}
           >
             {normalSprites.map((sprite) => {
@@ -278,7 +278,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
                         <img
                           src={costumeImgSrc}
                           alt={sprite.name}
-                          className="w-full h-full object-contain scale-125 filter drop-shadow-md transition-transform duration-200 group-hover:scale-135"
+                          className="w-full h-full object-contain scale-[1.8] filter drop-shadow-md transition-transform duration-200 group-hover:scale-[2.0]"
                           draggable={false}
                         />
                       ) : (

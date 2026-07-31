@@ -231,10 +231,10 @@
 
 /* Button container positioning */
 .add-extension-btn-container {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  z-index: 100;
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 1000;
 }
 
 /* Shine animation effect */
@@ -262,16 +262,14 @@
 /* Responsive Design - Tablet */
 @media (max-width: 1024px) {
   .add-extension-btn-container {
-    bottom: 10px;
-    left: 10px;
+    padding: 6px 0;
   }
 }
 
 /* Responsive Design - Mobile */
 @media (max-width: 768px) {
   .add-extension-btn-container {
-    bottom: 8px;
-    left: 8px;
+    padding: 4px 0;
   }
 
   .add-extension-btn-container button {
@@ -295,8 +293,7 @@
 /* Responsive Design - Extra Small */
 @media (max-width: 480px) {
   .add-extension-btn-container {
-    bottom: 6px;
-    left: 6px;
+    padding: 3px 0;
   }
 
   .add-extension-btn-container button {
@@ -318,9 +315,9 @@
 }
 
 /* Animation for smooth appearance */
-@keyframes slideInFromLeft {
+@keyframes slideInFromRight {
   from {
-    transform: translateX(-100%);
+    transform: translateX(100%);
     opacity: 0;
   }
 
@@ -331,7 +328,7 @@
 }
 
 .add-extension-btn-container {
-  animation: slideInFromLeft 0.3s ease-out;
+  animation: slideInFromRight 0.3s ease-out;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

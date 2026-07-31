@@ -80,6 +80,15 @@ export class StageManager {
                 this.currentBackdropIndex = idx;
             }
         }
+        const b = this.getCurrentBackdrop();
+        if (b && b.src && (!b.image || !b.image.complete)) {
+            const img = new Image();
+            img.onload = () => {
+                b.image = img;
+                this.onUpdate();
+            };
+            img.src = b.src;
+        }
         this.onUpdate();
     }
 
