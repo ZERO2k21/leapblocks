@@ -47,7 +47,10 @@ COPY server/package.json server/package-lock.json* /tmp/server/
 RUN cd /tmp/server && npm install --production && \
     mkdir -p /app && cp -r /tmp/server/node_modules /app/node_modules
 
+# Cache-bust: increment to force re-copying server code on next build
+ARG CACHEBUST=1
 COPY server/ ./server/
+RUN echo "Server code cache-busted: $CACHEBUST"
 COPY src/creova/apk/ ./src/creova/apk/
 COPY src/creova/apk/tools/ ./tools/
 

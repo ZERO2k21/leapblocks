@@ -11,7 +11,7 @@
    Must match BLOCK_SCALE in LeapRenderer.js
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  --block-scale: 1;
+  --block-scale: 0.85;
 }
 
 /* Main block styling */
@@ -28,8 +28,8 @@
 /* Block text styling */
 .blocklyText {
   font-family: 'Plus Jakarta Sans', sans-serif !important;
-  font-size: calc(12px * var(--block-scale)) !important;
-  font-weight: 500 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
   line-height: 1.2 !important;
 }
 
@@ -96,7 +96,8 @@
   border-radius: 4px !important;
   padding: 2px 4px !important;
   font-family: 'Plus Jakarta Sans', sans-serif !important;
-  font-size: 12px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
 }
 
 .blocklyFieldTextInput:focus {
@@ -480,7 +481,7 @@
 .blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect)+.blocklyText {
   fill: #575E75 !important;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-  font-size: calc(12px * var(--block-scale)) !important;
+  font-size: 14px !important;
   font-weight: 700 !important;
 }
 
@@ -784,8 +785,8 @@
 
 .blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.blocklyShadow .blocklyText) {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-  font-size: calc(12px * var(--block-scale)) !important;
-  font-weight: 600 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
   fill: rgb(255, 255, 255) !important;
 }
 
