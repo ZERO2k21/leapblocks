@@ -344,6 +344,7 @@
   box-shadow: none !important;
   padding: 16px 0 !important;
   overflow-x: hidden !important;
+  overflow-y: auto !important;
 }
 
 .leap-blockly-workspace .blocklyTreeRoot {

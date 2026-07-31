@@ -22,7 +22,7 @@ interface SensorOverlayProps {
   type: string;
   currentValues: any;
   rotation?: number;
-  wrapperRef?: React.RefObject<HTMLDivElement>;
+  wrapperRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 // ── Single-value slider row (Horizontal and Compact) ─────────────────────────
@@ -148,7 +148,7 @@ export const RotationContext = React.createContext<number>(0);
 interface CompactCardProps {
   borderColor?: string;
   children: React.ReactNode;
-  wrapperRef?: React.RefObject<HTMLDivElement>;
+  wrapperRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children, wrapperRef }) => {

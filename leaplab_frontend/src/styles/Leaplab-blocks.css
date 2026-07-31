@@ -359,10 +359,11 @@
    BLOCKLY TOOLBOX - LeapBlox Style
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ICT Panel Touch Support - prevent browser scroll/zoom on Blockly elements */
+/* ICT Panel Touch Support - prevent browser scroll/zoom on Blockly elements.
+   NOTE: .blocklyToolboxDiv is intentionally excluded so the category list can
+   be touch-scrolled when many extensions are installed. */
 .blocklySvg,
 .blocklyFlyout,
-.blocklyToolboxDiv,
 .blocklyBlockCanvas,
 .blocklyWorkspace {
   touch-action: none !important;
@@ -429,14 +430,17 @@
   background-color: rgba(0, 0, 0, 0.05) !important;
 }
 
-/* Row content container - vertical layout with gap */
+/* Row content container - vertical layout with gap
+   height: auto (not 100%) so multi-line category labels ("Face Detection",
+   "More Blocks", ...) grow the row instead of overflowing into the row below
+   and making the categories look collided together. */
 .blocklyTreeRowContentContainer {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: flex-start !important;
   width: 100% !important;
-  height: 100% !important;
+  height: auto !important;
 }
 
 /* Hide default Blockly icon */
@@ -444,18 +448,19 @@
   display: none !important;
 }
 
-/* Labels below icons */
+/* Labels below icons — single-line with ellipsis truncation to keep
+   every row the same height even with long extension names */
 .blocklyToolboxCategoryLabel {
-  font-size: 10px !important;
+  font-size: 9px !important;
   font-weight: 600 !important;
   color: #575E75 !important;
   text-align: center !important;
   line-height: 1.2 !important;
-  white-space: normal !important;
-  overflow: visible !important;
-  overflow-wrap: anywhere !important;
-  max-width: 64px !important;
-  margin-top: 4px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 72px !important;
+  margin-top: 2px !important;
   display: block !important;
 }
 
@@ -609,35 +614,15 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   CATEGORY COLORED CIRCLES (LeapBlox-style circular icons)
+   CATEGORY COLORED CIRCLES (Legacy — Blockly v8-era pseudo-element icons)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Create circular icon before each category label */
+/* Blockly 12 renders category icons via the custom .leapblox-icon divs
+   (custom-toolbox.ts), so these old ::before rules are dead. The base rule
+   still matched every row and injected an empty 32px ghost circle + shadow
+   above each icon, bloating every row. Neutralize it. */
 .blocklyToolboxCategory::before {
-  content: '';
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  margin-bottom: 4px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  background-size: 18px;
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-.blocklyToolboxCategory:hover::before {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.blocklyToolboxSelected::before {
-  border: 2px solid white;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  content: none !important;
 }
 
 /* Motion - Blue */

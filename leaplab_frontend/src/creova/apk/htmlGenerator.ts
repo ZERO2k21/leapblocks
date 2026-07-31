@@ -1909,7 +1909,7 @@ function generateAppJs(appState: any): string {
   function init() {
     try {
       console.log('[LeapApp] init() called');
-      console.log('[LeapApp] screens:', ${JSON.stringify(screens.map(s => ({ id: s.id, alignHorizontal: s.alignHorizontal, alignVertical: s.alignVertical, components: (s.components || []).map(c => ({ id: c.id, type: c.type, props: c.props })) })))});
+      console.log('[LeapApp] screens:', ${JSON.stringify(screens.map((s: any) => ({ id: s.id, alignHorizontal: s.alignHorizontal, alignVertical: s.alignVertical, components: (s.components || []).map((c: any) => ({ id: c.id, type: c.type, props: c.props })) })))});
       resizeScreens();
       navigateTo('${firstScreenId}');
       setTimeout(function() {

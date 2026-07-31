@@ -83,6 +83,20 @@ style Category with circular icons and vertical layout
                 'more blocks': '➕',
                 // Hardware category (Upload mode)
                 'hardware': '🔧',
+                // Extension categories
+                'pen': '✏️',
+                'face detection': '👤',
+                'object detection': '📷',
+                'music': '🎵',
+                'hand pose': '✋',
+                'human body detection': '🤸',
+                'human body': '🤸',
+                'ml environment': '🤖',
+                'machine learning': '🤖',
+                'text to speech': '🔊',
+                'text recognition': '🔤',
+                'computer vision': '🖥️',
+                'speech recognition': '🗣️',
             };
             return emojiMap[name] || '📦';
         }

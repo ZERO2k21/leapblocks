@@ -2197,8 +2197,187 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     }
                                 }
                             });
-
                         }
+
+                        // 3.6. CONTINUOUS FLYOUT (all categories in one scrollable list)
+                        // Renders every category's blocks in a single continuous flyout so that
+                        // scrolling past the end of one category flows directly into the next
+                        // one. Selecting a category jumps the flyout to that section instead of
+                        // replacing the contents.
+                        try {
+                            const toolboxAny = blocksWorkspace.getToolbox() as any;
+                            const flyoutAny = flyout as any;
+                            if (!toolboxAny || !flyoutAny || typeof flyoutAny.show !== 'function' || typeof flyoutAny.scrollToStart !== 'function') {
+                                throw new Error('flyout not ready');
+                            }
+                            const getCategories = () => {
+                                const items: any[] = toolboxAny.getToolboxItems?.() ?? [];
+                                return items.filter((it: any) => it instanceof Blockly.ToolboxCategory);
+                            };
+                            const origShow = flyoutAny.show.bind(flyoutAny);
+                            const getCategoryContents = (cat: any): any[] => {
+                                const raw: any = cat.getContents?.();
+                                if (typeof raw === 'string' && raw.length > 0) {
+                                    // Custom (dynamic) category — fetch its contents via the
+                                    // registered toolbox category callback.
+                                    try {
+                                        const dyn: any = flyoutAny.getDynamicCategoryContents?.(raw);
+                                        return Array.isArray(dyn) ? dyn : [];
+                                    } catch {
+                                        return [];
+                                    }
+                                }
+                                return Array.isArray(raw) ? raw : [];
+                            };
+                            const jumpToSelectedSection = () => {
+                                const list = getCategories();
+                                const selIdx = list.indexOf(toolboxAny.getSelectedItem?.() ?? null);
+                                if (selIdx < 0) return;
+                                // Jump to the selected category's first item (its header label),
+                                // so the label is at the top of the flyout with blocks below.
+                                const sectionStartItems: number[] = [];
+                                let total = 0;
+                                for (const cat of list) {
+                                    sectionStartItems.push(total);
+                                    // JSON 'sep' items render as flyout separators, which are
+                                    // skipped when counting positions — exclude them here too.
+                                    total += getCategoryContents(cat).filter((c: any) => !(c && typeof c === 'object' && c.kind === 'sep')).length;
+                                }
+                                const target = sectionStartItems[selIdx];
+                                const contents: any[] = flyoutAny.getContents?.() ?? [];
+                                let items = 0;
+                                let y = 0;
+                                for (const item of contents) {
+                                    if (items >= target) break;
+                                    if (item.getType() !== 'sep') items++;
+                                    y += item.getElement?.()?.getBoundingRectangle?.()?.getHeight?.() ?? 0;
+                                }
+                                const px = (y + (flyoutAny.MARGIN ?? 8)) * (flyoutAny.getWorkspace().getScale() ?? 1);
+                                flyoutAny.getWorkspace().scrollbar?.setY(px);
+                            };
+                            // Flyout label widths are measured with canvas text metrics at
+                            // construction time, which ignores CSS text-transform/letter-spacing
+                            // (e.g. the uppercase category-header style). The rendered text is
+                            // therefore wider than the measured width and, being centered
+                            // (text-anchor: middle), overflows the flyout's left edge — hiding
+                            // the first letters (visible with long extension category names).
+                            // Re-measure the rendered text and re-center it so it stays inside.
+                            const fixFlyoutLabelWidths = () => {
+                                const contents: any[] = flyoutAny.getContents?.() ?? [];
+                                let maxRight = 0;
+                                for (const item of contents) {
+                                    const lab = item.getElement?.();
+                                    if (!lab?.svgText || item.getType() !== 'label') continue;
+                                    let w = 0;
+                                    try {
+                                        w = lab.svgText.getBBox().width;
+                                    } catch {
+                                        w = 0;
+                                    }
+                                    if (w > 0 && Math.abs(w - (lab.width ?? 0)) > 0.5) {
+                                        lab.svgText.setAttribute('x', String(w / 2));
+                                        lab.width = w;
+                                        lab.svgGroup?.querySelector('.blocklyFlyoutLabelBackground')?.setAttribute('width', String(w));
+                                    }
+                                    const rect = lab.getBoundingRectangle?.();
+                                    if (rect) maxRight = Math.max(maxRight, rect.right + (flyoutAny.MARGIN ?? 8));
+                                }
+                                if (maxRight > 0) {
+                                    const svg = flyoutAny.svgGroup_;
+                                    const curW = parseFloat(svg?.getAttribute('width') ?? '0') || 0;
+                                    if (maxRight > curW && svg) {
+                                        flyoutAny.width_ = maxRight;
+                                        svg.setAttribute('width', String(maxRight));
+                                        flyoutAny.position?.();
+                                    }
+                                }
+                            };
+                            // Scroll-spy: as the user scrolls the continuous flyout,
+                            // highlight the toolbox category whose section is at the
+                            // top of the flyout viewport. Only the visual highlight
+                            // (setSelected) is toggled — the real toolbox selection
+                            // (used as the jump target) is left untouched, so
+                            // scrolling never re-renders or repositions the flyout.
+                            let lastHighlightedCat = -1;
+                            let spyRafScheduled = false;
+                            const scheduleScrollSpy = () => {
+                                if (spyRafScheduled) return;
+                                spyRafScheduled = true;
+                                requestAnimationFrame(() => {
+                                    spyRafScheduled = false;
+                                    try {
+                                        if (!flyoutAny.isVisible?.()) {
+                                            lastHighlightedCat = -1;
+                                            return;
+                                        }
+                                        const list = getCategories();
+                                        if (list.length === 0) return;
+                                        const contents: any[] = flyoutAny.getContents?.() ?? [];
+                                        const perCat: number[] = list.map((cat) =>
+                                            getCategoryContents(cat).filter((c: any) => !(c && typeof c === 'object' && c.kind === 'sep')).length
+                                        );
+                                        const itemToCat: number[] = [];
+                                        let cat = 0;
+                                        let rem = perCat[0] ?? 0;
+                                        for (const item of contents) {
+                                            if (item.getType() === 'sep') continue;
+                                            while (rem <= 0 && cat < list.length - 1) {
+                                                cat++;
+                                                rem = perCat[cat] ?? 0;
+                                            }
+                                            itemToCat.push(cat);
+                                            rem--;
+                                        }
+                                        if (itemToCat.length === 0) return;
+                                        const flyoutWs = flyoutAny.getWorkspace();
+                                        const viewTop = flyoutWs?.getMetrics?.()?.viewTop ?? 0;
+                                        let current = 0;
+                                        let i = 0;
+                                        for (const item of contents) {
+                                            if (item.getType() === 'sep') continue;
+                                            const el = item.getElement?.();
+                                            const rect = el?.getBoundingRectangle?.();
+                                            if (rect && rect.top <= viewTop) current = itemToCat[i] ?? 0;
+                                            i++;
+                                        }
+                                        if (current !== lastHighlightedCat) {
+                                            list.forEach((c, idx) => c.setSelected?.(idx === current));
+                                            lastHighlightedCat = current;
+                                        }
+                                    } catch {
+                                        // The highlight must never break scrolling.
+                                    }
+                                    if (flyoutAny.isVisible?.()) scheduleScrollSpy();
+                                });
+                            };
+                            flyoutAny.show = function (items: any) {
+                                const combined: any[] = [];
+                                for (const cat of getCategories()) {
+                                    combined.push(...getCategoryContents(cat));
+                                }
+                                origShow.call(this, combined);
+                                fixFlyoutLabelWidths();
+                                scheduleScrollSpy();
+                            };
+                            flyoutAny.scrollToStart = function () {
+                                jumpToSelectedSection();
+                            };
+                            const currentIdx = getCategories().indexOf(toolboxAny.getSelectedItem?.() ?? null);
+                            if (currentIdx >= 0) toolboxAny.selectItemByPosition(currentIdx);
+                            // The app registers its dynamic toolbox category callbacks
+                            // (LEAP_VARIABLES, LEAP_MYBLOCKS, ...) in a later timeout; re-render
+                            // once afterwards so those sections are populated on first paint.
+                            setTimeout(() => {
+                                try {
+                                    flyoutAny.show?.([]);
+                                } catch {
+                                    // ignore
+                                }
+                            }, 400);
+                        } catch {
+                            // Flyout patching failed — fall back to default behavior.
+                        }
+
                         // 4. FLYOUT BLOCK PREVIEW (Click to Preview)
 
                         if (flyout && flyout.getWorkspace()) {
