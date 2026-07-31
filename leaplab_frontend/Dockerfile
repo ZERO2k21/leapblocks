@@ -22,7 +22,7 @@ RUN arduino-cli config init --dest-file /app/arduino-cli.yaml && \
     arduino-cli config set directories.downloads /app/arduino-data/staging && \
     arduino-cli config set directories.user /app/arduino-data/user && \
     arduino-cli config set board_manager.additional_urls \
-      "https://dl.espressif.com/dl/package_esp32_index.json,https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json" && \
+      "https://dl.espressif.com/dl/package_esp32_index.json,https://espressif.github.io/arduino-esp32/package_esp32_index.json" && \
     arduino-cli core update-index
 
 RUN arduino-cli core install arduino:avr

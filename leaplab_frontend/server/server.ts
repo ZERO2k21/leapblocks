@@ -191,7 +191,7 @@ const FORGE_LIB_LIBRARIES = (() => {
 // so `core install esp32:esp32` works even if one host is unreachable.
 const ESP32_INDEX_URLS = [
   'https://dl.espressif.com/dl/package_esp32_index.json',
-  'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json',
+  'https://espressif.github.io/arduino-esp32/package_esp32_index.json',
 ];
 const ESP32_ADDITIONAL_URLS = ESP32_INDEX_URLS.map((u) => ['--additional-urls', u]).flat();
 

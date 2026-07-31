@@ -132,11 +132,11 @@ const initCores = async () => {
       console.log('[SERVER] Core esp32:esp32 not found. Installing (this may take a few minutes)...');
       await runCommand(
         `${CLI_BIN} core update-index --config-file "${FORGE.configFile}" --additional-urls ` +
-        `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
+        `https://espressif.github.io/arduino-esp32/package_esp32_index.json`
       );
       await runCommand(
         `${CLI_BIN} core install esp32:esp32 --config-file "${FORGE.configFile}" --additional-urls ` +
-        `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
+        `https://espressif.github.io/arduino-esp32/package_esp32_index.json`
       );
       console.log('[SERVER] Core esp32:esp32 installed successfully.');
     } else {

@@ -674,7 +674,7 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
     private async ensureESP32BoardManagerUrls(configPath: string): Promise<void> {
         const ESP32_URLS = [
             'https://dl.espressif.com/dl/package_esp32_index.json',
-            'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json',
+            'https://espressif.github.io/arduino-esp32/package_esp32_index.json',
         ];
         try {
             let content = fs.existsSync(configPath) ? fs.readFileSync(configPath, 'utf-8') : '';
@@ -708,7 +708,7 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
 
         const ESP32_URLS = [
             'https://dl.espressif.com/dl/package_esp32_index.json',
-            'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json',
+            'https://espressif.github.io/arduino-esp32/package_esp32_index.json',
         ];
 
         try {
