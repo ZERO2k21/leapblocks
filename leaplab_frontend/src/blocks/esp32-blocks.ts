@@ -703,18 +703,18 @@ export const esp32Toolbox = {
             contents: [
                 {
                     kind: 'block', type: 'esp32_http_get',
-                    inputs: { URL: { shadow: { type: 'arduino_text', fields: { TEXT: 'https://api.example.com/data' } } } }
+                    inputs: { URL: { shadow: { type: 'arduino_text', fields: { TEXT: 'api.example.com' } } } }
                 },
                 {
                     kind: 'block', type: 'esp32_http_post',
                     inputs: {
-                        URL: { shadow: { type: 'arduino_text', fields: { TEXT: 'https://api.example.com/data' } } },
-                        BODY: { shadow: { type: 'arduino_text', fields: { TEXT: '{"key":"value"}' } } },
+                        URL: { shadow: { type: 'arduino_text', fields: { TEXT: 'api.example.com' } } },
+                        BODY: { shadow: { type: 'arduino_text', fields: { TEXT: '{"data":1}' } } },
                     }
                 },
                 {
                     kind: 'block', type: 'esp32_http_status',
-                    inputs: { URL: { shadow: { type: 'arduino_text', fields: { TEXT: 'https://api.example.com' } } } }
+                    inputs: { URL: { shadow: { type: 'arduino_text', fields: { TEXT: 'api.example.com' } } } }
                 },
             ],
         },
@@ -726,8 +726,8 @@ export const esp32Toolbox = {
                 {
                     kind: 'block', type: 'esp32_mqtt_connect',
                     inputs: {
-                        BROKER: { shadow: { type: 'arduino_text', fields: { TEXT: 'broker.hivemq.com' } } },
-                        CLIENT_ID: { shadow: { type: 'arduino_text', fields: { TEXT: 'esp32client' } } },
+                        BROKER: { shadow: { type: 'arduino_text', fields: { TEXT: 'hivemq.com' } } },
+                        CLIENT_ID: { shadow: { type: 'arduino_text', fields: { TEXT: 'client1' } } },
                     }
                 },
                 {
@@ -753,7 +753,7 @@ export const esp32Toolbox = {
                 {
                     kind: 'block', type: 'esp32_ws_connect',
                     inputs: {
-                        HOST: { shadow: { type: 'arduino_text', fields: { TEXT: 'echo.websocket.org' } } },
+                        HOST: { shadow: { type: 'arduino_text', fields: { TEXT: 'websocket.org' } } },
                         PATH: { shadow: { type: 'arduino_text', fields: { TEXT: '/' } } },
                     }
                 },

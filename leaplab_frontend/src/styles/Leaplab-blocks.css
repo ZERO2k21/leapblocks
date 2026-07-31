@@ -11,7 +11,7 @@
    Must match BLOCK_SCALE in LeapRenderer.js
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  --block-scale: 0.85;
+  --block-scale: 1;
 }
 
 /* Main block styling */
@@ -372,7 +372,7 @@
   background-color: #ffffff !important;
   border-right: 1px solid var(--border-subtle) !important;
   padding: 10px 0 12px !important;
-  width: 78px !important;
+  width: 94px !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02) !important;
@@ -406,10 +406,10 @@
   flex-direction: column !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  padding: 4px 3px 10px 3px !important;
-  margin: 0 2px 2px 2px !important;
-  min-height: 48px !important;
-  border-radius: 8px !important;
+  padding: 8px 4px 10px 4px !important;
+  margin: 4px 2px 6px 2px !important;
+  min-height: 56px !important;
+  border-radius: 10px !important;
   cursor: pointer !important;
   transition: background-color 0.15s ease !important;
   border-left: none !important;
@@ -420,8 +420,9 @@
 .blocklyToolboxCategoryContainer {
   pointer-events: auto !important;
   cursor: pointer !important;
-  border-radius: 8px !important;
+  border-radius: 10px !important;
   transition: background-color 0.15s ease !important;
+  margin-bottom: 6px !important;
 }
 
 .blocklyToolboxCategoryContainer:hover .blocklyToolboxCategory {
@@ -449,16 +450,16 @@
 /* Labels below icons — single-line with ellipsis truncation to keep
    every row the same height even with long extension names */
 .blocklyToolboxCategoryLabel {
-  font-size: 9px !important;
-  font-weight: 600 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
   color: #575E75 !important;
   text-align: center !important;
   line-height: 1.2 !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  max-width: 72px !important;
-  margin-top: 2px !important;
+  max-width: 88px !important;
+  margin-top: 5px !important;
   display: block !important;
 }
 
@@ -595,12 +596,26 @@
 }
 
 /* Selected state */
-.blocklyToolboxSelected {
-  background-color: rgba(0, 0, 0, 0.07) !important;
+.blocklyToolboxSelected,
+.blocklyToolboxCategory.blocklyToolboxSelected,
+.blocklyToolboxCategoryContainer.blocklyToolboxSelected,
+.blocklyToolboxCategory[aria-selected="true"],
+.blocklyToolboxCategoryContainer[aria-selected="true"] {
+  background-color: #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
 }
 
-.blocklyToolboxSelected .blocklyToolboxCategoryLabel {
-  font-weight: 600 !important;
+.blocklyToolboxSelected .blocklyToolboxCategoryLabel,
+.blocklyToolboxCategory[aria-selected="true"] .blocklyToolboxCategoryLabel {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+.blocklyToolboxSelected .leapblox-icon,
+.blocklyToolboxCategory[aria-selected="true"] .leapblox-icon {
+  transform: scale(1.1) !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22) !important;
 }
 
 /* Separator */
@@ -708,7 +723,7 @@
 .blocklyFlyout {
   background-color: rgba(249, 249, 249, 0.8) !important;
   backdrop-filter: blur(8px) !important;
-  min-width: 280px !important;
+  min-width: 240px !important;
 }
 
 .blocklyFlyoutBackground {
@@ -872,6 +887,9 @@
 
 /* Fix category icons scale */
 .leapblox-icon {
+  width: 38px !important;
+  height: 38px !important;
+  font-size: 18px !important;
   transform: scale(1) !important;
   flex-shrink: 0 !important;
   /* Allow clicks to pass through the icon to the toolbox category row */

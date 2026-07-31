@@ -45,14 +45,14 @@ style Category with circular icons and vertical layout
 
             // Apply all styles inline - compact size for narrow toolbox
             iconDiv.style.cssText = `
-                width: 32px;
-                height: 32px;
+                width: 38px;
+                height: 38px;
                 border-radius: 50%;
                 background-color: ${this.colour_ || '#ccc'};
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 14px;
+                font-size: 18px;
                 color: white;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.15);
                 flex-shrink: 0;
