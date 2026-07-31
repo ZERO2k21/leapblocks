@@ -422,34 +422,33 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     return (
       <div className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900">
         {/* TopBar */}
-        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 py-2.5 bg-slate-900 border-b border-slate-800 text-white shadow-md select-none">
+        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 h-[68px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 text-white shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] select-none">
           {/* Left Section: Back + Logo + Module Name */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
             <button
               type="button"
               onClick={onBack}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border-0 rounded-xl text-white text-xs font-bold cursor-pointer transition-all active:scale-95"
+              className="flex items-center justify-center w-10 h-10 bg-[#94c5ff]/18 hover:bg-[#bfdbfe]/24 border border-[#94c5ff]/24 rounded-xl text-white cursor-pointer transition-all active:scale-95 shrink-0"
               title="Back to Workspace"
             >
-              <span>←</span>
-              <span>Back</span>
+              <span className="text-base font-bold">←</span>
             </button>
 
-            <div className="h-6 w-px bg-white/20 my-auto" />
+            <div className="h-7 w-px bg-white/15 my-auto" />
 
             <div className="flex items-center gap-2.5">
-              <Logo height={32} />
-              <span className="text-white text-base md:text-lg font-black tracking-wider border-l border-white/20 pl-2.5 font-sans uppercase">
+              <Logo height={44} />
+              <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans uppercase border-l border-white/20 pl-2.5">
                 QUIZ
               </span>
             </div>
           </div>
 
           {/* Right Section: Auth + Creoleap Logo */}
-          <div className="flex items-center gap-3">
-            <LeapLabAuthButton variant="dark" size="sm" style={{ height: 32, borderRadius: '9999px' }} />
+          <div className="flex items-center gap-3.5">
+            <LeapLabAuthButton variant="dark" size="sm" style={{ height: 34, borderRadius: '9999px' }} />
             <div className="hidden sm:block">
-              <CreoleapLogo height={28} />
+              <CreoleapLogo height={32} />
             </div>
           </div>
         </header>
@@ -641,40 +640,40 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     return (
       <div className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900">
         {/* TopBar */}
-        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 py-2.5 bg-slate-900 border-b border-slate-800 text-white shadow-md select-none">
+        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 h-[68px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 text-white shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] select-none">
           {/* Left Section: Exit + Logo + Module Name */}
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-3.5 min-w-0">
             <button
               type="button"
               onClick={() => setShowExitConfirm(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border-0 rounded-xl text-white text-xs font-bold cursor-pointer transition-all active:scale-95 shrink-0"
+              className="flex items-center justify-center h-10 px-3.5 bg-[#94c5ff]/18 hover:bg-[#bfdbfe]/24 border border-[#94c5ff]/24 rounded-xl text-white text-xs font-bold cursor-pointer transition-all active:scale-95 shrink-0"
               title="Exit Quiz"
             >
               <span>←</span>
               <span>Exit</span>
             </button>
 
-            <div className="h-6 w-px bg-white/20 my-auto shrink-0" />
+            <div className="h-7 w-px bg-white/15 my-auto shrink-0" />
 
             <div className="flex items-center gap-2.5 shrink-0">
-              <Logo height={30} />
-              <span className="text-white text-base md:text-lg font-black tracking-wider border-l border-white/20 pl-2.5 font-sans uppercase">
+              <Logo height={44} />
+              <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans uppercase border-l border-white/20 pl-2.5">
                 QUIZ
               </span>
             </div>
           </div>
 
-          <h2 className="hidden md:block flex-1 min-w-0 truncate text-center text-sm font-extrabold text-slate-200 px-4 m-0">
+          <h2 className="hidden md:block flex-1 min-w-0 truncate text-center text-base font-extrabold text-slate-100 px-4 m-0">
             {activeQuiz.title}
           </h2>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-3.5 shrink-0">
             {timeLeft !== null && (
-              <span className={`text-sm md:text-base font-black tabular-nums py-1 px-3 rounded-lg bg-slate-800 border border-slate-700 ${timeLeft < 60 ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}>
+              <span className={`text-sm md:text-base font-black tabular-nums py-1.5 px-3.5 rounded-xl bg-white/10 border border-white/15 ${timeLeft < 60 ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}>
                 ⏱️ {formatTime(timeLeft)}
               </span>
             )}
-            <span className="text-xs text-slate-300 font-bold bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700">
+            <span className="text-xs text-slate-200 font-bold bg-white/10 px-3 py-1.5 rounded-xl border border-white/15">
               {answeredCount}/{totalQuestions} Answered
             </span>
           </div>
@@ -1012,34 +1011,34 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     return (
       <div className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900">
         {/* TopBar */}
-        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 py-2.5 bg-slate-900 border-b border-slate-800 text-white shadow-md select-none">
+        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 h-[68px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 text-white shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] select-none">
           {/* Left Section: Back + Logo + Module Name */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
             <button
               type="button"
               onClick={() => { setView('list'); setResult(null); setActiveQuiz(null); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border-0 rounded-xl text-white text-xs font-bold cursor-pointer transition-all active:scale-95"
+              className="flex items-center justify-center h-10 px-3.5 bg-[#94c5ff]/18 hover:bg-[#bfdbfe]/24 border border-[#94c5ff]/24 rounded-xl text-white text-xs font-bold cursor-pointer transition-all active:scale-95"
               title="Back to Quizzes"
             >
               <span>←</span>
-              <span>Quizzes</span>
+              <span className="ml-1">Quizzes</span>
             </button>
 
-            <div className="h-6 w-px bg-white/20 my-auto" />
+            <div className="h-7 w-px bg-white/15 my-auto" />
 
             <div className="flex items-center gap-2.5">
-              <Logo height={32} />
-              <span className="text-white text-base md:text-lg font-black tracking-wider border-l border-white/20 pl-2.5 font-sans uppercase">
+              <Logo height={44} />
+              <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans uppercase border-l border-white/20 pl-2.5">
                 QUIZ
               </span>
             </div>
           </div>
 
           {/* Right Section: Auth + Creoleap Logo */}
-          <div className="flex items-center gap-3">
-            <LeapLabAuthButton variant="dark" size="sm" style={{ height: 32, borderRadius: '9999px' }} />
+          <div className="flex items-center gap-3.5">
+            <LeapLabAuthButton variant="dark" size="sm" style={{ height: 34, borderRadius: '9999px' }} />
             <div className="hidden sm:block">
-              <CreoleapLogo height={28} />
+              <CreoleapLogo height={32} />
             </div>
           </div>
         </header>

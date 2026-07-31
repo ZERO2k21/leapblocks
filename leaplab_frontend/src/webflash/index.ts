@@ -102,22 +102,40 @@ interface ServerCompileResult {
 async function compileOnServer(options: WebUploadOptions): Promise<ServerCompileResult> {
     const isESP32 = isEsp32Fqbn(options.fqbn);
     const endpoint = isESP32 ? '/compile/esp32' : '/compile';
+    const url = `${CLOUD_COMPILER_URL}${endpoint}`;
     const body = JSON.stringify({
         code: options.code,
         board: options.fqbn,
         libraries: options.libraries?.join(',') || '',
     });
 
-    options.onLog?.(`Compiling for ${options.fqbn} on the LeapBlocks server...`);
-    const res = await fetch(`${CLOUD_COMPILER_URL}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body,
-    });
+    options.onLog?.(`[webflash] Compiling for ${options.fqbn} on the LeapBlocks server...`);
+    options.onLog?.(`[webflash] POST ${url} (${body.length} bytes, board=${options.fqbn}, isESP32=${isESP32})`);
+
+    let res: Response;
+    try {
+        res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body,
+        });
+    } catch (e: any) {
+        options.onLog?.(`[webflash] Network error: ${e?.message}`);
+        return { success: false, errors: `Network error reaching compiler server: ${e?.message}` };
+    }
+
+    options.onLog?.(`[webflash] Response: HTTP ${res.status} ${res.statusText}`);
+
     if (!res.ok) {
+        const text = await res.text().catch(() => '(unreadable)');
+        options.onLog?.(`[webflash] Error body: ${text.slice(0, 500)}`);
         return { success: false, errors: `Compiler server error (HTTP ${res.status}).` };
     }
+
     const data = await res.json();
+    options.onLog?.(`[webflash] Server response keys: ${Object.keys(data).join(', ')}`);
+    options.onLog?.(`[webflash] Server success=${data.success}, hasHex=${!!data.hex}, hasBinBase64=${!!data.binBase64}, errors=${JSON.stringify(data.errors || null)}`);
+
     if (!data.success) {
         const errors = data.errors;
         return {
@@ -144,30 +162,42 @@ async function compileOnServer(options: WebUploadOptions): Promise<ServerCompile
  */
 export async function uploadToBoard(options: WebUploadOptions): Promise<{ success: boolean; error?: string }> {
     try {
+        console.log(`[webflash] uploadToBoard called — fqbn=${options.fqbn}, codeLength=${options.code?.length}`);
+
         if (!isWebSerialSupported()) {
+            console.log('[webflash] Web Serial NOT supported');
             return {
                 success: false,
                 error: 'Web Serial is not supported in this browser. Use Chrome or Edge — or install LeapBlocks Desktop.',
             };
         }
+        console.log('[webflash] Web Serial supported ✓');
 
         let port = grantedPort;
         if (!port) {
+            console.log('[webflash] No granted port — opening picker...');
             const picked = await requestPort();
             if (!picked?.port) {
+                console.log('[webflash] User cancelled picker');
                 return { success: false, error: 'No port selected. Please connect your board and pick its port.' };
             }
             port = picked.port;
+            console.log('[webflash] Picker granted port ✓');
+        } else {
+            console.log('[webflash] Using previously granted port ✓');
         }
 
         // 1. Compile on the server.
         options.onProgress?.(5, 'Compiling on the LeapBlocks server...');
+        console.log('[webflash] Step 1: compileOnServer...');
         const compiled = await compileOnServer(options);
+        console.log(`[webflash] compileOnServer result: success=${compiled.success}, errors=${compiled.errors?.slice(0, 200) || 'none'}`);
         if (!compiled.success) {
             return { success: false, error: `Compilation failed:\n${compiled.errors}` };
         }
 
         // 2. Flash from the browser.
+        console.log('[webflash] Step 2: flashing from browser...');
         if (isEsp32Fqbn(options.fqbn)) {
             await flashEsp32(port, {
                 binBase64: compiled.binBase64!,

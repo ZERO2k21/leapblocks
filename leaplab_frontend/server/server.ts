@@ -255,14 +255,20 @@ async function initCores(): Promise<void> {
     await getCliVersion();
 
     const { stdout } = await runCLI(['core', 'list', '--format', 'json']);
+    console.log('[SERVER] Core list output length:', stdout.length);
     let data: any;
     try { data = JSON.parse(stdout || '[]'); } catch { data = []; }
     const cores = Array.isArray(data) ? data : [];
+    console.log('[SERVER] Found', cores.length, 'installed cores');
+    cores.forEach((c: any, i: number) => {
+      console.log(`[SERVER]   core[${i}]: id=${c.id}, platform=${c.platform?.id || '(none)'}, version=${c.installedVersion || c.version || '?'}`);
+    });
 
     const hasAvr = cores.some((c: any) =>
       (c.id && c.id.startsWith('arduino:avr')) ||
       (c.platform?.id && c.platform.id.startsWith('arduino:avr'))
     );
+    console.log('[SERVER] hasAvr =', hasAvr);
 
     if (!hasAvr) {
       console.log('[SERVER] Installing arduino:avr core...');
@@ -274,14 +280,17 @@ async function initCores(): Promise<void> {
       (c.id && c.id.startsWith('esp32:')) ||
       (c.platform?.id && c.platform.id.startsWith('esp32:'))
     );
+    console.log('[SERVER] hasEsp32 =', hasEsp32);
 
     if (!hasEsp32) {
       console.log('[SERVER] Installing esp32:esp32 core (may take a few minutes)...');
       await runCLI(['core', 'update-index', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
       const { code } = await runCLI(['core', 'install', 'esp32:esp32', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
       esp32CoreReady = code === 0;
+      console.log('[SERVER] ESP32 install result:', esp32CoreReady ? 'success' : 'FAILED (code=' + code + ')');
     } else {
       esp32CoreReady = true;
+      console.log('[SERVER] ESP32 core already installed ✓');
     }
 
     console.log('[SERVER] Core initialization complete');
@@ -291,22 +300,40 @@ async function initCores(): Promise<void> {
 }
 
 async function ensureESP32Core(): Promise<boolean> {
-  if (esp32CoreReady) return true;
+  if (esp32CoreReady) {
+    console.log('[SERVER] ensureESP32Core: already ready (cached)');
+    return true;
+  }
   try {
+    console.log('[SERVER] ensureESP32Core: checking installed cores...');
     const { stdout, code } = await runCLI(['core', 'list', '--format', 'json']);
-    if (code !== 0) throw new Error('core list failed');
+    if (code !== 0) {
+      console.error('[SERVER] ensureESP32Core: core list failed with code', code);
+      throw new Error('core list failed');
+    }
+    console.log('[SERVER] ensureESP32Core: core list output length =', stdout.length);
     const cores = JSON.parse(stdout || '[]');
+    console.log('[SERVER] ensureESP32Core: parsed', Array.isArray(cores) ? cores.length : 'not-array', 'cores');
+    if (Array.isArray(cores)) {
+      cores.forEach((c: any, i: number) => {
+        console.log(`[SERVER]   core[${i}]: id=${c.id}, platform=${c.platform?.id || '(none)'}`);
+      });
+    }
     const installed = Array.isArray(cores) && cores.some((c: any) =>
       (c.id && c.id.startsWith('esp32:')) ||
       (c.platform?.id && c.platform.id.startsWith('esp32:'))
     );
+    console.log('[SERVER] ensureESP32Core: esp32 core installed =', installed);
     if (installed) { esp32CoreReady = true; return true; }
 
-    console.log('[SERVER] Installing ESP32 core (first run)...');
-    const { code: ic } = await runCLI([
+    console.log('[SERVER] ensureESP32Core: ESP32 core NOT found — installing now...');
+    const { code: ic, stdout: installOut, stderr: installErr } = await runCLI([
       'core', 'install', 'esp32:esp32',
       '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json',
     ]);
+    console.log('[SERVER] ensureESP32Core: install exit code =', ic);
+    if (installOut) console.log('[SERVER] ensureESP32Core: install stdout:', installOut.slice(0, 500));
+    if (installErr) console.error('[SERVER] ensureESP32Core: install stderr:', installErr.slice(0, 500));
     esp32CoreReady = ic === 0;
     return esp32CoreReady;
   } catch (e: any) {
@@ -744,8 +771,11 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
     processedCode = processedCode.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
     processedCode = migrateESP32LedcAPI(processedCode);
 
+    console.log(`[SERVER] /compile/esp32: calling ensureESP32Core (current esp32CoreReady=${esp32CoreReady})...`);
     const coreOk = await ensureESP32Core();
+    console.log(`[SERVER] /compile/esp32: ensureESP32Core returned ${coreOk}`);
     if (!coreOk) {
+      console.error('[SERVER] /compile/esp32: ESP32 core NOT available — rejecting request');
       return res.json({ success: false, errors: 'ESP32 core not available on this server' });
     }
 
