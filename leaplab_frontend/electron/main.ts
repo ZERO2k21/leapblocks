@@ -908,13 +908,19 @@ async function ensureESP32Core(): Promise<boolean> {
       sendProgress('ESP32 core not found — installing (this may take 2-5 minutes)...');
       sendProgress('Please wait, downloading ESP32 platform...');
 
-      const { code: updateCode, stderr: updateErr } = await runCLI([
-        'core', 'update-index',
-        '--additional-urls', ESP32_URLS.join(',')
-      ]);
+      let updateOk = false;
+      for (const url of ESP32_URLS) {
+        const urlShort = url.includes('dl.espressif.com') ? 'Espressif CDN' : 'GitHub';
+        sendProgress(`Updating package index via ${urlShort}...`);
+        const { code: updateCode, stderr: updateErr } = await runCLI([
+          'core', 'update-index',
+          '--additional-urls', url
+        ]);
+        if (updateCode === 0) { updateOk = true; break; }
+        console.warn(`[FORGE] Index update failed with ${url}:`, updateErr);
+      }
 
-      if (updateCode !== 0) {
-        console.error('[FORGE] Failed to update index:', updateErr);
+      if (!updateOk) {
         sendProgress('ERROR: Failed to update package index');
         return false;
       }

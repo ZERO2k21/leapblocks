@@ -728,11 +728,17 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
 
             if (!installed) {
                 send('ESP32 core not found — installing (this may take 2-5 minutes)...');
-                const { code: updateCode } = await this.runCLI(arduinoCliPath, configPath, [
-                    'core', 'update-index', '--additional-urls', ESP32_URLS.join(',')
-                ]);
+                let updateOk = false;
+                for (const url of ESP32_URLS) {
+                    send(`Updating package index via ${url}...`);
+                    const { code: updateCode } = await this.runCLI(arduinoCliPath, configPath, [
+                        'core', 'update-index', '--additional-urls', url
+                    ]);
+                    if (updateCode === 0) { updateOk = true; break; }
+                    send('Index update failed, trying next...');
+                }
 
-                if (updateCode !== 0) { send('ERROR: Failed to update package index'); return false; }
+                if (!updateOk) { send('ERROR: Failed to update package index'); return false; }
 
                 let ok = false;
                 for (const url of ESP32_URLS) {

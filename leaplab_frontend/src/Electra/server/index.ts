@@ -125,20 +125,35 @@ const initCores = async () => {
     }
 
     // Install ESP32 core if not present
-    const hasEsp32 = Array.isArray(data) && data.some((c: any) =>
+    const hasEsp32 = cores.some((c: any) =>
       (c.platform?.id === 'esp32:esp32') || (c.id === 'esp32:esp32')
     );
     if (!hasEsp32) {
       console.log('[SERVER] Core esp32:esp32 not found. Installing (this may take a few minutes)...');
-      await runCommand(
-        `${CLI_BIN} core update-index --config-file "${FORGE.configFile}" --additional-urls ` +
-        `https://espressif.github.io/arduino-esp32/package_esp32_index.json`
-      );
-      await runCommand(
-        `${CLI_BIN} core install esp32:esp32 --config-file "${FORGE.configFile}" --additional-urls ` +
-        `https://espressif.github.io/arduino-esp32/package_esp32_index.json`
-      );
-      console.log('[SERVER] Core esp32:esp32 installed successfully.');
+      const esp32Urls = [
+        'https://dl.espressif.com/dl/package_esp32_index.json',
+        'https://espressif.github.io/arduino-esp32/package_esp32_index.json',
+      ];
+      let esp32Installed = false;
+      for (const url of esp32Urls) {
+        try {
+          await runCommand(
+            `${CLI_BIN} core update-index --config-file "${FORGE.configFile}" --additional-urls ${url}`
+          );
+          await runCommand(
+            `${CLI_BIN} core install esp32:esp32 --config-file "${FORGE.configFile}" --additional-urls ${url}`
+          );
+          esp32Installed = true;
+          break;
+        } catch (err: any) {
+          console.warn(`[SERVER] ESP32 core install via ${url} failed:`, err.message);
+        }
+      }
+      if (esp32Installed) {
+        console.log('[SERVER] Core esp32:esp32 installed successfully.');
+      } else {
+        console.warn('[SERVER] All ESP32 core install attempts failed.');
+      }
     } else {
       console.log('[SERVER] Core esp32:esp32 is already installed.');
     }

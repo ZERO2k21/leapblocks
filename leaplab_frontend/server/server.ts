@@ -187,13 +187,32 @@ const FORGE_LIB_LIBRARIES = (() => {
   return null;
 })();
 
-// ESP32 package indexes: the official Espressif CDN plus the GitHub mirror,
-// so `core install esp32:esp32` works even if one host is unreachable.
+// ESP32 package indexes: the Espressif CDN is primary (proven reachable from
+// Render's build network); GitHub-hosted mirrors are fallbacks, since arduino-cli
+// aborts when ANY configured index 404s, each URL must be tried on its own.
 const ESP32_INDEX_URLS = [
   'https://dl.espressif.com/dl/package_esp32_index.json',
   'https://espressif.github.io/arduino-esp32/package_esp32_index.json',
 ];
-const ESP32_ADDITIONAL_URLS = ESP32_INDEX_URLS.map((u) => ['--additional-urls', u]).flat();
+
+async function updateIndexFor(url: string): Promise<boolean> {
+  const { code } = await runCLI(['core', 'update-index', '--additional-urls', url]);
+  return code === 0;
+}
+
+async function installESP32Core(): Promise<boolean> {
+  for (const url of ESP32_INDEX_URLS) {
+    console.log('[SERVER] update-index + core install esp32:esp32 via', url);
+    if (!(await updateIndexFor(url))) {
+      console.log('[SERVER]   index update failed for', url, '— trying next URL');
+      continue;
+    }
+    const { code } = await runCLI(['core', 'install', 'esp32:esp32', '--additional-urls', url]);
+    if (code === 0) return true;
+    console.log('[SERVER]   install failed for', url, '— trying next URL');
+  }
+  return false;
+}
 
 console.log(`[SERVER] arduino-cli: ${CLI_PATH}`);
 console.log(`[SERVER] config:      ${CLI_CONFIG || '(default)'}`);
@@ -304,12 +323,10 @@ async function initCores(): Promise<void> {
 
     if (!hasEsp32) {
       console.log('[SERVER] Installing esp32:esp32 core (may take a few minutes)...');
-      console.log('[SERVER] ESP32 index URLs:', ESP32_INDEX_URLS.join(', '));
-      await runCLI(['core', 'update-index', ...ESP32_ADDITIONAL_URLS]);
-      const { code } = await runCLI(['core', 'install', 'esp32:esp32', ...ESP32_ADDITIONAL_URLS]);
-      esp32CoreReady = code === 0;
-      console.log('[SERVER] ESP32 install result:', esp32CoreReady ? 'success' : 'FAILED (code=' + code + ')');
-      if (!esp32CoreReady) {
+      const ok = await installESP32Core();
+      esp32CoreReady = ok;
+      console.log('[SERVER] ESP32 install result:', ok ? 'success' : 'FAILED');
+      if (!ok) {
         const check = await runCLI(['core', 'list', '--format', 'json']);
         console.log('[SERVER] Post-install core list raw:', JSON.stringify(check.stdout).slice(0, 2000));
       }
@@ -353,13 +370,8 @@ async function ensureESP32Core(): Promise<boolean> {
 
     console.log('[SERVER] ensureESP32Core: ESP32 core NOT found — installing now...');
     console.log('[SERVER] ensureESP32Core: index URLs:', ESP32_INDEX_URLS.join(', '));
-    const { code: ic, stdout: installOut, stderr: installErr } = await runCLI([
-      'core', 'install', 'esp32:esp32', ...ESP32_ADDITIONAL_URLS,
-    ]);
-    console.log('[SERVER] ensureESP32Core: install exit code =', ic);
-    if (installOut) console.log('[SERVER] ensureESP32Core: install stdout:', installOut.slice(0, 500));
-    if (installErr) console.error('[SERVER] ensureESP32Core: install stderr:', installErr.slice(0, 500));
-    esp32CoreReady = ic === 0;
+    esp32CoreReady = await installESP32Core();
+    console.log('[SERVER] ensureESP32Core: install result:', esp32CoreReady ? 'success' : 'FAILED');
     return esp32CoreReady;
   } catch (e: any) {
     console.error('[SERVER] ensureESP32Core error:', e.message);
