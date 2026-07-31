@@ -22,7 +22,7 @@ RUN arduino-cli config init --dest-file /app/arduino-cli.yaml && \
     arduino-cli config set directories.downloads /app/arduino-data/staging && \
     arduino-cli config set directories.user /app/arduino-data/user && \
     arduino-cli config set board_manager.additional_urls \
-      "https://dl.espressif.com/dl/package_esp32_index.json" && \
+      "https://dl.espressif.com/dl/package_esp32_index.json,https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json" && \
     arduino-cli core update-index
 
 RUN arduino-cli core install arduino:avr
@@ -59,7 +59,7 @@ COPY server/package.json server/package-lock.json* /tmp/server/
 RUN cd /tmp/server && npm install --production && \
     mkdir -p /app && cp -r /tmp/server/node_modules /app/node_modules
 
-COPY server/ ./server/
+COPY --chmod=755 server/ ./server/
 COPY src/creova/apk/ ./src/creova/apk/
 COPY src/creova/apk/tools/ ./tools/
 RUN npx --yes esbuild src/creova/apk/buildAPK.ts --bundle --platform=node --target=node20 --outfile=src/creova/apk/buildAPK.js --external:fs-extra --external:child_process --external:path --external:os 2>/dev/null || \

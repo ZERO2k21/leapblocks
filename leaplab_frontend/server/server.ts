@@ -187,6 +187,14 @@ const FORGE_LIB_LIBRARIES = (() => {
   return null;
 })();
 
+// ESP32 package indexes: the official Espressif CDN plus the GitHub mirror,
+// so `core install esp32:esp32` works even if one host is unreachable.
+const ESP32_INDEX_URLS = [
+  'https://dl.espressif.com/dl/package_esp32_index.json',
+  'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json',
+];
+const ESP32_ADDITIONAL_URLS = ESP32_INDEX_URLS.map((u) => ['--additional-urls', u]).flat();
+
 console.log(`[SERVER] arduino-cli: ${CLI_PATH}`);
 console.log(`[SERVER] config:      ${CLI_CONFIG || '(default)'}`);
 console.log(`[SERVER] libraries:   ${FORGE_LIB_LIBRARIES || '(none)'}`);
@@ -254,10 +262,12 @@ async function initCores(): Promise<void> {
   try {
     await getCliVersion();
 
-    const { stdout } = await runCLI(['core', 'list', '--format', 'json']);
+    const { stdout, stderr } = await runCLI(['core', 'list', '--format', 'json']);
+    console.log('[SERVER] Core list raw stdout:', JSON.stringify(stdout).slice(0, 2000));
+    if (stderr) console.log('[SERVER] Core list stderr:', stderr.slice(0, 1000));
     console.log('[SERVER] Core list output length:', stdout.length);
     let data: any;
-    try { data = JSON.parse(stdout || '[]'); } catch { data = []; }
+    try { data = JSON.parse(stdout || '[]'); } catch (e: any) { console.log('[SERVER] Core list JSON parse failed:', e.message); data = []; }
     const cores = Array.isArray(data) ? data : [];
     console.log('[SERVER] Found', cores.length, 'installed cores');
     cores.forEach((c: any, i: number) => {
@@ -284,10 +294,15 @@ async function initCores(): Promise<void> {
 
     if (!hasEsp32) {
       console.log('[SERVER] Installing esp32:esp32 core (may take a few minutes)...');
-      await runCLI(['core', 'update-index', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
-      const { code } = await runCLI(['core', 'install', 'esp32:esp32', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
+      console.log('[SERVER] ESP32 index URLs:', ESP32_INDEX_URLS.join(', '));
+      await runCLI(['core', 'update-index', ...ESP32_ADDITIONAL_URLS]);
+      const { code } = await runCLI(['core', 'install', 'esp32:esp32', ...ESP32_ADDITIONAL_URLS]);
       esp32CoreReady = code === 0;
       console.log('[SERVER] ESP32 install result:', esp32CoreReady ? 'success' : 'FAILED (code=' + code + ')');
+      if (!esp32CoreReady) {
+        const check = await runCLI(['core', 'list', '--format', 'json']);
+        console.log('[SERVER] Post-install core list raw:', JSON.stringify(check.stdout).slice(0, 2000));
+      }
     } else {
       esp32CoreReady = true;
       console.log('[SERVER] ESP32 core already installed ✓');
@@ -327,9 +342,9 @@ async function ensureESP32Core(): Promise<boolean> {
     if (installed) { esp32CoreReady = true; return true; }
 
     console.log('[SERVER] ensureESP32Core: ESP32 core NOT found — installing now...');
+    console.log('[SERVER] ensureESP32Core: index URLs:', ESP32_INDEX_URLS.join(', '));
     const { code: ic, stdout: installOut, stderr: installErr } = await runCLI([
-      'core', 'install', 'esp32:esp32',
-      '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json',
+      'core', 'install', 'esp32:esp32', ...ESP32_ADDITIONAL_URLS,
     ]);
     console.log('[SERVER] ensureESP32Core: install exit code =', ic);
     if (installOut) console.log('[SERVER] ensureESP32Core: install stdout:', installOut.slice(0, 500));
