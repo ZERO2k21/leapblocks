@@ -205,6 +205,16 @@ export interface CLIResult {
   code: number;
 }
 
+// arduino-cli `core list --format json` returns `{"platforms": [...]}` (v1.x)
+// but older versions return a bare array — accept both shapes.
+function parseCoreList(stdout: string): any[] {
+  if (!stdout) return [];
+  const data = JSON.parse(stdout);
+  if (Array.isArray(data)) return data;
+  if (Array.isArray((data as any)?.platforms)) return (data as any).platforms;
+  return [];
+}
+
 function runCLI(args: string[], timeoutMs = 120_000): Promise<CLIResult> {
   return new Promise((resolve) => {
     const cliArgs = CLI_CONFIG ? ['--config-file', CLI_CONFIG, ...args] : args;
@@ -267,8 +277,8 @@ async function initCores(): Promise<void> {
     if (stderr) console.log('[SERVER] Core list stderr:', stderr.slice(0, 1000));
     console.log('[SERVER] Core list output length:', stdout.length);
     let data: any;
-    try { data = JSON.parse(stdout || '[]'); } catch (e: any) { console.log('[SERVER] Core list JSON parse failed:', e.message); data = []; }
-    const cores = Array.isArray(data) ? data : [];
+    try { data = JSON.parse(stdout || '{}'); } catch (e: any) { console.log('[SERVER] Core list JSON parse failed:', e.message); data = {}; }
+    const cores = parseCoreList(stdout);
     console.log('[SERVER] Found', cores.length, 'installed cores');
     cores.forEach((c: any, i: number) => {
       console.log(`[SERVER]   core[${i}]: id=${c.id}, platform=${c.platform?.id || '(none)'}, version=${c.installedVersion || c.version || '?'}`);
@@ -327,8 +337,8 @@ async function ensureESP32Core(): Promise<boolean> {
       throw new Error('core list failed');
     }
     console.log('[SERVER] ensureESP32Core: core list output length =', stdout.length);
-    const cores = JSON.parse(stdout || '[]');
-    console.log('[SERVER] ensureESP32Core: parsed', Array.isArray(cores) ? cores.length : 'not-array', 'cores');
+    const cores = parseCoreList(stdout);
+    console.log('[SERVER] ensureESP32Core: parsed', cores.length, 'cores');
     if (Array.isArray(cores)) {
       cores.forEach((c: any, i: number) => {
         console.log(`[SERVER]   core[${i}]: id=${c.id}, platform=${c.platform?.id || '(none)'}`);

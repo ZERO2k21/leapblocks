@@ -717,7 +717,10 @@ static void __lf_setup_wifi() { WiFi.onEvent(__lf_wifi_event); }
             if (listCode !== 0) { send('ERROR: Failed to list installed cores'); return false; }
 
             let cores: any[] = [];
-            try { cores = JSON.parse(stdout || '[]'); } catch (_) { }
+            try {
+                const data = JSON.parse(stdout || '{}');
+                cores = Array.isArray(data) ? data : (Array.isArray(data.platforms) ? data.platforms : []);
+            } catch (_) { }
             const installed = cores.some((c: any) =>
                 (c.id ?? c.platform?.id ?? '').startsWith('esp32:') ||
                 (c.id ?? c.platform?.id ?? '').startsWith('espressif:')

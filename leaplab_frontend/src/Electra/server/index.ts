@@ -108,7 +108,10 @@ const initCores = async () => {
       data = [];
     }
 
-    const hasAvr = Array.isArray(data) && data.some((c: any) =>
+    // arduino-cli v1.x returns {"platforms": [...]}; older versions return a bare array
+    const cores = Array.isArray(data) ? data : (Array.isArray(data?.platforms) ? data.platforms : []);
+
+    const hasAvr = cores.some((c: any) =>
       (c.platform?.architecture === 'avr') || (c.id === 'arduino:avr')
     );
 

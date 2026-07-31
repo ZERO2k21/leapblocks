@@ -820,12 +820,23 @@ ipcMain.handle('read-bin-file', async (_, filePath: string) => {
 
 let esp32CoreReady = false;
 
+// arduino-cli `core list --format json` returns `{"platforms": [...]}` (v1.x)
+// but older versions return a bare array — accept both shapes.
+function parseCoreList(stdout: string): any[] {
+  if (!stdout) return [];
+  try {
+    const data = JSON.parse(stdout);
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data.platforms)) return data.platforms;
+  } catch (_) { /* fall through */ }
+  return [];
+}
+
 async function warmupESP32Core(): Promise<void> {
   try {
     const { stdout, code } = await runCLI(['core', 'list', '--format', 'json']);
     if (code !== 0) return;
-    let cores: any[] = [];
-    try { cores = JSON.parse(stdout); } catch (_) { return; }
+    const cores = parseCoreList(stdout);
     const installed = Array.isArray(cores) && cores.some(c =>
       (c.id && (c.id.startsWith('esp32:') || c.id.startsWith('espressif:'))) ||
       (c.platform?.id && (c.platform.id.startsWith('esp32:') || c.platform.id.startsWith('espressif:')))
@@ -886,12 +897,9 @@ async function ensureESP32Core(): Promise<boolean> {
       return false;
     }
 
-    let cores: any[] = [];
-    try { cores = JSON.parse(stdout); } catch (e: any) {
-      console.warn('[FORGE] Failed to parse core list:', e.message);
-    }
+    const cores = parseCoreList(stdout);
 
-    const installed = Array.isArray(cores) && cores.some(c =>
+    const installed = cores.some(c =>
       (c.id && (c.id.startsWith('esp32:') || c.id.startsWith('espressif:'))) ||
       (c.platform && c.platform.id && (c.platform.id.startsWith('esp32:') || c.platform.id.startsWith('espressif:')))
     );
