@@ -49,6 +49,20 @@ interface AttemptResult {
 
 const QUIZZES_PATH = '/api/leaplab/quiz/quizzes';
 
+// Background ticker: browsers throttle main-thread timers in hidden tabs,
+// but Web Worker timers keep ticking (~1s) even when the tab is in the background.
+const TIMER_WORKER_CODE = `setInterval(() => { self.postMessage('tick'); }, 250);`;
+const timerWorkerBlob = new Blob([TIMER_WORKER_CODE], { type: 'application/javascript' });
+const timerWorkerUrl = URL.createObjectURL(timerWorkerBlob);
+
+// Persist the in-progress quiz locally so answers survive network loss / page reloads
+const SESSION_KEY = 'pulse_quiz_session_v1';
+const clearQuizSession = () => {
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch {}
+};
+
 // ─── API helpers ───────────────────────────────────────────────
 
 async function apiGet(path: string, token: string) {
@@ -100,6 +114,16 @@ export default function PulseApp({ onBack }: PulseAppProps) {
   // Result state
   const [result, setResult] = useState<AttemptResult | null>(null);
 
+  // Tab-warning & exit-confirm state
+  const [leftDuringQuiz, setLeftDuringQuiz] = useState(false);
+  const [awaySeconds, setAwaySeconds] = useState(0);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+  // Network & resume state
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [resumedNotice, setResumedNotice] = useState(false);
+  const pendingSubmitRef = useRef(false);
+
   // ── Fetch quizzes ──
   const fetchQuizzes = useCallback(async () => {
     if (!token) {
@@ -125,21 +149,153 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     return () => controller.abort();
   }, [fetchQuizzes]);
 
-  // ── Timer ──
+  // Restore an in-progress quiz after a reload (survives network loss)
   useEffect(() => {
-    if (timeLeft === null || timeLeft <= 0) return;
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev !== null && prev <= 1) {
-          clearInterval(timer);
-          handleSubmitRef.current();
-          return 0;
-        }
-        return prev !== null ? prev - 1 : null;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft]);
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s && s.attemptId && s.activeQuiz && s.answers && s.deadline && s.deadline > performance.now()) {
+        setActiveQuiz(s.activeQuiz);
+        setAttemptId(s.attemptId);
+        setAnswers(s.answers);
+        deadlineRef.current = s.deadline;
+        autoSubmittedRef.current = false;
+        tabSwitchCountRef.current = 0;
+        setTimeLeft(Math.max(0, Math.ceil((s.deadline - performance.now()) / 1000)));
+        setView('taking');
+        setResumedNotice(true);
+      } else {
+        clearQuizSession();
+      }
+    } catch {
+      clearQuizSession();
+    }
+  }, []);
+
+  // Persist the in-progress attempt locally so answers are never lost
+  useEffect(() => {
+    if (view !== 'taking' || !attemptId || !activeQuiz) return;
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        attemptId,
+        answers,
+        activeQuiz,
+        deadline: deadlineRef.current,
+      }));
+    } catch {}
+  }, [view, attemptId, answers, activeQuiz]);
+
+  // ── Timer (deadline-based: immune to setInterval drift & background throttling) ──
+  const deadlineRef = useRef<number | null>(null);
+  const autoSubmittedRef = useRef(false);
+  const submitGuardRef = useRef(false);
+  const tabSwitchCountRef = useRef(0);
+
+  // Max popup warnings allowed before auto-submitting on tab/window switches
+  const MAX_TAB_SWITCH_WARNINGS = 3;
+
+  useEffect(() => {
+    if (view !== 'taking' || deadlineRef.current === null) return;
+
+    const finishIfExpired = () => {
+      if (performance.now() >= deadlineRef.current! && !autoSubmittedRef.current) {
+        autoSubmittedRef.current = true;
+        handleSubmitRef.current();
+      }
+    };
+
+    // Submit precisely at the deadline (no polling — exact remaining ms)
+    const timeout = setTimeout(finishIfExpired, Math.max(0, deadlineRef.current - performance.now()));
+
+    // Background-safe ticker via Web Worker (survives main-thread throttling)
+    const worker = new Worker(timerWorkerUrl);
+    worker.onmessage = () => {
+      setTimeLeft(Math.max(0, Math.ceil((deadlineRef.current! - performance.now()) / 1000)));
+      finishIfExpired();
+    };
+
+    // Display-only countdown while visible
+    const displayTimer = setInterval(() => {
+      setTimeLeft(Math.max(0, Math.ceil((deadlineRef.current! - performance.now()) / 1000)));
+    }, 250);
+
+    const onVisibility = () => {
+      if (!document.hidden) {
+        setTimeLeft(Math.max(0, Math.ceil((deadlineRef.current! - performance.now()) / 1000)));
+        finishIfExpired();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(displayTimer);
+      document.removeEventListener('visibilitychange', onVisibility);
+      worker.terminate();
+    };
+  }, [view]);
+
+  // Warn when the user leaves the tab/window mid-quiz (time keeps running regardless).
+  // Allowed 3 times; the 4th switch auto-submits the quiz with the current answers.
+  useEffect(() => {
+    if (view !== 'taking') return;
+    let awayFrom = 0;
+    let isAway = false;
+
+    const onLeave = () => {
+      if (!isAway && (document.hidden || !document.hasFocus())) {
+        isAway = true;
+        awayFrom = performance.now();
+      }
+    };
+
+    const onReturn = () => {
+      if (!isAway) return;
+      isAway = false;
+      tabSwitchCountRef.current += 1;
+      if (tabSwitchCountRef.current > MAX_TAB_SWITCH_WARNINGS) {
+        handleSubmitRef.current();
+        return;
+      }
+      setAwaySeconds(Math.round((performance.now() - awayFrom) / 1000));
+      setLeftDuringQuiz(true);
+    };
+
+    const onVisibility = () => (document.hidden ? onLeave() : onReturn());
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('blur', onLeave);
+    window.addEventListener('focus', onReturn);
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('blur', onLeave);
+      window.removeEventListener('focus', onReturn);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, [view]);
+
+  // Network status: warn while offline, auto-retry a pending submit on reconnect
+  useEffect(() => {
+    const goOnline = () => {
+      setIsOnline(true);
+      if (pendingSubmitRef.current && view === 'taking') {
+        pendingSubmitRef.current = false;
+        handleSubmitRef.current();
+      }
+    };
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, [view]);
 
   // ── Start quiz ──
   const startQuiz = async (quizId: string) => {
@@ -155,11 +311,19 @@ export default function PulseApp({ onBack }: PulseAppProps) {
       setAttemptId(attemptRes.data.attemptId);
       setAnswers({});
       setView('taking');
+      setLeftDuringQuiz(false);
+      setShowExitConfirm(false);
+      setResumedNotice(false);
+      tabSwitchCountRef.current = 0;
 
-      // Set timer if quiz has time limit
+      // Set timer if quiz has time limit (deadline-based, exact ms)
+      autoSubmittedRef.current = false;
       if (quizRes.data.timeLimitMinutes) {
-        setTimeLeft(quizRes.data.timeLimitMinutes * 60);
+        const seconds = quizRes.data.timeLimitMinutes * 60;
+        deadlineRef.current = performance.now() + seconds * 1000;
+        setTimeLeft(seconds);
       } else {
+        deadlineRef.current = null;
         setTimeLeft(null);
       }
     } catch (err: any) {
@@ -172,7 +336,8 @@ export default function PulseApp({ onBack }: PulseAppProps) {
 
   // ── Submit quiz ──
   const handleSubmit = async () => {
-    if (!token || !attemptId || submitting) return;
+    if (!token || !attemptId || submitting || submitGuardRef.current) return;
+    submitGuardRef.current = true;
     setSubmitting(true);
     try {
       const answerArray = Object.entries(answers).map(([questionId, selectedAnswer]) => ({
@@ -182,15 +347,25 @@ export default function PulseApp({ onBack }: PulseAppProps) {
 
       const res = await apiPost(`${QUIZZES_PATH}/attempts/${attemptId}/submit`, token, {
         answers: answerArray,
+        timeLeftSeconds: timeLeft,
+        submittedAt: new Date().toISOString(),
       });
 
       setResult(res.data);
       setView('result');
       setTimeLeft(null);
+      pendingSubmitRef.current = false;
+      clearQuizSession();
     } catch (err: any) {
-      setError(err.message);
+      if (!navigator.onLine) {
+        pendingSubmitRef.current = true;
+        setError('Network lost — your answers are saved on this device. Submission will retry automatically when you are back online.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setSubmitting(false);
+      submitGuardRef.current = false;
     }
   };
 
@@ -217,7 +392,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
   // ──────────────────────────────────────────────────────────────
   if (view === 'list') {
     return (
-      <div className="h-full overflow-y-auto bg-slate-50 font-sans text-slate-900">
+      <div className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900">
         {/* Header */}
         <div className="p-6 pb-4 bg-gradient-to-br from-indigo-600 to-indigo-500 text-white">
           <button onClick={onBack} className="bg-white/15 hover:bg-white/25 border-none text-white py-1.5 px-3 rounded-lg cursor-pointer text-xs font-semibold mb-3 transition-colors">
@@ -253,9 +428,9 @@ export default function PulseApp({ onBack }: PulseAppProps) {
           {quizzes.map((quiz) => (
             <div key={quiz.id} className="bg-white border-2 border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
               <div className="p-4 pb-3">
-                <h3 className="text-base font-bold m-0 text-slate-900">{quiz.title}</h3>
+                <h3 className="text-base font-bold m-0 text-slate-900 break-words">{quiz.title}</h3>
                 {quiz.description && (
-                  <p className="text-xs text-slate-500 mt-1 mb-0 leading-snug">{quiz.description}</p>
+                  <p className="text-xs text-slate-500 mt-1 mb-0 leading-snug break-words">{quiz.description}</p>
                 )}
                 <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-400 font-medium">
                   <span>{quiz.questionCount} questions</span>
@@ -293,14 +468,14 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     const totalQuestions = activeQuiz.questions.length;
 
     return (
-      <div className="h-full overflow-y-auto bg-slate-50 font-sans text-slate-900">
+      <div className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900">
         {/* Top bar */}
         <div className="sticky top-0 z-[100] flex items-center justify-between p-3 px-4 bg-white border-b-2 border-slate-200">
-          <button onClick={() => { setView('list'); setTimeLeft(null); }} className="bg-slate-100 hover:bg-slate-200 text-slate-700 border-none py-1.5 px-3 rounded-lg cursor-pointer text-xs font-semibold transition-colors">
+          <button onClick={() => setShowExitConfirm(true)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 border-none py-1.5 px-3 rounded-lg cursor-pointer text-xs font-semibold transition-colors">
             ← Exit
           </button>
-          <h2 className="text-lg font-extrabold m-0 text-slate-900">{activeQuiz.title}</h2>
-          <div className="flex items-center gap-3">
+          <h2 className="flex-1 min-w-0 truncate text-center text-lg font-extrabold m-0 text-slate-900 px-2">{activeQuiz.title}</h2>
+          <div className="flex items-center gap-3 shrink-0">
             {timeLeft !== null && (
               <span className={`text-lg font-extrabold tabular-nums ${timeLeft < 60 ? 'text-red-500' : 'text-slate-900'}`}>
                 {formatTime(timeLeft)}
@@ -310,6 +485,95 @@ export default function PulseApp({ onBack }: PulseAppProps) {
           </div>
         </div>
 
+        {!isOnline && (
+          <div className="m-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-sm text-center font-medium">
+            Network lost — your answers are saved on this device. Submission will retry automatically when you're back online.
+          </div>
+        )}
+
+        {resumedNotice && (
+          <div className="m-4 p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-700 text-sm text-center font-medium">
+            Resumed your in-progress quiz — answers saved on this device.
+            <button onClick={() => setResumedNotice(false)} className="ml-2 py-1 px-2 bg-indigo-600 hover:bg-indigo-700 text-white border-none rounded-md cursor-pointer text-xs font-semibold transition-colors">
+              OK
+            </button>
+          </div>
+        )}
+
+        {error && (
+          <div className="m-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm text-center">
+            <p className="m-0 font-medium">{error}</p>
+            <div className="flex justify-center gap-2 mt-2">
+              <button onClick={handleSubmit} disabled={submitting} className="py-1.5 px-4 bg-red-600 hover:bg-red-700 text-white border-none rounded-lg cursor-pointer text-xs font-semibold transition-colors">
+                {submitting ? 'Submitting...' : 'Retry Submit'}
+              </button>
+              <button onClick={() => { setView('list'); setTimeLeft(null); deadlineRef.current = null; clearQuizSession(); }} className="py-1.5 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 border-none rounded-lg cursor-pointer text-xs font-semibold transition-colors">
+                Exit
+              </button>
+            </div>
+          </div>
+        )}
+
+        {timeLeft === 0 && !error && (
+          <div className="m-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-sm text-center font-medium">
+            Time's up — submitting your answers...
+          </div>
+        )}
+
+        {leftDuringQuiz && (
+          <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
+            <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 text-center">
+              <div className="w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-2xl font-extrabold mx-auto mb-3">!</div>
+              <h2 className="text-lg font-extrabold m-0 mb-2 text-slate-900">You left the quiz</h2>
+              <p className="text-sm text-slate-600 m-0 mb-1 font-medium">
+                The quiz timer kept running while you were away.
+              </p>
+              {awaySeconds > 0 && (
+                <p className="text-sm text-slate-500 m-0 mb-4 font-medium">
+                  You were away for {formatTime(awaySeconds)}.
+                </p>
+              )}
+              <p className="text-xs text-amber-600 m-0 mb-4 font-semibold">
+                Warning {tabSwitchCountRef.current} of {MAX_TAB_SWITCH_WARNINGS}. On the next switch the quiz will be submitted automatically.
+              </p>
+              <button
+                onClick={() => setLeftDuringQuiz(false)}
+                className="w-full py-2.5 px-6 bg-indigo-600 hover:bg-indigo-700 text-white border-none rounded-xl text-sm font-bold cursor-pointer transition-colors"
+              >
+                Continue Quiz
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showExitConfirm && (
+          <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
+            <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+              <h2 className="m-0 mb-2 text-lg font-bold text-slate-900">Submit quiz?</h2>
+              <p className="m-0 mb-5 text-sm text-slate-600 leading-relaxed font-medium">
+                You have answered {answeredCount}/{totalQuestions} questions. Submit now and finish the quiz?
+              </p>
+              <div className="flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => { setShowExitConfirm(false); autoSubmittedRef.current = true; setView('list'); setTimeLeft(null); deadlineRef.current = null; clearQuizSession(); }}
+                  className="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-semibold cursor-pointer transition-all hover:bg-slate-50"
+                >
+                  No, Exit Quiz
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowExitConfirm(false); handleSubmit(); }}
+                  disabled={submitting}
+                  className="px-4 py-2 rounded-xl border-0 bg-green-600 text-white text-xs font-semibold cursor-pointer transition-all hover:bg-green-700 shadow-md shadow-green-600/20"
+                >
+                  {submitting ? 'Submitting...' : 'Yes, Submit'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Questions */}
         <div className="p-4 flex flex-col gap-4 pb-28">
           {activeQuiz.questions.map((q, idx) => (
@@ -318,12 +582,13 @@ export default function PulseApp({ onBack }: PulseAppProps) {
                 <span className="text-xs font-extrabold text-indigo-600 bg-indigo-50 py-0.5 px-2 rounded-md">Q{idx + 1}</span>
                 <span className="text-xs text-slate-400 font-semibold">{q.points} pt{q.points !== 1 ? 's' : ''}</span>
               </div>
-              <p className="text-sm font-semibold leading-relaxed mb-3 text-slate-900">{q.questionText}</p>
+              <p className="text-sm font-semibold leading-relaxed mb-3 text-slate-900 break-words whitespace-pre-line">{q.questionText}</p>
               {q.questionMediaUrl && getImageUrl(q.questionMediaUrl) && (
                 <img
                   src={getImageUrl(q.questionMediaUrl)!}
                   alt="Question"
                   className="max-w-full rounded-xl mb-3"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
               )}
               <div className="flex flex-col gap-2">
@@ -332,15 +597,15 @@ export default function PulseApp({ onBack }: PulseAppProps) {
                   return (
                     <button
                       key={opt.id}
-                      className={`flex items-center gap-3 p-3 px-3.5 border-2 rounded-xl cursor-pointer text-left transition-all text-sm ${
+                      className={`flex items-center gap-3 p-3 px-3.5 min-w-0 border-2 rounded-xl cursor-pointer text-left transition-all text-sm ${
                         isSelected ? 'bg-indigo-50 border-indigo-600 text-indigo-600 font-medium' : 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-white'
                       }`}
                       onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: opt.text || '' }))}
                     >
                       <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-200 font-bold text-xs shrink-0 text-slate-700">{String.fromCharCode(65 + optIdx)}</span>
-                      <span className="flex-1 font-medium">{opt.text}</span>
+                      <span className="flex-1 min-w-0 break-words font-medium">{opt.text}</span>
                       {opt.mediaUrl && getImageUrl(opt.mediaUrl) && (
-                        <img src={getImageUrl(opt.mediaUrl)!} alt="" className="w-12 h-12 object-cover rounded-lg" />
+                        <img src={getImageUrl(opt.mediaUrl)!} alt="" className="w-12 h-12 object-cover rounded-lg" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                       )}
                     </button>
                   );
@@ -374,7 +639,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     const passed = activeQuiz ? result.score >= activeQuiz.passingPoints : true;
 
     return (
-      <div className="h-full overflow-y-auto bg-slate-50 font-sans text-slate-900">
+      <div className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900">
         <div className="max-w-[400px] my-15 mx-auto p-10 bg-white rounded-3xl border-2 border-slate-200 text-center shadow-lg">
           <div className={`w-18 h-18 rounded-full flex items-center justify-center text-4xl font-extrabold mx-auto mb-4 ${passed ? 'bg-green-100 text-green-600' : 'bg-red-50 text-red-600'}`}>
             {passed ? '✓' : '✗'}
