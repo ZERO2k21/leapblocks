@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import type React from 'react';
 import { log } from '../utils/log';
+import { isWebSerialSupported, listPorts as webListPorts, requestPort as webRequestPort, uploadToBoard } from '../../webflash';
 
 export function useHardwareControls(
     editorMode: string,
@@ -25,6 +26,13 @@ export function useHardwareControls(
             const electronAPI = (window as any).electronAPI;
             if (electronAPI?.getPorts) {
                 portList = await electronAPI.getPorts();
+                setPorts(portList);
+            } else if (isWebSerialSupported()) {
+                const webPorts = await webListPorts();
+                portList = webPorts.map((p, i) => ({
+                    path: p.path,
+                    manufacturer: p.manufacturer || `Web Serial port ${i + 1}`,
+                }));
                 setPorts(portList);
             } else {
                 portList = [{ path: 'WEB_DEMO', manufacturer: 'LeapBlocks Web' }];
@@ -53,7 +61,10 @@ export function useHardwareControls(
     }, [editorMode, selectedPort, isConnected, setPorts]);
 
     const handleConnect = useCallback(async () => {
-        if (!selectedPort) {
+        const electronAPI = (window as any).electronAPI;
+
+        // Web Serial needs no pre-selected port — the browser picker grants access.
+        if (!selectedPort && electronAPI?.connectPort) {
             addLog('Select a port first');
             return;
         }
@@ -87,6 +98,19 @@ export function useHardwareControls(
                 } else {
                     addLog(`Connection failed: ${result.error}`);
                 }
+            } else if (isWebSerialSupported()) {
+                const picked = await webRequestPort();
+                if (picked?.port) {
+                    setPorts((prev) => {
+                        const next = (prev || []).filter((p) => p?.path !== picked.path);
+                        return [{ path: picked.path, manufacturer: picked.manufacturer || 'Web Serial device' }, ...next];
+                    });
+                    setIsConnected(true);
+                    addLog('Connected via Web Serial — ready to upload');
+                    refreshPorts();
+                } else {
+                    addLog('No board selected');
+                }
             } else if (selectedPort === 'WEB_DEMO') {
                 setIsConnected(true);
                 addLog('Connected to LeapBlocks Web (Simulation Mode)');
@@ -97,7 +121,7 @@ export function useHardwareControls(
             addLog('Connection error occurred');
             console.error(err);
         }
-    }, [selectedPort, isConnected, baudRate, selectedBoard, addLog, setIsConnected]);
+    }, [selectedPort, isConnected, baudRate, selectedBoard, addLog, setIsConnected, setPorts, refreshPorts]);
 
     useEffect(() => {
         if (isConnected && selectedPort) {
@@ -131,13 +155,58 @@ export function useHardwareControls(
     const handleUpload = useCallback(async () => {
         if (!generatedCode || isUploading) return;
 
-        if (!selectedPort) {
+        const electronAPI = (window as any).electronAPI;
+
+        // In Electron a COM port must be chosen first; in the browser the Web
+        // Serial picker is opened automatically by uploadToBoard.
+        if (!selectedPort && electronAPI?.uploadCode) {
             addLog('No port selected!');
             alert('⚠️ No port selected!\n\nPlease connect your board and select a COM port.');
             return;
         }
 
-        const electronAPI = (window as any).electronAPI;
+        const fqbnMap: Record<string, string> = {
+            'arduino_uno': 'arduino:avr:uno',
+            'arduino_mega': 'arduino:avr:mega',
+            'arduino_nano': 'arduino:avr:nano',
+            'esp32': 'esp32:esp32:esp32c3',
+        };
+        const fqbn = fqbnMap[selectedBoard] || 'arduino:avr:uno';
+
+        // ── Web Serial upload path (no Electron) ──
+        if (!electronAPI?.uploadCode) {
+            if (!isWebSerialSupported()) {
+                addLog('Upload requires LeapBlocks Desktop, or Chrome/Edge with Web Serial');
+                return;
+            }
+
+            setIsUploading(true);
+            setUploadProgress('Uploading...');
+            addLog('Starting upload via Web Serial...');
+
+            const result = await uploadToBoard({
+                code: generatedCode,
+                fqbn,
+                onProgress: (progress, message) => {
+                    setUploadProgress(`${progress}%: ${message}`);
+                    addLog(`${progress}%: ${message}`);
+                },
+                onLog: (message) => addLog(message),
+            });
+
+            if (result?.success) {
+                addLog('Upload complete!');
+                setUploadProgress('Upload complete!');
+                setActiveTab('log');
+            } else {
+                const message = result?.error || 'Upload failed.';
+                addLog(`Upload failed: ${message}`);
+                setUploadProgress(`Failed: ${message}`);
+            }
+            setIsUploading(false);
+            return;
+        }
+
         if (isConnected) {
             addLog('Disconnecting serial for upload...');
             await window.electronAPI.disconnectPort();
@@ -148,14 +217,6 @@ export function useHardwareControls(
         setIsUploading(true);
         setUploadProgress('Uploading...');
         addLog('Starting upload...');
-
-        const fqbnMap: Record<string, string> = {
-            'arduino_uno': 'arduino:avr:uno',
-            'arduino_mega': 'arduino:avr:mega',
-            'arduino_nano': 'arduino:avr:nano',
-            'esp32': 'esp32:esp32:esp32c3',
-        };
-        const fqbn = fqbnMap[selectedBoard] || 'arduino:avr:uno';
 
         try {
             const result = await window.electronAPI.uploadCode(generatedCode, selectedPort, fqbn);

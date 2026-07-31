@@ -1,0 +1,479 @@
+/**
+ * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
+ * All rights reserved. Proprietary and confidential.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ *
+ * AVR flasher — speaks the same protocols as avrdude's "arduino" (STK500v1,
+ * optiboot) and "wiring" (STK500v2, Mega2560) programmers to the bootloaders
+ * on Arduino Uno / Nano / Mega. Runs entirely in the browser over the Web
+ * Serial API. No drivers needed.
+ *
+ * Upload sequence:
+ *   1. Open the port at 1200 baud and close it → toggles DTR → board resets
+ *      into its bootloader (the Arduino "reset trick").
+ *   2. Re-open at the bootloader baud (115200 → 57600 → 19200 fallback).
+ *   3. Sync, read signature, enter progmode, write flash page-by-page.
+ */
+
+import { parseIntelHex } from './intelHex';
+
+// ── STK500v1 protocol constants ─────────────────────────────────────────────
+const STK_GET_SYNC = 0x30;
+const STK_GET_SIGN_ON = 0x15;
+const STK_ENTER_PROGMODE = 0x50;
+const STK_LEAVE_PROGMODE = 0x51;
+const STK_READ_SIGN = 0x75;
+const STK_LOAD_ADDRESS = 0x55;
+const STK_PROG_PAGE = 0x64;
+const CRC_EOP = 0x20;
+
+const STK_INSYNC = 0x14;
+const STK_OK = 0x10;
+const STK_NOSYNC = 0x15;
+
+// ── STK500v2 protocol constants (Mega2560 / Wiring bootloader) ─────────────
+const V2_MESSAGE_START = 0x1b;
+const V2_TOKEN = 0x0e;
+const V2_STATUS_OK = 0x00;
+const V2_CMD_SIGN_ON = 0x01;
+const V2_CMD_LOAD_ADDRESS = 0x06;
+const V2_CMD_ENTER_PROGMODE = 0x10;
+const V2_CMD_LEAVE_PROGMODE = 0x11;
+const V2_CMD_PROGRAM_FLASH = 0x13;
+const V2_CMD_READ_SIGNATURE = 0x18;
+
+// ── Board profiles (bootloader params used by avrdude "arduino" programmer) ─
+interface AvrBoardProfile {
+    fqbn: string;
+    /** Bytes per flash page. */
+    pageSize: number;
+    /** Expected chip signature (device signature bytes). */
+    signature: number[];
+    /** Flash size in bytes. */
+    flashSize: number;
+    /** Try these baud rates in order (most bootloaders auto-baud). */
+    bauds: number[];
+    /** Bootloader protocol: optiboot uses STK500v1, the Mega2560 uses STK500v2. */
+    protocol: 'stk500v1' | 'stk500v2';
+}
+
+const AVR_BOARD_PROFILES: Record<string, AvrBoardProfile> = {
+    'arduino:avr:uno': {
+        fqbn: 'arduino:avr:uno',
+        pageSize: 128,
+        signature: [0x1e, 0x95, 0x02], // ATmega328P
+        flashSize: 32 * 1024,
+        bauds: [115200, 57600],
+        protocol: 'stk500v1',
+    },
+    'arduino:avr:nano': {
+        fqbn: 'arduino:avr:nano',
+        pageSize: 128,
+        signature: [0x1e, 0x95, 0x02], // ATmega328P
+        flashSize: 32 * 1024,
+        bauds: [115200, 57600, 19200],
+        protocol: 'stk500v1',
+    },
+    'arduino:avr:mega': {
+        fqbn: 'arduino:avr:mega',
+        pageSize: 256,
+        signature: [0x1e, 0x98, 0x01], // ATmega2560
+        flashSize: 256 * 1024,
+        bauds: [115200, 57600],
+        protocol: 'stk500v2',
+    },
+};
+
+export function getAvrBoardProfile(fqbn: string): AvrBoardProfile | undefined {
+    const match = Object.values(AVR_BOARD_PROFILES).find(p => p.fqbn === fqbn);
+    return match;
+}
+
+export interface AvrFlashOptions {
+    hex: string;
+    fqbn: string;
+    onProgress?: (progress: number, message: string) => void;
+    onLog?: (message: string) => void;
+}
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Minimal byte-stream wrapper over a Web Serial port with a read buffer and
+ * timeouts. Only used while a single upload owns the port.
+ */
+class SerialStream {
+    private port: SerialPort;
+    private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+    private writer: WritableStreamDefaultWriter<Uint8Array> | null = null;
+    private buffer = new Uint8Array(0);
+    private closed = false;
+
+    constructor(port: SerialPort) {
+        this.port = port;
+    }
+
+    async open(baudRate: number): Promise<void> {
+        await this.port.open({ baudRate });
+        const readable = this.port.readable;
+        const writable = this.port.writable;
+        if (!readable || !writable) throw new Error('Serial port has no read/write streams.');
+        this.reader = readable.getReader();
+        this.writer = writable.getWriter();
+        this.closed = false;
+        this.buffer = new Uint8Array(0);
+        this.startReading();
+    }
+
+    private startReading() {
+        const pump = async () => {
+            try {
+                while (!this.closed && this.reader) {
+                    const { value, done } = await this.reader.read();
+                    if (done) break;
+                    if (value && value.length) this.append(value);
+                }
+            } catch {
+                // Port closed / read error — ignore, close() is awaited elsewhere.
+            }
+        };
+        pump();
+    }
+
+    private append(chunk: Uint8Array) {
+        const merged = new Uint8Array(this.buffer.length + chunk.length);
+        merged.set(this.buffer, 0);
+        merged.set(chunk, this.buffer.length);
+        this.buffer = merged;
+    }
+
+    /** Clear any leftover bytes in the receive buffer. */
+    flushInput() {
+        this.buffer = new Uint8Array(0);
+    }
+
+    async write(bytes: Uint8Array): Promise<void> {
+        if (!this.writer) throw new Error('Port is not open');
+        await this.writer.write(bytes);
+    }
+
+    /** Wait until at least `count` bytes are buffered, then consume them. */
+    async readBytes(count: number, timeoutMs = 2000): Promise<Uint8Array> {
+        const deadline = Date.now() + timeoutMs;
+        while (this.buffer.length < count) {
+            if (Date.now() > deadline) {
+                throw new Error(`Timed out waiting for ${count} bytes from the board (received ${this.buffer.length}).`);
+            }
+            await sleep(10);
+        }
+        const out = this.buffer.slice(0, count);
+        this.buffer = this.buffer.slice(count);
+        return out;
+    }
+
+    /** Send a raw STK command and consume the INSYNC … OK (or NOSYNC) envelope. */
+    async stkCommand(bytes: Uint8Array, responseLength = 0, timeoutMs = 5000): Promise<Uint8Array> {
+        this.flushInput();
+        await this.write(bytes);
+        const insync = await this.readBytes(1, timeoutMs);
+        if (insync[0] !== STK_INSYNC) {
+            throw new Error('Board did not acknowledge the command (no sync). Is it in bootloader mode?');
+        }
+        const payload = responseLength > 0 ? await this.readBytes(responseLength, timeoutMs) : new Uint8Array(0);
+        const status = await this.readBytes(1, timeoutMs);
+        if (status[0] !== STK_OK) {
+            throw new Error(`Board rejected the command (status 0x${status[0].toString(16)}).`);
+        }
+        return payload;
+    }
+
+    async close(): Promise<void> {
+        this.closed = true;
+        try {
+            if (this.reader) {
+                await this.reader.cancel();
+                // cancel() does not release the stream lock — release it so the
+                // port can be reopened on the next upload.
+                try { this.reader.releaseLock(); } catch { /* already released */ }
+                this.reader = null;
+            }
+            if (this.writer) {
+                try { await this.writer.releaseLock(); } catch { /* ignore */ }
+                this.writer = null;
+            }
+            if (this.port.readable) await this.port.close();
+        } catch {
+            // Already closed or port disappeared — fine.
+        }
+    }
+}
+
+/** Reset the board into its bootloader by briefly opening at 1200 baud. */
+async function resetIntoBootloader(port: SerialPort): Promise<void> {
+    await port.open({ baudRate: 1200 });
+    await sleep(150);
+    await port.close();
+    await sleep(300); // bootloader window is ~1s (optiboot WDT) — sync fast
+}
+
+/** Try to sync with the bootloader at the given baud. */
+async function syncAtBaud(stream: SerialStream, baudRate: number, attempts = 4): Promise<boolean> {
+    await stream.open(baudRate);
+    for (let i = 0; i < attempts; i++) {
+        try {
+            await stream.stkCommand(new Uint8Array([STK_GET_SYNC, CRC_EOP]), 0, 1500);
+            await stream.stkCommand(new Uint8Array([STK_GET_SIGN_ON, CRC_EOP]), 0, 1500);
+            return true;
+        } catch {
+            await stream.flushInput();
+            await sleep(400);
+        }
+    }
+    return false;
+}
+
+// ── STK500v2 (Mega2560 "wiring" bootloader) ─────────────────────────────────
+
+interface Stk500v2Session {
+    stream: SerialStream;
+    seqNum: number;
+}
+
+/**
+ * Build an STK500v2 message frame:
+ * [0x1B, seq, len_hi, len_lo, 0x0E, body..., checksum] where checksum is the
+ * XOR of every byte from 0x1B through the last body byte (AVR068 framing).
+ */
+export function buildV2Message(seqNum: number, body: Uint8Array): Uint8Array {
+    const msg = new Uint8Array(5 + body.length + 1);
+    msg[0] = V2_MESSAGE_START;
+    msg[1] = seqNum & 0xff;
+    msg[2] = (body.length >> 8) & 0xff;
+    msg[3] = body.length & 0xff;
+    msg[4] = V2_TOKEN;
+    msg.set(body, 5);
+    let checksum = 0;
+    for (let i = 0; i < 5 + body.length; i++) checksum ^= msg[i];
+    msg[msg.length - 1] = checksum;
+    return msg;
+}
+
+/**
+ * Send a v2 command and return the response body (command echo and status
+ * byte stripped). The bootloader replies `[cmd, STATUS_OK, data...]` inside a
+ * framed message; on any framing/status error an Error is thrown.
+ */
+async function v2Command(session: Stk500v2Session, command: number, body: Uint8Array, timeoutMs = 3000): Promise<Uint8Array> {
+    const { stream } = session;
+    const payload = new Uint8Array(1 + body.length);
+    payload[0] = command;
+    payload.set(body, 1);
+    stream.flushInput();
+
+    await stream.write(buildV2Message(session.seqNum++, payload));
+
+    // Response starts with 0x1B; skip any strays (echoed bytes etc.).
+    let header: Uint8Array;
+    for (let tries = 0; ; tries++) {
+        header = await stream.readBytes(1, timeoutMs);
+        if (header[0] === V2_MESSAGE_START) break;
+        if (tries > 32) throw new Error('STK500v2: no valid message start.');
+    }
+    const rest = await stream.readBytes(4, timeoutMs); // seq, len_hi, len_lo, token
+    const length = (rest[1] << 8) | rest[2];
+    if (rest[3] !== V2_TOKEN) throw new Error('STK500v2: bad token in response.');
+    const data = await stream.readBytes(length + 1, timeoutMs); // body + trailing checksum
+    const response = new Uint8Array([...header, ...rest, ...data]);
+
+    let checksum = 0;
+    for (let i = 0; i < response.length; i++) checksum ^= response[i];
+    if (checksum !== 0) throw new Error('STK500v2: response checksum mismatch.');
+
+    const responseBody = data.slice(0, length);
+    if (responseBody[0] !== command) {
+        throw new Error(`STK500v2: unexpected command echo 0x${responseBody[0].toString(16)}.`);
+    }
+    if (responseBody[1] !== V2_STATUS_OK) {
+        throw new Error(`STK500v2: bootloader rejected the command (status 0x${responseBody[1].toString(16)}).`);
+    }
+    return responseBody.slice(2);
+}
+
+async function writeFlashV2(session: Stk500v2Session, data: Uint8Array, profile: AvrBoardProfile, options: AvrFlashOptions): Promise<void> {
+    const pageSize = profile.pageSize;
+    const pageCount = Math.ceil(data.length / pageSize);
+    for (let page = 0; page < pageCount; page++) {
+        const offset = page * pageSize;
+        const pageBytes = data.slice(offset, Math.min(offset + pageSize, data.length));
+        const padded = new Uint8Array(pageSize);
+        padded.set(pageBytes);
+
+        // LOAD_ADDRESS: 4-byte big-endian word address (stk500boot.c: b1<<24|b2<<16|b3<<8|b4 <<1).
+        const wordAddress = Math.floor(offset / 2);
+        await v2Command(
+            session,
+            V2_CMD_LOAD_ADDRESS,
+            new Uint8Array([(wordAddress >>> 24) & 0xff, (wordAddress >>> 16) & 0xff, (wordAddress >>> 8) & 0xff, wordAddress & 0xff]),
+            3000,
+        );
+
+        // PROGRAM_FLASH: [size_hi, size_lo, mode, delay_hi, delay_lo, 4× SPI cmd (ignored), data…].
+        // The bootloader erases one page per write command, so chunks must be page-sized.
+        const body = new Uint8Array(9 + padded.length);
+        body[0] = (padded.length >> 8) & 0xff;
+        body[1] = padded.length & 0xff;
+        body[2] = 0x29; // mode: program flash
+        body[3] = 0x00; // delay
+        body[4] = 0x00;
+        body[5] = 0x4c; // SPI: write page
+        body[6] = 0x00;
+        body[7] = 0x00;
+        body[8] = 0x00;
+        body.set(padded, 9);
+        await v2Command(session, V2_CMD_PROGRAM_FLASH, body, 10000);
+
+        if (page % 16 === 0 || page === pageCount - 1) {
+            const percent = Math.round(((page + 1) / pageCount) * 100);
+            options.onProgress?.(percent, `Writing flash ${page + 1}/${pageCount} pages...`);
+        }
+    }
+
+    await v2Command(session, V2_CMD_LEAVE_PROGMODE, new Uint8Array(0), 3000);
+    options.onProgress?.(100, 'Upload complete!');
+    options.onLog?.(`✓ Firmware flashed (${data.length} bytes, ${pageCount} pages).`);
+}
+
+/** Sign on, verify the chip signature and enter programming mode (v2 sync). */
+async function syncV2AtBaud(stream: SerialStream, profile: AvrBoardProfile, options: AvrFlashOptions): Promise<Stk500v2Session> {
+    const session: Stk500v2Session = { stream, seqNum: 0 };
+
+    // Sign-on doubles as the sync: the v2 bootloader replies framed [0x01, OK, 8, "AVRISP_2"].
+    const signOn = await v2Command(session, V2_CMD_SIGN_ON, new Uint8Array(0), 3000);
+    options.onLog?.(`Bootloader found (v2 sign-on: ${Array.from(signOn).map(b => String.fromCharCode(b)).join('')}).`);
+
+    // Signature: one call per byte; stk500boot.c reads the index from the 5th
+    // message byte (msgBuffer[4]), i.e. body position 3. Response: [OK, sig, OK].
+    const signature = new Uint8Array(3);
+    for (let i = 0; i < 3; i++) {
+        const resp = await v2Command(session, V2_CMD_READ_SIGNATURE, new Uint8Array([0x30, 0x00, 0x00, i]), 3000);
+        signature[i] = resp[0];
+    }
+    const expected = profile.signature.join('.');
+    const actual = Array.from(signature).join('.');
+    if (signature[0] !== profile.signature[0] || signature[1] !== profile.signature[1] || signature[2] !== profile.signature[2]) {
+        throw new Error(`Chip mismatch: expected signature ${expected} but the board reports ${actual}. Check that the correct board is selected.`);
+    }
+    options.onLog?.(`Chip verified: signature ${actual} (${profile.fqbn}).`);
+
+    await v2Command(session, V2_CMD_ENTER_PROGMODE, new Uint8Array(0), 3000);
+    return session;
+}
+
+export async function flashAvr(port: SerialPort, options: AvrFlashOptions): Promise<void> {
+    const profile = getAvrBoardProfile(options.fqbn);
+    if (!profile) {
+        throw new Error(`Unsupported AVR board: ${options.fqbn}. Web upload supports Uno, Nano and Mega.`);
+    }
+
+    const { data } = parseIntelHex(options.hex);
+    if (!data.length) throw new Error('Firmware hex file is empty or invalid.');
+    if (data.length > profile.flashSize) {
+        throw new Error(`Firmware is ${data.length} bytes but the ${profile.fqbn} flash is only ${profile.flashSize} bytes.`);
+    }
+
+    options.onLog?.(`Resetting ${options.fqbn} into bootloader...`);
+    await resetIntoBootloader(port);
+
+    let stream: SerialStream | null = null;
+    try {
+        if (profile.protocol === 'stk500v2') {
+            let session: Stk500v2Session | null = null;
+            for (const baud of profile.bauds) {
+                options.onLog?.(`Syncing with bootloader at ${baud} baud...`);
+                stream = new SerialStream(port);
+                try {
+                    await stream.open(baud);
+                    session = await syncV2AtBaud(stream, profile, options);
+                    break;
+                } catch {
+                    await stream.close();
+                    stream = null;
+                }
+            }
+            if (!session || !stream) {
+                throw new Error('Could not sync with the bootloader. Check the USB cable and that the board has an Arduino bootloader.');
+            }
+            try {
+                await writeFlashV2(session, data, profile, options);
+            } finally {
+                await stream.close();
+            }
+            return;
+        }
+
+        let synced = false;
+        for (const baud of profile.bauds) {
+            options.onLog?.(`Syncing with bootloader at ${baud} baud...`);
+            stream = new SerialStream(port);
+            if (await syncAtBaud(stream, baud)) {
+                synced = true;
+                options.onLog?.(`Bootloader found at ${baud} baud.`);
+                break;
+            }
+            await stream.close();
+            stream = null;
+        }
+        if (!synced || !stream) {
+            throw new Error('Could not sync with the bootloader. Check the USB cable and that the board has an Arduino bootloader.');
+        }
+
+        // Verify the chip signature matches the selected board.
+        const signature = await stream.stkCommand(new Uint8Array([STK_READ_SIGN, CRC_EOP]), 3);
+        const expected = profile.signature.join('.');
+        const actual = Array.from(signature).join('.');
+        if (signature[0] !== profile.signature[0] || signature[1] !== profile.signature[1] || signature[2] !== profile.signature[2]) {
+            throw new Error(`Chip mismatch: expected signature ${expected} but the board reports ${actual}. Check that the correct board is selected.`);
+        }
+        options.onLog?.(`Chip verified: signature ${actual} (${options.fqbn}).`);
+
+        await stream.stkCommand(new Uint8Array([STK_ENTER_PROGMODE, CRC_EOP]));
+
+        // Program flash page by page (flash base address is always 0).
+        const pageSize = profile.pageSize;
+        const pageCount = Math.ceil(data.length / pageSize);
+        for (let page = 0; page < pageCount; page++) {
+            const offset = page * pageSize;
+            const pageBytes = data.slice(offset, Math.min(offset + pageSize, data.length));
+            const padded = new Uint8Array(pageSize);
+            padded.set(pageBytes);
+
+            // STK500v1 addresses flash in 16-bit words.
+            const wordAddress = Math.floor(offset / 2);
+            await stream.stkCommand(
+                new Uint8Array([STK_LOAD_ADDRESS, wordAddress & 0xff, (wordAddress >> 8) & 0xff, CRC_EOP]),
+                0,
+                2000,
+            );
+
+            const cmd = new Uint8Array(5 + padded.length);
+            cmd[0] = STK_PROG_PAGE;
+            cmd[1] = (pageSize >> 8) & 0xff;
+            cmd[2] = pageSize & 0xff;
+            cmd[3] = 0x46; // 'F' → flash memory
+            cmd.set(padded, 4);
+            cmd[cmd.length - 1] = CRC_EOP;
+            await stream.stkCommand(cmd, 0, 10000);
+
+            if (page % 16 === 0 || page === pageCount - 1) {
+                const percent = Math.round(((page + 1) / pageCount) * 100);
+                options.onProgress?.(percent, `Writing flash ${page + 1}/${pageCount} pages...`);
+            }
+        }
+
+        await stream.stkCommand(new Uint8Array([STK_LEAVE_PROGMODE, CRC_EOP]));
+        options.onProgress?.(100, 'Upload complete!');
+        options.onLog?.(`✓ Firmware flashed (${data.length} bytes, ${pageCount} pages).`);
+    } finally {
+        if (stream) await stream.close();
+    }
+}

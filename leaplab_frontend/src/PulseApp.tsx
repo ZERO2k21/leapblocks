@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLeapLabAuthStore } from './auth/leaplabAuthStore';
 import { LMS_API_BASE } from './auth/api';
+import Logo, { CreoleapLogo } from './components/Logo';
+import LeapLabAuthButton from './auth/LeapLabAuthButton';
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -111,13 +113,25 @@ export default function PulseApp({ onBack }: PulseAppProps) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Question navigation & status table tracking
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [visitedQuestions, setVisitedQuestions] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (activeQuiz && activeQuiz.questions && activeQuiz.questions[currentQuestionIndex]) {
+      const qId = activeQuiz.questions[currentQuestionIndex].id;
+      setVisitedQuestions((prev) => (prev[qId] ? prev : { ...prev, [qId]: true }));
+    }
+  }, [activeQuiz, currentQuestionIndex]);
+
   // Result state
   const [result, setResult] = useState<AttemptResult | null>(null);
 
-  // Tab-warning & exit-confirm state
+  // Tab-warning, exit-confirm & pre-quiz confirm state
   const [leftDuringQuiz, setLeftDuringQuiz] = useState(false);
   const [awaySeconds, setAwaySeconds] = useState(0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [quizToStart, setQuizToStart] = useState<Quiz | null>(null);
 
   // Network & resume state
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -159,6 +173,17 @@ export default function PulseApp({ onBack }: PulseAppProps) {
         setActiveQuiz(s.activeQuiz);
         setAttemptId(s.attemptId);
         setAnswers(s.answers);
+
+        // Restore visited questions including first question & answered questions
+        const initialVisited: Record<string, boolean> = {};
+        if (s.activeQuiz.questions && s.activeQuiz.questions[0]) {
+          initialVisited[s.activeQuiz.questions[0].id] = true;
+        }
+        Object.keys(s.answers || {}).forEach((qId) => {
+          initialVisited[qId] = true;
+        });
+        setVisitedQuestions(initialVisited);
+
         deadlineRef.current = s.deadline;
         autoSubmittedRef.current = false;
         tabSwitchCountRef.current = 0;
@@ -310,6 +335,9 @@ export default function PulseApp({ onBack }: PulseAppProps) {
       const attemptRes = await apiPost(`${QUIZZES_PATH}/${quizId}/start`, token, {});
       setAttemptId(attemptRes.data.attemptId);
       setAnswers({});
+      const firstQId = quizRes.data.questions?.[0]?.id;
+      setCurrentQuestionIndex(0);
+      setVisitedQuestions(firstQId ? { [firstQId]: true } : {});
       setView('taking');
       setLeftDuringQuiz(false);
       setShowExitConfirm(false);
@@ -393,13 +421,43 @@ export default function PulseApp({ onBack }: PulseAppProps) {
   if (view === 'list') {
     return (
       <div className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900">
-        {/* Header */}
-        <div className="p-6 pb-4 bg-gradient-to-br from-indigo-600 to-indigo-500 text-white">
-          <button onClick={onBack} className="bg-white/15 hover:bg-white/25 border-none text-white py-1.5 px-3 rounded-lg cursor-pointer text-xs font-semibold mb-3 transition-colors">
-            ← Back
-          </button>
-          <h1 className="text-2xl font-extrabold m-0">Quizzes</h1>
-          <p className="text-sm opacity-80 mt-1 mb-0">Test your knowledge</p>
+        {/* TopBar */}
+        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 py-2.5 bg-slate-900 border-b border-slate-800 text-white shadow-md select-none">
+          {/* Left Section: Back + Logo + Module Name */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border-0 rounded-xl text-white text-xs font-bold cursor-pointer transition-all active:scale-95"
+              title="Back to Workspace"
+            >
+              <span>←</span>
+              <span>Back</span>
+            </button>
+
+            <div className="h-6 w-px bg-white/20 my-auto" />
+
+            <div className="flex items-center gap-2.5">
+              <Logo height={32} />
+              <span className="text-white text-base md:text-lg font-black tracking-wider border-l border-white/20 pl-2.5 font-sans uppercase">
+                QUIZ
+              </span>
+            </div>
+          </div>
+
+          {/* Right Section: Auth + Creoleap Logo */}
+          <div className="flex items-center gap-3">
+            <LeapLabAuthButton variant="dark" size="sm" style={{ height: 32, borderRadius: '9999px' }} />
+            <div className="hidden sm:block">
+              <CreoleapLogo height={28} />
+            </div>
+          </div>
+        </header>
+
+        {/* Page Banner */}
+        <div className="p-6 pb-4 bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white shadow-sm border-b border-indigo-900/50">
+          <h1 className="text-2xl font-extrabold m-0 tracking-tight">Available Quizzes</h1>
+          <p className="text-xs text-indigo-200 mt-1 mb-0 font-medium">Select a quiz to test your knowledge</p>
         </div>
 
         {loading && (
@@ -424,38 +482,139 @@ export default function PulseApp({ onBack }: PulseAppProps) {
           </div>
         )}
 
-        <div className="p-4 px-6 pb-6 flex flex-col gap-3">
+        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
           {quizzes.map((quiz) => (
-            <div key={quiz.id} className="bg-white border-2 border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <div className="p-4 pb-3">
-                <h3 className="text-base font-bold m-0 text-slate-900 break-words">{quiz.title}</h3>
-                {quiz.description && (
-                  <p className="text-xs text-slate-500 mt-1 mb-0 leading-snug break-words">{quiz.description}</p>
-                )}
-                <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-400 font-medium">
-                  <span>{quiz.questionCount} questions</span>
-                  <span>{quiz.totalPoints} pts</span>
-                  {quiz.timeLimitMinutes && <span>{quiz.timeLimitMinutes}m</span>}
-                  {quiz.retakeAllowed === 1 && <span className="text-indigo-600">Retake</span>}
-                </div>
-                {quiz.hasAttempted && quiz.lastScore !== null && (
-                  <div className="mt-2 inline-block py-0.5 px-2 bg-slate-100 rounded-md text-xs font-semibold text-slate-600">
-                    Last: {quiz.lastScore}/{quiz.lastMaxScore}
+            <div key={quiz.id} className="bg-white border-2 border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-indigo-300 transition-all flex flex-col justify-between">
+              <div className="p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-base font-extrabold m-0 text-slate-900 break-words">{quiz.title}</h3>
+                    {quiz.retakeAllowed === 1 && (
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 shrink-0">
+                        Retake
+                      </span>
+                    )}
                   </div>
-                )}
+                  {quiz.description && (
+                    <p className="text-xs text-slate-500 mt-1.5 mb-0 leading-relaxed break-words">{quiz.description}</p>
+                  )}
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 font-semibold gap-1">
+                    <span>📝 {quiz.questionCount} Questions</span>
+                    <span>⭐ {quiz.totalPoints} Pts</span>
+                    {quiz.timeLimitMinutes ? <span>⏱️ {quiz.timeLimitMinutes}m</span> : null}
+                  </div>
+
+                  {quiz.hasAttempted && quiz.lastScore !== null && (
+                    <div className="inline-flex items-center gap-1 py-1 px-2.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-700 w-fit">
+                      <span>Last Score:</span>
+                      <span className="text-indigo-600">{quiz.lastScore}/{quiz.lastMaxScore}</span>
+                    </div>
+                  )}
+                </div>
               </div>
+
               <button
-                className={`w-full py-3 bg-gradient-to-br from-indigo-600 to-indigo-500 text-white border-none text-sm font-bold cursor-pointer transition-opacity ${
-                  !quiz.canRetake && quiz.hasAttempted ? 'opacity-50 cursor-not-allowed' : 'opacity-100 hover:opacity-95'
+                className={`w-full py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white border-none text-xs font-extrabold tracking-wide uppercase cursor-pointer transition-all ${
+                  !quiz.canRetake && quiz.hasAttempted ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'opacity-100 shadow-sm'
                 }`}
-                onClick={() => startQuiz(quiz.id)}
+                onClick={() => setQuizToStart(quiz)}
                 disabled={!quiz.canRetake && quiz.hasAttempted}
               >
-                {quiz.hasAttempted && quiz.canRetake ? 'Retake' : quiz.hasAttempted ? 'Completed' : 'Start'}
+                {quiz.hasAttempted && quiz.canRetake ? 'Retake Quiz' : quiz.hasAttempted ? 'Completed' : 'Start Quiz'}
               </button>
             </div>
           ))}
         </div>
+
+        {/* Pre-Quiz Start Confirmation Modal */}
+        {quizToStart && (
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
+            <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border-2 border-slate-200">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl font-extrabold mx-auto mb-3 border border-indigo-100 shadow-sm">
+                📝
+              </div>
+
+              <h2 className="text-xl font-extrabold text-center text-slate-900 m-0 mb-1">
+                Are you ready for this quiz??
+              </h2>
+              <p className="text-xs text-center text-slate-500 m-0 mb-5 font-semibold">
+                Please review all quiz details before starting.
+              </p>
+
+              {/* Quiz Details Card */}
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-6 flex flex-col gap-3">
+                <div>
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Quiz Name</div>
+                  <div className="text-base font-extrabold text-slate-900 mt-0.5">{quizToStart.title}</div>
+                  {quizToStart.description && (
+                    <div className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">{quizToStart.description}</div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-200/80 text-xs">
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                    <span className="text-slate-400 font-semibold block text-[11px]">Total Questions</span>
+                    <span className="text-slate-900 font-extrabold text-sm">{quizToStart.questionCount} Questions</span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                    <span className="text-slate-400 font-semibold block text-[11px]">Total Points</span>
+                    <span className="text-indigo-600 font-extrabold text-sm">{quizToStart.totalPoints} Pts</span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                    <span className="text-slate-400 font-semibold block text-[11px]">Time Limit</span>
+                    <span className="text-slate-900 font-extrabold text-sm">
+                      {quizToStart.timeLimitMinutes ? `${quizToStart.timeLimitMinutes} Mins` : 'No Limit'}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                    <span className="text-slate-400 font-semibold block text-[11px]">Retakes Allowed</span>
+                    <span className="text-slate-900 font-extrabold text-sm">
+                      {quizToStart.retakeAllowed === 1 ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                </div>
+
+                {quizToStart.hasAttempted && quizToStart.lastScore !== null && (
+                  <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs">
+                    <span className="text-slate-500 font-bold">Previous Score:</span>
+                    <span className="font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+                      {quizToStart.lastScore} / {quizToStart.lastMaxScore}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setQuizToStart(null)}
+                  className="flex-1 py-3 px-4 rounded-xl border-2 border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-sm font-extrabold cursor-pointer transition-colors"
+                >
+                  No
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const qId = quizToStart.id;
+                    setQuizToStart(null);
+                    startQuiz(qId);
+                  }}
+                  className="flex-1 py-3 px-4 rounded-xl border-none bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white text-sm font-extrabold cursor-pointer transition-all shadow-md shadow-indigo-600/20"
+                >
+                  Yes, Start Quiz →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -467,23 +626,59 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     const answeredCount = Object.keys(answers).length;
     const totalQuestions = activeQuiz.questions.length;
 
+    let visitedUnansweredCount = 0;
+    let unvisitedCount = 0;
+
+    activeQuiz.questions.forEach((q, idx) => {
+      const isAns = !!answers[q.id];
+      const isVis = !!visitedQuestions[q.id] || idx === currentQuestionIndex;
+      if (!isAns && isVis) visitedUnansweredCount++;
+      if (!isAns && !isVis) unvisitedCount++;
+    });
+
+    const currentQuestion = activeQuiz.questions[currentQuestionIndex] || activeQuiz.questions[0];
+
     return (
       <div className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900">
-        {/* Top bar */}
-        <div className="sticky top-0 z-[100] flex items-center justify-between p-3 px-4 bg-white border-b-2 border-slate-200">
-          <button onClick={() => setShowExitConfirm(true)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 border-none py-1.5 px-3 rounded-lg cursor-pointer text-xs font-semibold transition-colors">
-            ← Exit
-          </button>
-          <h2 className="flex-1 min-w-0 truncate text-center text-lg font-extrabold m-0 text-slate-900 px-2">{activeQuiz.title}</h2>
+        {/* TopBar */}
+        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 py-2.5 bg-slate-900 border-b border-slate-800 text-white shadow-md select-none">
+          {/* Left Section: Exit + Logo + Module Name */}
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={() => setShowExitConfirm(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border-0 rounded-xl text-white text-xs font-bold cursor-pointer transition-all active:scale-95 shrink-0"
+              title="Exit Quiz"
+            >
+              <span>←</span>
+              <span>Exit</span>
+            </button>
+
+            <div className="h-6 w-px bg-white/20 my-auto shrink-0" />
+
+            <div className="flex items-center gap-2.5 shrink-0">
+              <Logo height={30} />
+              <span className="text-white text-base md:text-lg font-black tracking-wider border-l border-white/20 pl-2.5 font-sans uppercase">
+                QUIZ
+              </span>
+            </div>
+          </div>
+
+          <h2 className="hidden md:block flex-1 min-w-0 truncate text-center text-sm font-extrabold text-slate-200 px-4 m-0">
+            {activeQuiz.title}
+          </h2>
+
           <div className="flex items-center gap-3 shrink-0">
             {timeLeft !== null && (
-              <span className={`text-lg font-extrabold tabular-nums ${timeLeft < 60 ? 'text-red-500' : 'text-slate-900'}`}>
-                {formatTime(timeLeft)}
+              <span className={`text-sm md:text-base font-black tabular-nums py-1 px-3 rounded-lg bg-slate-800 border border-slate-700 ${timeLeft < 60 ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}>
+                ⏱️ {formatTime(timeLeft)}
               </span>
             )}
-            <span className="text-xs text-slate-400 font-semibold">{answeredCount}/{totalQuestions}</span>
+            <span className="text-xs text-slate-300 font-bold bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700">
+              {answeredCount}/{totalQuestions} Answered
+            </span>
           </div>
-        </div>
+        </header>
 
         {!isOnline && (
           <div className="m-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-sm text-center font-medium">
@@ -547,85 +742,261 @@ export default function PulseApp({ onBack }: PulseAppProps) {
         )}
 
         {showExitConfirm && (
-          <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
-            <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
-              <h2 className="m-0 mb-2 text-lg font-bold text-slate-900">Submit quiz?</h2>
-              <p className="m-0 mb-5 text-sm text-slate-600 leading-relaxed font-medium">
-                You have answered {answeredCount}/{totalQuestions} questions. Submit now and finish the quiz?
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
+            <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border-2 border-slate-200">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl font-extrabold mx-auto mb-3 border border-emerald-100 shadow-sm">
+                🚀
+              </div>
+
+              <h2 className="text-xl font-extrabold text-center text-slate-900 m-0 mb-1">
+                Ready to Submit Quiz?
+              </h2>
+              <p className="text-xs text-center text-slate-500 m-0 mb-5 font-semibold">
+                Please review your answer summary before final submission.
               </p>
-              <div className="flex justify-end gap-2.5">
+
+              {/* Quiz Progress Details Box */}
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-5 flex flex-col gap-3">
+                <div>
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Quiz Name</div>
+                  <div className="text-base font-extrabold text-slate-900 mt-0.5">{activeQuiz.title}</div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-200/80 text-xs">
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                    <span className="text-slate-400 font-semibold block text-[11px]">Answered</span>
+                    <span className="text-emerald-600 font-extrabold text-sm">
+                      {answeredCount} / {totalQuestions}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                    <span className="text-slate-400 font-semibold block text-[11px]">Unanswered</span>
+                    <span className={`font-extrabold text-sm ${totalQuestions - answeredCount > 0 ? 'text-amber-600' : 'text-slate-700'}`}>
+                      {totalQuestions - answeredCount} / {totalQuestions}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                    <span className="text-slate-400 font-semibold block text-[11px]">Visited / Read</span>
+                    <span className="text-slate-900 font-extrabold text-sm">
+                      {Object.keys(visitedQuestions).length} / {totalQuestions}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                    <span className="text-slate-400 font-semibold block text-[11px]">Time Left</span>
+                    <span className="text-slate-900 font-extrabold text-sm">
+                      {timeLeft !== null ? formatTime(timeLeft) : 'No Limit'}
+                    </span>
+                  </div>
+                </div>
+
+                {totalQuestions - answeredCount > 0 ? (
+                  <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-xs font-semibold flex items-center gap-2">
+                    <span>⚠️</span>
+                    <span>You still have <strong>{totalQuestions - answeredCount} unanswered</strong> question{totalQuestions - answeredCount > 1 ? 's' : ''}.</span>
+                  </div>
+                ) : (
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs font-semibold flex items-center gap-2">
+                    <span>🎉</span>
+                    <span>All questions have been answered!</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => { setShowExitConfirm(false); autoSubmittedRef.current = true; setView('list'); setTimeLeft(null); deadlineRef.current = null; clearQuizSession(); }}
-                  className="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-semibold cursor-pointer transition-all hover:bg-slate-50"
+                  onClick={() => setShowExitConfirm(false)}
+                  className="flex-1 py-3 px-4 rounded-xl border-2 border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-sm font-extrabold cursor-pointer transition-colors"
                 >
-                  No, Exit Quiz
+                  No, Continue Quiz
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => { setShowExitConfirm(false); handleSubmit(); }}
+                  onClick={() => {
+                    setShowExitConfirm(false);
+                    handleSubmit();
+                  }}
                   disabled={submitting}
-                  className="px-4 py-2 rounded-xl border-0 bg-green-600 text-white text-xs font-semibold cursor-pointer transition-all hover:bg-green-700 shadow-md shadow-green-600/20"
+                  className="flex-1 py-3 px-4 rounded-xl border-none bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-700 hover:to-green-600 text-white text-sm font-extrabold cursor-pointer transition-all shadow-md shadow-emerald-600/20"
                 >
-                  {submitting ? 'Submitting...' : 'Yes, Submit'}
+                  {submitting ? 'Submitting...' : 'Yes, Submit Quiz'}
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Questions */}
-        <div className="p-4 flex flex-col gap-4 pb-28">
-          {activeQuiz.questions.map((q, idx) => (
-            <div key={q.id} className="bg-white border-2 border-slate-200 rounded-2xl p-5 shadow-sm">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-extrabold text-indigo-600 bg-indigo-50 py-0.5 px-2 rounded-md">Q{idx + 1}</span>
-                <span className="text-xs text-slate-400 font-semibold">{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+        {/* Side-by-side Question & Overview Container */}
+        <div className="p-4 flex flex-col md:flex-row gap-6 pb-28 max-w-6xl mx-auto items-start">
+          {/* LEFT COLUMN: Active Question View */}
+          <div className="flex-1 min-w-0 w-full">
+            {currentQuestion && (
+              <div key={currentQuestion.id} className="bg-white border-2 border-slate-200 rounded-2xl p-5 shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-extrabold text-indigo-600 bg-indigo-50 py-1 px-2.5 rounded-md">
+                    Question {currentQuestionIndex + 1} of {totalQuestions}
+                  </span>
+                  <span className="text-xs text-slate-400 font-semibold">{currentQuestion.points} pt{currentQuestion.points !== 1 ? 's' : ''}</span>
+                </div>
+                <p className="text-sm font-semibold leading-relaxed mb-3 text-slate-900 break-words whitespace-pre-line">{currentQuestion.questionText}</p>
+                {currentQuestion.questionMediaUrl && getImageUrl(currentQuestion.questionMediaUrl) && (
+                  <div className="w-[256px] h-[319px] max-w-full rounded-xl overflow-hidden mb-3 bg-slate-100 flex items-center justify-center border border-slate-200">
+                    <img
+                      src={getImageUrl(currentQuestion.questionMediaUrl)!}
+                      alt="Question"
+                      className="w-full h-full object-contain"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  {currentQuestion.options.map((opt, optIdx) => {
+                    const isSelected = answers[currentQuestion.id] === opt.text;
+                    return (
+                      <button
+                        key={opt.id}
+                        className={`flex items-center gap-3 p-3 px-3.5 min-w-0 border-2 rounded-xl cursor-pointer text-left transition-all text-sm ${
+                          isSelected ? 'bg-indigo-50 border-indigo-600 text-indigo-600 font-medium' : 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-white'
+                        }`}
+                        onClick={() => setAnswers((prev) => ({ ...prev, [currentQuestion.id]: opt.text || '' }))}
+                      >
+                        <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-200 font-bold text-xs shrink-0 text-slate-700">{String.fromCharCode(65 + optIdx)}</span>
+                        <span className="flex-1 min-w-0 break-words font-medium">{opt.text}</span>
+                        {opt.mediaUrl && getImageUrl(opt.mediaUrl) && (
+                          <div className="w-40 h-40 shrink-0 rounded-xl overflow-hidden bg-white border border-slate-200 p-1.5 flex items-center justify-center shadow-sm">
+                            <img
+                              src={getImageUrl(opt.mediaUrl)!}
+                              alt=""
+                              className="w-full h-full object-contain"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <p className="text-sm font-semibold leading-relaxed mb-3 text-slate-900 break-words whitespace-pre-line">{q.questionText}</p>
-              {q.questionMediaUrl && getImageUrl(q.questionMediaUrl) && (
-                <img
-                  src={getImageUrl(q.questionMediaUrl)!}
-                  alt="Question"
-                  className="max-w-full rounded-xl mb-3"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                />
-              )}
-              <div className="flex flex-col gap-2">
-                {q.options.map((opt, optIdx) => {
-                  const isSelected = answers[q.id] === opt.text;
-                  return (
-                    <button
-                      key={opt.id}
-                      className={`flex items-center gap-3 p-3 px-3.5 min-w-0 border-2 rounded-xl cursor-pointer text-left transition-all text-sm ${
-                        isSelected ? 'bg-indigo-50 border-indigo-600 text-indigo-600 font-medium' : 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-white'
-                      }`}
-                      onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: opt.text || '' }))}
-                    >
-                      <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-200 font-bold text-xs shrink-0 text-slate-700">{String.fromCharCode(65 + optIdx)}</span>
-                      <span className="flex-1 min-w-0 break-words font-medium">{opt.text}</span>
-                      {opt.mediaUrl && getImageUrl(opt.mediaUrl) && (
-                        <img src={getImageUrl(opt.mediaUrl)!} alt="" className="w-12 h-12 object-cover rounded-lg" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-                      )}
-                    </button>
-                  );
-                })}
+            )}
+          </div>
+
+          {/* RIGHT COLUMN: Question Overview Sidebar */}
+          <div className="w-full md:w-[320px] shrink-0 sticky top-20">
+            <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-2 mb-3 border-b border-slate-100 pb-3">
+                <span className="text-sm font-extrabold text-slate-800 tracking-wide">
+                  📊 Question Overview
+                </span>
+                <span className="text-xs font-semibold text-slate-400">
+                  Q{currentQuestionIndex + 1}/{totalQuestions}
+                </span>
+              </div>
+
+              {/* Status Badges & Counters */}
+              <div className="flex flex-col gap-1.5 text-xs font-semibold mb-4">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    Answered
+                  </span>
+                  <span className="font-extrabold">{answeredCount}</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    Read (Unanswered)
+                  </span>
+                  <span className="font-extrabold">{visitedUnansweredCount}</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                    Not Visited
+                  </span>
+                  <span className="font-extrabold">{unvisitedCount}</span>
+                </div>
+              </div>
+
+              {/* Question Number Palette Grid */}
+              <div className="pt-2 border-t border-slate-100">
+                <div className="text-[11px] font-bold text-slate-400 mb-2 uppercase tracking-wider">Select Question</div>
+                <div className="flex flex-wrap gap-2">
+                  {activeQuiz.questions.map((q, idx) => {
+                    const isCurrent = idx === currentQuestionIndex;
+                    const isAns = !!answers[q.id];
+                    const isVis = !!visitedQuestions[q.id] || isCurrent;
+
+                    let styleClass = 'bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200';
+                    let labelStatus = 'Not visited';
+
+                    if (isAns) {
+                      styleClass = 'bg-emerald-600 text-white border-emerald-600 shadow-sm';
+                      labelStatus = 'Answered';
+                    } else if (isVis) {
+                      styleClass = 'bg-amber-500 text-white border-amber-500 shadow-sm';
+                      labelStatus = 'Read (Unanswered)';
+                    }
+
+                    return (
+                      <button
+                        key={q.id}
+                        onClick={() => setCurrentQuestionIndex(idx)}
+                        className={`w-9 h-9 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center cursor-pointer ${styleClass} ${
+                          isCurrent ? 'ring-4 ring-indigo-500/40 border-2 border-indigo-600 scale-105' : ''
+                        }`}
+                        title={`Question ${idx + 1}: ${labelStatus}`}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          ))}
+          </div>
         </div>
 
-        {/* Submit */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 px-6 bg-white border-t-2 border-slate-200 flex justify-center z-50">
+        {/* Bottom Navigation & Submit Bar */}
+        <div className="fixed bottom-0 left-0 right-0 p-3 px-6 bg-white border-t-2 border-slate-200 flex items-center justify-between z-50 shadow-lg">
           <button
-            className={`py-3.5 px-12 bg-gradient-to-br from-green-600 to-emerald-500 text-white border-none rounded-xl text-base font-bold cursor-pointer transition-opacity ${
-              submitting || answeredCount === 0 ? 'opacity-50 cursor-not-allowed' : 'opacity-100 hover:opacity-95'
+            type="button"
+            onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}
+            disabled={currentQuestionIndex === 0}
+            className={`py-2.5 px-6 rounded-xl border border-slate-300 font-extrabold text-sm transition-all cursor-pointer ${
+              currentQuestionIndex === 0
+                ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400'
+                : 'bg-white text-slate-700 hover:bg-slate-100 shadow-sm'
             }`}
-            onClick={handleSubmit}
-            disabled={submitting || answeredCount === 0}
           >
-            {submitting ? 'Submitting...' : 'Submit Quiz'}
+            ← Previous
           </button>
+
+          <div className="flex items-center gap-3">
+            {currentQuestionIndex < totalQuestions - 1 && (
+              <button
+                type="button"
+                onClick={() => setCurrentQuestionIndex((prev) => Math.min(totalQuestions - 1, prev + 1))}
+                className="py-2.5 px-7 bg-indigo-600 hover:bg-indigo-700 text-white border-none rounded-xl text-sm font-extrabold cursor-pointer transition-all shadow-md shadow-indigo-600/20"
+              >
+                Next →
+              </button>
+            )}
+
+            <button
+              className={`py-2.5 px-8 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white border-none rounded-xl text-sm font-extrabold cursor-pointer transition-all shadow-md shadow-green-600/20 ${
+                submitting ? 'opacity-50 cursor-not-allowed' : 'opacity-100'
+              }`}
+              onClick={() => setShowExitConfirm(true)}
+              disabled={submitting}
+            >
+              {submitting ? 'Submitting...' : 'Submit Quiz'}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -640,6 +1011,39 @@ export default function PulseApp({ onBack }: PulseAppProps) {
 
     return (
       <div className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900">
+        {/* TopBar */}
+        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 py-2.5 bg-slate-900 border-b border-slate-800 text-white shadow-md select-none">
+          {/* Left Section: Back + Logo + Module Name */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => { setView('list'); setResult(null); setActiveQuiz(null); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border-0 rounded-xl text-white text-xs font-bold cursor-pointer transition-all active:scale-95"
+              title="Back to Quizzes"
+            >
+              <span>←</span>
+              <span>Quizzes</span>
+            </button>
+
+            <div className="h-6 w-px bg-white/20 my-auto" />
+
+            <div className="flex items-center gap-2.5">
+              <Logo height={32} />
+              <span className="text-white text-base md:text-lg font-black tracking-wider border-l border-white/20 pl-2.5 font-sans uppercase">
+                QUIZ
+              </span>
+            </div>
+          </div>
+
+          {/* Right Section: Auth + Creoleap Logo */}
+          <div className="flex items-center gap-3">
+            <LeapLabAuthButton variant="dark" size="sm" style={{ height: 32, borderRadius: '9999px' }} />
+            <div className="hidden sm:block">
+              <CreoleapLogo height={28} />
+            </div>
+          </div>
+        </header>
+
         <div className="max-w-[400px] my-15 mx-auto p-10 bg-white rounded-3xl border-2 border-slate-200 text-center shadow-lg">
           <div className={`w-18 h-18 rounded-full flex items-center justify-center text-4xl font-extrabold mx-auto mb-4 ${passed ? 'bg-green-100 text-green-600' : 'bg-red-50 text-red-600'}`}>
             {passed ? '✓' : '✗'}

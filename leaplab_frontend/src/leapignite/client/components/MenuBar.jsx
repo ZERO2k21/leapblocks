@@ -48,18 +48,24 @@ export default function MenuBar({
 }) {
     const [openMenu, setOpenMenu] = useState(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1710);
-    const [showDesktopMenus, setShowDesktopMenus] = useState(window.innerWidth >= 1100);
-    const rightSideRef = useRef(null);
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1920);
 
     useEffect(() => {
         const handleResize = () => {
-            setShowCreoleap(window.innerWidth >= 1710);
-            setShowDesktopMenus(window.innerWidth >= 1100);
+            setWindowWidth(window.innerWidth);
         };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    // Progressive collapse breakpoints starting from 1780px down to ensure left-side (File/Edit/ProjectName) is never pushed off-screen:
+    const showCreoleap = windowWidth >= 1780;
+    const showAuthAndShare = windowWidth >= 1650;
+    const showPorts = windowWidth >= 1500;
+    const showModeAndUpload = windowWidth >= 1350;
+    const showBoardSelect = windowWidth >= 1180;
+    const showFileEditMenus = windowWidth >= 900;
+    const showHamburgerBtn = windowWidth < 1780;
 
     const toggleMenu = (menuName) => {
         setOpenMenu((prev) => (prev === menuName ? null : menuName));
@@ -128,24 +134,28 @@ export default function MenuBar({
                             {/* Divider */}
                             <div className="w-px h-7 bg-white/10 shrink-0" />
 
-                            {/* Menus */}
-                            {showDesktopMenus && (
+                            {/* Menus — progressively collapses into hamburger menu below 1670px */}
+                            {(showFileEditMenus || showBoardSelect) && (
                                 <div className="flex items-center gap-0.5">
-                                    <DropdownMenu
-                                        label="File"
-                                        items={fileMenuItems}
-                                        isOpen={openMenu === 'file'}
-                                        onToggle={() => toggleMenu('file')}
-                                        onClose={closeMenu}
-                                    />
-                                    <DropdownMenu
-                                        label="Edit"
-                                        items={editMenuItems}
-                                        isOpen={openMenu === 'edit'}
-                                        onToggle={() => toggleMenu('edit')}
-                                        onClose={closeMenu}
-                                    />
-                                    {mode !== 'stage' && (
+                                    {showFileEditMenus && (
+                                        <>
+                                            <DropdownMenu
+                                                label="File"
+                                                items={fileMenuItems}
+                                                isOpen={openMenu === 'file'}
+                                                onToggle={() => toggleMenu('file')}
+                                                onClose={closeMenu}
+                                            />
+                                            <DropdownMenu
+                                                label="Edit"
+                                                items={editMenuItems}
+                                                isOpen={openMenu === 'edit'}
+                                                onToggle={() => toggleMenu('edit')}
+                                                onClose={closeMenu}
+                                            />
+                                        </>
+                                    )}
+                                    {showBoardSelect && mode !== 'stage' && (
                                         <button
                                             onClick={onOpenBoardModal}
                                             className="flex items-center gap-1.5 px-4 py-2 text-white text-sm font-semibold rounded-full transition-all tracking-wide cursor-pointer bg-transparent hover:bg-white/10"
@@ -169,24 +179,23 @@ export default function MenuBar({
                             />
                         </div>
 
-                        {/* ══ RIGHT: Ports · Toggle · Upload · CREOLEAP SVG ════════════════ */}
-                        <div ref={rightSideRef} className="flex items-center gap-2.5 shrink-0 overflow-hidden max-w-full">
+                        {/* ══ RIGHT: Ports · Toggle · Upload · CREOLEAP SVG · Hamburger ════════ */}
+                        <div className="flex items-center gap-2.5 shrink-0 overflow-hidden max-w-full">
+                            {/* Ports pill — only in upload mode when showPorts is true */}
+                            {showPorts && mode === 'upload' && (
+                                <PortsControl
+                                    ports={ports}
+                                    selectedPort={selectedPort}
+                                    onPortSelect={onPortSelect}
+                                    onRefreshPorts={onRefreshPorts}
+                                    onConnect={onConnect}
+                                    isConnected={isConnected}
+                                />
+                            )}
 
-                            {showDesktopMenus ? (
+                            {/* Stage / Upload mode toggle & Upload Button */}
+                            {showModeAndUpload && (
                                 <>
-                                    {/* Ports pill — only in upload mode */}
-                                    {mode === 'upload' && (
-                                        <PortsControl
-                                            ports={ports}
-                                            selectedPort={selectedPort}
-                                            onPortSelect={onPortSelect}
-                                            onRefreshPorts={onRefreshPorts}
-                                            onConnect={onConnect}
-                                            isConnected={isConnected}
-                                        />
-                                    )}
-
-                                    {/* Stage / Upload mode toggle */}
                                     <ModeToggle mode={mode} onModeChange={onModeChange} />
 
                                     {mode === 'upload' && (
@@ -200,10 +209,13 @@ export default function MenuBar({
                                             title="Upload to board"
                                         />
                                     )}
+                                </>
+                            )}
 
-                                    {/* Divider */}
+                            {/* Share & Auth buttons */}
+                            {showAuthAndShare && (
+                                <>
                                     <div className="w-px h-7 bg-white/10 shrink-0" />
-
                                     <button
                                         type="button"
                                         title="Share project"
@@ -219,26 +231,30 @@ export default function MenuBar({
                                     </button>
 
                                     <LeapLabAuthButton variant="dark" size="sm" />
-
-                                    {showCreoleap && (
-                                        <div className="flex items-center shrink-0 pl-1 h-[60px] overflow-hidden">
-                                            <img
-                                                src="assets/logo-creoleap.png"
-                                                alt="CREOLEAP"
-                                                className="w-[145px] h-auto object-contain block shrink-0 drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)] brightness-120 contrast-105"
-                                            />
-                                        </div>
-                                    )}
                                 </>
-                            ) : (
+                            )}
+
+                            {/* Creoleap Logo image */}
+                            {showCreoleap && (
+                                <div className="flex items-center shrink-0 pl-1 h-[60px] overflow-hidden">
+                                    <img
+                                        src="assets/logo-creoleap.png"
+                                        alt="CREOLEAP"
+                                        className="w-[145px] h-auto object-contain block shrink-0 drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)] brightness-120 contrast-105"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Hamburger Menu Icon Button when windowWidth < 1670px */}
+                            {showHamburgerBtn && (
                                 <button
                                     onClick={() => setMobileMenuOpen(true)}
-                                    className="flex items-center justify-center w-8.5 h-8.5 rounded-xl bg-white/10 border border-white/15 text-white cursor-pointer shrink-0 hover:bg-white/20"
+                                    title="Menu options"
+                                    className="flex items-center justify-center w-8.5 h-8.5 rounded-xl bg-white/10 border border-white/15 text-white cursor-pointer shrink-0 hover:bg-white/20 ml-1"
                                 >
                                     <MenuIcon size={18} strokeWidth={2.2} />
                                 </button>
                             )}
-
                         </div>
                     </div>
 

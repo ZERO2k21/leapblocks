@@ -5,6 +5,10 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 
+/** True when running in a browser with Web Serial (no Electron). */
+const isWeb = typeof navigator !== 'undefined' && !!(navigator as any).serial
+    && typeof (window as any).electronAPI === 'undefined';
+
 interface UploadModalProps {
     isOpen: boolean;
     progress: string; // Format: "25%: Configuring board..."
@@ -102,25 +106,43 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, progress }) => {
     const roundedPct = Math.round(displayPct);
     const launched = percentage >= 100;
 
-    const stageLabel =
-        percentage === 0 ? 'Initializing...' :
-            percentage < 5 ? 'Preparing environment...' :
-                percentage < 10 ? 'Checking Arduino CLI...' :
-                    percentage < 20 ? 'Saving Sketch...' :
-                        percentage < 25 ? 'Sketch saved' :
-                            percentage < 60 ? 'Compiling Code...' :
-                                percentage < 65 ? 'Compilation done' :
-                                    percentage < 90 ? 'Uploading to Board...' :
-                                        percentage < 100 ? 'Finalizing...' :
-                                            'Upload Complete!';
+    const stageLabel = isWeb
+        ? (percentage === 0 ? 'Initializing...' :
+               percentage < 5 ? 'Preparing sketch...' :
+                   percentage < 10 ? 'Connecting via Web Serial...' :
+                       percentage < 20 ? 'Saving Sketch...' :
+                           percentage < 25 ? 'Sketch saved' :
+                               percentage < 60 ? 'Compiling Code...' :
+                                   percentage < 65 ? 'Compilation done' :
+                                       percentage < 90 ? 'Uploading to Board...' :
+                                           percentage < 100 ? 'Finalizing...' :
+                                               'Upload Complete!')
+        : (percentage === 0 ? 'Initializing...' :
+               percentage < 5 ? 'Preparing environment...' :
+                   percentage < 10 ? 'Checking Arduino CLI...' :
+                       percentage < 20 ? 'Saving Sketch...' :
+                           percentage < 25 ? 'Sketch saved' :
+                               percentage < 60 ? 'Compiling Code...' :
+                                   percentage < 65 ? 'Compilation done' :
+                                       percentage < 90 ? 'Uploading to Board...' :
+                                           percentage < 100 ? 'Finalizing...' :
+                                               'Upload Complete!');
 
-    const stages = [
-        { label: 'Init', threshold: 5 },
-        { label: 'Save', threshold: 15 },
-        { label: 'Compile', threshold: 30 },
-        { label: 'Upload', threshold: 70 },
-        { label: 'Done', threshold: 100 },
-    ];
+    const stages = isWeb
+        ? [
+            { label: 'Init', threshold: 5 },
+            { label: 'Connect', threshold: 15 },
+            { label: 'Compile', threshold: 30 },
+            { label: 'Upload', threshold: 70 },
+            { label: 'Done', threshold: 100 },
+        ]
+        : [
+            { label: 'Init', threshold: 5 },
+            { label: 'Save', threshold: 15 },
+            { label: 'Compile', threshold: 30 },
+            { label: 'Upload', threshold: 70 },
+            { label: 'Done', threshold: 100 },
+        ];
 
     if (!isOpen) return null;
 

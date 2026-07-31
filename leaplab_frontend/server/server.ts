@@ -264,16 +264,10 @@ async function initCores(): Promise<void> {
       (c.platform?.id && c.platform.id.startsWith('arduino:avr'))
     );
 
-    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
-
     if (!hasAvr) {
-      if (isProduction) {
-        console.warn('[SERVER] Warning: arduino:avr core is missing but skipping auto-installation in production/Render environment.');
-      } else {
-        console.log('[SERVER] Installing arduino:avr core...');
-        await runCLI(['core', 'update-index']);
-        await runCLI(['core', 'install', 'arduino:avr']);
-      }
+      console.log('[SERVER] Installing arduino:avr core...');
+      await runCLI(['core', 'update-index']);
+      await runCLI(['core', 'install', 'arduino:avr']);
     }
 
     const hasEsp32 = cores.some((c: any) =>
@@ -282,15 +276,10 @@ async function initCores(): Promise<void> {
     );
 
     if (!hasEsp32) {
-      if (isProduction) {
-        console.warn('[SERVER] Warning: esp32:esp32 core is missing but skipping auto-installation in production/Render environment.');
-        esp32CoreReady = false;
-      } else {
-        console.log('[SERVER] Installing esp32:esp32 core (may take a few minutes)...');
-        await runCLI(['core', 'update-index', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
-        const { code } = await runCLI(['core', 'install', 'esp32:esp32', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
-        esp32CoreReady = code === 0;
-      }
+      console.log('[SERVER] Installing esp32:esp32 core (may take a few minutes)...');
+      await runCLI(['core', 'update-index', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
+      const { code } = await runCLI(['core', 'install', 'esp32:esp32', '--additional-urls', 'https://dl.espressif.com/dl/package_esp32_index.json']);
+      esp32CoreReady = code === 0;
     } else {
       esp32CoreReady = true;
     }
@@ -312,12 +301,6 @@ async function ensureESP32Core(): Promise<boolean> {
       (c.platform?.id && c.platform.id.startsWith('esp32:'))
     );
     if (installed) { esp32CoreReady = true; return true; }
-
-    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
-    if (isProduction) {
-      console.warn('[SERVER] ESP32 core is not installed. Skipping auto-installation in production/Render.');
-      return false;
-    }
 
     console.log('[SERVER] Installing ESP32 core (first run)...');
     const { code: ic } = await runCLI([

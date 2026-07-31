@@ -5,6 +5,7 @@
  */
 import { useState, useRef, useCallback, useEffect } from "react"
 import { getBoardConfig, getBoardNameById, createUploadFiles, formatPortLabel, isBoardUploadFile, sortUploadFiles } from "../utils/boardConfig"
+import { isWebSerialSupported, listPorts as webListPorts, requestPort as webRequestPort, uploadToBoard } from "../../../webflash"
 
 interface BoardPort {
   path: string
@@ -66,6 +67,16 @@ export function useUploadMode({ addLog }: UseUploadModeProps) {
 
   const refreshPorts = useCallback(async () => {
     if (!(window as any).electronAPI?.getPorts) {
+      if (isWebSerialSupported()) {
+        try {
+          const nextPorts = await webListPorts()
+          setPorts(nextPorts.map((p, i) => ({ path: p.path, manufacturer: p.manufacturer || `Web Serial port ${i + 1}` })))
+          return
+        } catch {
+          addUploadMessage("Unable to scan Web Serial ports.", "error")
+          return
+        }
+      }
       addUploadMessage("Serial support is unavailable in this renderer.", "warning")
       return
     }
@@ -81,7 +92,34 @@ export function useUploadMode({ addLog }: UseUploadModeProps) {
 
   const handleConnectToBoard = useCallback(async () => {
     if (!(window as any).electronAPI) {
-      addUploadMessage("Serial support is unavailable in this renderer.", "warning")
+      if (!isWebSerialSupported()) {
+        addUploadMessage("Serial support is unavailable in this renderer.", "warning")
+        return
+      }
+
+      if (isConnected) {
+        setIsConnected(false)
+        addUploadMessage("Board disconnected from Web Serial.", "warning")
+        return
+      }
+
+      try {
+        const picked = await webRequestPort()
+        if (picked?.port) {
+          setSelectedPort(picked.path)
+          setPorts((prev) => {
+            const next = prev.filter((p) => p.path !== picked.path)
+            return [{ path: picked.path, manufacturer: picked.manufacturer || "Web Serial device" }, ...next]
+          })
+          setIsConnected(true)
+          addUploadMessage("Board connected via Web Serial. Ready to upload.", "success")
+          refreshPorts()
+        } else {
+          addUploadMessage("No board selected.", "warning")
+        }
+      } catch {
+        addUploadMessage("Unable to connect via Web Serial.", "error")
+      }
       return
     }
 
@@ -113,7 +151,7 @@ export function useUploadMode({ addLog }: UseUploadModeProps) {
     } else {
       addUploadMessage(connectResult?.error || "Unable to connect to the selected port.", "error")
     }
-  }, [addUploadMessage, baudRate, isConnected, selectedBoard, selectedPort])
+  }, [addUploadMessage, baudRate, isConnected, refreshPorts, selectedBoard, selectedPort])
 
   const handleSendSerial = useCallback(async (message: string) => {
     if (!(window as any).electronAPI?.sendSerial) {
@@ -132,7 +170,50 @@ export function useUploadMode({ addLog }: UseUploadModeProps) {
 
   const handleUploadFirmware = useCallback(async () => {
     if (!(window as any).electronAPI?.uploadCode) {
-      addUploadMessage("Upload support is unavailable in this renderer.", "warning")
+      // ── Web Serial upload path (no Electron) ──
+      if (!isWebSerialSupported()) {
+        addUploadMessage("Upload requires LeapBlocks Desktop, or Chrome/Edge with Web Serial.", "warning")
+        return
+      }
+
+      const boardCode = uploadProjectFiles[activeBoardFile] || ""
+      if (!boardCode.trim()) {
+        addUploadMessage(`No board firmware found in ${activeBoardFile}.`, "warning")
+        return
+      }
+
+      setUploadPanelTab("terminal")
+      setIsUploadingFirmware(true)
+      setUploadProgressMessage(`Preparing ${activeBoardFile}...`)
+      addUploadMessage(`Uploading ${activeBoardFile} to ${selectedBoardName} via Web Serial.`, "info")
+
+      try {
+        const result = await uploadToBoard({
+          code: boardCode,
+          fqbn: selectedBoardConfig.fqbn,
+          onProgress: (progress, message) => {
+            const nextMessage = `${progress}%: ${message}`
+            setUploadProgressMessage(nextMessage)
+            addUploadMessage(nextMessage, "info")
+          },
+          onLog: (message) => addUploadMessage(message, "info"),
+        })
+
+        if (result?.success) {
+          setUploadProgressMessage("Upload complete.")
+          addUploadMessage(`Upload complete for ${selectedBoardName}.`, "success")
+        } else {
+          const message = result?.error || "Upload failed."
+          setUploadProgressMessage(message)
+          addUploadMessage(message, "error")
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unexpected upload failure."
+        setUploadProgressMessage(message)
+        addUploadMessage(message, "error")
+      } finally {
+        setIsUploadingFirmware(false)
+      }
       return
     }
 
