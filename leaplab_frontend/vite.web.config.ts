@@ -32,9 +32,12 @@ export default defineConfig({
   build: {
     outDir: 'build',
     emptyOutDir: true,
-    minify: true,
-    sourcemap: true,
-    chunkSizeWarningLimit: 1000, // Increase warning limit to 1000 kB
+    minify: 'esbuild',
+    cssMinify: 'esbuild',
+    target: 'es2022',
+    sourcemap: false,
+    reportCompressedSize: false,
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
       input: path.resolve(__dirname, 'index.html'),
       // Mark Electron/Node-only modules as external so they're stripped

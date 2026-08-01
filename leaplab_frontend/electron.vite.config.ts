@@ -77,9 +77,11 @@ export default defineConfig({
     build: {
       outDir: 'dist/renderer',
       minify: 'esbuild', // esbuild is faster than terser
-      target: 'es2020',
+      target: 'es2022',
+      sourcemap: false,
+      reportCompressedSize: false,
       // Increase chunk size warning limit
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 2000,
       rollupOptions: {
         input: path.resolve(__dirname, 'index.html'),
         // tfjs / coco-ssd MUST be bundled for the renderer — Chromium has no
