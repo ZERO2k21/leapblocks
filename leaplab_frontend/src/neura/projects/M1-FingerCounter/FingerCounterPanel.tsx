@@ -12,7 +12,7 @@ interface FingerCounterPanelProps {
 type CaptureStatus = 'idle' | 'loading-model' | 'detecting' | 'success' | 'no-hand' | 'error'
 
 const DETECT_THROTTLE_MS = 33
-const PREDICT_THROTTLE_MS = 500
+const PREDICT_THROTTLE_MS = 100
 
 const FINGER_LABELS: Record<string, number> = {
     'One': 1, 'Two': 2, 'Three': 3, 'Four': 4, 'Five': 5
@@ -35,6 +35,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
     const lastPredictTimeRef = useRef(0)
     const audioContextRef = useRef<AudioContext | null>(null)
     const majorityVoteRef = useRef(new MajorityVoteBuffer(5))
+    const lastSoundCountRef = useRef(0)
 
     const [isCapturing, setIsCapturing] = useState(false)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
@@ -192,12 +193,31 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                             const count = FINGER_LABELS[smoothed] || 0
                             setCurrentCount(count)
                             setCountHistory(prev => [...prev.slice(-19), count])
-                            playCountSound(count)
+                            
+                            if (lastSoundCountRef.current !== count) {
+                                playCountSound(count)
+                                lastSoundCountRef.current = count
+                            }
+
+                            // Draw hand skeleton onto overlay canvas for real-time tracking feedback
+                            if (overlayCanvasRef.current) {
+                                overlayCanvasRef.current.width = videoRef.current.videoWidth || 640
+                                overlayCanvasRef.current.height = videoRef.current.videoHeight || 480
+                                classifierRef.current.drawHand(overlayCanvasRef.current, keypoints)
+                            }
                         } else {
                             setPrediction(null)
                             setHandDetected(false)
                             setCurrentCount(0)
                             majorityVoteRef.current.clear()
+                            lastSoundCountRef.current = 0
+                            // Clear overlay canvas when no hand is detected
+                            if (overlayCanvasRef.current) {
+                                const overlayCtx = overlayCanvasRef.current.getContext('2d')
+                                if (overlayCtx) {
+                                    overlayCtx.clearRect(0, 0, overlayCanvasRef.current.width, overlayCanvasRef.current.height)
+                                }
+                            }
                         }
                     }
                 } catch { /* ignore */ }
@@ -217,6 +237,45 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
     }, [mode.mode, stream, startCamera, playCountSound])
+
+    // Collect mode: throttled hand detection loop for overlay drawing
+    useEffect(() => {
+        if (mode.mode !== 'collect' || !stream) return
+        const detectLoop = async () => {
+            if (isPredictingRef.current) return
+            if (videoRef.current && overlayCanvasRef.current) {
+                isPredictingRef.current = true
+                try {
+                    const canvas = overlayCanvasRef.current
+                    const ctx = canvas.getContext('2d')
+                    if (ctx) {
+                        canvas.width = videoRef.current.videoWidth || 640
+                        canvas.height = videoRef.current.videoHeight || 480
+                        ctx.clearRect(0, 0, canvas.width, canvas.height)
+                        const keypoints = await classifierRef.current.detectHand(videoRef.current)
+                        if (keypoints.length > 0) {
+                            setHandDetected(true)
+                            classifierRef.current.drawHand(canvas, keypoints)
+                        } else {
+                            setHandDetected(false)
+                        }
+                    }
+                } catch { /* ignore detection loop errors */ }
+                isPredictingRef.current = false
+            }
+        }
+        lastDetectTimeRef.current = performance.now()
+        const tick = () => {
+            const now = performance.now()
+            if (now - lastDetectTimeRef.current >= DETECT_THROTTLE_MS) {
+                lastDetectTimeRef.current = now
+                detectLoop()
+            }
+            animFrameRef.current = requestAnimationFrame(tick)
+        }
+        animFrameRef.current = requestAnimationFrame(tick)
+        return () => cancelAnimationFrame(animFrameRef.current)
+    }, [mode.mode, stream])
 
     const handleCapture = useCallback(async () => {
         if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return

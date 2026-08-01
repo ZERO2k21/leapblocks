@@ -183,21 +183,47 @@ export class HandPoseRuntime {
         });
     }
 
-    private detectGesture(landmarks: any[]): string {
-        // Simple gesture detection based on finger positions
-        const thumbTip = landmarks[4];
-        const indexTip = landmarks[8];
-        const middleTip = landmarks[12];
-        const ringTip = landmarks[16];
-        const pinkyTip = landmarks[20];
-        const wrist = landmarks[0];
+    private euclidean(a: { x: number; y: number }, b: { x: number; y: number }): number {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
 
-        // Check if fingers are extended
-        const indexExtended = indexTip.y < landmarks[6].y;
-        const middleExtended = middleTip.y < landmarks[10].y;
-        const ringExtended = ringTip.y < landmarks[14].y;
-        const pinkyExtended = pinkyTip.y < landmarks[18].y;
-        const thumbExtended = thumbTip.x < landmarks[3].x; // Simplified
+    private detectGesture(landmarks: any[]): string {
+        if (landmarks.length < 21) return 'none';
+
+        // Simple gesture detection based on finger positions (rotation-invariant)
+        const wrist = landmarks[0];
+        const thumbTip = landmarks[4];
+        const thumbIp = landmarks[3];
+        const indexTip = landmarks[8];
+        const indexPip = landmarks[6];
+        const indexMcp = landmarks[5];
+        const middleTip = landmarks[12];
+        const middlePip = landmarks[10];
+        const middleMcp = landmarks[9];
+        const ringTip = landmarks[16];
+        const ringPip = landmarks[14];
+        const ringMcp = landmarks[13];
+        const pinkyTip = landmarks[20];
+        const pinkyPip = landmarks[18];
+        const pinkyMcp = landmarks[17];
+
+        const indexExtended = this.euclidean(indexTip, indexMcp) > this.euclidean(indexPip, indexMcp) * 1.2 && 
+                              this.euclidean(indexTip, wrist) > this.euclidean(indexPip, wrist);
+                              
+        const middleExtended = this.euclidean(middleTip, middleMcp) > this.euclidean(middlePip, middleMcp) * 1.2 && 
+                               this.euclidean(middleTip, wrist) > this.euclidean(middlePip, wrist);
+                               
+        const ringExtended = this.euclidean(ringTip, ringMcp) > this.euclidean(ringPip, ringMcp) * 1.2 && 
+                             this.euclidean(ringTip, wrist) > this.euclidean(ringPip, wrist);
+                             
+        const pinkyExtended = this.euclidean(pinkyTip, pinkyMcp) > this.euclidean(pinkyPip, pinkyMcp) * 1.2 && 
+                              this.euclidean(pinkyTip, wrist) > this.euclidean(pinkyPip, wrist);
+                              
+        // Thumb: outward from index knuckle and wrist
+        const thumbOutward = this.euclidean(thumbTip, indexMcp) > this.euclidean(thumbIp, indexMcp) * 1.05;
+        const thumbExtended = thumbOutward && (this.euclidean(thumbTip, wrist) > this.euclidean(thumbIp, wrist));
 
         // Peace sign: index and middle extended, others closed
         if (indexExtended && middleExtended && !ringExtended && !pinkyExtended) {

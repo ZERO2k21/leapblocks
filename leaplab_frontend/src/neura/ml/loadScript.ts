@@ -59,14 +59,23 @@ export async function ensureTf(): Promise<any> {
 
     tfPromise = (async () => {
         try {
-            await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@${TF_VERSION}/dist/tf.min.js`)
-            // Initialize the default backend (webgl) so inference works immediately
-            await window.tf.ready()
+            // Try to import from local npm package first (for offline compatibility in Electron/web)
+            const tf = await import('@tensorflow/tfjs')
+            window.tf = tf
+            await tf.ready()
             window._tfLoaded = true
-            return window.tf
+            return tf
         } catch (e) {
-            tfPromise = null
-            throw e
+            console.warn('[loadScript] Local TensorFlow.js load failed, trying CDN fallback:', e)
+            try {
+                await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@${TF_VERSION}/dist/tf.min.js`)
+                await window.tf.ready()
+                window._tfLoaded = true
+                return window.tf
+            } catch (cdnErr) {
+                tfPromise = null
+                throw e
+            }
         }
     })()
 
@@ -179,12 +188,20 @@ export async function ensureMediaPipeVision(): Promise<any> {
 
     mediaPipeVisionPromise = (async () => {
         try {
-            const mod = await import(/* @vite-ignore */ `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}`)
+            // Try to import from local npm dependency first (for offline compatibility in Electron/web)
+            const mod = await import('@mediapipe/tasks-vision')
             window._mediaPipeVision = mod
             return mod
         } catch (e) {
-            mediaPipeVisionPromise = null
-            throw e
+            console.warn('[loadScript] Local MediaPipe Tasks-Vision load failed, trying CDN fallback:', e)
+            try {
+                const mod = await import(/* @vite-ignore */ `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}`)
+                window._mediaPipeVision = mod
+                return mod
+            } catch (cdnErr) {
+                mediaPipeVisionPromise = null
+                throw e
+            }
         }
     })()
 
