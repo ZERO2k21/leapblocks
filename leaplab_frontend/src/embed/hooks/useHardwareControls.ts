@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import type React from 'react';
 import { log } from '../utils/log';
-import { isWebSerialSupported, listPorts as webListPorts, requestPort as webRequestPort, uploadToBoard } from '../../webflash';
+import { isWebSerialSupported, listPorts as webListPorts, requestPort as webRequestPort, uploadToBoard, startWebSerialMonitor, stopWebSerialMonitor, sendWebSerial } from '../../webflash';
 
 export function useHardwareControls(
     editorMode: string,
@@ -83,6 +83,7 @@ export function useHardwareControls(
                     addLog(`Disconnected from ${selectedPort}`);
                 }
             } else {
+                await stopWebSerialMonitor();
                 setIsConnected(false);
                 addLog(`Disconnected from ${selectedPort}`);
             }
@@ -99,6 +100,7 @@ export function useHardwareControls(
                     addLog(`Connection failed: ${result.error}`);
                 }
             } else if (isWebSerialSupported()) {
+                await stopWebSerialMonitor();
                 const picked = await webRequestPort();
                 if (picked?.port) {
                     setPorts((prev) => {
@@ -108,6 +110,11 @@ export function useHardwareControls(
                     setIsConnected(true);
                     addLog('Connected via Web Serial — ready to upload');
                     refreshPorts();
+                    startWebSerialMonitor(
+                        baudRate,
+                        (line) => setSerialMessages(prev => [...prev.slice(-100), line]),
+                        (msg) => addLog(msg),
+                    );
                 } else {
                     addLog('No board selected');
                 }
@@ -121,7 +128,7 @@ export function useHardwareControls(
             addLog('Connection error occurred');
             console.error(err);
         }
-    }, [selectedPort, isConnected, baudRate, selectedBoard, addLog, setIsConnected, setPorts, refreshPorts]);
+    }, [selectedPort, isConnected, baudRate, selectedBoard, addLog, setIsConnected, setPorts, setSerialMessages, refreshPorts]);
 
     useEffect(() => {
         if (isConnected && selectedPort) {
@@ -146,6 +153,13 @@ export function useHardwareControls(
                 setSerialMessages(prev => [...prev.slice(-100), `> ${data.trim()}`]);
             } else if (selectedPort === 'WEB_DEMO') {
                 setSerialMessages(prev => [...prev.slice(-100), `> ${data.trim()}`]);
+            } else if (isWebSerialSupported()) {
+                const ok = await sendWebSerial(data);
+                if (ok) {
+                    setSerialMessages(prev => [...prev.slice(-100), `> ${data.trim()}`]);
+                } else {
+                    addLog('Failed to send — port is not open');
+                }
             }
         } catch (e) {
             addLog('Failed to send');
@@ -169,7 +183,7 @@ export function useHardwareControls(
             'arduino_uno': 'arduino:avr:uno',
             'arduino_mega': 'arduino:avr:mega',
             'arduino_nano': 'arduino:avr:nano',
-            'esp32': 'esp32:esp32:esp32c3',
+            'esp32': 'esp32:esp32:esp32',
         };
         const fqbn = fqbnMap[selectedBoard] || 'arduino:avr:uno';
 
@@ -183,6 +197,7 @@ export function useHardwareControls(
             setIsUploading(true);
             setUploadProgress('Uploading...');
             addLog('Starting upload via Web Serial...');
+            await stopWebSerialMonitor();
 
             const result = await uploadToBoard({
                 code: generatedCode,
@@ -204,6 +219,11 @@ export function useHardwareControls(
                 setUploadProgress(`Failed: ${message}`);
             }
             setIsUploading(false);
+            startWebSerialMonitor(
+                baudRate,
+                (line) => setSerialMessages(prev => [...prev.slice(-100), line]),
+                (msg) => addLog(msg),
+            );
             return;
         }
 
@@ -257,7 +277,7 @@ export function useHardwareControls(
             setUploadProgress('Upload error');
             setIsUploading(false);
         }
-    }, [generatedCode, isUploading, addLog, selectedPort, selectedBoard, isConnected, baudRate, setIsConnected, setIsUploading, setUploadProgress, setActiveTab]);
+    }, [generatedCode, isUploading, addLog, selectedPort, selectedBoard, isConnected, baudRate, setIsConnected, setIsUploading, setUploadProgress, setActiveTab, setSerialMessages]);
 
     return { refreshPorts, handleConnect, handleSendSerial, handleUpload };
 }

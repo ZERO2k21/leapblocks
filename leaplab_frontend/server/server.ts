@@ -798,9 +798,17 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
     try {
       const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
       const buffer = fs.readFileSync(binPath);
+      const bootloaderBuffer = fs.existsSync(path.join(CACHE_DIR, `${hash}.bootloader.bin`))
+        ? fs.readFileSync(path.join(CACHE_DIR, `${hash}.bootloader.bin`))
+        : null;
+      const partitionsBuffer = fs.existsSync(path.join(CACHE_DIR, `${hash}.partitions.bin`))
+        ? fs.readFileSync(path.join(CACHE_DIR, `${hash}.partitions.bin`))
+        : null;
       console.log(`[SERVER] Cache HIT for firmware ID: ${hash}`);
       return res.json({
         success: true, id: hash, binBase64: buffer.toString('base64'),
+        bootloaderBase64: bootloaderBuffer?.toString('base64') || null,
+        partitionsBase64: partitionsBuffer?.toString('base64') || null,
         size: buffer.length, hash, cached: true, metadata: meta
       });
     } catch {
@@ -878,13 +886,24 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
 
     const binBuffer = fs.readFileSync(path.join(tempDir, binFile));
 
+    // arduino-cli also produces the bootloader and partition table — flash all
+    // three so the board boots regardless of what was on the flash before.
+    const bootloaderFile = files.find(f => f.endsWith('.bootloader.bin'));
+    const partitionsFile = files.find(f => f.endsWith('.partitions.bin'));
+    const bootloaderBuffer = bootloaderFile ? fs.readFileSync(path.join(tempDir, bootloaderFile)) : null;
+    const partitionsBuffer = partitionsFile ? fs.readFileSync(path.join(tempDir, partitionsFile)) : null;
+
     fs.writeFileSync(binPath, binBuffer);
+    if (bootloaderBuffer) fs.writeFileSync(path.join(CACHE_DIR, `${hash}.bootloader.bin`), bootloaderBuffer);
+    if (partitionsBuffer) fs.writeFileSync(path.join(CACHE_DIR, `${hash}.partitions.bin`), partitionsBuffer);
     const metadata = { id: hash, board, compiledAt: new Date().toISOString(), size: binBuffer.length, hash };
     fs.writeFileSync(metaPath, JSON.stringify(metadata, null, 2));
     evictCache();
 
     return res.json({
       success: true, id: hash, binBase64: binBuffer.toString('base64'),
+      bootloaderBase64: bootloaderBuffer?.toString('base64') || null,
+      partitionsBase64: partitionsBuffer?.toString('base64') || null,
       size: binBuffer.length, hash, cached: false, metadata
     });
   } catch (err: any) {

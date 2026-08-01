@@ -51,3 +51,14 @@ extraResources:
     to: arduino-cli
     filter:
       - "**/*"
+  # Local compile server — Electron starts it on localhost:3001 so web-serial
+  # uploads compile locally first (falls back to the cloud compiler otherwise).
+  # src/index.ts runs server.ts through tsx when server.js is absent.
+  - from: server
+    to: server
+    filter:
+      - "**/*"
+      - "!public/**/*"
+      - "!logs/**/*"
+      - "!cache/**/*"
+      - "!node_modules/.cache/**/*"

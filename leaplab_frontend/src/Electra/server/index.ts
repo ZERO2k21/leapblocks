@@ -20,6 +20,12 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+// GET /health — used by the frontend to detect whether the local compiler
+// server is up (local-first compile routing: try localhost, fall back to cloud).
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', isInitialized });
+});
+
 /**
  * Resolve the path to the arduino-cli binary.
  * Electra ONLY uses the bundled binary or cached download.

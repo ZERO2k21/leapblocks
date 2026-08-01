@@ -239,6 +239,13 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     const [logMessages, setLogMessages] = useState<string[]>(['Ready']);
 
+    // Auto-scroll log area when new log messages arrive
+    useEffect(() => {
+        if (activeTab === 'log' && logAreaRef.current) {
+            logAreaRef.current.scrollTop = logAreaRef.current.scrollHeight;
+        }
+    }, [logMessages, activeTab]);
+
     const [isRunning, setIsRunning] = useState(false);
 
     // Keep ref in sync with isRunning state (for use in intervals/callbacks with stale closures)
@@ -3301,7 +3308,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                 /* ── Log area ─────────────────────────────────────────────── */
                 .log-area-responsive {
                     flex-shrink: 0 !important;
-                    overflow: hidden !important;
                     display: flex !important;
                     flex-direction: column !important;
                 }
@@ -4071,7 +4077,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                                 </div>
 
-                                <div ref={logAreaRef} className={`${styles.logArea} log-area-responsive`} style={{ height: logAreaHeight, minHeight: 80, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                                <div ref={logAreaRef} className={`${styles.logArea} log-area-responsive`} style={{ height: logAreaHeight, minHeight: 80, flexShrink: 0, overflowY: activeTab === 'log' ? 'auto' : 'hidden', display: 'flex', flexDirection: 'column' }}>
 
                                     {activeTab === 'log' ? (
 

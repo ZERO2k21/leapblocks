@@ -58,8 +58,8 @@ export const BOARD_UPLOAD_CONFIG: Record<string, BoardConfig> = {
   },
   esp32: {
     fileName: "esp32.cpp",
-    fqbn: "esp32:esp32:esp32c3",
-    runtimeLabel: "ESP32-C3",
+    fqbn: "esp32:esp32:esp32",
+    runtimeLabel: "ESP32",
   },
 }
 

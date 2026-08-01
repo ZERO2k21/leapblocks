@@ -9,10 +9,14 @@
  * Serial API. No drivers needed.
  *
  * Upload sequence:
- *   1. Open the port at 1200 baud and close it → toggles DTR → board resets
- *      into its bootloader (the Arduino "reset trick").
- *   2. Re-open at the bootloader baud (115200 → 57600 → 19200 fallback).
- *   3. Sync, read signature, enter progmode, write flash page-by-page.
+ *   1. Open the port at the bootloader baud (115200 → 57600 → 19200 fallback).
+ *   2. Pulse DTR + RTS with the port open → board resets into its bootloader
+ *      (avrdude-style). Clones wired through either line are covered.
+ *   3. avrdude-style sync loop: keep sending the STK sync byte while watching
+ *      for INSYNC — catches the bootloader anywhere in its watchdog window.
+ *   4. Fallback: classic 1200-baud open/close reset for bridges that ignore
+ *      DTR at higher baud.
+ *   5. Sync, read signature, enter progmode, write flash page-by-page.
  */
 
 import { parseIntelHex } from './intelHex';
@@ -103,7 +107,7 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
  * timeouts. Only used while a single upload owns the port.
  */
 class SerialStream {
-    private port: SerialPort;
+    readonly port: SerialPort;
     private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
     private writer: WritableStreamDefaultWriter<Uint8Array> | null = null;
     private buffer = new Uint8Array(0);
@@ -150,6 +154,17 @@ class SerialStream {
     /** Clear any leftover bytes in the receive buffer. */
     flushInput() {
         this.buffer = new Uint8Array(0);
+    }
+
+    /**
+     * If the buffered bytes contain the target byte, consume everything up to
+     * and including it and return true. Used by the avrdude-style sync loop.
+     */
+    consumeUntil(target: number): boolean {
+        const idx = this.buffer.indexOf(target);
+        if (idx < 0) return false;
+        this.buffer = this.buffer.slice(idx + 1);
+        return true;
     }
 
     async write(bytes: Uint8Array): Promise<void> {
@@ -208,28 +223,92 @@ class SerialStream {
     }
 }
 
-/** Reset the board into its bootloader by briefly opening at 1200 baud. */
-async function resetIntoBootloader(port: SerialPort): Promise<void> {
-    await port.open({ baudRate: 1200 });
-    await sleep(150);
-    await port.close();
-    await sleep(300); // bootloader window is ~1s (optiboot WDT) — sync fast
+/**
+ * Set a serial control line. Modern Chrome (>= 133) uses dataTerminalReady /
+ * requestToSend; older engines use the dtr / rts aliases and SILENTLY IGNORE
+ * unknown dictionary members. Sending both names in one call lets every
+ * generation apply whichever it understands without throwing.
+ */
+async function setSignal(port: SerialPort, modern: string, legacy: string, state: boolean): Promise<void> {
+    try {
+        await (port.setSignals as any)({ [modern]: state, [legacy]: state });
+    } catch {
+        try { await (port.setSignals as any)({ [modern]: state }); } catch { /* unsupported */ }
+        try { await (port.setSignals as any)({ [legacy]: state }); } catch { /* unsupported */ }
+    }
+}
+
+const setDtr = (port: SerialPort, state: boolean) => setSignal(port, 'dataTerminalReady', 'dtr', state);
+const setRts = (port: SerialPort, state: boolean) => setSignal(port, 'requestToSend', 'rts', state);
+
+/**
+ * Pulse DTR and RTS with the port OPEN — the reset edges that drop the board
+ * into its bootloader (avrdude "arduino" programmer behaviour). Both lines are
+ * pulsed because clones (CH340 etc.) wire the auto-reset circuit through DTR,
+ * RTS, or both; both edges are produced so boards that reset on either
+ * polarity re-enter the bootloader. Must be followed by sync bytes within the
+ * optiboot watchdog window.
+ */
+async function pulseDtr(port: SerialPort): Promise<void> {
+    await setDtr(port, false);
+    await setRts(port, false);
+    await sleep(100);
+    await setDtr(port, true);
+    await setRts(port, true);
+    await sleep(100);
+    await setDtr(port, false);
+    await setRts(port, false);
+    await sleep(100);
+}
+
+/**
+ * avrdude-style sync: keep sending the STK sync byte every ~40ms while
+ * watching for the INSYNC (0x14) reply. This catches the bootloader wherever
+ * it is inside its ~1s watchdog window — a single sync byte misses it.
+ */
+async function waitForBootloaderSync(stream: SerialStream, timeoutMs = 1500): Promise<boolean> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        if (stream.consumeUntil(STK_INSYNC)) return true;
+        await stream.write(new Uint8Array([STK_GET_SYNC, CRC_EOP]));
+        await sleep(40);
+    }
+    return false;
+}
+
+/**
+ * Classic Arduino CLI reset: open at 1200 baud and close again. The DTR drop
+ * on close triggers the auto-reset circuit on bridges that ignore signal
+ * changes while the port is open at higher baud rates.
+ */
+async function classicReset(port: SerialPort): Promise<void> {
+    try {
+        await port.open({ baudRate: 1200 });
+        await sleep(200);
+        await setDtr(port, false);
+        await port.close();
+        await sleep(300);
+    } catch {
+        // Port unavailable or already in use — the open-port pulse is primary.
+    }
 }
 
 /** Try to sync with the bootloader at the given baud. */
-async function syncAtBaud(stream: SerialStream, baudRate: number, attempts = 4): Promise<boolean> {
+async function syncAtBaud(stream: SerialStream, baudRate: number, reset = true): Promise<boolean> {
     await stream.open(baudRate);
-    for (let i = 0; i < attempts; i++) {
+    await sleep(200);
+    // Reset into the bootloader NOW, with the port open: the sync loop below
+    // then catches the bootloader inside its ~1s watchdog window.
+    if (reset) {
         try {
-            await stream.stkCommand(new Uint8Array([STK_GET_SYNC, CRC_EOP]), 0, 1500);
-            await stream.stkCommand(new Uint8Array([STK_GET_SIGN_ON, CRC_EOP]), 0, 1500);
-            return true;
+            await pulseDtr(stream.port);
+            await sleep(120);
         } catch {
-            await stream.flushInput();
-            await sleep(400);
+            // No signal control on this platform — the retry cycles still fire
+            // the open/close edges between baud attempts.
         }
     }
-    return false;
+    return waitForBootloaderSync(stream, 1500);
 }
 
 // ── STK500v2 (Mega2560 "wiring" bootloader) ─────────────────────────────────
@@ -345,6 +424,15 @@ async function writeFlashV2(session: Stk500v2Session, data: Uint8Array, profile:
 
 /** Sign on, verify the chip signature and enter programming mode (v2 sync). */
 async function syncV2AtBaud(stream: SerialStream, profile: AvrBoardProfile, options: AvrFlashOptions): Promise<Stk500v2Session> {
+    // Reset into the bootloader NOW, with the port open, so the sign-on below
+    // lands within the ~1s bootloader watchdog window.
+    try {
+        await pulseDtr(stream.port);
+        await sleep(120);
+    } catch {
+        // No signal control on this platform — the retry cycles still fire
+        // the open/close edges between baud attempts.
+    }
     const session: Stk500v2Session = { stream, seqNum: 0 };
 
     // Sign-on doubles as the sync: the v2 bootloader replies framed [0x01, OK, 8, "AVRISP_2"].
@@ -382,22 +470,26 @@ export async function flashAvr(port: SerialPort, options: AvrFlashOptions): Prom
     }
 
     options.onLog?.(`Resetting ${options.fqbn} into bootloader...`);
-    await resetIntoBootloader(port);
 
     let stream: SerialStream | null = null;
     try {
         if (profile.protocol === 'stk500v2') {
             let session: Stk500v2Session | null = null;
-            for (const baud of profile.bauds) {
-                options.onLog?.(`Syncing with bootloader at ${baud} baud...`);
-                stream = new SerialStream(port);
-                try {
-                    await stream.open(baud);
-                    session = await syncV2AtBaud(stream, profile, options);
-                    break;
-                } catch {
-                    await stream.close();
-                    stream = null;
+            // Retry the whole reset+sync cycle: the first attempt often loses
+            // the ~1s bootloader window (slow port reopen, missed DTR pulse).
+            for (let attempt = 1; attempt <= 3 && !session; attempt++) {
+                if (attempt > 1) options.onLog?.(`Bootloader entry retry ${attempt}/3...`);
+                for (const baud of profile.bauds) {
+                    options.onLog?.(`Syncing with bootloader at ${baud} baud...`);
+                    stream = new SerialStream(port);
+                    try {
+                        await stream.open(baud);
+                        session = await syncV2AtBaud(stream, profile, options);
+                        break;
+                    } catch {
+                        await stream.close();
+                        stream = null;
+                    }
                 }
             }
             if (!session || !stream) {
@@ -412,16 +504,33 @@ export async function flashAvr(port: SerialPort, options: AvrFlashOptions): Prom
         }
 
         let synced = false;
-        for (const baud of profile.bauds) {
-            options.onLog?.(`Syncing with bootloader at ${baud} baud...`);
-            stream = new SerialStream(port);
-            if (await syncAtBaud(stream, baud)) {
-                synced = true;
-                options.onLog?.(`Bootloader found at ${baud} baud.`);
-                break;
+        for (let attempt = 1; attempt <= 3 && !synced; attempt++) {
+            if (attempt > 1) options.onLog?.(`Bootloader entry retry ${attempt}/3...`);
+            for (const baud of profile.bauds) {
+                options.onLog?.(`Syncing with bootloader at ${baud} baud...`);
+                stream = new SerialStream(port);
+                if (await syncAtBaud(stream, baud)) {
+                    synced = true;
+                    options.onLog?.(`Bootloader found at ${baud} baud.`);
+                    break;
+                }
+                await stream.close();
+                stream = null;
+
+                // Fallback for bridges that ignore DTR while the port is open:
+                // the classic 1200-baud open/close reset, then sync in the new
+                // watchdog window without re-pulsing.
+                options.onLog?.(`Trying classic 1200-baud reset at ${baud}...`);
+                await classicReset(port);
+                stream = new SerialStream(port);
+                if (await syncAtBaud(stream, baud, /* reset */ false)) {
+                    synced = true;
+                    options.onLog?.(`Bootloader found at ${baud} baud (classic reset).`);
+                    break;
+                }
+                await stream.close();
+                stream = null;
             }
-            await stream.close();
-            stream = null;
         }
         if (!synced || !stream) {
             throw new Error('Could not sync with the bootloader. Check the USB cable and that the board has an Arduino bootloader.');

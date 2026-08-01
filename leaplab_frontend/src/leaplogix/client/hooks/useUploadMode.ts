@@ -5,7 +5,7 @@
  */
 import { useState, useRef, useCallback, useEffect } from "react"
 import { getBoardConfig, getBoardNameById, createUploadFiles, formatPortLabel, isBoardUploadFile, sortUploadFiles } from "../utils/boardConfig"
-import { isWebSerialSupported, listPorts as webListPorts, requestPort as webRequestPort, uploadToBoard } from "../../../webflash"
+import { isWebSerialSupported, listPorts as webListPorts, requestPort as webRequestPort, uploadToBoard, startWebSerialMonitor, stopWebSerialMonitor, sendWebSerial } from "../../../webflash"
 
 interface BoardPort {
   path: string
@@ -98,12 +98,14 @@ export function useUploadMode({ addLog }: UseUploadModeProps) {
       }
 
       if (isConnected) {
+        await stopWebSerialMonitor()
         setIsConnected(false)
         addUploadMessage("Board disconnected from Web Serial.", "warning")
         return
       }
 
       try {
+        await stopWebSerialMonitor()
         const picked = await webRequestPort()
         if (picked?.port) {
           setSelectedPort(picked.path)
@@ -114,6 +116,11 @@ export function useUploadMode({ addLog }: UseUploadModeProps) {
           setIsConnected(true)
           addUploadMessage("Board connected via Web Serial. Ready to upload.", "success")
           refreshPorts()
+          startWebSerialMonitor(
+            baudRate,
+            (line) => setSerialMessages((prev) => [...prev.slice(-100), line]),
+            (msg) => addUploadMessage(msg, msg.toLowerCase().includes("fail") ? "error" : "info")
+          )
         } else {
           addUploadMessage("No board selected.", "warning")
         }
@@ -151,22 +158,29 @@ export function useUploadMode({ addLog }: UseUploadModeProps) {
     } else {
       addUploadMessage(connectResult?.error || "Unable to connect to the selected port.", "error")
     }
-  }, [addUploadMessage, baudRate, isConnected, refreshPorts, selectedBoard, selectedPort])
+  }, [addUploadMessage, baudRate, isConnected, refreshPorts, selectedBoard, selectedPort, setSerialMessages])
 
   const handleSendSerial = useCallback(async (message: string) => {
-    if (!(window as any).electronAPI?.sendSerial) {
-      addUploadMessage("Serial support is unavailable in this renderer.", "warning")
-      return
-    }
-
+    const electronAPI = (window as any).electronAPI
     try {
-      await (window as any).electronAPI.sendSerial(message)
-      setSerialMessages((prev) => [...prev, `> ${message}`])
+      if (electronAPI?.sendSerial) {
+        await electronAPI.sendSerial(message)
+        setSerialMessages((prev) => [...prev, `> ${message}`])
+      } else if (isWebSerialSupported()) {
+        const ok = await sendWebSerial(message)
+        if (ok) {
+          setSerialMessages((prev) => [...prev, `> ${message}`])
+        } else {
+          addUploadMessage("Failed to send — port is not open.", "error")
+        }
+      } else {
+        addUploadMessage("Serial support is unavailable in this renderer.", "warning")
+      }
     } catch (error) {
       const nextMessage = error instanceof Error ? error.message : "Unable to send serial data."
       addUploadMessage(nextMessage, "error")
     }
-  }, [addUploadMessage])
+  }, [addUploadMessage, setSerialMessages])
 
   const handleUploadFirmware = useCallback(async () => {
     if (!(window as any).electronAPI?.uploadCode) {
@@ -188,6 +202,7 @@ export function useUploadMode({ addLog }: UseUploadModeProps) {
       addUploadMessage(`Uploading ${activeBoardFile} to ${selectedBoardName} via Web Serial.`, "info")
 
       try {
+        await stopWebSerialMonitor()
         const result = await uploadToBoard({
           code: boardCode,
           fqbn: selectedBoardConfig.fqbn,
@@ -213,6 +228,11 @@ export function useUploadMode({ addLog }: UseUploadModeProps) {
         addUploadMessage(message, "error")
       } finally {
         setIsUploadingFirmware(false)
+        startWebSerialMonitor(
+          baudRate,
+          (line) => setSerialMessages((prev) => [...prev.slice(-100), line]),
+          (msg) => addUploadMessage(msg, msg.toLowerCase().includes("fail") ? "error" : "info")
+        )
       }
       return
     }
@@ -269,7 +289,7 @@ export function useUploadMode({ addLog }: UseUploadModeProps) {
       }
       setIsUploadingFirmware(false)
     }
-  }, [activeBoardFile, addUploadMessage, baudRate, isConnected, selectedBoard, selectedBoardConfig.fqbn, selectedBoardName, selectedPort, uploadProjectFiles])
+  }, [activeBoardFile, addUploadMessage, baudRate, isConnected, selectedBoard, selectedBoardConfig.fqbn, selectedBoardName, selectedPort, setSerialMessages, uploadProjectFiles])
 
   useEffect(() => {
     if (!(window as any).electronAPI) return undefined

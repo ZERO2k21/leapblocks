@@ -52,11 +52,23 @@ const log = (category: string, msg: string, data?: any) => {
 
 function startCompileServer() {
   const isDev = !app.isPackaged;
-  const serverPath = isDev
-    ? path.join(app.getAppPath(), 'server', 'server.js')
-    : path.join(process.resourcesPath, 'server', 'server.js');
+  const serverDir = isDev
+    ? path.join(app.getAppPath(), 'server')
+    : path.join(process.resourcesPath, 'server');
 
-  log('COMPILE-SERVER', `Attempting to start compile server from: ${serverPath}`);
+  // Prefer a compiled server.js (packaged build); fall back to the TypeScript
+  // source (repo layout) which is executed through tsx.
+  let serverPath = path.join(serverDir, 'server.js');
+  let viaTsx = false;
+  if (!fs.existsSync(serverPath)) {
+    const tsEntry = path.join(serverDir, 'server.ts');
+    if (fs.existsSync(tsEntry)) {
+      serverPath = tsEntry;
+      viaTsx = true;
+    }
+  }
+
+  log('COMPILE-SERVER', `Attempting to start compile server from: ${serverPath}${viaTsx ? ' (via tsx)' : ''}`);
 
   if (!fs.existsSync(serverPath)) {
     log('COMPILE-SERVER', `Server file not found at: ${serverPath}`);
@@ -64,9 +76,7 @@ function startCompileServer() {
   }
 
   // Check node_modules exist for the server
-  const nmPath = isDev
-    ? path.join(app.getAppPath(), 'server', 'node_modules')
-    : path.join(process.resourcesPath, 'server', 'node_modules');
+  const nmPath = path.join(serverDir, 'node_modules');
 
   if (!fs.existsSync(nmPath)) {
     log('COMPILE-SERVER', `node_modules missing at: ${nmPath} — run: cd server && npm install`);
@@ -75,7 +85,25 @@ function startCompileServer() {
 
   const arduinoCliPath = getBundledArduinoCliPath();
 
-  compileServerProcess = spawn('node', [serverPath], {
+  // When running the TypeScript source, launch it through tsx:
+  // node <tsx-cli.mjs> server/server.ts
+  const args: string[] = [];
+  if (viaTsx) {
+    const tsxCandidates = [
+      path.join(app.getAppPath(), 'node_modules', 'tsx', 'dist', 'cli.mjs'),
+      path.join(process.resourcesPath, 'node_modules', 'tsx', 'dist', 'cli.mjs'),
+      path.join(serverDir, 'node_modules', 'tsx', 'dist', 'cli.mjs'),
+    ];
+    const tsxCli = tsxCandidates.find((p) => fs.existsSync(p));
+    if (!tsxCli) {
+      log('COMPILE-SERVER', `tsx not found in ${tsxCandidates.join('; ')} — cannot run ${serverPath}`);
+      return;
+    }
+    args.push(tsxCli);
+  }
+  args.push(serverPath);
+
+  compileServerProcess = spawn('node', args, {
     env: {
       ...process.env,
       PORT: '3001',

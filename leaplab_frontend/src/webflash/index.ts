@@ -17,7 +17,7 @@
  * No drivers or desktop installation required — works in Chrome / Edge / Opera.
  */
 
-import { CLOUD_COMPILER_URL } from '../config/platform';
+import { CLOUD_COMPILER_URL, COMPILER_URL_LOCAL, getPrimaryCompilerUrl } from '../config/platform';
 import { flashAvr, getAvrBoardProfile } from './avrFlasher';
 import { flashEsp32, isEsp32Fqbn } from './espFlasher';
 
@@ -90,51 +90,228 @@ function describePort(port: SerialPort): string {
     return 'Web Serial device';
 }
 
+// ── Web Serial monitor (browser serial monitor) ─────────────────────────────
+
+let monitorPort: SerialPort | null = null;
+let monitorReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+let monitorOpenedPort = false;
+
+/** Opens the granted port if it isn't open yet. */
+async function openGrantedPort(baudRate: number): Promise<SerialPort | null> {
+    const port = grantedPort;
+    if (!port) {
+        console.log('[webflash-monitor] openGrantedPort: no granted port');
+        return null;
+    }
+    if (!port.readable) {
+        try {
+            console.log(`[webflash-monitor] opening port at ${baudRate} baud...`);
+            await port.open({ baudRate });
+            monitorOpenedPort = true;
+            console.log('[webflash-monitor] port opened OK');
+        } catch (err: any) {
+            console.error(`[webflash-monitor] port.open failed: ${err?.message || err}`);
+            throw err;
+        }
+        return port;
+    }
+    if (port.readable.locked) {
+        // A previous upload (esptool-js / SerialStream) left the stream locked.
+        // Close and reopen so the monitor can attach its own reader.
+        console.log('[webflash-monitor] stream locked by previous reader — closing and reopening');
+        try { await port.close(); } catch (err: any) {
+            console.error(`[webflash-monitor] close locked port failed: ${err?.message || err}`);
+        }
+        if (!port.readable) {
+            await port.open({ baudRate });
+            monitorOpenedPort = true;
+            console.log('[webflash-monitor] port reopened OK');
+        }
+    }
+    return port;
+}
+
+/**
+ * Starts streaming data from the granted Web Serial port, splitting the raw
+ * bytes into lines. Resolves false (and reports via onStatus) when no port is
+ * granted or it cannot be opened. End the loop with stopWebSerialMonitor().
+ */
+export async function startWebSerialMonitor(
+    baudRate: number,
+    onData: (line: string) => void,
+    onStatus?: (message: string) => void,
+): Promise<boolean> {
+    try {
+        const port = await openGrantedPort(baudRate);
+        if (!port?.readable || !port?.writable) {
+            console.log('[webflash-monitor] port has no readable/writable stream');
+            onStatus?.('No Web Serial port granted — click Connect first.');
+            return false;
+        }
+        monitorPort = port;
+        const decoder = new TextDecoder();
+        let buffer = '';
+        monitorReader = port.readable.getReader();
+        console.log('[webflash-monitor] reader attached — waiting for data...');
+        (async () => {
+            let received = 0;
+            try {
+                while (monitorReader) {
+                    const { value, done } = await monitorReader.read();
+                    if (done) {
+                        console.log('[webflash-monitor] read loop done (stream closed by device)');
+                        break;
+                    }
+                    if (!value?.length) continue;
+                    received += value.length;
+                    const text = decoder.decode(value, { stream: true });
+                    console.log(`[webflash-monitor] +${value.length} bytes (total ${received}): ${JSON.stringify(text)}`);
+                    buffer += text;
+                    let newline: number;
+                    while ((newline = buffer.indexOf('\n')) >= 0) {
+                        const line = buffer.slice(0, newline).replace(/\r$/, '');
+                        buffer = buffer.slice(newline + 1);
+                        console.log(`[webflash-monitor] line → ${JSON.stringify(line)}`);
+                        onData(line);
+                    }
+                }
+            } catch (err: any) {
+                console.error(`[webflash-monitor] read loop error: ${err?.message || err}`);
+                onStatus?.(`Serial monitor disconnected: ${err?.message || 'read error'}`);
+            } finally {
+                try { monitorReader?.releaseLock(); } catch { /* ignore */ }
+                monitorReader = null;
+                console.log('[webflash-monitor] read loop finished');
+            }
+        })();
+        onStatus?.(`Serial monitor connected at ${baudRate} baud.`);
+        return true;
+    } catch (err: any) {
+        console.error(`[webflash-monitor] start failed: ${err?.message || err}`);
+        onStatus?.(`Failed to open serial port: ${err?.message || 'unknown error'}`);
+        return false;
+    }
+}
+
+/** Stops the monitor read loop and closes the port if this module opened it. */
+export async function stopWebSerialMonitor(): Promise<void> {
+    console.log('[webflash-monitor] stopping monitor...');
+    try { await monitorReader?.cancel(); } catch { /* ignore */ }
+    try { monitorReader?.releaseLock(); } catch { /* ignore */ }
+    monitorReader = null;
+    if (monitorPort && monitorOpenedPort) {
+        try { if (monitorPort.readable) await monitorPort.close(); } catch { /* ignore */ }
+    }
+    monitorPort = null;
+    monitorOpenedPort = false;
+    console.log('[webflash-monitor] stopped');
+}
+
+/** Writes a string to the granted Web Serial port (serial monitor TX). */
+export async function sendWebSerial(data: string): Promise<boolean> {
+    try {
+        const port = grantedPort;
+        if (!port?.writable) {
+            console.log('[webflash-monitor] send failed: port not writable');
+            return false;
+        }
+        const writer = port.writable.getWriter();
+        await writer.write(new TextEncoder().encode(data));
+        writer.releaseLock();
+        console.log(`[webflash-monitor] sent ${JSON.stringify(data)}`);
+        return true;
+    } catch (err: any) {
+        console.error(`[webflash-monitor] send error: ${err?.message || err}`);
+        return false;
+    }
+}
+
 // ── Compile on the LeapBlocks compiler server ───────────────────────────────
 
 interface ServerCompileResult {
     success: boolean;
     hex?: string;
     binBase64?: string;
+    bootloaderBase64?: string;
+    partitionsBase64?: string;
     errors?: string | string[];
 }
 
+interface CompileAttempt {
+    ok: boolean;
+    httpStatus?: number;
+    data?: any;
+    networkError?: string;
+}
+
+async function postCompile(url: string, body: string, onLog?: (message: string) => void): Promise<CompileAttempt> {
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body,
+        });
+        onLog?.(`[webflash] ${url} → HTTP ${res.status}`);
+        if (!res.ok) {
+            const text = await res.text().catch(() => '(unreadable)');
+            onLog?.(`[webflash] Error body: ${text.slice(0, 500)}`);
+            return { ok: false, httpStatus: res.status };
+        }
+        const data = await res.json();
+        return { ok: true, data };
+    } catch (e: any) {
+        onLog?.(`[webflash] Network error reaching ${url}: ${e?.message}`);
+        return { ok: false, networkError: e?.message };
+    }
+}
+
+/**
+ * Compile on the LeapBlocks compiler server — CLOUD FIRST:
+ * tries the currently resolved URL (defaults to the cloud compiler), and
+ * if it is unreachable or fails with a server error, retries the request once
+ * against the other endpoint (cloud ↔ local fallback).
+ */
 async function compileOnServer(options: WebUploadOptions): Promise<ServerCompileResult> {
     const isESP32 = isEsp32Fqbn(options.fqbn);
     const endpoint = isESP32 ? '/compile/esp32' : '/compile';
-    const url = `${CLOUD_COMPILER_URL}${endpoint}`;
     const body = JSON.stringify({
         code: options.code,
         board: options.fqbn,
         libraries: options.libraries?.join(',') || '',
     });
 
+    const primaryUrl = `${CLOUD_COMPILER_URL}${endpoint}`;
+    const secondaryUrl = CLOUD_COMPILER_URL.startsWith('http://localhost')
+        ? `${getPrimaryCompilerUrl()}${endpoint}`
+        : `${COMPILER_URL_LOCAL}${endpoint}`;
+
     options.onLog?.(`[webflash] Compiling for ${options.fqbn} on the LeapBlocks server...`);
-    options.onLog?.(`[webflash] POST ${url} (${body.length} bytes, board=${options.fqbn}, isESP32=${isESP32})`);
+    options.onLog?.(`[webflash] POST ${primaryUrl} (${body.length} bytes, board=${options.fqbn}, isESP32=${isESP32})`);
 
-    let res: Response;
-    try {
-        res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body,
-        });
-    } catch (e: any) {
-        options.onLog?.(`[webflash] Network error: ${e?.message}`);
-        return { success: false, errors: `Network error reaching compiler server: ${e?.message}` };
+    let attempt = await postCompile(primaryUrl, body, options.onLog);
+
+    // Fall back to the other server on network errors, 5xx (e.g. cloud still
+    // initializing → 503) or 404 (endpoint not implemented on that server).
+    const shouldFallback = !attempt.ok && (
+        attempt.httpStatus === undefined ||
+        attempt.httpStatus >= 500 ||
+        attempt.httpStatus === 404
+    );
+    if (shouldFallback && primaryUrl !== secondaryUrl) {
+        options.onLog?.(`[webflash] Primary compiler (${primaryUrl}) unavailable — retrying on fallback (${secondaryUrl})...`);
+        attempt = await postCompile(secondaryUrl, body, options.onLog);
     }
 
-    options.onLog?.(`[webflash] Response: HTTP ${res.status} ${res.statusText}`);
-
-    if (!res.ok) {
-        const text = await res.text().catch(() => '(unreadable)');
-        options.onLog?.(`[webflash] Error body: ${text.slice(0, 500)}`);
-        return { success: false, errors: `Compiler server error (HTTP ${res.status}).` };
+    if (!attempt.ok) {
+        if (attempt.networkError) {
+            return { success: false, errors: `Network error reaching compiler server: ${attempt.networkError}` };
+        }
+        return { success: false, errors: `Compiler server error (HTTP ${attempt.httpStatus}).` };
     }
 
-    const data = await res.json();
+    const data = attempt.data;
     options.onLog?.(`[webflash] Server response keys: ${Object.keys(data).join(', ')}`);
-    options.onLog?.(`[webflash] Server success=${data.success}, hasHex=${!!data.hex}, hasBinBase64=${!!data.binBase64}, errors=${JSON.stringify(data.errors || null)}`);
+    options.onLog?.(`[webflash] Server success=${data.success}, hasHex=${!!data.hex}, hasBinBase64=${!!data.binBase64}, hasBootloader=${!!data.bootloaderBase64}, hasPartitions=${!!data.partitionsBase64}, errors=${JSON.stringify(data.errors || null)}`);
 
     if (!data.success) {
         const errors = data.errors;
@@ -149,7 +326,7 @@ async function compileOnServer(options: WebUploadOptions): Promise<ServerCompile
     if (!isESP32 && !data.hex) {
         return { success: false, errors: 'Server did not return a HEX file for the AVR board.' };
     }
-    return { success: true, hex: data.hex, binBase64: data.binBase64 };
+    return { success: true, hex: data.hex, binBase64: data.binBase64, bootloaderBase64: data.bootloaderBase64, partitionsBase64: data.partitionsBase64 };
 }
 
 // ── Main upload entry point ─────────────────────────────────────────────────
@@ -201,6 +378,8 @@ export async function uploadToBoard(options: WebUploadOptions): Promise<{ succes
         if (isEsp32Fqbn(options.fqbn)) {
             await flashEsp32(port, {
                 binBase64: compiled.binBase64!,
+                bootloaderBase64: compiled.bootloaderBase64,
+                partitionsBase64: compiled.partitionsBase64,
                 onProgress: options.onProgress,
                 onLog: options.onLog,
             });
@@ -214,7 +393,7 @@ export async function uploadToBoard(options: WebUploadOptions): Promise<{ succes
         } else {
             return {
                 success: false,
-                error: `Board ${options.fqbn} is not supported for web upload yet. Supported: Arduino Uno, Nano, Mega, ESP32-C3.`,
+                error: `Board ${options.fqbn} is not supported for web upload yet. Supported: Arduino Uno, Nano, Mega, ESP32.`,
             };
         }
 
