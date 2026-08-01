@@ -22,6 +22,17 @@ const { chromium } = require('playwright');
       );
       out.ok = true;
       out.inputs = model.inputs;
+      
+      out.attempts.push('run inference 1D');
+      const samples = new Float32Array(15600).fill(0.001);
+      const inputTensor = window.tf.tensor1d(samples);
+      const res = await model.executeAsync(inputTensor);
+      out.inferenceOk = true;
+      out.outputShapes = res.map(r => r.shape);
+      
+      // clean up
+      res.forEach(r => r.dispose());
+      inputTensor.dispose();
     } catch (e) {
       out.ok = false;
       out.error = e.message;
