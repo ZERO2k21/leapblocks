@@ -17,7 +17,7 @@
  * No drivers or desktop installation required — works in Chrome / Edge / Opera.
  */
 
-import { CLOUD_COMPILER_URL, COMPILER_URL_LOCAL, getPrimaryCompilerUrl } from '../config/platform';
+import { CLOUD_COMPILER_URL, COMPILER_URL_LOCAL, getPrimaryCompilerUrl, detectCompilerServer, isLocalHost } from '../config/platform';
 import { flashAvr, getAvrBoardProfile } from './avrFlasher';
 import { flashEsp32, isEsp32Fqbn } from './espFlasher';
 
@@ -155,11 +155,22 @@ export async function startWebSerialMonitor(
         console.log('[webflash-monitor] reader attached — waiting for data...');
         (async () => {
             let received = 0;
+            // Devices that print without newlines (or slow/failed baud reads)
+            // would otherwise never render — flush partial output periodically.
+            const flushPartial = () => {
+                if (buffer) {
+                    console.log(`[webflash-monitor] flush → ${JSON.stringify(buffer)}`);
+                    onData(buffer);
+                    buffer = '';
+                }
+            };
+            const flushTimer = setInterval(flushPartial, 150);
             try {
                 while (monitorReader) {
                     const { value, done } = await monitorReader.read();
                     if (done) {
                         console.log('[webflash-monitor] read loop done (stream closed by device)');
+                        flushPartial();
                         break;
                     }
                     if (!value?.length) continue;
@@ -179,6 +190,8 @@ export async function startWebSerialMonitor(
                 console.error(`[webflash-monitor] read loop error: ${err?.message || err}`);
                 onStatus?.(`Serial monitor disconnected: ${err?.message || 'read error'}`);
             } finally {
+                clearInterval(flushTimer);
+                flushPartial();
                 try { monitorReader?.releaseLock(); } catch { /* ignore */ }
                 monitorReader = null;
                 console.log('[webflash-monitor] read loop finished');
@@ -272,6 +285,15 @@ async function postCompile(url: string, body: string, onLog?: (message: string) 
  * against the other endpoint (cloud ↔ local fallback).
  */
 async function compileOnServer(options: WebUploadOptions): Promise<ServerCompileResult> {
+    // Hosted build: the startup probe is one-shot and free-tier Render spins
+    // down after idle time, so re-probe right before compiling — the cloud
+    // server may be warm by now, and cloud is always primary on the hosted site.
+    if (CLOUD_COMPILER_URL === COMPILER_URL_LOCAL && !isLocalHost()) {
+        options.onLog?.('[webflash] Local fallback active — re-probing cloud compiler...');
+        const cloudUp = await detectCompilerServer();
+        options.onLog?.(`[webflash] Cloud compiler ${cloudUp ? 'reachable ✓ — using it' : 'still unreachable — will use it as fallback (first compile may take 1–3 min while Render wakes up)'}`);
+    }
+
     const isESP32 = isEsp32Fqbn(options.fqbn);
     const endpoint = isESP32 ? '/compile/esp32' : '/compile';
     const body = JSON.stringify({
@@ -304,7 +326,10 @@ async function compileOnServer(options: WebUploadOptions): Promise<ServerCompile
 
     if (!attempt.ok) {
         if (attempt.networkError) {
-            return { success: false, errors: `Network error reaching compiler server: ${attempt.networkError}` };
+            const hint = isLocalHost()
+                ? ''
+                : ' The cloud compiler may be starting up (cold start can take 1–3 minutes) — wait a moment and retry.';
+            return { success: false, errors: `Network error reaching compiler server: ${attempt.networkError}.${hint}` };
         }
         return { success: false, errors: `Compiler server error (HTTP ${attempt.httpStatus}).` };
     }

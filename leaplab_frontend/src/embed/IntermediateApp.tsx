@@ -320,7 +320,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
     const [serialMessages, setSerialMessages] = useState<string[]>([]);
 
-    const [baudRate, setBaudRate] = useState<number>(9600);
+    const [baudRate, setBaudRate] = useState<number>(115200);
 
     const [lineEnding, setLineEnding] = useState<string>('\r\n');
 

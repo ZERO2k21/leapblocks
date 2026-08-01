@@ -41,6 +41,9 @@ const isLocal = typeof window !== 'undefined' &&
     window.location.hostname === '127.0.0.1' ||
     window.location.hostname === '[::1]');
 
+/** True when the app is served from localhost (dev server / Electron). */
+export const isLocalHost = (): boolean => isLocal;
+
 /**
  * Compile server URL resolution — CLOUD FIRST:
  * 1. Always prefer the cloud compiler server (VITE_COMPILER_URL or Render).
@@ -71,7 +74,13 @@ export let CLOUD_COMPILER_URL: string = getPrimaryUrl();
 // Dedicated backend database and sharing API URL
 export const BACKEND_API_URL = isLocal ? COMPILER_URL_LOCAL : getPrimaryUrl();
 
-const detectCompilerServer = async () => {
+/**
+ * Probes the cloud compiler server and updates CLOUD_COMPILER_URL.
+ * Returns true when the cloud is reachable. NOTE: free-tier Render spins down
+ * after idle time and takes ~1 min to wake — a failed probe here only means
+ * "cold right now", so hosted builds re-probe before every compile.
+ */
+export const detectCompilerServer = async (): Promise<boolean> => {
   const primary = getPrimaryUrl();
   try {
     const controller = new AbortController();
@@ -86,14 +95,15 @@ const detectCompilerServer = async () => {
     if (res.ok) {
       CLOUD_COMPILER_URL = primary;
       console.log(`[Platform] Cloud compiler server detected (${primary}). Using cloud.`);
-    } else {
-      CLOUD_COMPILER_URL = COMPILER_URL_LOCAL;
-      console.log(`[Platform] Cloud server returned error status (${res.status}). Switching to local fallback: ${COMPILER_URL_LOCAL}`);
+      return true;
     }
+    CLOUD_COMPILER_URL = COMPILER_URL_LOCAL;
+    console.log(`[Platform] Cloud server returned error status (${res.status}). Using local fallback: ${COMPILER_URL_LOCAL}`);
   } catch {
     CLOUD_COMPILER_URL = COMPILER_URL_LOCAL;
-    console.log(`[Platform] Cloud compiler server not reachable. Switching to local fallback: ${COMPILER_URL_LOCAL}`);
+    console.log(`[Platform] Cloud compiler server not reachable (cold start?). Using local fallback: ${COMPILER_URL_LOCAL}`);
   }
+  return false;
 };
 
 console.log(`[Platform] CLOUD_COMPILER_URL = ${CLOUD_COMPILER_URL} (cloud first, fallback: ${COMPILER_URL_LOCAL})`);
