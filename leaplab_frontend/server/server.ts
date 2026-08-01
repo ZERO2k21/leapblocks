@@ -680,6 +680,16 @@ function simulateBuild(job: BuildJob, project: any): void {
   next();
 }
 
+// ─── Compile serialization ─────────────────────────────────────
+// The Render instance has limited RAM: concurrent Arduino/ESP32
+// compiles can OOM-kill the process. All compiles run one at a time.
+let compileChain: Promise<unknown> = Promise.resolve();
+function withCompileLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = compileChain.then(fn);
+  compileChain = run.catch(() => undefined);
+  return run;
+}
+
 // ─── POST /compile ────────────────────────────────────────────
 app.post('/compile', async (req: Request, res: Response) => {
   const { code, board = 'arduino:avr:uno', libraries = '' } = req.body;
@@ -688,6 +698,8 @@ app.post('/compile', async (req: Request, res: Response) => {
   if (!isInitialized) {
     return res.status(503).json({ success: false, errors: ['Server is still initializing. Please wait.'] });
   }
+
+  return withCompileLock(async () => {
 
   const isESP32 = board.startsWith('esp32:');
   const tempId = uuidv4();
@@ -767,6 +779,7 @@ app.post('/compile', async (req: Request, res: Response) => {
   } finally {
     try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
   }
+  });
 });
 
 // ─── POST /compile/esp32 (with SHA-256 caching) ───────────────
@@ -796,10 +809,11 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
   }
 
   console.log(`[SERVER] Cache MISS, compiling for firmware ID: ${hash}`);
-  const tempId = uuidv4();
-  const tempDir = path.join(os.tmpdir(), `electra_${tempId}`);
-  const sketchDir = path.join(tempDir, 'sketch');
-  const sketchPath = path.join(sketchDir, 'sketch.ino');
+  return withCompileLock(async () => {
+    const tempId = uuidv4();
+    const tempDir = path.join(os.tmpdir(), `electra_${tempId}`);
+    const sketchDir = path.join(tempDir, 'sketch');
+    const sketchPath = path.join(sketchDir, 'sketch.ino');
 
   try {
     fs.mkdirSync(sketchDir, { recursive: true });
@@ -878,6 +892,7 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
   } finally {
     try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
   }
+  });
 });
 
 // ─── GET /firmware/:id ────────────────────────────────────────
