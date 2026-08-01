@@ -1,5 +1,6 @@
 {
   "buildCommand": "cd leaplab_frontend && bun run build:web",
+  "installCommand": "cd leaplab_frontend && bun install",
   "outputDirectory": "leaplab_frontend/build",
   "framework": "vite",
   "headers": [
