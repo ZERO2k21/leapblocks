@@ -41,17 +41,11 @@ const isLocal = typeof window !== 'undefined' &&
     window.location.hostname === '127.0.0.1' ||
     window.location.hostname === '[::1]');
 
-/** True when the app is served from localhost (dev server / Electron). */
-export const isLocalHost = (): boolean => isLocal;
-
 /**
- * Compile server URL resolution — CLOUD FIRST:
- * 1. Always prefer the cloud compiler server (VITE_COMPILER_URL or Render).
- * 2. detectCompilerServer() probes it once on startup; if it is not
- *    responding within 3s, CLOUD_COMPILER_URL switches to the local fallback
- *    (http://localhost:3001, started by Electron / run locally).
- * 3. webflash additionally retries each compile request against the other
- *    URL when the chosen one is unreachable (see src/webflash/index.ts).
+ * Compile server URL resolution — CLOUD ONLY:
+ * The compiler is always the cloud server (VITE_COMPILER_URL or Render).
+ * There is no localhost fallback; detectCompilerServer() only reports
+ * reachability (free-tier Render can be cold on the first request).
  */
 export const COMPILER_URL_LOCAL = 'http://localhost:3001';
 
@@ -65,20 +59,16 @@ const getPrimaryUrl = (): string => {
 /** Primary cloud compiler URL. */
 export const getPrimaryCompilerUrl = (): string => getPrimaryUrl();
 
-/** Local fallback compiler URL (used when the cloud server is not responding). */
-export const getFallbackCompilerUrl = (): string => COMPILER_URL_LOCAL;
-
-// 2. Live binding export so it can be updated dynamically
-export let CLOUD_COMPILER_URL: string = getPrimaryUrl();
+// Compile server binding — always the cloud endpoint.
+export const CLOUD_COMPILER_URL: string = getPrimaryUrl();
 
 // Dedicated backend database and sharing API URL
 export const BACKEND_API_URL = isLocal ? COMPILER_URL_LOCAL : getPrimaryUrl();
 
 /**
- * Probes the cloud compiler server and updates CLOUD_COMPILER_URL.
- * Returns true when the cloud is reachable. NOTE: free-tier Render spins down
- * after idle time and takes ~1 min to wake — a failed probe here only means
- * "cold right now", so hosted builds re-probe before every compile.
+ * Probes the cloud compiler server. Returns true when it is reachable.
+ * CLOUD_COMPILER_URL is never changed — the cloud is always the compiler,
+ * even during cold starts (a failed probe only means "cold right now").
  */
 export const detectCompilerServer = async (): Promise<boolean> => {
   const primary = getPrimaryUrl();
@@ -92,21 +82,15 @@ export const detectCompilerServer = async (): Promise<boolean> => {
     });
     clearTimeout(timeoutId);
 
-    if (res.ok) {
-      CLOUD_COMPILER_URL = primary;
-      console.log(`[Platform] Cloud compiler server detected (${primary}). Using cloud.`);
-      return true;
-    }
-    CLOUD_COMPILER_URL = COMPILER_URL_LOCAL;
-    console.log(`[Platform] Cloud server returned error status (${res.status}). Using local fallback: ${COMPILER_URL_LOCAL}`);
+    console.log(`[Platform] Cloud compiler ${res.ok ? 'reachable' : `returned status ${res.status}`} (${primary})`);
+    return res.ok;
   } catch {
-    CLOUD_COMPILER_URL = COMPILER_URL_LOCAL;
-    console.log(`[Platform] Cloud compiler server not reachable (cold start?). Using local fallback: ${COMPILER_URL_LOCAL}`);
+    console.log(`[Platform] Cloud compiler not reachable yet (cold start?) (${primary})`);
+    return false;
   }
-  return false;
 };
 
-console.log(`[Platform] CLOUD_COMPILER_URL = ${CLOUD_COMPILER_URL} (cloud first, fallback: ${COMPILER_URL_LOCAL})`);
+console.log(`[Platform] CLOUD_COMPILER_URL = ${CLOUD_COMPILER_URL} (cloud only — no localhost fallback)`);
 
 if (typeof window !== 'undefined') {
   detectCompilerServer();

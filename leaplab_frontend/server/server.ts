@@ -864,9 +864,14 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
 
     cliArgs.push(sketchDir);
 
-    // ESP32 builds can take 2-4 minutes on Render — don't kill them at the
-    // default 120s timeout.
-    const { stdout, stderr, code: exitCode } = await runCLI(cliArgs, 900_000);
+    // ESP32 builds are heavy: ~30s on a fast desktop, ~15-25 min on Render's
+    // free tier (0.1 CPU / 512 MB). Cap parallelism so the 512 MB instance
+    // doesn't thrash spawning one gcc per host core, and never kill the build
+    // before 30 minutes. Note: arduino-cli has no usable object cache, so the
+    // first compile of each sketch is always slow; afterwards the firmware
+    // cache (by sketch hash) serves it instantly.
+    cliArgs.push('--jobs', '2');
+    const { stdout, stderr, code: exitCode } = await runCLI(cliArgs, 1_800_000);
 
     if (exitCode !== 0) {
       console.error('[SERVER] /compile/esp32: COMPILE FAILED (exit', exitCode + ')');

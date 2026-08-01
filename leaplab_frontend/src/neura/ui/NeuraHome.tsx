@@ -277,11 +277,14 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                     background: #fff;
                     border-radius: 1.5rem;
                     box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04), 0 12px 28px rgba(0,0,0,0.03);
-                    padding: 2.25rem 1.75rem;
+                    padding: 2rem 1.75rem 1.5rem;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     text-align: center;
+                    justify-content: space-between;
+                    height: 100%;
+                    min-height: 380px;
                     transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
                     cursor: pointer;
                     border: 1.5px solid #e5e7eb;
@@ -377,7 +380,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                             </div>
 
                             {/* Main Title */}
-                            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-500 tracking-tight leading-tight mb-4">
+                            <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-500 tracking-tight leading-tight mb-4 whitespace-nowrap">
                                 ⚡ Choose Your Superpower! ⚡
                             </h1>
 
@@ -446,66 +449,73 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                             onMouseLeave={() => setHoveredCard(null)}
                                             className={`neura-card ${borderClass}`}
                                         >
-                                            {/* Icon Container */}
-                                            <div
-                                                className="flex items-center justify-center transition-transform duration-300 hover:scale-110 w-[min(88px,20vw)] h-[min(88px,20vw)] rounded-3xl mb-5 text-[min(48px,10vw)]"
-                                                style={{
-                                                    backgroundColor: `${item.color}10`,
-                                                    border: `2px solid ${item.color}25`,
-                                                    boxShadow: `0 6px 20px ${item.color}18`,
-                                                }}
-                                            >
-                                                {item.emoji}
-                                            </div>
-
-                                            {/* Badge */}
-                                            <div
-                                                className="inline-flex items-center rounded-full py-1.25 px-3.5 pl-2 shadow-md mb-3.5 gap-1.5"
-                                                style={{
-                                                    backgroundColor: item.color,
-                                                    boxShadow: `0 3px 12px ${item.color}35`,
-                                                }}
-                                            >
-                                                <span className="text-xs leading-none">{item.badge.split(' ')[0]}</span>
-                                                <span className="font-bold text-[11px] tracking-wider text-white">
-                                                    {item.badge.split(' ').slice(1).join(' ')}
-                                                </span>
-                                            </div>
-
-                                            {/* Title */}
-                                            <h3 className="font-extrabold text-gray-800 leading-snug text-2xl mb-2.5">
-                                                {item.name}
-                                            </h3>
-
-                                            {/* Description */}
-                                            <p className="text-gray-500 leading-relaxed font-medium text-sm max-w-[250px]">
-                                                {item.description}
-                                            </p>
-
-                                            {/* Toggle switch for pose classifier */}
-                                            {item.hasToggle && (
+                                            {/* Upper content container to vertically center icon, badge, title and description */}
+                                            <div className="flex-1 flex flex-col items-center justify-center w-full">
+                                                {/* Icon Container */}
                                                 <div
-                                                    className="flex items-center rounded-2xl mt-4 bg-slate-100 border-2 border-slate-200 p-1.25 gap-1"
-                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="flex items-center justify-center transition-transform duration-300 hover:scale-110 w-[min(80px,18vw)] h-[min(80px,18vw)] rounded-3xl mb-4 text-[min(42px,9vw)]"
+                                                    style={{
+                                                        backgroundColor: `${item.color}10`,
+                                                        border: `2px solid ${item.color}25`,
+                                                        boxShadow: `0 6px 20px ${item.color}18`,
+                                                    }}
                                                 >
-                                                    <button
-                                                        onClick={() => setPoseMode('body')}
-                                                        className={`py-2.5 px-4.5 rounded-xl text-xs font-bold tracking-widest uppercase transition-all duration-250 border-none cursor-pointer flex items-center gap-1.5 ${
-                                                            poseMode === 'body' ? 'bg-white text-orange-600 shadow-md' : 'bg-transparent text-slate-400'
-                                                        }`}
-                                                    >
-                                                        <span className="text-sm">🏋️</span> Body
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setPoseMode('hand')}
-                                                        className={`py-2.5 px-4.5 rounded-xl text-xs font-bold tracking-widest uppercase transition-all duration-250 border-none cursor-pointer flex items-center gap-1.5 ${
-                                                            poseMode === 'hand' ? 'bg-white text-blue-600 shadow-md' : 'bg-transparent text-slate-400'
-                                                        }`}
-                                                    >
-                                                        <span className="text-sm">✋</span> Hand
-                                                    </button>
+                                                    {item.emoji}
                                                 </div>
-                                            )}
+
+                                                {/* Badge */}
+                                                <div
+                                                    className="inline-flex items-center rounded-full py-1 px-3 pl-2 shadow-sm mb-3 gap-1.5"
+                                                    style={{
+                                                        backgroundColor: item.color,
+                                                        boxShadow: `0 3px 12px ${item.color}35`,
+                                                    }}
+                                                >
+                                                    <span className="text-xs leading-none">{item.badge.split(' ')[0]}</span>
+                                                    <span className="font-bold text-[11px] tracking-wider text-white uppercase">
+                                                        {item.badge.split(' ').slice(1).join(' ')}
+                                                    </span>
+                                                </div>
+
+                                                {/* Title */}
+                                                <h3 className="font-extrabold text-gray-800 leading-snug text-xl sm:text-2xl mb-2">
+                                                    {item.name}
+                                                </h3>
+
+                                                {/* Description */}
+                                                <p className="text-gray-500 leading-relaxed font-medium text-xs sm:text-sm max-w-[250px]">
+                                                    {item.description}
+                                                </p>
+                                            </div>
+
+                                            {/* Bottom Action slot (Ensures identical card height & layout symmetry) */}
+                                            <div className="w-full mt-4 flex items-center justify-center min-h-[44px] shrink-0">
+                                                {item.hasToggle ? (
+                                                    <div
+                                                        className="flex items-center rounded-2xl bg-slate-100 border-2 border-slate-200 p-1 gap-1"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setPoseMode('body')}
+                                                            className={`py-1.5 px-3.5 rounded-xl text-[11px] font-extrabold tracking-wider uppercase transition-all duration-200 border-none cursor-pointer flex items-center gap-1.5 ${
+                                                                poseMode === 'body' ? 'bg-white text-orange-600 shadow-md' : 'bg-transparent text-slate-400'
+                                                            }`}
+                                                        >
+                                                            <span className="text-xs">🏋️</span> Body
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setPoseMode('hand')}
+                                                            className={`py-1.5 px-3.5 rounded-xl text-[11px] font-extrabold tracking-wider uppercase transition-all duration-200 border-none cursor-pointer flex items-center gap-1.5 ${
+                                                                poseMode === 'hand' ? 'bg-white text-blue-600 shadow-md' : 'bg-transparent text-slate-400'
+                                                            }`}
+                                                        >
+                                                            <span className="text-xs">✋</span> Hand
+                                                        </button>
+                                                    </div>
+                                                ) : null}
+                                            </div>
                                         </div>
                                     )
                                 })}

@@ -17,7 +17,7 @@
  * No drivers or desktop installation required — works in Chrome / Edge / Opera.
  */
 
-import { CLOUD_COMPILER_URL, COMPILER_URL_LOCAL, getPrimaryCompilerUrl, detectCompilerServer, isLocalHost } from '../config/platform';
+import { CLOUD_COMPILER_URL } from '../config/platform';
 import { flashAvr, getAvrBoardProfile } from './avrFlasher';
 import { flashEsp32, isEsp32Fqbn } from './espFlasher';
 
@@ -279,21 +279,9 @@ async function postCompile(url: string, body: string, onLog?: (message: string) 
 }
 
 /**
- * Compile on the LeapBlocks compiler server — CLOUD FIRST:
- * tries the currently resolved URL (defaults to the cloud compiler), and
- * if it is unreachable or fails with a server error, retries the request once
- * against the other endpoint (cloud ↔ local fallback).
+ * Compile on the LeapBlocks cloud compiler server — CLOUD ONLY.
  */
 async function compileOnServer(options: WebUploadOptions): Promise<ServerCompileResult> {
-    // Hosted build: the startup probe is one-shot and free-tier Render spins
-    // down after idle time, so re-probe right before compiling — the cloud
-    // server may be warm by now, and cloud is always primary on the hosted site.
-    if (CLOUD_COMPILER_URL === COMPILER_URL_LOCAL && !isLocalHost()) {
-        options.onLog?.('[webflash] Local fallback active — re-probing cloud compiler...');
-        const cloudUp = await detectCompilerServer();
-        options.onLog?.(`[webflash] Cloud compiler ${cloudUp ? 'reachable ✓ — using it' : 'still unreachable — will use it as fallback (first compile may take 1–3 min while Render wakes up)'}`);
-    }
-
     const isESP32 = isEsp32Fqbn(options.fqbn);
     const endpoint = isESP32 ? '/compile/esp32' : '/compile';
     const body = JSON.stringify({
@@ -302,34 +290,16 @@ async function compileOnServer(options: WebUploadOptions): Promise<ServerCompile
         libraries: options.libraries?.join(',') || '',
     });
 
-    const primaryUrl = `${CLOUD_COMPILER_URL}${endpoint}`;
-    const secondaryUrl = CLOUD_COMPILER_URL.startsWith('http://localhost')
-        ? `${getPrimaryCompilerUrl()}${endpoint}`
-        : `${COMPILER_URL_LOCAL}${endpoint}`;
+    const url = `${CLOUD_COMPILER_URL}${endpoint}`;
 
     options.onLog?.(`[webflash] Compiling for ${options.fqbn} on the LeapBlocks server...`);
-    options.onLog?.(`[webflash] POST ${primaryUrl} (${body.length} bytes, board=${options.fqbn}, isESP32=${isESP32})`);
+    options.onLog?.(`[webflash] POST ${url} (${body.length} bytes, board=${options.fqbn}, isESP32=${isESP32})`);
 
-    let attempt = await postCompile(primaryUrl, body, options.onLog);
-
-    // Fall back to the other server on network errors, 5xx (e.g. cloud still
-    // initializing → 503) or 404 (endpoint not implemented on that server).
-    const shouldFallback = !attempt.ok && (
-        attempt.httpStatus === undefined ||
-        attempt.httpStatus >= 500 ||
-        attempt.httpStatus === 404
-    );
-    if (shouldFallback && primaryUrl !== secondaryUrl) {
-        options.onLog?.(`[webflash] Primary compiler (${primaryUrl}) unavailable — retrying on fallback (${secondaryUrl})...`);
-        attempt = await postCompile(secondaryUrl, body, options.onLog);
-    }
+    const attempt = await postCompile(url, body, options.onLog);
 
     if (!attempt.ok) {
         if (attempt.networkError) {
-            const hint = isLocalHost()
-                ? ''
-                : ' The cloud compiler may be starting up (cold start can take 1–3 minutes) — wait a moment and retry.';
-            return { success: false, errors: `Network error reaching compiler server: ${attempt.networkError}.${hint}` };
+            return { success: false, errors: `Network error reaching compiler server: ${attempt.networkError}. The cloud compiler may be starting up (cold start can take 1–3 minutes) — wait a moment and retry.` };
         }
         return { success: false, errors: `Compiler server error (HTTP ${attempt.httpStatus}).` };
     }
@@ -390,7 +360,7 @@ export async function uploadToBoard(options: WebUploadOptions): Promise<{ succes
         }
 
         // 1. Compile on the server.
-        options.onProgress?.(5, 'Compiling on the LeapBlocks server...');
+        options.onProgress?.(5, 'Compiling on the LeapBlocks server... (first build of this sketch can take several minutes; later uploads of the same code are instant)');
         console.log('[webflash] Step 1: compileOnServer...');
         const compiled = await compileOnServer(options);
         console.log(`[webflash] compileOnServer result: success=${compiled.success}, errors=${compiled.errors?.slice(0, 200) || 'none'}`);
