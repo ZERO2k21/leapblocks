@@ -8,7 +8,12 @@ import { ensureTf } from './loadScript'
 export interface KNNPrediction {
     label: string
     confidences: Record<string, number>
+    /** True cosine similarity to the closest training example (0-1). */
+    similarity?: number
 }
+
+/** Predictions below this cosine similarity are treated as "not from the training samples". */
+export const RELATEDNESS_THRESHOLD = 0.4
 
 export class KNNClassifier {
     private examples: Record<string, any> = {}
@@ -75,6 +80,7 @@ export class KNNClassifier {
 
         const weightedScores: Record<string, number> = {}
         let maxSimilarity = -Infinity
+        let maxCosine = -Infinity
 
         for (const label of labels) {
             const examples = this.examples[label]
@@ -85,11 +91,26 @@ export class KNNClassifier {
             const vals = await sim.data() as Float32Array
             sim.dispose()
 
+            // True cosine similarity (L2-normalized dot product) — consistent across
+            // all model types even when embeddings aren't pre-normalized.
+            const cos = tf.tidy(() => {
+                const embNorm = tf.div(emb, tf.maximum(tf.norm(emb), 1e-10))
+                const exNorm = tf.div(examples, tf.maximum(tf.norm(examples, 2, 1).expandDims(1), 1e-10))
+                const dot = tf.sum(tf.mul(embNorm, exNorm), 1)
+                return dot.squeeze()
+            })
+            const cosVals = await cos.data() as Float32Array
+            cos.dispose()
+
             const sorted = Array.from(vals).sort((a: number, b: number) => b - a)
             const topK = sorted.slice(0, effectiveK)
 
             if (topK.length > 0 && topK[0] > maxSimilarity) {
                 maxSimilarity = topK[0]
+            }
+            const bestCos = Array.from(cosVals).reduce((m, v) => Math.max(m, v), -Infinity)
+            if (bestCos > maxCosine) {
+                maxCosine = bestCos
             }
 
             const weightedSum = topK.reduce((s, v) => {
@@ -131,7 +152,7 @@ export class KNNClassifier {
 
         const winner = labels.reduce((a, b) => confidences[a] > confidences[b] ? a : b)
 
-        return { label: winner, confidences }
+        return { label: winner, confidences, similarity: maxCosine }
     }
 
     /**

@@ -4,6 +4,8 @@ import { ensureMobileNet } from '../loadScript'
 export interface NumberPrediction {
     label: string
     confidences: Record<string, number>
+    /** True cosine similarity to the closest training sample (0-1). */
+    similarity?: number
 }
 
 function isolateDigit(sourceCanvas: HTMLCanvasElement): HTMLCanvasElement {

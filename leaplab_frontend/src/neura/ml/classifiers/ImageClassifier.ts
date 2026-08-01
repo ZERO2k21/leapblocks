@@ -4,6 +4,8 @@ import { ensureMobileNet } from '../loadScript'
 export interface ImagePrediction {
     label: string
     confidences: Record<string, number>
+    /** True cosine similarity to the closest training sample (0-1). */
+    similarity?: number
 }
 
 // Singleton listener for WebGL context loss — shows recovery banner

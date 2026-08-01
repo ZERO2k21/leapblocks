@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { PoseClassifier } from '../../ml/classifiers/PoseClassifier'
+import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import { useIsMobile } from '../../hooks/useResponsive'
 import WorkflowIndicator from '../components/WorkflowIndicator'
@@ -9,6 +10,7 @@ import CaptureButton from '../components/CaptureButton'
 import SampleGrid from '../components/SampleGrid'
 import TrainPanel from '../components/TrainPanel'
 import TestPanel from '../components/TestPanel'
+import NotRelatedModal from '../components/NotRelatedModal'
 
 interface PoseClassifierPanelProps {
     mode: UseNeuraProjectReturn
@@ -41,6 +43,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     const [testImage, setTestImage] = useState<string | null>(null)
     const [inferenceTime, setInferenceTime] = useState(0)
     const [isDragging, setIsDragging] = useState(false)
+    const [showNotRelated, setShowNotRelated] = useState(false)
     const cameraOnRef = useRef(false)
     const streamStateRef = useRef<MediaStream | null>(null)
     const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
@@ -364,8 +367,16 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                 const result = await classifierRef.current.predictFromImage(tempCanvas)
                 const elapsed = Math.round(performance.now() - start)
                 if (result) {
-                    setPrediction(result)
-                    setInferenceTime(elapsed)
+                    if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                        setPrediction(null)
+                        setShowNotRelated(true)
+                    } else {
+                        setPrediction(result)
+                        setInferenceTime(elapsed)
+                    }
+                } else {
+                    setPrediction(null)
+                    setShowNotRelated(true)
                 }
             }
         } catch { /* prediction failed */ }
@@ -414,8 +425,16 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                     const result = await classifierRef.current.predictFromImage(canvas)
                     const elapsed = Math.round(performance.now() - start)
                     if (result) {
-                        setPrediction(result)
-                        setInferenceTime(elapsed)
+                        if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                            setPrediction(null)
+                            setShowNotRelated(true)
+                        } else {
+                            setPrediction(result)
+                            setInferenceTime(elapsed)
+                        }
+                    } else {
+                        setPrediction(null)
+                        setShowNotRelated(true)
                     }
                 }
             }
@@ -768,6 +787,12 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                     </div>
                 </div>
             )}
+
+            <NotRelatedModal
+                isOpen={showNotRelated}
+                onClose={() => setShowNotRelated(false)}
+                onUpload={() => testFileInputRef.current?.click()}
+            />
         </div>
     )
 }
