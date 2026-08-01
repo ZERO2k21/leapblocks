@@ -329,13 +329,19 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     try {
       // Fetch quiz details
       const quizRes = await apiGet(`${QUIZZES_PATH}/${quizId}`, token);
-      setActiveQuiz(quizRes.data);
+      const quiz = { ...quizRes.data, questions: [...(quizRes.data.questions || [])] };
+      // Shuffle question order (answers are keyed by question id, so scoring is unaffected)
+      for (let i = quiz.questions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [quiz.questions[i], quiz.questions[j]] = [quiz.questions[j], quiz.questions[i]];
+      }
+      setActiveQuiz(quiz);
 
       // Start attempt
       const attemptRes = await apiPost(`${QUIZZES_PATH}/${quizId}/start`, token, {});
       setAttemptId(attemptRes.data.attemptId);
       setAnswers({});
-      const firstQId = quizRes.data.questions?.[0]?.id;
+      const firstQId = quiz.questions?.[0]?.id;
       setCurrentQuestionIndex(0);
       setVisitedQuestions(firstQId ? { [firstQId]: true } : {});
       setView('taking');
