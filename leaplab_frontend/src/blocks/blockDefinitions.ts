@@ -367,7 +367,7 @@ const blockDefinitions: Record<string, BlockDefinition> = {
         category: 'looks',
         color: COLORS.looks,
         shape: 'stack',
-        message: 'say %1 for %2 seconds',
+        message: '🗣️ say %1 for %2 seconds',
         inputs: [
             { type: 'string', name: 'MESSAGE', default: 'Hello!' },
             { type: 'number', name: 'SECS', default: 2 }
@@ -378,7 +378,7 @@ const blockDefinitions: Record<string, BlockDefinition> = {
         category: 'looks',
         color: COLORS.looks,
         shape: 'stack',
-        message: 'say %1',
+        message: '🗣️ say %1',
         inputs: [{ type: 'string', name: 'MESSAGE', default: 'Hello!' }]
     },
     'looks_thinkforsecs': {
@@ -386,7 +386,7 @@ const blockDefinitions: Record<string, BlockDefinition> = {
         category: 'looks',
         color: COLORS.looks,
         shape: 'stack',
-        message: 'think %1 for %2 seconds',
+        message: '💭 think %1 for %2 seconds',
         inputs: [
             { type: 'string', name: 'MESSAGE', default: 'Hmm...' },
             { type: 'number', name: 'SECS', default: 2 }
@@ -397,7 +397,7 @@ const blockDefinitions: Record<string, BlockDefinition> = {
         category: 'looks',
         color: COLORS.looks,
         shape: 'stack',
-        message: 'think %1',
+        message: '💭 think %1',
         inputs: [{ type: 'string', name: 'MESSAGE', default: 'Hmm...' }]
     },
     'looks_switchcostumeto': {

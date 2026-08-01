@@ -13,7 +13,7 @@ export function registerLeapRenderer(blocklyInstance: any): void {
         constructor() {
             super();
 
-            const S = 1.0;
+            const S = 0.88;
 
             this.CORNER_RADIUS = 6;
             this.notchOffsetLeft_ = 12;
@@ -27,8 +27,8 @@ export function registerLeapRenderer(blocklyInstance: any): void {
             this.FIELD_BORDER_RECT_X_PADDING = Math.round(8 * S);
 
             this.FIELD_TEXT_FONTWEIGHT = '700';
-            this.FIELD_TEXT_FONTFAMILY = '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif';
-            this.FIELD_TEXT_FONTSIZE = 15;
+            this.FIELD_TEXT_FONTFAMILY = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
+            this.FIELD_TEXT_FONTSIZE = 14;
 
             this.CORNER_RADIUS = 6;
             this.CHECKBOX_SIZE = Math.round(16 * S);

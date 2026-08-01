@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Libertinus+Math&display=swap');
+
 /**
  * Copyright (c) 2026 Creoleap Technologies Pvt. Ltd.
  * All rights reserved. Proprietary and confidential.
@@ -26,11 +28,18 @@
 }
 
 /* Block text styling */
-.blocklyText {
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-  font-size: 15px !important;
+.blocklyText,
+.blocklySvg text,
+.blocklyEditableText text,
+.blocklyNonEditableText text {
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+  font-size: 14px !important;
   font-weight: 700 !important;
   line-height: 1.2 !important;
+  text-transform: capitalize !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: geometricPrecision !important;
 }
 
 /* Block connection styling */
@@ -95,9 +104,12 @@
   border: none !important;
   border-radius: 4px !important;
   padding: 2px 4px !important;
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-  font-size: 14px !important;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+  font-size: 13px !important;
   font-weight: 700 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: geometricPrecision !important;
 }
 
 .blocklyFieldTextInput:focus {
@@ -142,7 +154,7 @@
   background-color: #fff !important;
   border: 1px solid #ddd !important;
   border-radius: 4px !important;
-  font-family: 'Helvetica Neue', Arial, sans-serif !important;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
   font-size: 11px !important;
   padding: 4px !important;
 }
@@ -481,9 +493,13 @@
 .blocklyEditableText:not(.blocklyDropdownTextParent) .blocklyText,
 .blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect)+.blocklyText {
   fill: #575E75 !important;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-  font-size: 14px !important;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+  font-size: 13px !important;
   font-weight: 700 !important;
+  text-transform: capitalize !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: geometricPrecision !important;
 }
 
 /* 2. DROPDOWN FIELDS - White background with Dark text */
@@ -501,6 +517,7 @@
 .blocklyDropdownTextParent .blocklyText {
   fill: #575E75 !important;
   font-weight: 700 !important;
+  text-transform: capitalize !important;
 }
 
 /* Explicitly target uneditable parts of white inputs to stay dark */
@@ -532,11 +549,13 @@
   border-radius: 12px !important;
   box-shadow: 0 0 0 3px rgba(76, 151, 255, 0.4) !important;
   padding: 0 6px !important;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-  font-size: 13px !important;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
   box-sizing: border-box !important;
   caret-color: #000 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
 }
 
 .blocklyHtmlInput::selection,
@@ -799,10 +818,14 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.blocklyShadow .blocklyText) {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-  font-size: 15px !important;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+  font-size: 14px !important;
   font-weight: 700 !important;
   fill: rgb(255, 255, 255) !important;
+  text-transform: capitalize !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: geometricPrecision !important;
 }
 
 
@@ -846,10 +869,11 @@
 .blocklyDropDownDiv .goog-menuitem,
 .blocklyDropDownDiv .blocklyMenuItem {
   padding: 8px 20px !important;
-  font-family: 'Segoe UI', sans-serif !important;
-  font-size: 14px !important;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+  font-size: 13px !important;
   font-weight: 600 !important;
   color: #333 !important;
+  text-transform: capitalize !important;
   /* Force dark text explicitly */
   cursor: pointer !important;
   background-color: transparent !important;

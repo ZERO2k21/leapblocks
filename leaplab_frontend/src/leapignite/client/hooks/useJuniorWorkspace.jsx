@@ -260,7 +260,7 @@ export function useJuniorWorkspace({
                 zoom: {
                     controls: false,
                     wheel: true,
-                    startScale: 1.0,
+                    startScale: 0.85,
                     maxScale: 3,
                     minScale: 0.3,
                     scaleSpeed: 1.2

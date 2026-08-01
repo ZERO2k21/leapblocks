@@ -2,5 +2,6 @@
   "files.associations": {
     "bun.lock": "jsonc",
     "**/bun.lock": "jsonc"
-  }
+  },
+  "css.lint.unknownAtRules": "ignore"
 }

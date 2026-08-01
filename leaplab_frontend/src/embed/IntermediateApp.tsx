@@ -1941,7 +1941,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         grid: { spacing: 20, length: 3, colour: '#e8e8e8', snap: true },
 
-                        zoom: { controls: true, wheel: true, startScale: 1.0, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
+                        zoom: { controls: true, wheel: true, startScale: 0.85, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
 
                         trashcan: true,
 
@@ -2189,7 +2189,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             // Lock the flyout scale so blocks inside don't zoom
                             // with the main workspace viewport.
-                            const FIXED_FLYOUT_SCALE = 0.85;
+                            const FIXED_FLYOUT_SCALE = 0.8;
                             flyout.getFlyoutScale = () => FIXED_FLYOUT_SCALE;
                             if (flyout.getWorkspace()) {
                                 flyout.getWorkspace().setScale(FIXED_FLYOUT_SCALE);
