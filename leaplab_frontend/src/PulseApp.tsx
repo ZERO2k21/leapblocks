@@ -589,6 +589,17 @@ export default function PulseApp({ onBack }: PulseAppProps) {
                 )}
               </div>
 
+              {/* Quiz Rules Warning */}
+              <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3.5 mb-6 flex items-start gap-2.5 text-xs text-amber-900 shadow-sm">
+                <span className="text-base shrink-0 select-none">⚠️</span>
+                <div className="flex-1">
+                  <div className="font-extrabold text-amber-950 text-[11px] uppercase tracking-wider mb-0.5">Important Rules</div>
+                  <div className="font-medium text-amber-900 leading-snug">
+                    Do not switch tabs or leave the window during the quiz. Doing so will automatically submit your test.
+                  </div>
+                </div>
+              </div>
+
               {/* Action Buttons */}
               <div className="flex items-center gap-3">
                 <button

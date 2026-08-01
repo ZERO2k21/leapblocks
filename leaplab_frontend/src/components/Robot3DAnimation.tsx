@@ -151,8 +151,7 @@ const Robot3DAnimation: React.FC<Robot3DAnimationProps> = ({ onSelect }) => {
           x5-video-player-inline="true"
           preload="auto"
           disablePictureInPicture
-          // @ts-ignore custom HTML5 attribute
-          disableremoteplayback="true"
+          disableRemotePlayback={true}
           controlsList="nodownload nofullscreen noremoteplayback"
           onContextMenu={(e) => e.preventDefault()}
         >
