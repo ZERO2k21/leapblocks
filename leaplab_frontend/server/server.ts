@@ -845,6 +845,9 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
     const { stdout, stderr, code: exitCode } = await runCLI(cliArgs);
 
     if (exitCode !== 0) {
+      console.error('[SERVER] /compile/esp32: COMPILE FAILED (exit', exitCode + ')');
+      console.error('[SERVER] /compile/esp32: stderr:', (stderr || '').slice(-3000));
+      console.error('[SERVER] /compile/esp32: stdout tail:', (stdout || '').slice(-1500));
       return res.json({ success: false, errors: stderr || stdout || `Exit code ${exitCode}` });
     }
 
@@ -853,6 +856,7 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
       ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
 
     if (!binFile) {
+      console.error('[SERVER] /compile/esp32: no .bin produced. Files:', files.join(', '));
       return res.json({ success: false, errors: `No .bin found. Files: ${files.join(', ')}` });
     }
 
@@ -905,9 +909,10 @@ app.post('/transpile', async (req: Request, res: Response) => {
       if (exitCode !== 0) {
         return res.json({ success: false, errors: stderr || 'Compilation validation failed' });
       }
-    } catch (err: any) {
-      return res.json({ success: false, errors: err.message });
-    } finally {
+  } catch (err: any) {
+    console.error('[SERVER] /compile/esp32: EXCEPTION:', err.message);
+    return res.json({ success: false, errors: err.message });
+  } finally {
       try { if (fs.existsSync(sketchDir)) fs.rmSync(sketchDir, { recursive: true, force: true }); } catch {}
     }
   }
