@@ -7,7 +7,7 @@ This folder contains NSIS customization for the LeapBlocks Windows installer.
 Run from the repository root:
 
 ```powershell
-npm run dist:win
+bun run dist:win
 ```
 
 This builds the Electron app and creates an NSIS installer in `out/`.

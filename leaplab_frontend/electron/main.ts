@@ -128,7 +128,7 @@ function startCompileServer(): void {
 
   if (!fs.existsSync(serverPath)) {
     console.log('[COMPILE-SERVER] Server file not found at:', serverPath);
-    console.log('[COMPILE-SERVER] Run: cd server && npm install');
+    console.log('[COMPILE-SERVER] Run: cd server && bun install');
     return;
   }
 
@@ -138,7 +138,7 @@ function startCompileServer(): void {
     : path.join(process.resourcesPath, 'server', 'node_modules');
 
   if (!fs.existsSync(nmPath)) {
-    console.log('[COMPILE-SERVER] node_modules missing — run: cd server && npm install');
+    console.log('[COMPILE-SERVER] node_modules missing — run: cd server && bun install');
     return;
   }
 

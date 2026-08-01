@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd leaplab_frontend && npm run build:web",
+  "buildCommand": "cd leaplab_frontend && bun run build:web",
   "outputDirectory": "leaplab_frontend/build",
   "framework": "vite",
   "headers": [

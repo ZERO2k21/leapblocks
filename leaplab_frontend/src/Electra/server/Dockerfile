@@ -1,4 +1,4 @@
-FROM node:18-slim
+FROM oven/bun:1-slim
 
 # Install dependencies for arduino-cli
 RUN apt-get update && apt-get install -y curl ca-certificates && rm -rf /var/lib/apt/lists/*
@@ -19,9 +19,9 @@ RUN arduino-cli config init && \
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN bun install
 COPY . .
-RUN npm run build
+RUN bun run build
 
 EXPOSE 3001
-CMD ["node", "dist/index.js"]
+CMD ["bun", "run", "dist/index.js"]

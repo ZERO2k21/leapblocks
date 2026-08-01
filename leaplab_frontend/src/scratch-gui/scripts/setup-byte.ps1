@@ -57,7 +57,7 @@ if ($missingFiles.Count -eq 0) {
     
     Write-Host "Next steps:" -ForegroundColor Cyan
     Write-Host "  1. Verify transparent backgrounds on all 4 images" -ForegroundColor White
-    Write-Host "  2. Restart your dev server (npm run dev)" -ForegroundColor White
+    Write-Host "  2. Restart your dev server (bun dev)" -ForegroundColor White
     Write-Host "  3. Open the sprite library in your application" -ForegroundColor White
     Write-Host "  4. Search for 'Byte' or 'tech' or 'coding'" -ForegroundColor White
     Write-Host "  5. Add it to your project and test!" -ForegroundColor White

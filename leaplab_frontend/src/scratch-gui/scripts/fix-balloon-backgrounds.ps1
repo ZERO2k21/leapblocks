@@ -98,7 +98,7 @@ if ($filesMissing -gt 0) {
     Write-Host "✅ All balloon sprites are ready!" -ForegroundColor Green
     Write-Host ""
     Write-Host "Next steps:" -ForegroundColor Cyan
-    Write-Host "1. Run: npm run dev" -ForegroundColor White
+    Write-Host "1. Run: bun dev" -ForegroundColor White
     Write-Host "2. Check the Balloon1 sprite in your application" -ForegroundColor White
     Write-Host "3. Verify all 5 colors appear with transparent backgrounds" -ForegroundColor White
     Write-Host ""

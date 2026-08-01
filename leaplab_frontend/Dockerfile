@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM oven/bun:1-slim
 
 RUN apt-get update && apt-get install -y \
     curl \
@@ -51,19 +51,17 @@ RUN arduino-cli lib install \
 
 RUN chmod -R 777 /app/arduino-data
 
-RUN npm install -g tsx
-
 WORKDIR /app
 
-COPY server/package.json server/package-lock.json* /tmp/server/
-RUN cd /tmp/server && npm install --production && \
+COPY server/package.json server/bun.lock* /tmp/server/
+RUN cd /tmp/server && bun install --production && \
     mkdir -p /app && cp -r /tmp/server/node_modules /app/node_modules
 
 COPY --chmod=755 server/ ./server/
 COPY src/creova/apk/ ./src/creova/apk/
 COPY src/creova/apk/tools/ ./tools/
-RUN npx --yes esbuild src/creova/apk/buildAPK.ts --bundle --platform=node --target=node20 --outfile=src/creova/apk/buildAPK.js --external:fs-extra --external:child_process --external:path --external:os 2>/dev/null || \
-    echo "[INFO] APK pre-compile skipped — tsx handles .ts at runtime"
+RUN bun x esbuild src/creova/apk/buildAPK.ts --bundle --platform=node --target=node20 --outfile=src/creova/apk/buildAPK.js --external:fs-extra --external:child_process --external:path --external:os 2>/dev/null || \
+    echo "[INFO] APK pre-compile skipped — bun handles .ts at runtime"
 RUN cp /app/arduino-cli.yaml /app/server/arduino-cli.yaml && \
     chmod 777 /app/server/arduino-cli.yaml
 
@@ -75,4 +73,4 @@ EXPOSE 3002
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:3001/health || exit 1
 
-CMD ["tsx", "server/server.ts"]
+CMD ["bun", "run", "server/server.ts"]

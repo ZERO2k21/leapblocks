@@ -44,7 +44,7 @@ if ($missingFiles.Count -eq 0) {
     Write-Host "SUCCESS: All sprite files are in place!" -ForegroundColor Green
     Write-Host ""
     Write-Host "Next steps:" -ForegroundColor Cyan
-    Write-Host "  1. Restart your dev server (npm run dev)" -ForegroundColor White
+    Write-Host "  1. Restart your dev server (bun dev)" -ForegroundColor White
     Write-Host "  2. Open the sprite library in your application" -ForegroundColor White
     Write-Host "  3. Search for 'Superhero Lion'" -ForegroundColor White
     Write-Host "  4. Add it to your project and test!" -ForegroundColor White

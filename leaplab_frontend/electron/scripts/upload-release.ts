@@ -44,7 +44,7 @@ async function main(): Promise<void> {
   // 1. Verify that build files exist in out/
   const latestYmlPath = path.join(OUT_DIR, 'latest.yml');
   if (!fs.existsSync(latestYmlPath)) {
-    console.error('❌ Error: out/latest.yml not found. Have you run "npm run dist:win" or "npm run dist"?');
+    console.error('❌ Error: out/latest.yml not found. Have you run "bun run dist:win" or "bun run dist"?');
     process.exit(1);
   }
 

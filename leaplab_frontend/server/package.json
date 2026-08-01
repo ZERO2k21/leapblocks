@@ -5,10 +5,10 @@
   "type": "module",
   "main": "server.ts",
   "scripts": {
-    "start": "npx tsx server.ts",
-    "dev": "npx tsx watch server.ts",
-    "proxy": "npx tsx tcp-proxy.ts",
-    "start:all": "concurrently \"npm run start\" \"npm run proxy\""
+    "start": "bun run server.ts",
+    "dev": "bun --watch server.ts",
+    "proxy": "bun run tcp-proxy.ts",
+    "start:all": "concurrently \"bun run start\" \"bun run proxy\""
   },
   "engines": {
     "node": ">=18.0.0"

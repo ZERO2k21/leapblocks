@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM oven/bun:1-slim
 
 RUN apt-get update && apt-get install -y \
     curl \
@@ -43,8 +43,8 @@ RUN arduino-cli lib install \
 
 WORKDIR /app
 
-COPY server/package.json server/package-lock.json* /tmp/server/
-RUN cd /tmp/server && npm install --production && \
+COPY server/package.json server/bun.lock* /tmp/server/
+RUN cd /tmp/server && bun install --production && \
     mkdir -p /app && cp -r /tmp/server/node_modules /app/node_modules
 
 # --chmod forces BuildKit to create a unique layer hash, preventing stale cache
@@ -58,4 +58,4 @@ EXPOSE 3002
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:3001/health || exit 1
 
-CMD ["node", "server/server.js"]
+CMD ["bun", "run", "server/server.ts"]

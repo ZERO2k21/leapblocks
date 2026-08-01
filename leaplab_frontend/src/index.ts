@@ -79,7 +79,7 @@ function startCompileServer() {
   const nmPath = path.join(serverDir, 'node_modules');
 
   if (!fs.existsSync(nmPath)) {
-    log('COMPILE-SERVER', `node_modules missing at: ${nmPath} — run: cd server && npm install`);
+    log('COMPILE-SERVER', `node_modules missing at: ${nmPath} — run: cd server && bun install`);
     return;
   }
 

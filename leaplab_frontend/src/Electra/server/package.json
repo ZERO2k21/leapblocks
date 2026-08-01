@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "ts-node index.ts",
+    "dev": "bun run index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
-    "start:proxy": "ts-node tcp-proxy.ts",
-    "start:all": "concurrently \"npm run start\" \"npm run start:proxy\""
+    "start": "bun run dist/index.js",
+    "start:proxy": "bun run tcp-proxy.ts",
+    "start:all": "concurrently \"bun run start\" \"bun run start:proxy\""
   },
   "dependencies": {
     "cors": "^2.8.5",
