@@ -12,7 +12,7 @@
     "esModuleInterop": true,
     "noImplicitAny": true,
     "sourceMap": false,
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "dist",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
@@ -22,6 +22,7 @@
     "emitDecoratorMetadata": true,
     "noEmit": true,
     "incremental": true,
+    "types": ["node"],
     "paths": {
       "@/*": ["./src/*"],
       "@blockly-runtime": [
@@ -31,7 +32,8 @@
   },
   "include": [
     "src/**/*",
-    "src/types/**/*"
+    "src/types/**/*",
+    "electron/**/*"
   ],
   "exclude": [
     "node_modules",
