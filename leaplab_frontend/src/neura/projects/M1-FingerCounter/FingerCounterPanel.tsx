@@ -12,7 +12,7 @@ interface FingerCounterPanelProps {
 type CaptureStatus = 'idle' | 'loading-model' | 'detecting' | 'success' | 'no-hand' | 'error'
 
 const DETECT_THROTTLE_MS = 33
-const PREDICT_THROTTLE_MS = 500
+const PREDICT_THROTTLE_MS = 100
 
 const FINGER_LABELS: Record<string, number> = {
     'One': 1, 'Two': 2, 'Three': 3, 'Four': 4, 'Five': 5
@@ -35,6 +35,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
     const lastPredictTimeRef = useRef(0)
     const audioContextRef = useRef<AudioContext | null>(null)
     const majorityVoteRef = useRef(new MajorityVoteBuffer(5))
+    const lastSoundCountRef = useRef(0)
 
     const [isCapturing, setIsCapturing] = useState(false)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
@@ -52,6 +53,9 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
     const [currentCount, setCurrentCount] = useState(0)
     const [countHistory, setCountHistory] = useState<number[]>([])
     const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
+    const [testImage, setTestImage] = useState<string | null>(null)
+    const [autoPredict, setAutoPredict] = useState(true)
+    const testFileInputRef = useRef<HTMLInputElement>(null)
 
     const showSaved = useCallback((msg: string) => {
         setSavedMessage(msg)
@@ -153,7 +157,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
 
     // Rule-based classifier: no KNN rebuild needed
     useEffect(() => {
-        if (mode.mode !== 'test') return
+        if (mode.mode !== 'test' || testImage) return
         if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
             testCameraStartedRef.current = true
             startCamera()
@@ -180,24 +184,58 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                             
                             const elapsed = Math.round(performance.now() - start)
                             setInferenceTime(elapsed)
-                            setHandDetected(true)
                             
                             // Build prediction result with all class confidences
                             const confidences: Record<string, number> = {}
                             for (const [label, conf] of Object.entries(result.details)) {
                                 confidences[label] = conf
                             }
-                            setPrediction({ label: smoothed, confidences })
                             
-                            const count = FINGER_LABELS[smoothed] || 0
-                            setCurrentCount(count)
-                            setCountHistory(prev => [...prev.slice(-19), count])
-                            playCountSound(count)
+                            // Filter based on confidenceThreshold
+                            const predConfidence = result.confidence
+                            if (predConfidence < confidenceThreshold) {
+                                setPrediction(null)
+                                setHandDetected(false)
+                                setCurrentCount(0)
+                                if (overlayCanvasRef.current) {
+                                    const overlayCtx = overlayCanvasRef.current.getContext('2d')
+                                    if (overlayCtx) {
+                                        overlayCtx.clearRect(0, 0, overlayCanvasRef.current.width, overlayCanvasRef.current.height)
+                                    }
+                                }
+                            } else {
+                                setPrediction({ label: smoothed, confidences })
+                                setHandDetected(true)
+                                
+                                const count = FINGER_LABELS[smoothed] || 0
+                                setCurrentCount(count)
+                                setCountHistory(prev => [...prev.slice(-19), count])
+                                
+                                if (lastSoundCountRef.current !== count) {
+                                    playCountSound(count)
+                                    lastSoundCountRef.current = count
+                                }
+
+                                // Draw hand skeleton onto overlay canvas for real-time tracking feedback
+                                if (overlayCanvasRef.current) {
+                                    overlayCanvasRef.current.width = videoRef.current.videoWidth || 640
+                                    overlayCanvasRef.current.height = videoRef.current.videoHeight || 480
+                                    classifierRef.current.drawHand(overlayCanvasRef.current, keypoints)
+                                }
+                            }
                         } else {
                             setPrediction(null)
                             setHandDetected(false)
                             setCurrentCount(0)
                             majorityVoteRef.current.clear()
+                            lastSoundCountRef.current = 0
+                            // Clear overlay canvas when no hand is detected
+                            if (overlayCanvasRef.current) {
+                                const overlayCtx = overlayCanvasRef.current.getContext('2d')
+                                if (overlayCtx) {
+                                    overlayCtx.clearRect(0, 0, overlayCanvasRef.current.width, overlayCanvasRef.current.height)
+                                }
+                            }
                         }
                     }
                 } catch { /* ignore */ }
@@ -207,6 +245,10 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
         }
         lastPredictTimeRef.current = performance.now()
         const tick = () => {
+            if (!autoPredict) {
+                animFrameRef.current = requestAnimationFrame(tick)
+                return
+            }
             const now = performance.now()
             if (now - lastPredictTimeRef.current >= PREDICT_THROTTLE_MS) {
                 lastPredictTimeRef.current = now
@@ -216,7 +258,234 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [mode.mode, stream, startCamera, playCountSound])
+    }, [mode.mode, stream, startCamera, playCountSound, autoPredict, confidenceThreshold])
+
+    const manualPredict = useCallback(async () => {
+        if (isPredictingRef.current) return
+        let elementToDetect: HTMLVideoElement | HTMLImageElement | null = null
+        let width = 640
+        let height = 480
+        
+        if (testImage) {
+            const img = new Image()
+            img.src = testImage
+            await new Promise<void>((resolve) => {
+                img.onload = () => resolve()
+                img.onerror = () => resolve()
+            })
+            if (img.complete && img.naturalWidth > 0) {
+                elementToDetect = img
+                width = img.naturalWidth
+                height = img.naturalHeight
+            }
+        } else if (streamStateRef.current && videoRef.current) {
+            elementToDetect = videoRef.current
+            width = videoRef.current.videoWidth || 640
+            height = videoRef.current.videoHeight || 480
+        }
+        
+        if (!elementToDetect || !canvasRef.current) return
+        
+        isPredictingRef.current = true
+        setIsProcessing(true)
+        try {
+            const start = performance.now()
+            const ctx = canvasRef.current.getContext('2d')
+            if (ctx) {
+                canvasRef.current.width = width
+                canvasRef.current.height = height
+                ctx.drawImage(elementToDetect, 0, 0, width, height)
+                
+                const keypoints = await classifierRef.current.detectHand(canvasRef.current)
+                if (keypoints && keypoints.length > 0) {
+                    const features = classifierRef.current.extractFeatures(keypoints)
+                    const result = classifyFingerCount(features)
+                    const smoothed = majorityVoteRef.current.add(result.label)
+                    
+                    const elapsed = Math.round(performance.now() - start)
+                    setInferenceTime(elapsed)
+                    
+                    const confidences: Record<string, number> = {}
+                    for (const [label, conf] of Object.entries(result.details)) {
+                        confidences[label] = conf
+                    }
+                    
+                    const predConfidence = result.confidence
+                    if (predConfidence < confidenceThreshold) {
+                        setPrediction(null)
+                        setHandDetected(false)
+                        setCurrentCount(0)
+                        showSaved('⚠️ Confidence below threshold!')
+                        if (overlayCanvasRef.current) {
+                            const overlayCtx = overlayCanvasRef.current.getContext('2d')
+                            if (overlayCtx) {
+                                overlayCtx.clearRect(0, 0, overlayCanvasRef.current.width, overlayCanvasRef.current.height)
+                            }
+                        }
+                    } else {
+                        setPrediction({ label: smoothed, confidences })
+                        setHandDetected(true)
+                        const count = FINGER_LABELS[smoothed] || 0
+                        setCurrentCount(count)
+                        setCountHistory(prev => [...prev.slice(-19), count])
+                        
+                        if (lastSoundCountRef.current !== count) {
+                            playCountSound(count)
+                            lastSoundCountRef.current = count
+                        }
+                        
+                        if (overlayCanvasRef.current) {
+                            overlayCanvasRef.current.width = width
+                            overlayCanvasRef.current.height = height
+                            classifierRef.current.drawHand(overlayCanvasRef.current, keypoints)
+                        }
+                    }
+                } else {
+                    setPrediction(null)
+                    setHandDetected(false)
+                    setCurrentCount(0)
+                    majorityVoteRef.current.clear()
+                    lastSoundCountRef.current = 0
+                    showSaved('⚠️ No hand detected!')
+                    if (overlayCanvasRef.current) {
+                        const overlayCtx = overlayCanvasRef.current.getContext('2d')
+                        if (overlayCtx) {
+                            overlayCtx.clearRect(0, 0, overlayCanvasRef.current.width, overlayCanvasRef.current.height)
+                        }
+                    }
+                }
+            }
+        } catch { /* ignore */ }
+        setIsProcessing(false)
+        isPredictingRef.current = false
+    }, [testImage, confidenceThreshold, playCountSound, showSaved])
+
+    const handleTestUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !file.type.startsWith('image/')) return
+        
+        const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result as string)
+            reader.readAsDataURL(file)
+        })
+        
+        setTestImage(dataUrl)
+        setCameraOn(false)
+        stopCamera()
+        
+        setTimeout(() => {
+            const img = new Image()
+            img.src = dataUrl
+            img.onload = async () => {
+                setIsProcessing(true)
+                try {
+                    const start = performance.now()
+                    if (canvasRef.current) {
+                        const width = img.naturalWidth || 640
+                        const height = img.naturalHeight || 480
+                        canvasRef.current.width = width
+                        canvasRef.current.height = height
+                        const ctx = canvasRef.current.getContext('2d')
+                        if (ctx) {
+                            ctx.drawImage(img, 0, 0, width, height)
+                            const keypoints = await classifierRef.current.detectHand(canvasRef.current)
+                            if (keypoints && keypoints.length > 0) {
+                                const features = classifierRef.current.extractFeatures(keypoints)
+                                const result = classifyFingerCount(features)
+                                
+                                const elapsed = Math.round(performance.now() - start)
+                                setInferenceTime(elapsed)
+                                
+                                const confidences: Record<string, number> = {}
+                                for (const [label, conf] of Object.entries(result.details)) {
+                                    confidences[label] = conf
+                                }
+                                
+                                const predConfidence = result.confidence
+                                if (predConfidence < confidenceThreshold) {
+                                    setPrediction(null)
+                                    setHandDetected(false)
+                                    setCurrentCount(0)
+                                    showSaved('⚠️ Confidence below threshold!')
+                                    if (overlayCanvasRef.current) {
+                                        const overlayCtx = overlayCanvasRef.current.getContext('2d')
+                                        if (overlayCtx) {
+                                            overlayCtx.clearRect(0, 0, overlayCanvasRef.current.width, overlayCanvasRef.current.height)
+                                        }
+                                    }
+                                } else {
+                                    setPrediction({ label: result.label, confidences })
+                                    setHandDetected(true)
+                                    const count = FINGER_LABELS[result.label] || 0
+                                    setCurrentCount(count)
+                                    
+                                    if (overlayCanvasRef.current) {
+                                        overlayCanvasRef.current.width = width
+                                        overlayCanvasRef.current.height = height
+                                        classifierRef.current.drawHand(overlayCanvasRef.current, keypoints)
+                                    }
+                                }
+                            } else {
+                                setPrediction(null)
+                                setHandDetected(false)
+                                setCurrentCount(0)
+                                showSaved('⚠️ No hand detected in the uploaded image.')
+                                if (overlayCanvasRef.current) {
+                                    const overlayCtx = overlayCanvasRef.current.getContext('2d')
+                                    if (overlayCtx) {
+                                        overlayCtx.clearRect(0, 0, overlayCanvasRef.current.width, overlayCanvasRef.current.height)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch {
+                    showSaved('⚠️ Failed to analyze image.')
+                }
+                setIsProcessing(false)
+            }
+        }, 100)
+    }, [confidenceThreshold, showSaved])
+
+    // Collect mode: throttled hand detection loop for overlay drawing
+    useEffect(() => {
+        if (mode.mode !== 'collect' || !stream) return
+        const detectLoop = async () => {
+            if (isPredictingRef.current) return
+            if (videoRef.current && overlayCanvasRef.current) {
+                isPredictingRef.current = true
+                try {
+                    const canvas = overlayCanvasRef.current
+                    const ctx = canvas.getContext('2d')
+                    if (ctx) {
+                        canvas.width = videoRef.current.videoWidth || 640
+                        canvas.height = videoRef.current.videoHeight || 480
+                        ctx.clearRect(0, 0, canvas.width, canvas.height)
+                        const keypoints = await classifierRef.current.detectHand(videoRef.current)
+                        if (keypoints.length > 0) {
+                            setHandDetected(true)
+                            classifierRef.current.drawHand(canvas, keypoints)
+                        } else {
+                            setHandDetected(false)
+                        }
+                    }
+                } catch { /* ignore detection loop errors */ }
+                isPredictingRef.current = false
+            }
+        }
+        lastDetectTimeRef.current = performance.now()
+        const tick = () => {
+            const now = performance.now()
+            if (now - lastDetectTimeRef.current >= DETECT_THROTTLE_MS) {
+                lastDetectTimeRef.current = now
+                detectLoop()
+            }
+            animFrameRef.current = requestAnimationFrame(tick)
+        }
+        animFrameRef.current = requestAnimationFrame(tick)
+        return () => cancelAnimationFrame(animFrameRef.current)
+    }, [mode.mode, stream])
 
     const handleCapture = useCallback(async () => {
         if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return
@@ -420,44 +689,106 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                     </div>
 
                     <div className="flex flex-col lg:flex-row gap-4 flex-1 mt-3 min-h-0">
-                        {/* Camera Feed */}
+                        {/* Camera Feed / Test Image */}
                         <div className="flex-1 flex flex-col min-w-0">
-                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
-                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
+                            <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px] flex items-center justify-center">
+                                {cameraOn && (
+                                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
+                                )}
+                                {!cameraOn && testImage && (
+                                    <img src={testImage} className="w-full h-full object-contain" />
+                                )}
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
+                                <canvas ref={overlayCanvasRef} className={`absolute inset-0 w-full h-full pointer-events-none ${testImage ? '' : '-scale-x-100'}`} />
 
                                 {cameraOn && (
-                                    <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
+                                    <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md z-10">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                                         <span className="text-white text-[9px] font-bold">🔍 LIVE</span>
+                                    </div>
+                                )}
+                                
+                                {!cameraOn && testImage && (
+                                    <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md z-10">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                                        <span className="text-white text-[9px] font-bold">📂 TEST IMAGE</span>
                                     </div>
                                 )}
 
                                 {/* Large Count Display */}
                                 {currentCount > 0 && (
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                                         <div className="animate-fade-in text-[120px] font-black drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)] leading-none" style={{ color: COUNT_COLORS[currentCount] || '#fff' }}>
                                             {currentCount}
                                         </div>
                                     </div>
                                 )}
 
-                                {!cameraOn && (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span className="text-5xl mb-3">📷</span>
-                                        <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
-                                        <p className="text-white/50 text-[10px] mb-4">Start camera to test finger counting</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 bg-[#0ea5e9] text-white rounded-xl text-xs font-bold shadow-lg">📷 Start Camera</button>
+                                {/* Loading Overlay */}
+                                {isProcessing && (
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 py-2 px-3 bg-white/90 backdrop-blur-md rounded-xl shadow-lg z-20">
+                                        <div className="w-3.5 h-3.5 border-2 border-[#0ea5e9] border-t-transparent rounded-full animate-spin" />
+                                        <span className="text-[10px] font-bold text-gray-900">Analyzing...</span>
                                     </div>
                                 )}
 
+                                {!cameraOn && !testImage && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                                        <span className="text-5xl mb-3">📷</span>
+                                        <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
+                                        <p className="text-white/50 text-[10px] mb-4">Start camera or upload an image to test</p>
+                                        <div className="flex gap-2">
+                                            <button onClick={startCamera} className="px-5 py-2.5 bg-[#0ea5e9] text-white rounded-xl text-xs font-bold shadow-lg cursor-pointer">📷 Start Camera</button>
+                                            <button onClick={() => testFileInputRef.current?.click()} className="px-5 py-2.5 bg-white text-[#0ea5e9] border-2 border-[#0ea5e9] rounded-xl text-xs font-bold shadow-lg cursor-pointer">📂 Upload Image</button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="flex items-center justify-center gap-2 mt-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1]">
-                                    {cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
-                                </button>
+                            {/* Camera & Upload Controls */}
+                            <div className="flex flex-wrap items-center justify-center gap-2.5 mt-2.5">
+                                {testImage ? (
+                                    <>
+                                        <button onClick={() => {
+                                            setTestImage(null);
+                                            setPrediction(null);
+                                            setCurrentCount(0);
+                                            if (overlayCanvasRef.current) {
+                                                const oCtx = overlayCanvasRef.current.getContext('2d');
+                                                oCtx?.clearRect(0, 0, overlayCanvasRef.current.width, overlayCanvasRef.current.height);
+                                            }
+                                        }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#f1f5f9] text-[#475569] cursor-pointer">
+                                            🔄 Clear Image & Start Live
+                                        </button>
+                                        <button onClick={() => testFileInputRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1] cursor-pointer">
+                                            📂 Upload Another
+                                        </button>
+                                        <button onClick={manualPredict} disabled={isProcessing} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white shadow-md cursor-pointer">
+                                            🔍 Scan Image
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1] cursor-pointer">
+                                            {cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
+                                        </button>
+                                        <button onClick={() => testFileInputRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1] cursor-pointer">
+                                            📂 Upload Image
+                                        </button>
+                                        {cameraOn && (
+                                            <>
+                                                <button onClick={() => setAutoPredict(p => !p)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer ${autoPredict ? 'bg-[#dcfce7] text-[#15803d]' : 'bg-[#fee2e2] text-[#b91c1c]'}`}>
+                                                    {autoPredict ? '🔄 Auto Scan: ON' : '⏸️ Auto Scan: OFF'}
+                                                </button>
+                                                {!autoPredict && (
+                                                    <button onClick={manualPredict} disabled={isProcessing} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white shadow-md cursor-pointer animate-pulse">
+                                                        🔍 Scan Hand
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -522,6 +853,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                             )}
                         </div>
                     </div>
+                    <input ref={testFileInputRef} type="file" accept="image/*" onChange={handleTestUpload} className="hidden" />
                 </div>
             )}
         </div>

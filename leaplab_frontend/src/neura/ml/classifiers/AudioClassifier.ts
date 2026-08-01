@@ -32,7 +32,7 @@ export class AudioClassifier {
             samples[i] = rawData[Math.min(midStart + i, rawData.length - 1)] ?? 0
         }
 
-        const inputTensor = tf.tensor3d(samples, [1, targetLength, 1])
+        const inputTensor = tf.tensor1d(samples)
         const result = await yamnet.executeAsync(inputTensor)
         const emb = result[1] as any
         const meanEmb = tf.mean(emb, 0) as any

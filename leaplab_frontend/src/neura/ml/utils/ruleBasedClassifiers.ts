@@ -26,18 +26,23 @@ export function classifyFingerCount(features: Float32Array): ClassificationResul
     ] : [0, 0, 0, 0, 0]
 
     const count = flags.reduce((sum, f) => sum + (f > 0.5 ? 1 : 0), 0)
+    const fingerConf = flags.reduce((sum, f) => sum + (f > 0.5 ? f : 1.0 - f), 0) / 5
+
+    const details: Record<string, number> = {
+        'Zero': 0,
+        'One': 0,
+        'Two': 0,
+        'Three': 0,
+        'Four': 0,
+        'Five': 0
+    }
+    const label = fingerNames[count] || 'Zero'
+    details[label] = fingerConf
 
     return {
-        label: fingerNames[count] || 'Zero',
-        confidence: 0.95,
-        details: {
-            'Zero': count === 0 ? 1 : 0,
-            'One': count === 1 ? 1 : 0,
-            'Two': count === 2 ? 1 : 0,
-            'Three': count === 3 ? 1 : 0,
-            'Four': count === 4 ? 1 : 0,
-            'Five': count === 5 ? 1 : 0
-        }
+        label,
+        confidence: fingerConf,
+        details
     }
 }
 
