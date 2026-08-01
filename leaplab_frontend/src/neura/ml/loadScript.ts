@@ -261,7 +261,7 @@ export async function ensureYamNet(): Promise<any> {
     yamnetModelPromise = (async () => {
         try {
             const model = await tf.loadGraphModel(
-                'https://tfhub.dev/google/tfjs-model/yamnet/1/default/1',
+                'https://tfhub.dev/google/tfjs-model/yamnet/tfjs/1',
                 { fromTFHub: true }
             )
             window.yamnet = model

@@ -17,7 +17,7 @@ const { chromium } = require('playwright');
     try {
       out.attempts.push('start loadGraphModel tfhub');
       const model = await window.tf.loadGraphModel(
-        'https://tfhub.dev/google/tfjs-model/yamnet/1/default/1',
+        'https://tfhub.dev/google/tfjs-model/yamnet/tfjs/1',
         { fromTFHub: true }
       );
       out.ok = true;
