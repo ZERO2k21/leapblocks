@@ -372,7 +372,10 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                             new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Prediction timeout')), 12000))
                         ])
                         const elapsed = Math.round(performance.now() - start)
-                        if (result && result.confidences[result.label] >= confidenceThreshold) {
+                        if (result && result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                            setPrediction(null)
+                            setHandDetected(false)
+                        } else if (result && result.confidences[result.label] >= confidenceThreshold) {
                             setPrediction(result)
                             setHandDetected(true)
                             setInferenceTime(elapsed)

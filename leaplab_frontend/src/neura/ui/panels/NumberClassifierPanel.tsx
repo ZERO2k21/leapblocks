@@ -178,8 +178,14 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         const result = await classifierRef.current.predict(canvas, 3)
                         const elapsed = Math.round(performance.now() - start)
                         if (result) {
-                            setPrediction(result)
-                            setInferenceTime(elapsed)
+                            if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                                setPrediction(null)
+                            } else {
+                                setPrediction(result)
+                                setInferenceTime(elapsed)
+                            }
+                        } else {
+                            setPrediction(null)
                         }
                     }
                 } catch (err) {
