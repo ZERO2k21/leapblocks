@@ -195,7 +195,9 @@ export class HandPoseClassifier {
             const distPipMcp = euclidean(kp[pip], kp[mcp])
             const distTipWrist = euclidean(kp[tip], wrist)
             const distPipWrist = euclidean(kp[pip], wrist)
-            return (distTipMcp > distPipMcp * 1.2 && distTipWrist > distPipWrist) ? 1 : 0
+            const ratioMcp = distTipMcp / (distPipMcp * 1.2 || 1)
+            const ratioWrist = distTipWrist / (distPipWrist || 1)
+            return Math.min(1.0, Math.max(0.0, (ratioMcp + ratioWrist) / 2))
         }
 
         const RING_MCP = 13
@@ -208,9 +210,10 @@ export class HandPoseClassifier {
         
         // Thumb: Check if the distance from thumb tip to index MCP is greater than thumb IP to index MCP,
         // and also thumb tip is farther from the wrist than thumb IP.
-        const thumbOutward = euclidean(kp[THUMB_TIP], kp[INDEX_MCP]) > euclidean(kp[THUMB_IP], kp[INDEX_MCP]) * 1.05
-        const thumbExtended = thumbOutward && (euclidean(kp[THUMB_TIP], wrist) > euclidean(kp[THUMB_IP], wrist))
-        features[67] = thumbExtended ? 1 : 0
+        const thumbOutward = euclidean(kp[THUMB_TIP], kp[INDEX_MCP]) / (euclidean(kp[THUMB_IP], kp[INDEX_MCP]) * 1.05 || 1)
+        const thumbRatioWrist = euclidean(kp[THUMB_TIP], wrist) / (euclidean(kp[THUMB_IP], wrist) || 1)
+        const thumbScore = Math.min(1.0, Math.max(0.0, (thumbOutward + thumbRatioWrist) / 2))
+        features[67] = thumbScore
 
         // --- Tip-to-wrist distances (indices 68-72), normalized by hand size ---
         const handSize = euclidean(kp[WRIST], kp[MIDDLE_MCP]) || 1
