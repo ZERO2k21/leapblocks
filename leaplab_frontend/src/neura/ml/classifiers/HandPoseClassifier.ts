@@ -4,6 +4,8 @@ import { ensureMediaPipeVision, MEDIAPIPE_WASM_URL, HAND_LANDMARKER_MODEL_URL } 
 export interface HandPosePrediction {
     label: string
     confidences: Record<string, number>
+    /** True cosine similarity to the closest training sample (0-1). */
+    similarity?: number
 }
 
 export interface HandKeypoint {

@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { ImageClassifier } from '../../ml/classifiers/ImageClassifier'
+import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import WorkflowIndicator from '../components/WorkflowIndicator'
 import StatsBar from '../components/StatsBar'
@@ -8,6 +9,7 @@ import CaptureButton from '../components/CaptureButton'
 import SampleGrid from '../components/SampleGrid'
 import TrainPanel from '../components/TrainPanel'
 import TestPanel from '../components/TestPanel'
+import NotRelatedModal from '../components/NotRelatedModal'
 
 interface ImageClassifierPanelProps {
     mode: UseNeuraProjectReturn
@@ -44,6 +46,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const [augmentMode, setAugmentMode] = useState(true)
     const [inferenceTime, setInferenceTime] = useState(0)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
+    const [showNotRelated, setShowNotRelated] = useState(false)
     const [totalEpochs, setTotalEpochs] = useState(50)
     const [currentEpoch, setCurrentEpoch] = useState(0)
     const streamRef = useRef<MediaStream | null>(null)
@@ -298,8 +301,16 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 const result = await classifierRef.current.predict(img)
                 const elapsed = Math.round(performance.now() - start)
                 if (result) {
-                    setPrediction(result)
-                    setInferenceTime(elapsed)
+                    if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                        setPrediction(null)
+                        setShowNotRelated(true)
+                    } else {
+                        setPrediction(result)
+                        setInferenceTime(elapsed)
+                    }
+                } else {
+                    setPrediction(null)
+                    setShowNotRelated(true)
                 }
             }
         } catch { /* prediction failed */ }
@@ -341,8 +352,16 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             const result = await classifierRef.current.predict(videoRef.current)
             const elapsed = Math.round(performance.now() - start)
             if (result) {
-                setPrediction(result)
-                setInferenceTime(elapsed)
+                if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                    setPrediction(null)
+                    setShowNotRelated(true)
+                } else {
+                    setPrediction(result)
+                    setInferenceTime(elapsed)
+                }
+            } else {
+                setPrediction(null)
+                setShowNotRelated(true)
             }
         } catch (err) {
             console.error('[Neura] Test capture prediction error:', err)
@@ -917,6 +936,12 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     </div>
                 </div>
             )}
+
+            <NotRelatedModal
+                isOpen={showNotRelated}
+                onClose={() => setShowNotRelated(false)}
+                onUpload={() => testFileInputRef.current?.click()}
+            />
         </div>
     )
 }

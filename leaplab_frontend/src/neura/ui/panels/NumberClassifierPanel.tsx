@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { NumberClassifier } from '../../ml/classifiers/NumberClassifier'
+import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import { useIsMobile } from '../../hooks/useResponsive'
 import CaptureButton from '../components/CaptureButton'
@@ -8,6 +9,7 @@ import SampleGrid from '../components/SampleGrid'
 import WorkflowIndicator from '../components/WorkflowIndicator'
 import TrainPanel from '../components/TrainPanel'
 import TestPanel from '../components/TestPanel'
+import NotRelatedModal from '../components/NotRelatedModal'
 
 interface NumberClassifierPanelProps {
     mode: UseNeuraProjectReturn
@@ -41,6 +43,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const [testImage, setTestImage] = useState<string | null>(null)
     const [inferenceTime, setInferenceTime] = useState(0)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
+    const [showNotRelated, setShowNotRelated] = useState(false)
     const [inputMode, setInputMode] = useState<'draw' | 'camera'>('draw')
     const [augmentMode, setAugmentMode] = useState(true)
     const [currentEpoch, setCurrentEpoch] = useState(0)
@@ -352,8 +355,16 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                 const result = await classifierRef.current.predict(img, 3)
                 const elapsed = Math.round(performance.now() - start)
                 if (result) {
-                    setPrediction(result)
-                    setInferenceTime(elapsed)
+                    if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                        setPrediction(null)
+                        setShowNotRelated(true)
+                    } else {
+                        setPrediction(result)
+                        setInferenceTime(elapsed)
+                    }
+                } else {
+                    setPrediction(null)
+                    setShowNotRelated(true)
                 }
             }
         } catch { /* prediction failed */ }
@@ -396,8 +407,16 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             const result = await classifierRef.current.predict(drawCanvasRef.current, 3)
             const elapsed = Math.round(performance.now() - start)
             if (result) {
-                setPrediction(result)
-                setInferenceTime(elapsed)
+                if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                    setPrediction(null)
+                    setShowNotRelated(true)
+                } else {
+                    setPrediction(result)
+                    setInferenceTime(elapsed)
+                }
+            } else {
+                setPrediction(null)
+                setShowNotRelated(true)
             }
         } catch (err) {
             console.error('[NumberClassifier] Test capture error:', err)
@@ -828,7 +847,16 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                             stopCamera()
                                             setIsProcessing(true)
                                             classifierRef.current.predict(canvas, 3).then(result => {
-                                                if (result) { setPrediction(result); setInferenceTime(0) }
+                                                if (result && result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                                                    setPrediction(null)
+                                                    setShowNotRelated(true)
+                                                } else if (result) {
+                                                    setPrediction(result)
+                                                    setInferenceTime(0)
+                                                } else {
+                                                    setPrediction(null)
+                                                    setShowNotRelated(true)
+                                                }
                                                 setIsProcessing(false)
                                             }).catch(() => setIsProcessing(false))
                                         }}
@@ -898,6 +926,12 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     </div>
                 </div>
             )}
+
+            <NotRelatedModal
+                isOpen={showNotRelated}
+                onClose={() => setShowNotRelated(false)}
+                onUpload={() => testFileInputRef.current?.click()}
+            />
         </div>
     )
 }

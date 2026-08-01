@@ -5,6 +5,8 @@ import { calcAngle, normalizeAngle, midpoint, lineAngle } from '../utils/geometr
 export interface PosePrediction {
     label: string
     confidences: Record<string, number>
+    /** True cosine similarity to the closest training sample (0-1). */
+    similarity?: number
 }
 
 export interface Keypoint {
