@@ -737,7 +737,7 @@ app.post('/compile', async (req: Request, res: Response) => {
 
     cliArgs.push(sketchDir);
 
-    const { stdout, stderr, code: exitCode } = await runCLI(cliArgs);
+    const { stdout, stderr, code: exitCode } = await runCLI(cliArgs, 900_000);
 
     if (exitCode !== 0) {
       return res.json({ success: false, errors: stderr || stdout || `Exit code ${exitCode}` });
@@ -842,7 +842,9 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
 
     cliArgs.push(sketchDir);
 
-    const { stdout, stderr, code: exitCode } = await runCLI(cliArgs);
+    // ESP32 builds can take 2-4 minutes on Render — don't kill them at the
+    // default 120s timeout.
+    const { stdout, stderr, code: exitCode } = await runCLI(cliArgs, 900_000);
 
     if (exitCode !== 0) {
       console.error('[SERVER] /compile/esp32: COMPILE FAILED (exit', exitCode + ')');
