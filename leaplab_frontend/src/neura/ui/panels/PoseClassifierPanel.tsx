@@ -189,7 +189,9 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                         ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height)
                         const result = await classifierRef.current.predictFromImage(canvasRef.current)
                         const elapsed = Math.round(performance.now() - start)
-                        if (result && result.confidences[result.label] >= confidenceThreshold) {
+                        if (result && result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                            setPrediction(null)
+                        } else if (result && result.confidences[result.label] >= confidenceThreshold) {
                             setPrediction(result)
                             setInferenceTime(elapsed)
                         } else if (result) {

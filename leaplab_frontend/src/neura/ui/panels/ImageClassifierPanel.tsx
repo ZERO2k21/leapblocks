@@ -183,8 +183,14 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     const result = await classifierRef.current.predict(videoRef.current)
                     const elapsed = Math.round(performance.now() - start)
                     if (result) {
-                        setPrediction(result)
-                        setInferenceTime(elapsed)
+                        if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                            setPrediction(null)
+                        } else {
+                            setPrediction(result)
+                            setInferenceTime(elapsed)
+                        }
+                    } else {
+                        setPrediction(null)
                     }
                 } catch (err) {
                     console.error('Prediction error:', err)
