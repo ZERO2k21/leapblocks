@@ -1,5 +1,5 @@
 import { KNNClassifier, ensureTf } from '../KNNClassifier'
-import { ensureHandPose } from '../loadScript'
+import { ensureMediaPipeVision, MEDIAPIPE_WASM_URL, HAND_LANDMARKER_MODEL_URL } from '../loadScript'
 
 export interface HandPosePrediction {
     label: string
@@ -28,6 +28,16 @@ const HAND_CONNECTIONS: [number, number][] = [
 
 const HAND_DRAW_COLOR = '#0ea5e9'
 const HAND_DRAW_COLOR_LIGHT = '#7dd3fc'
+
+// MediaPipe Hands 21 landmark names (must match hand-pose-detection ordering)
+const LANDMARK_NAMES = [
+    'wrist',
+    'thumb_cmc', 'thumb_mcp', 'thumb_ip', 'thumb_tip',
+    'index_mcp', 'index_pip', 'index_dip', 'index_tip',
+    'middle_mcp', 'middle_pip', 'middle_dip', 'middle_tip',
+    'ring_mcp', 'ring_pip', 'ring_dip', 'ring_tip',
+    'pinky_mcp', 'pinky_pip', 'pinky_dip', 'pinky_tip'
+]
 
 // Feature vector size: 63 raw landmarks + 5 finger flags + 5 tip-wrist distances + 5 inter-finger distances = 78
 const FEATURE_SIZE = 78
@@ -60,39 +70,46 @@ export class HandPoseClassifier {
 
         this.modelPromise = (async () => {
             try {
-                const handPoseDetection = await ensureHandPose()
-                const tf = await ensureTf()
-                try {
-                    const detector = await handPoseDetection.createDetector(
-                        handPoseDetection.SupportedModels.MediaPipeHands,
-                        { runtime: 'tfjs', maxNumHands: 1, modelComplexity: 1 }
-                    )
-                    this.handModel = detector
-                    this.modelPromise = null
-                    return detector
-                } catch (firstErr) {
-                    console.warn('[HandPose] WebGL createDetector failed, trying CPU backend:', firstErr)
-                    try {
-                        await tf.setBackend('cpu')
-                        await tf.ready()
-                        const detector = await handPoseDetection.createDetector(
-                            handPoseDetection.SupportedModels.MediaPipeHands,
-                            { runtime: 'tfjs', maxNumHands: 1, modelComplexity: 0 }
-                        )
-                        this.handModel = detector
-                        this.modelPromise = null
-                        return detector
-                    } catch (cpuErr) {
-                        console.warn('[HandPose] CPU fallback also failed:', cpuErr)
-                        this.modelPromise = null
-                        this.handModel = null
-                        throw firstErr
-                    }
-                }
-            } catch (e) {
+                const { HandLandmarker, FilesetResolver } = await ensureMediaPipeVision()
+                const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL)
+                // GPU delegate = fast native MediaPipe runtime (not tfjs).
+                // runningMode 'VIDEO' + detectForVideo keeps tracking smooth (~5-10ms/frame).
+                const landmarker = await HandLandmarker.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: HAND_LANDMARKER_MODEL_URL,
+                        delegate: 'GPU',
+                    },
+                    runningMode: 'VIDEO',
+                    numHands: 1,
+                    minHandDetectionConfidence: 0.4,
+                    minHandPresenceConfidence: 0.4,
+                    minTrackingConfidence: 0.4,
+                })
+                this.handModel = landmarker
                 this.modelPromise = null
-                this.handModel = null
-                throw e
+                return landmarker
+            } catch (firstErr) {
+                console.warn('[HandPose] MediaPipe GPU init failed, trying CPU delegate:', firstErr)
+                try {
+                    const { HandLandmarker, FilesetResolver } = await ensureMediaPipeVision()
+                    const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL)
+                    const landmarker = await HandLandmarker.createFromOptions(vision, {
+                        baseOptions: {
+                            modelAssetPath: HAND_LANDMARKER_MODEL_URL,
+                            delegate: 'CPU',
+                        },
+                        runningMode: 'VIDEO',
+                        numHands: 1,
+                    })
+                    this.handModel = landmarker
+                    this.modelPromise = null
+                    return landmarker
+                } catch (cpuErr) {
+                    console.warn('[HandPose] CPU delegate also failed:', cpuErr)
+                    this.modelPromise = null
+                    this.handModel = null
+                    throw firstErr
+                }
             }
         })()
 
@@ -233,10 +250,29 @@ export class HandPoseClassifier {
     }
 
     async detectHand(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement): Promise<HandKeypoint[]> {
-        const detector = await this.ensureModel()
-        const estimation = await detector.estimateHands(imageElement)
-        if (estimation.length > 0) {
-            return estimation[0].keypoints as HandKeypoint[]
+        const landmarker = await this.ensureModel()
+        // Video mode needs monotonically increasing timestamps for smooth tracking.
+        const timestamp = typeof performance !== 'undefined' ? performance.now() : Date.now()
+        const width =
+            (imageElement as HTMLVideoElement).videoWidth ||
+            (imageElement as HTMLCanvasElement).width ||
+            (imageElement as HTMLImageElement).naturalWidth ||
+            640
+        const height =
+            (imageElement as HTMLVideoElement).videoHeight ||
+            (imageElement as HTMLCanvasElement).height ||
+            (imageElement as HTMLImageElement).naturalHeight ||
+            480
+        const result = await landmarker.detectForVideo(imageElement, timestamp)
+        if (result && result.landmarks && result.landmarks.length > 0) {
+            const hand = result.landmarks[0]
+            return hand.map((lm: any, i: number) => ({
+                x: lm.x * width,
+                y: lm.y * height,
+                z: typeof lm.z === 'number' ? lm.z : 0,
+                score: 1,
+                name: LANDMARK_NAMES[i] || `landmark_${i}`,
+            }))
         }
         return []
     }
@@ -341,11 +377,12 @@ export class HandPoseClassifier {
         return added
     }
 
-    drawHand(canvas: HTMLCanvasElement, keypoints: HandKeypoint[], color?: string) {
+    drawHand(canvas: HTMLCanvasElement, keypoints: HandKeypoint[], color?: string, options?: { readableLabels?: boolean }) {
         const ctx = canvas.getContext('2d')
         if (!ctx) return
 
         const drawColor = color || HAND_DRAW_COLOR
+        const readableLabels = !!options?.readableLabels
 
         ctx.clearRect(0, 0, canvas.width, canvas.height)
 
@@ -382,20 +419,40 @@ export class HandPoseClassifier {
             }
         }
 
-        // Draw fingertip labels
-        const fingertips = [4, 8, 12, 16, 20]
-        const fingerNames = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky']
-        ctx.font = 'bold 11px system-ui, sans-serif'
-        ctx.textAlign = 'center'
-        for (let i = 0; i < fingertips.length; i++) {
-            const kp = keypoints[fingertips[i]]
-            if (kp && kp.score > 0.3) {
-                ctx.fillStyle = drawColor
-                ctx.fillText(fingerNames[i], kp.x, kp.y - 12)
+        // Fingertip labels. For CSS-mirrored consumers (e.g. HandPoseClassifierPanel)
+        // draw them inside the mirror transform as before so the double-mirror keeps them readable.
+        // For unmirrored overlays (e.g. Drawing Canvas) use readableLabels to draw after the
+        // transform at the mirrored x position so text stays right-reading.
+        if (!readableLabels) {
+            const fingertips = [4, 8, 12, 16, 20]
+            const fingerNames = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky']
+            ctx.font = 'bold 11px system-ui, sans-serif'
+            ctx.textAlign = 'center'
+            for (let i = 0; i < fingertips.length; i++) {
+                const kp = keypoints[fingertips[i]]
+                if (kp && kp.score > 0.3) {
+                    ctx.fillStyle = drawColor
+                    ctx.fillText(fingerNames[i], kp.x, kp.y - 12)
+                }
             }
         }
 
         ctx.restore()
+
+        if (readableLabels) {
+            const fingertips = [4, 8, 12, 16, 20]
+            const fingerNames = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky']
+            ctx.font = 'bold 11px system-ui, sans-serif'
+            ctx.textAlign = 'center'
+            for (let i = 0; i < fingertips.length; i++) {
+                const kp = keypoints[fingertips[i]]
+                if (kp && kp.score > 0.3) {
+                    const lx = canvas.width - kp.x
+                    ctx.fillStyle = drawColor
+                    ctx.fillText(fingerNames[i], lx, kp.y - 12)
+                }
+            }
+        }
     }
 
     getSampleCounts(): Record<string, number> {
@@ -422,7 +479,10 @@ export class HandPoseClassifier {
         this.detachWebGLHandlers()
         this.knn.dispose()
         if (this.handModel) {
-            try { if (typeof this.handModel.dispose === 'function') this.handModel.dispose() } catch { /* ignore */ }
+            try {
+                if (typeof this.handModel.close === 'function') this.handModel.close()
+                else if (typeof this.handModel.dispose === 'function') this.handModel.dispose()
+            } catch { /* ignore */ }
             this.handModel = null
         }
         this.modelPromise = null

@@ -13,7 +13,10 @@ declare const window: Window & {
     use?: any
     speechCommands?: any
     yamnet?: any
+    _mediaPipeVision?: any
 }
+
+const TASKS_VISION_VERSION = '0.10.3'
 
 const TF_VERSION = '4.20.0'
 const MOBILENET_VERSION = '2.1.1'
@@ -162,6 +165,34 @@ export async function ensureHandPose(): Promise<any> {
 
     return handPosePromise
 }
+
+let mediaPipeVisionPromise: Promise<any> | null = null
+
+/**
+ * Loads MediaPipe Tasks Vision (native WASM/GPU runtime, NOT tfjs).
+ * This is the officially recommended fast runtime for hand landmarks —
+ * it runs on the GPU delegate with ~5-10ms inference per frame.
+ */
+export async function ensureMediaPipeVision(): Promise<any> {
+    if (window._mediaPipeVision) return window._mediaPipeVision
+    if (mediaPipeVisionPromise) return mediaPipeVisionPromise
+
+    mediaPipeVisionPromise = (async () => {
+        try {
+            const mod = await import(/* @vite-ignore */ `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}`)
+            window._mediaPipeVision = mod
+            return mod
+        } catch (e) {
+            mediaPipeVisionPromise = null
+            throw e
+        }
+    })()
+
+    return mediaPipeVisionPromise
+}
+
+export const MEDIAPIPE_WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`
+export const HAND_LANDMARKER_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'
 
 let usePromise: Promise<any> | null = null
 

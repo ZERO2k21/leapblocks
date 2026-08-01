@@ -7,13 +7,14 @@ interface DrawingCanvasPanelProps {
     mode: UseNeuraProjectReturn
 }
 
-const PREDICT_THROTTLE_MS = 300
+const PREDICT_THROTTLE_MS = 16
 const CANVAS_WIDTH = 640
 const CANVAS_HEIGHT = 480
 const MAX_UNDO = 30
 const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
 const BRUSH_SIZES = { small: 3, medium: 8, large: 15 }
 const ERASER_BRUSH = 25
+const POINTER_COLOR = '#22c55e'
 
 const CLASSES = ['Draw', 'Erase', 'Move', 'Color Select'] as const
 
@@ -38,7 +39,6 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
     const stateMachineRef = useRef(new StateMachineBuffer(3))
 
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
-    const [isProcessing, setIsProcessing] = useState(false)
     const [stream, setStream] = useState<MediaStream | null>(null)
     const [modelLoading, setModelLoading] = useState(false)
     const [handDetected, setHandDetected] = useState(false)
@@ -107,18 +107,6 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
         saveUndoState()
         ctx.clearRect(0, 0, canvas.width, canvas.height)
     }, [saveUndoState])
-
-    const getFingerPosition = useCallback((keypoints: { x: number; y: number; score: number }[]): { x: number; y: number } | null => {
-        if (!keypoints || keypoints.length < 21) return null
-        const indexTip = keypoints[8]
-        if (!indexTip || indexTip.score < 0.3) return null
-        const canvas = drawingCanvasRef.current
-        if (!canvas) return null
-        return {
-            x: (1 - indexTip.x / CANVAS_WIDTH) * canvas.width,
-            y: (indexTip.y / CANVAS_HEIGHT) * canvas.height
-        }
-    }, [])
 
     const drawAtPosition = useCallback((x: number, y: number, isErase: boolean) => {
         const canvas = drawingCanvasRef.current
@@ -257,6 +245,10 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
         setIsDragging(false)
         lastDragPosRef.current = null
         isPanningRef.current = false
+        if (overlayCanvasRef.current) {
+            const octx = overlayCanvasRef.current.getContext('2d')
+            if (octx) octx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+        }
         if (previewCanvasRef.current) {
             const pctx = previewCanvasRef.current.getContext('2d')
             if (pctx) pctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
@@ -299,7 +291,6 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
             if (isPredictingRef.current) return
             if (streamStateRef.current && videoRef.current && hiddenCanvasRef.current) {
                 isPredictingRef.current = true
-                setIsProcessing(true)
                 let keypoints: any[] = []
                 let elapsed = 0
                 try {
@@ -310,7 +301,9 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                         hiddenCanvasRef.current.height = CANVAS_HEIGHT
                         ctx.drawImage(videoRef.current, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
                         try {
-                            keypoints = await classifierRef.current.detectHand(hiddenCanvasRef.current)
+                            const rawKeypoints = await classifierRef.current.detectHand(hiddenCanvasRef.current)
+                            // MediaPipe normalized landmarks scaled to pixels; default score to 1 so gating works
+                            keypoints = rawKeypoints.map(kp => ({ ...kp, score: typeof kp.score === 'number' ? kp.score : 1 }))
                             if (keypoints.length > 0) {
                                 handDetectionEverWorkedRef.current = true
                                 if (modelErrorShownRef.current) {
@@ -322,7 +315,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                             console.warn('[DrawingCanvas] detectHand error:', detectErr)
                             if (!handDetectionEverWorkedRef.current && !modelErrorShownRef.current) {
                                 modelErrorShownRef.current = true
-                                setModelError('Hand model failed with WebGL; tried CPU fallback — still failed. For best results use a regular browser (Chrome/Edge).')
+                                setModelError('MediaPipe GPU hand model failed to load. Check your internet connection and retry.')
                             }
                         }
                         elapsed = Math.round(performance.now() - start)
@@ -338,7 +331,8 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
 
                         // Smooth index fingertip position (landmark 8)
                         const indexTip = keypoints[8]
-                        if (indexTip && typeof indexTip.score === 'number' && indexTip.score > 0.3) {
+                        const indexTipOk = !!indexTip && (typeof indexTip.score !== 'number' || indexTip.score > 0.3)
+                        if (indexTipOk) {
                             const sa = smoothingAlphaRef.current
                             if (smoothedIndexTipRef.current) {
                                 smoothedIndexTipRef.current = {
@@ -350,8 +344,13 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                             }
                             console.debug('[DrawingCanvas] indexTip raw:', Math.round(indexTip.x) + ',' + Math.round(indexTip.y), '→ sm:', Math.round(smoothedIndexTipRef.current.x) + ',' + Math.round(smoothedIndexTipRef.current.y))
                         } else {
-                            smoothedIndexTipRef.current = null
-                            if (indexTip) console.debug('[DrawingCanvas] Index tip low confidence:', typeof indexTip.score === 'number' ? indexTip.score.toFixed(2) : indexTip.score)
+                            if (indexTip) {
+                                // Fall back to raw tip position so pointer/drawing still work
+                                smoothedIndexTipRef.current = { x: indexTip.x, y: indexTip.y }
+                                console.debug('[DrawingCanvas] Index tip low confidence, using raw:', Math.round(indexTip.x) + ',' + Math.round(indexTip.y))
+                            } else {
+                                smoothedIndexTipRef.current = null
+                            }
                         }
 
                         // Rule-based classification
@@ -373,23 +372,21 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                         setPrediction({ label: toolName, confidences: { [toolName]: 1 } })
                         setActiveTool(toolName)
 
-                        // Draw overlay: skeleton + tool pointer
+                        // Draw overlay: skeleton + green finger pointer (aligned to mirrored webcam)
                         if (overlayCanvasRef.current && smoothedIndexTipRef.current) {
                             try {
                                 overlayCanvasRef.current.width = CANVAS_WIDTH
                                 overlayCanvasRef.current.height = CANVAS_HEIGHT
-                                classifierRef.current.drawHand(overlayCanvasRef.current, keypoints)
+                                classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, POINTER_COLOR, { readableLabels: true })
                                 const octx = overlayCanvasRef.current.getContext('2d')
                                 if (octx) {
-                                    const px = smoothedIndexTipRef.current.x
-                                    const py = smoothedIndexTipRef.current.y
+                                    const raw = smoothedIndexTipRef.current
+                                    const px = overlayCanvasRef.current.width - raw.x
+                                    const py = raw.y
                                     const isErase = toolName === 'Erase'
-                                    const color = isErase ? '#ef4444' : COLORS[currentColorIndexRef.current]
+                                    const color = isErase ? '#ef4444' : POINTER_COLOR
                                     const brushPx = BRUSH_SIZES[brushSizeRef.current]
                                     const ringRadius = isErase ? 24 : Math.max(10, brushPx * 1.8)
-                                    octx.save()
-                                    octx.scale(-1, 1)
-                                    octx.translate(-overlayCanvasRef.current.width, 0)
                                     octx.beginPath()
                                     octx.arc(px, py, ringRadius, 0, Math.PI * 2)
                                     octx.strokeStyle = color
@@ -435,7 +432,6 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                                     octx.fill()
                                     octx.fillStyle = '#ffffff'
                                     octx.fillText(labelText, px, py - ringRadius - 13)
-                                    octx.restore()
                                 }
                             } catch (drawErr) {
                                 console.warn('[DrawingCanvas] Overlay draw error:', drawErr)
@@ -464,7 +460,6 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                 } catch (e) {
                     console.warn('[DrawingCanvas] Prediction error:', e)
                 }
-                setIsProcessing(false)
                 isPredictingRef.current = false
             }
         }
@@ -479,7 +474,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
             pctx.save()
             pctx.scale(-1, 1)
             pctx.translate(-CANVAS_WIDTH, 0)
-            pctx.globalAlpha = 0.35
+            pctx.globalAlpha = 0.5
             pctx.drawImage(drawingCanvasRef.current, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
             pctx.globalAlpha = 1.0
             pctx.restore()
@@ -519,11 +514,11 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                     {/* LEFT: Webcam + Drawing Canvas stacked */}
                     <div className="flex-1 flex flex-col gap-2 min-w-0">
                         {/* Webcam Feed */}
-                        <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] min-h-[200px] max-h-[280px]">
+                        <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] min-h-[240px] max-h-[320px]">
                             <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                             <canvas ref={hiddenCanvasRef} className="hidden" />
-                            <canvas ref={previewCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
-                            <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
+                            <canvas ref={previewCanvasRef} className="absolute inset-0 w-full h-full object-contain pointer-events-none -scale-x-100" />
+                            <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
                             {cameraOn && (
                                 <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                     <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -552,7 +547,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                             )}
                         </div>
 
-                        {/* Drawing Canvas */}
+                        {/* Drawing Canvas (visible whiteboard) */}
                         <div className="relative rounded-2xl overflow-hidden bg-white border border-gray-200 flex-1 min-h-[280px]">
                             <canvas
                                 ref={drawingCanvasRef}
@@ -569,8 +564,8 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                                         width: activeTool === 'Erase' ? '24px' : '10px',
                                         height: activeTool === 'Erase' ? '24px' : '10px',
                                         transform: 'translate(-50%, -50%)',
-                                        borderColor: activeTool === 'Erase' ? '#ef4444' : COLORS[currentColorIndex],
-                                        background: activeTool === 'Erase' ? 'rgba(239,68,68,0.2)' : `${COLORS[currentColorIndex]}40`,
+                                        borderColor: activeTool === 'Erase' ? '#ef4444' : '#22c55e',
+                                        background: activeTool === 'Erase' ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.25)',
                                     }}
                                 />
                             )}
