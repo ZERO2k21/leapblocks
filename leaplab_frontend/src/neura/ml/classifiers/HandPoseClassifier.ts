@@ -187,17 +187,20 @@ export class HandPoseClassifier {
         const wrist = kp[WRIST]
 
         // --- Finger extension flags (indices 63-67) ---
-        // For Index, Middle, Ring, Pinky, we check if the tip is farther from the MCP (knuckle)
-        // than the PIP (first joint), and also farther from the wrist than the PIP.
-        // This makes the extension checks fully rotation-invariant.
+        // For Index, Middle, Ring, Pinky we map finger straightness to a 0-1 score:
+        // an extended (straight) finger keeps its tip ~2x past the PIP (score → 1), while a
+        // curled finger folds the tip back toward the MCP (score → 0). A 0.5 threshold on
+        // these scores is now a meaningful boundary, so curled fingers in a 2-finger pose
+        // no longer register as extended.
         const isFingerExtended = (tip: number, pip: number, mcp: number) => {
             const distTipMcp = euclidean(kp[tip], kp[mcp])
             const distPipMcp = euclidean(kp[pip], kp[mcp])
             const distTipWrist = euclidean(kp[tip], wrist)
             const distPipWrist = euclidean(kp[pip], wrist)
-            const ratioMcp = distTipMcp / (distPipMcp * 1.2 || 1)
-            const ratioWrist = distTipWrist / (distPipWrist || 1)
-            return Math.min(1.0, Math.max(0.0, (ratioMcp + ratioWrist) / 2))
+            const straightness = distTipMcp / (distPipMcp || 1)
+            const wristAdvance = distTipWrist / (distPipWrist || 1)
+            const score = ((straightness - 1.0) / 0.8) * 0.7 + ((wristAdvance - 1.0) / 0.15) * 0.3
+            return Math.min(1.0, Math.max(0.0, score))
         }
 
         const RING_MCP = 13
@@ -207,12 +210,13 @@ export class HandPoseClassifier {
         features[64] = isFingerExtended(MIDDLE_TIP, MIDDLE_PIP, MIDDLE_MCP)
         features[65] = isFingerExtended(RING_TIP, RING_PIP, RING_MCP)
         features[66] = isFingerExtended(PINKY_TIP, PINKY_PIP, PINKY_MCP)
-        
-        // Thumb: Check if the distance from thumb tip to index MCP is greater than thumb IP to index MCP,
-        // and also thumb tip is farther from the wrist than thumb IP.
-        const thumbOutward = euclidean(kp[THUMB_TIP], kp[INDEX_MCP]) / (euclidean(kp[THUMB_IP], kp[INDEX_MCP]) * 1.05 || 1)
+
+        // Thumb: only counts as extended when clearly sticking out from the palm. A relaxed
+        // thumb resting beside the index in a peace sign scores low; a genuinely extended
+        // thumb scores high.
+        const thumbOutward = euclidean(kp[THUMB_TIP], kp[INDEX_MCP]) / (euclidean(kp[THUMB_IP], kp[INDEX_MCP]) || 1)
         const thumbRatioWrist = euclidean(kp[THUMB_TIP], wrist) / (euclidean(kp[THUMB_IP], wrist) || 1)
-        const thumbScore = Math.min(1.0, Math.max(0.0, (thumbOutward + thumbRatioWrist) / 2))
+        const thumbScore = Math.min(1.0, Math.max(0.0, ((thumbOutward - 1.0) / 0.8) * 0.5 + ((thumbRatioWrist - 1.0) / 0.35) * 0.5))
         features[67] = thumbScore
 
         // --- Tip-to-wrist distances (indices 68-72), normalized by hand size ---
