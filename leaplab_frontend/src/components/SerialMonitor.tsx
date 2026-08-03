@@ -243,7 +243,7 @@ const styles = {
         backgroundColor: '#f9f9f9',
         borderTop: '1px solid #eee',
         display: 'flex',
-        justifyContent: 'flex-end',
+        justifyContent: 'flex-start',
     },
     checkboxLabel: {
         display: 'flex',

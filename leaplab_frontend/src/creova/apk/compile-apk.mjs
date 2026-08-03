@@ -3,7 +3,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const apkDir = path.join(__dirname, 'src', 'creova', 'apk');
+const apkDir = __dirname;
+const projectRoot = path.resolve(__dirname, '..', '..', '..');
 
 function compile(entry, outfile, external = []) {
   const ext = external.map(e => `--external:${e}`).join(' ');
@@ -11,7 +12,7 @@ function compile(entry, outfile, external = []) {
   const outPath = JSON.stringify(path.join(apkDir, outfile));
   const cmd = `npx esbuild ${entryPath} --bundle --platform=node --target=node18 --outfile=${outPath} ${ext}`;
   console.log(`Compiling ${entry} → ${outfile}...`);
-  execSync(cmd, { cwd: __dirname, stdio: 'inherit' });
+  execSync(cmd, { cwd: projectRoot, stdio: 'inherit' });
 }
 
 compile('build-worker.ts', 'build-worker.js', ['path']);

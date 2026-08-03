@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { IgniteTopbar } from './Topbar';
 import Palette from '../components/Palette_Enhanced';
 import PhoneCanvas from '../components/PhoneCanvas_Enhanced';
@@ -104,6 +104,37 @@ export default function AppInventorLayout({
   onBack,
   brandName = 'CREOVA',
 }) {
+  const [mediaHeight, setMediaHeight] = useState(260);
+  const isDraggingRef = useRef(false);
+  const startYRef = useRef(0);
+  const startHeightRef = useRef(0);
+
+  const handleDragStart = useCallback((e) => {
+    e.preventDefault();
+    isDraggingRef.current = true;
+    startYRef.current = e.clientY;
+    startHeightRef.current = mediaHeight;
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+
+    const handleDragMove = (ev) => {
+      if (!isDraggingRef.current) return;
+      const delta = startYRef.current - ev.clientY;
+      const newHeight = Math.min(Math.max(startHeightRef.current + delta, 120), 600);
+      setMediaHeight(newHeight);
+    };
+
+    const handleDragEnd = () => {
+      isDraggingRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+    };
+
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
+  }, [mediaHeight]);
   return (
     <div className="h-screen w-full overflow-hidden flex flex-col bg-slate-50 text-slate-900 font-sans">
       <input
@@ -145,7 +176,13 @@ export default function AppInventorLayout({
               <div className="flex-1 min-h-0 flex flex-col">
                 <ComponentTree appState={appState} />
               </div>
-              <div className="h-[260px] border-t border-slate-200 flex flex-col wide:h-[300px] ultra:h-[380px]">
+              <div
+                className="h-1.5 cursor-row-resize group shrink-0 flex items-center justify-center hover:bg-blue-50 transition-colors"
+                onMouseDown={handleDragStart}
+              >
+                <div className="w-8 h-1 rounded-full bg-slate-300 group-hover:bg-blue-400 transition-colors" />
+              </div>
+              <div style={{ height: mediaHeight }} className="border-t border-slate-200 flex flex-col shrink-0 overflow-hidden">
                 <MediaManager appState={appState} />
               </div>
             </div>
