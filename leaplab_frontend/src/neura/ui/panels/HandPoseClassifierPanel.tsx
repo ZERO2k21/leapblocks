@@ -769,7 +769,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                                 {cameraOn ? (
                                     <>
                                         <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
-                                        <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full -scale-x-100" />
+                                        <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
                                         <div className="absolute top-2.5 left-2.5 flex items-center gap-1.25 py-1 px-2.5 bg-black/50 backdrop-blur-md rounded-md z-10">
                                             <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]" />
                                             <span className="text-white text-[10px] font-bold">✋ LIVE</span>

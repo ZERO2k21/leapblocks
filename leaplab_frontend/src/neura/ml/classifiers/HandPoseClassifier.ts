@@ -47,16 +47,47 @@ const LEGACY_FEATURE_SIZE = 63
 
 // Landmark indices
 const WRIST = 0
-const THUMB_TIP = 4, THUMB_IP = 3
+const THUMB_MCP = 2, THUMB_IP = 3, THUMB_TIP = 4
 const INDEX_MCP = 5, INDEX_PIP = 6, INDEX_TIP = 8
 const MIDDLE_MCP = 9, MIDDLE_PIP = 10, MIDDLE_TIP = 12
-const RING_PIP = 14, RING_TIP = 16
-const PINKY_PIP = 18, PINKY_TIP = 20
+const RING_MCP = 13, RING_PIP = 14, RING_TIP = 16
+const PINKY_MCP = 17, PINKY_PIP = 18, PINKY_TIP = 20
 
 function euclidean(a: { x: number; y: number }, b: { x: number; y: number }): number {
     const dx = a.x - b.x
     const dy = a.y - b.y
     return Math.sqrt(dx * dx + dy * dy)
+}
+
+/** Angle (degrees) at vertex `b` between vectors b→a and b→c. 180° = fully straight. */
+function angleAt(a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }): number {
+    const ax = a.x - b.x, ay = a.y - b.y
+    const cx = c.x - b.x, cy = c.y - b.y
+    const magA = Math.sqrt(ax * ax + ay * ay)
+    const magC = Math.sqrt(cx * cx + cy * cy)
+    if (magA === 0 || magC === 0) return 180
+    const cos = Math.max(-1, Math.min(1, (ax * cx + ay * cy) / (magA * magC)))
+    return Math.acos(cos) * 180 / Math.PI
+}
+
+function clamp01(v: number): number {
+    return Math.min(1, Math.max(0, v))
+}
+
+/**
+ * Joint-angle extension score for the four fingers (index/middle/ring/pinky).
+ * Uses the angle at the PIP joint (mcp→pip→tip): a straight finger holds
+ * ~170-180°, a curled one folds well below. Rotation- and hand-size-invariant.
+ * Maps 125° → 0, 170° → 1 (so ~147° is the 0.5 boundary).
+ */
+function pipExtensionScore(
+    kp: { x: number; y: number }[],
+    mcp: number,
+    pip: number,
+    tip: number
+): number {
+    const ang = angleAt(kp[mcp], kp[pip], kp[tip])
+    return clamp01((ang - 125) / (170 - 125))
 }
 
 export class HandPoseClassifier {
@@ -184,40 +215,27 @@ export class HandPoseClassifier {
         if (keypoints.length < 21) return features
 
         const kp = keypoints
-        const wrist = kp[WRIST]
 
         // --- Finger extension flags (indices 63-67) ---
-        // For Index, Middle, Ring, Pinky we map finger straightness to a 0-1 score:
-        // an extended (straight) finger keeps its tip ~2x past the PIP (score → 1), while a
-        // curled finger folds the tip back toward the MCP (score → 0). A 0.5 threshold on
-        // these scores is now a meaningful boundary, so curled fingers in a 2-finger pose
-        // no longer register as extended.
-        const isFingerExtended = (tip: number, pip: number, mcp: number) => {
-            const distTipMcp = euclidean(kp[tip], kp[mcp])
-            const distPipMcp = euclidean(kp[pip], kp[mcp])
-            const distTipWrist = euclidean(kp[tip], wrist)
-            const distPipWrist = euclidean(kp[pip], wrist)
-            const straightness = distTipMcp / (distPipMcp || 1)
-            const wristAdvance = distTipWrist / (distPipWrist || 1)
-            const score = ((straightness - 1.0) / 0.8) * 0.7 + ((wristAdvance - 1.0) / 0.15) * 0.3
-            return Math.min(1.0, Math.max(0.0, score))
-        }
+        // For Index, Middle, Ring, Pinky we use the PIP joint angle (see pipExtensionScore):
+        // an extended (straight) finger keeps its PIP angle near 180° (score → 1), while a
+        // curled finger folds the joint below ~125° (score → 0). Angle-based scoring is
+        // rotation-invariant and robust to hand size, so partially curled fingers in a
+        // 2-finger pose no longer register as extended.
+        features[63] = pipExtensionScore(kp, INDEX_MCP, INDEX_PIP, INDEX_TIP)
+        features[64] = pipExtensionScore(kp, MIDDLE_MCP, MIDDLE_PIP, MIDDLE_TIP)
+        features[65] = pipExtensionScore(kp, RING_MCP, RING_PIP, RING_TIP)
+        features[66] = pipExtensionScore(kp, PINKY_MCP, PINKY_PIP, PINKY_TIP)
 
-        const RING_MCP = 13
-        const PINKY_MCP = 17
-
-        features[63] = isFingerExtended(INDEX_TIP, INDEX_PIP, INDEX_MCP)
-        features[64] = isFingerExtended(MIDDLE_TIP, MIDDLE_PIP, MIDDLE_MCP)
-        features[65] = isFingerExtended(RING_TIP, RING_PIP, RING_MCP)
-        features[66] = isFingerExtended(PINKY_TIP, PINKY_PIP, PINKY_MCP)
-
-        // Thumb: only counts as extended when clearly sticking out from the palm. A relaxed
-        // thumb resting beside the index in a peace sign scores low; a genuinely extended
-        // thumb scores high.
-        const thumbOutward = euclidean(kp[THUMB_TIP], kp[INDEX_MCP]) / (euclidean(kp[THUMB_IP], kp[INDEX_MCP]) || 1)
-        const thumbRatioWrist = euclidean(kp[THUMB_TIP], wrist) / (euclidean(kp[THUMB_IP], wrist) || 1)
-        const thumbScore = Math.min(1.0, Math.max(0.0, ((thumbOutward - 1.0) / 0.8) * 0.5 + ((thumbRatioWrist - 1.0) / 0.35) * 0.5))
-        features[67] = thumbScore
+        // Thumb: only counts as extended when it is BOTH straight (IP joint angle large)
+        // AND clearly abducted away from the index finger. A relaxed thumb resting beside
+        // the index in a peace sign fails the abduction check; a curled thumb fails the
+        // straightness check. This matches how a thumb needs to "stick out" to count.
+        const thumbStraight = clamp01((angleAt(kp[THUMB_MCP], kp[THUMB_IP], kp[THUMB_TIP]) - 130) / 40)
+        const dTipIndexMcp = euclidean(kp[THUMB_TIP], kp[INDEX_MCP])
+        const dIpIndexMcp = euclidean(kp[THUMB_IP], kp[INDEX_MCP]) || 1
+        const thumbAbduct = clamp01((dTipIndexMcp / dIpIndexMcp - 1.0) / 0.25)
+        features[67] = Math.min(thumbStraight, thumbAbduct)
 
         // --- Tip-to-wrist distances (indices 68-72), normalized by hand size ---
         const handSize = euclidean(kp[WRIST], kp[MIDDLE_MCP]) || 1
@@ -275,6 +293,22 @@ export class HandPoseClassifier {
     }
 
     async detectHand(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement): Promise<HandKeypoint[]> {
+        // A <video> is not ready until its first frame is buffered. Feeding MediaPipe a
+        // video with videoWidth/videoHeight === 0 (no frame yet) makes it call texImage2D
+        // on empty data -> RET_CHECK "ROI width and height must be > 0" + "Graph has errors",
+        // which permanently poisons the landmarker graph and floods the console. Bail out
+        // early and let the rAF loop retry on the next frame.
+        const w =
+            (imageElement as HTMLVideoElement).videoWidth ||
+            (imageElement as HTMLCanvasElement).width ||
+            (imageElement as HTMLImageElement).naturalWidth ||
+            0
+        if (w <= 0) return []
+        // A <video> needs a fully decoded frame. readyState < HAVE_CURRENT_DATA (2) means
+        // only metadata is loaded (videoWidth > 0 but frame bytes unavailable); feeding that
+        // to texImage2D still throws. Skip until the camera has actually delivered a frame.
+        const el = imageElement as HTMLVideoElement
+        if (typeof el.readyState === 'number' && el.readyState < 2) return []
         const landmarker = await this.ensureModel()
         // Video mode needs monotonically increasing timestamps for smooth tracking.
         const timestamp = typeof performance !== 'undefined' ? performance.now() : Date.now()

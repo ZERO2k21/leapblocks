@@ -3,7 +3,7 @@ import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { HandPoseClassifier } from '../../ml/classifiers/HandPoseClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
-import { classifyFingerCount, MajorityVoteBuffer } from '../../ml/utils/ruleBasedClassifiers'
+import { classifyFingerCount } from '../../ml/utils/ruleBasedClassifiers'
 
 interface FingerCounterPanelProps {
     mode: UseNeuraProjectReturn
@@ -34,7 +34,6 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
     const lastDetectTimeRef = useRef(0)
     const lastPredictTimeRef = useRef(0)
     const audioContextRef = useRef<AudioContext | null>(null)
-    const majorityVoteRef = useRef(new MajorityVoteBuffer(5))
     const lastSoundCountRef = useRef(0)
 
     const [isCapturing, setIsCapturing] = useState(false)
@@ -56,6 +55,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
     const [testImage, setTestImage] = useState<string | null>(null)
     const [autoPredict, setAutoPredict] = useState(true)
     const testFileInputRef = useRef<HTMLInputElement>(null)
+    const [fingerFlags, setFingerFlags] = useState<number[]>([0, 0, 0, 0, 0])
 
     const showSaved = useCallback((msg: string) => {
         setSavedMessage(msg)
@@ -179,19 +179,14 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                         const keypoints = await classifierRef.current.detectHand(canvasRef.current)
                         if (keypoints && keypoints.length > 0) {
                             const features = classifierRef.current.extractFeatures(keypoints)
+                            setFingerFlags([features[67], features[63], features[64], features[65], features[66]])
                             const result = classifyFingerCount(features)
-                            const smoothed = majorityVoteRef.current.add(result.label)
                             
                             const elapsed = Math.round(performance.now() - start)
                             setInferenceTime(elapsed)
                             
-                            // Build prediction result with all class confidences
-                            const confidences: Record<string, number> = {}
-                            for (const [label, conf] of Object.entries(result.details)) {
-                                confidences[label] = conf
-                            }
+                            const confidences: Record<string, number> = { [result.label]: result.confidence }
                             
-                            // Filter based on confidenceThreshold
                             const predConfidence = result.confidence
                             if (predConfidence < confidenceThreshold) {
                                 setPrediction(null)
@@ -204,10 +199,10 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                                     }
                                 }
                             } else {
-                                setPrediction({ label: smoothed, confidences })
+                                setPrediction({ label: result.label, confidences })
                                 setHandDetected(true)
                                 
-                                const count = FINGER_LABELS[smoothed] || 0
+                                const count = FINGER_LABELS[result.label] || 0
                                 setCurrentCount(count)
                                 setCountHistory(prev => [...prev.slice(-19), count])
                                 
@@ -220,14 +215,13 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                                 if (overlayCanvasRef.current) {
                                     overlayCanvasRef.current.width = videoRef.current.videoWidth || 640
                                     overlayCanvasRef.current.height = videoRef.current.videoHeight || 480
-                                    classifierRef.current.drawHand(overlayCanvasRef.current, keypoints)
+                                    classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, { readableLabels: true })
                                 }
                             }
                         } else {
                             setPrediction(null)
                             setHandDetected(false)
                             setCurrentCount(0)
-                            majorityVoteRef.current.clear()
                             lastSoundCountRef.current = 0
                             // Clear overlay canvas when no hand is detected
                             if (overlayCanvasRef.current) {
@@ -299,16 +293,13 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                 const keypoints = await classifierRef.current.detectHand(canvasRef.current)
                 if (keypoints && keypoints.length > 0) {
                     const features = classifierRef.current.extractFeatures(keypoints)
+                    setFingerFlags([features[67], features[63], features[64], features[65], features[66]])
                     const result = classifyFingerCount(features)
-                    const smoothed = majorityVoteRef.current.add(result.label)
                     
                     const elapsed = Math.round(performance.now() - start)
                     setInferenceTime(elapsed)
                     
-                    const confidences: Record<string, number> = {}
-                    for (const [label, conf] of Object.entries(result.details)) {
-                        confidences[label] = conf
-                    }
+                    const confidences: Record<string, number> = { [result.label]: result.confidence }
                     
                     const predConfidence = result.confidence
                     if (predConfidence < confidenceThreshold) {
@@ -323,9 +314,9 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                             }
                         }
                     } else {
-                        setPrediction({ label: smoothed, confidences })
+                        setPrediction({ label: result.label, confidences })
                         setHandDetected(true)
-                        const count = FINGER_LABELS[smoothed] || 0
+                        const count = FINGER_LABELS[result.label] || 0
                         setCurrentCount(count)
                         setCountHistory(prev => [...prev.slice(-19), count])
                         
@@ -337,14 +328,13 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                         if (overlayCanvasRef.current) {
                             overlayCanvasRef.current.width = width
                             overlayCanvasRef.current.height = height
-                            classifierRef.current.drawHand(overlayCanvasRef.current, keypoints)
+                            classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, { readableLabels: true })
                         }
                     }
                 } else {
                     setPrediction(null)
                     setHandDetected(false)
                     setCurrentCount(0)
-                    majorityVoteRef.current.clear()
                     lastSoundCountRef.current = 0
                     showSaved('⚠️ No hand detected!')
                     if (overlayCanvasRef.current) {
@@ -392,15 +382,13 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                             const keypoints = await classifierRef.current.detectHand(canvasRef.current)
                             if (keypoints && keypoints.length > 0) {
                                 const features = classifierRef.current.extractFeatures(keypoints)
+                                setFingerFlags([features[67], features[63], features[64], features[65], features[66]])
                                 const result = classifyFingerCount(features)
                                 
                                 const elapsed = Math.round(performance.now() - start)
                                 setInferenceTime(elapsed)
                                 
-                                const confidences: Record<string, number> = {}
-                                for (const [label, conf] of Object.entries(result.details)) {
-                                    confidences[label] = conf
-                                }
+                                const confidences: Record<string, number> = { [result.label]: result.confidence }
                                 
                                 const predConfidence = result.confidence
                                 if (predConfidence < confidenceThreshold) {
@@ -423,7 +411,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                                     if (overlayCanvasRef.current) {
                                         overlayCanvasRef.current.width = width
                                         overlayCanvasRef.current.height = height
-                                        classifierRef.current.drawHand(overlayCanvasRef.current, keypoints)
+classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, { readableLabels: true })
                                     }
                                 }
                             } else {
@@ -465,7 +453,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                         const keypoints = await classifierRef.current.detectHand(videoRef.current)
                         if (keypoints.length > 0) {
                             setHandDetected(true)
-                            classifierRef.current.drawHand(canvas, keypoints)
+                            classifierRef.current.drawHand(canvas, keypoints, undefined, { readableLabels: true })
                         } else {
                             setHandDetected(false)
                         }
@@ -568,7 +556,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                             <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
                                 <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
@@ -699,7 +687,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                                     <img src={testImage} className="w-full h-full object-contain" />
                                 )}
                                 <canvas ref={canvasRef} className="hidden" />
-                                <canvas ref={overlayCanvasRef} className={`absolute inset-0 w-full h-full pointer-events-none ${testImage ? '' : '-scale-x-100'}`} />
+                                <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 
                                 {cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md z-10">
@@ -817,6 +805,14 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                                         {prediction.label} ({Math.round(prediction.confidences[prediction.label] * 100)}%)
                                     </p>
                                 )}
+                                <div className="grid grid-cols-5 gap-1 mt-3">
+                                    {['👍', '☝️', '✌️', '🤙', '🖐️'].map((emoji, i) => (
+                                        <div key={i} className="flex flex-col items-center gap-0.5">
+                                            <span className={`text-sm ${fingerFlags[i] > 0.5 ? '' : 'opacity-25 grayscale'}`}>{emoji}</span>
+                                            <span className={`text-[10px] font-bold ${fingerFlags[i] > 0.5 ? 'text-emerald-600' : 'text-gray-400'}`}>{fingerFlags[i].toFixed(2)}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Speed & Hand Status */}
