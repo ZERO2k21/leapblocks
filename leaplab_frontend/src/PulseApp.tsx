@@ -329,12 +329,28 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     try {
       // Fetch quiz details
       const quizRes = await apiGet(`${QUIZZES_PATH}/${quizId}`, token);
-      const quiz = { ...quizRes.data, questions: [...(quizRes.data.questions || [])] };
-      // Shuffle question order (answers are keyed by question id, so scoring is unaffected)
-      for (let i = quiz.questions.length - 1; i > 0; i--) {
+      const rawQuestions = quizRes.data.questions || [];
+
+      // Deep clone & shuffle options for every question to prevent malpractice
+      const questions: QuizQuestion[] = rawQuestions.map((q: QuizQuestion) => {
+        const shuffledOptions = [...(q.options || [])];
+        for (let i = shuffledOptions.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+        }
+        return {
+          ...q,
+          options: shuffledOptions,
+        };
+      });
+
+      // Fisher-Yates shuffle question order
+      for (let i = questions.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [quiz.questions[i], quiz.questions[j]] = [quiz.questions[j], quiz.questions[i]];
+        [questions[i], questions[j]] = [questions[j], questions[i]];
       }
+
+      const quiz = { ...quizRes.data, questions };
       setActiveQuiz(quiz);
 
       // Start attempt
