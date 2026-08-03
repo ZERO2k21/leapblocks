@@ -3646,7 +3646,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={() => {
                                 const flyout = workspaceRef.current?.getFlyout() as any;
                                 if (flyout?.getWorkspace()) {
-                                    flyout.getWorkspace().setScale(1.0);
+                                    flyout.getWorkspace().setScale(0.8);
                                 }
                             }} style={undefined} />
 
