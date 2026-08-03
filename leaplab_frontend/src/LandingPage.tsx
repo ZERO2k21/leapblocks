@@ -229,7 +229,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
                 Explore
               </button>
               <button
-                className={`bg-transparent border-none text-[#0f172a] no-underline font-semibold text-[0.95rem] cursor-pointer py-1.5 px-3 rounded-full transition-all duration-200 ease-out hover:text-[#4f46e5] hover:bg-[#4f46e5]/[0.06] ${showProjects ? 'text-white bg-[#4f46e5] hover:text-white hover:bg-[#4f46e5]' : ''}`}
+                className={`font-semibold text-[0.95rem] cursor-pointer py-1.5 px-4 rounded-full transition-all duration-200 ease-out focus:outline-none ${
+                  showProjects
+                    ? 'bg-[#7c3aed] text-white shadow-sm hover:bg-[#6d28d9] hover:text-white'
+                    : 'bg-transparent text-[#0f172a] hover:text-[#7c3aed] hover:bg-[#7c3aed]/[0.08]'
+                }`}
                 onClick={() => {
                   const target = showProjects ? 'modules' : 'my-projects';
                   setActiveTab(target);
@@ -284,7 +288,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               Explore
             </button>
             <button
-              className={`w-full text-left py-3 px-4 font-semibold rounded-xl transition-colors ${showProjects ? 'bg-[#4f46e5] text-white' : 'text-slate-800 hover:bg-[#4f46e5]/[0.06] hover:text-[#4f46e5]'}`}
+              className={`w-full text-left py-3 px-4 font-semibold rounded-xl transition-colors focus:outline-none ${
+                showProjects
+                  ? 'bg-[#7c3aed] text-white shadow-sm'
+                  : 'text-slate-800 hover:bg-[#7c3aed]/[0.08] hover:text-[#7c3aed]'
+              }`}
               onClick={() => {
                 const target = showProjects ? 'modules' : 'my-projects';
                 setActiveTab(target);

@@ -516,9 +516,9 @@ function clientSideTranspile(code: string): TranspileResult {
         return `var ${varName} = ${fnName}(${cleanArgs});`;
       }
     );
-    // C++ default-construction: ClassName varName;
+    // C++ default-construction: ClassName varName; (e.g. decode_results results;)
     js = js.replace(
-      /^\s*([A-Z][A-Za-z0-9_]*)\s+(\w+)\s*;/gm,
+      /^\s*([A-Z][A-Za-z0-9_]*|decode_results)\s+(\w+)\s*;/gm,
       (_m: string, className: string, varName: string) => `var ${varName} = new ${className}();`
     );
     // Fallback: Class-type variable with arbitrary RHS assignment

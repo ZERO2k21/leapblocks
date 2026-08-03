@@ -23,6 +23,7 @@ import { RotaryEncoderEmulator } from './RotaryEncoderEmulator';
 import { IRReceiverEmulator } from './IRReceiverEmulator';
 import { HX711Emulator } from './HX711Emulator';
 import { ESP32_BOARD_CONFIG, ESP32_BOARDS, type ESP32PinInfo } from './ESP32BoardConfig.js';
+import { createMFRC522Class, createIRremoteClass } from '../esp32c3/ArduinoLibraries';
 
 /** Simplified ECG pulse shape used by the heart-beat sensor emulator. Returns -1..+1 for phase 0..1 */
 function heartEcgPulse(phase: number): number {
@@ -1102,6 +1103,14 @@ class CircuitEngine {
     this._pendingLibraryClasses.set('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
     console.log(`[LCD BRIDGE] RealLiquidCrystal_I2C stored in _pendingLibraryClasses`);
 
+    const RealMFRC522 = createMFRC522Class(this);
+    this._pendingLibraryClasses.set('MFRC522', RealMFRC522);
+
+    const irRemote = createIRremoteClass(this);
+    this._pendingLibraryClasses.set('IRrecv', irRemote.IRrecv);
+    this._pendingLibraryClasses.set('decode_results', irRemote.decode_results);
+    this._pendingLibraryClasses.set('IrReceiver', irRemote.IrReceiver);
+
     // If runtime already exists (re-sync case), inject immediately
     if (esp32Runtime) {
       esp32Runtime.injectLibraryClass('Adafruit_SSD1306', RealAdafruitSSD1306);
@@ -1110,8 +1119,12 @@ class CircuitEngine {
       esp32Runtime.injectLibraryClass('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
       esp32Runtime.injectLibraryClass('Adafruit_FT6206', RealAdafruit_FT6206);
       esp32Runtime.injectLibraryClass('TS_Point', RealTS_Point);
+      esp32Runtime.injectLibraryClass('MFRC522', RealMFRC522);
+      esp32Runtime.injectLibraryClass('IRrecv', irRemote.IRrecv);
+      esp32Runtime.injectLibraryClass('decode_results', irRemote.decode_results);
+      esp32Runtime.injectLibraryClass('IrReceiver', irRemote.IrReceiver);
       this._wireI2CBus(esp32Runtime);
-      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + TFT_eSPI + Touch + LCD_I2C + wired I2C bus');
+      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + TFT_eSPI + Touch + LCD_I2C + MFRC522 + IRremote + wired I2C bus');
 
     } else {
       console.log('[OLED/LCD BRIDGE] Runtime not yet created — classes queued for initTranspiled()');

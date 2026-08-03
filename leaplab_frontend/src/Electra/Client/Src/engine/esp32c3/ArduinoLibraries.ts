@@ -979,6 +979,161 @@ export function createNewPingClass(runtime: any) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// MFRC522 RFID READER LIBRARY
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function createMFRC522Class(runtime: any) {
+    return class MFRC522 {
+        private ssPin: number;
+        private rstPin: number;
+        public uid: { size: number; uidByte: number[] } = { size: 4, uidByte: [0xE2, 0x4B, 0x89, 0x1F] };
+
+        constructor(ssPin?: number, rstPin?: number) {
+            this.ssPin = ssPin || 10;
+            this.rstPin = rstPin || 9;
+        }
+
+        PCD_Init(): void {}
+
+        private getRfidNode(): any {
+            try {
+                const { nodes } = useForgeStore.getState();
+                return nodes.find(n => n.data?.type === 'rfid-rc522' || n.data?.type === 'rfid-sensor');
+            } catch (e) {
+                return null;
+            }
+        }
+
+        PICC_IsNewCardPresent(): boolean {
+            const node = this.getRfidNode();
+            if (!node) return false;
+            return Boolean(node.data?.sensorValues?.cardPresent);
+        }
+
+        PICC_ReadCardSerial(): boolean {
+            const node = this.getRfidNode();
+            if (!node) return false;
+            const sv = node.data?.sensorValues;
+            if (!sv?.cardPresent) return false;
+
+            const uidStr = String(sv?.cardUid || 'E2 4B 89 1F');
+            const hexParts = uidStr.trim().split(/\s+/).filter(Boolean);
+            const bytes = hexParts.map(h => parseInt(h, 16) || 0);
+
+            this.uid = {
+                size: bytes.length || 4,
+                uidByte: bytes.length ? bytes : [0xE2, 0x4B, 0x89, 0x1F],
+            };
+            return true;
+        }
+
+        PICC_HaltA(): void {}
+        PCD_StopCrypto1(): void {}
+        PCD_DumpVersionToSerial(): void {}
+        PCD_DumpToSerial(_uid?: any): void {}
+        PICC_GetType(_sak?: number): number { return 0x04; }
+        PICC_GetTypeName(_type?: number): string { return 'MIFARE 1KB'; }
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// IRREMOTE LIBRARY (NEC / IR RECEIVER & TRANSMITTER)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function createIRremoteClass(runtime: any) {
+    class decode_results {
+        public value: number = 0;
+        public decode_type: number = 3; // NEC
+        public bits: number = 32;
+        public rawbuf: number[] = [];
+        public rawlen: number = 0;
+    }
+
+    class IRrecv {
+        private recvPin: number;
+        private isEnabled: boolean = false;
+        private lastReadHex: string | null = null;
+
+        constructor(recvPin: number) {
+            this.recvPin = recvPin;
+        }
+
+        enableIRIn(): void {
+            this.isEnabled = true;
+        }
+
+        disableIRIn(): void {
+            this.isEnabled = false;
+        }
+
+        private getIrNode(): any {
+            try {
+                const { nodes } = useForgeStore.getState();
+                return nodes.find(n =>
+                    n.data?.type === 'ir-receiver' ||
+                    n.data?.type === 'ir-remote' ||
+                    n.data?.type === 'ir-obstacle-sensor' ||
+                    n.data?.type === 'ir-sensor'
+                );
+            } catch (e) {
+                return null;
+            }
+        }
+
+        decode(results?: any): boolean {
+            const node = this.getIrNode();
+            if (!node) return false;
+
+            const sv = node.data?.sensorValues;
+            const currentHex = sv?.lastIrCode ?? (sv?.obstacleDetected ? '0x00FF30CF' : null);
+            if (!currentHex || currentHex === this.lastReadHex) return false;
+
+            this.lastReadHex = currentHex;
+            const val = parseInt(currentHex.replace(/^0x/i, ''), 16) || 0;
+
+            if (results) {
+                results.value = val;
+                results.decode_type = 3;
+                results.bits = 32;
+            }
+            return true;
+        }
+
+        resume(): void {
+            this.lastReadHex = null;
+        }
+    }
+
+    const IrReceiver = {
+        decodedIRData: {
+            decodedRawData: 0,
+            protocol: 3,
+            command: 0,
+            address: 0,
+        },
+        begin(_pin?: number): void {},
+        decode(): boolean {
+            const res = new decode_results();
+            const recv = new IRrecv(11);
+            const found = recv.decode(res);
+            if (found) {
+                this.decodedIRData.decodedRawData = res.value;
+                this.decodedIRData.command = res.value & 0xFF;
+                this.decodedIRData.address = (res.value >> 16) & 0xFF;
+            }
+            return found;
+        },
+        resume(): void {},
+    };
+
+    return {
+        IRrecv,
+        decode_results,
+        IrReceiver,
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // EXPORT ALL LIBRARY CREATORS
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -991,6 +1146,8 @@ export function injectAllLibraries(runtime: any): Record<string, any> {
     const Ultrasonic = createUltrasonicClass(runtime);
     const NewPing = createNewPingClass(runtime);
     const AccelStepper = createAccelStepperClass(runtime);
+    const MFRC522 = createMFRC522Class(runtime);
+    const irRemote = createIRremoteClass(runtime);
 
     return {
         // Servo
@@ -1016,6 +1173,14 @@ export function injectAllLibraries(runtime: any): Record<string, any> {
         // Ultrasonic
         Ultrasonic,
         NewPing,
+
+        // RFID
+        MFRC522,
+
+        // IRremote
+        IRrecv: irRemote.IRrecv,
+        decode_results: irRemote.decode_results,
+        IrReceiver: irRemote.IrReceiver,
 
         // NeoPixel static methods
         NEO_RGB: Adafruit_NeoPixel.NEO_RGB,
