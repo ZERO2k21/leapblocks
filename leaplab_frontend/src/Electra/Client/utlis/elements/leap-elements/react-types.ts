@@ -56,6 +56,7 @@ import { StepperMotorElement } from './stepper-motor-element';
 import { HX711Element } from './hx711-element';
 import { KS2EMDC5Element } from './ks2e-m-dc5-element';
 import { BiaxialStepperElement } from './biaxial-stepper-element';
+import { RFIDRC522Element } from './rfid-rc522-element';
 import type React from 'react';
 
 type LeapElement<T> = Partial<T> & React.ClassAttributes<T>;
@@ -120,6 +121,9 @@ declare global {
       'leap-ks2e-m-dc5': LeapElement<KS2EMDC5Element>;
       'leap-relay-module': LeapElement<RelayModuleElement>;
       'leap-biaxial-stepper': LeapElement<BiaxialStepperElement>;
+      'leap-rfid-rc522': LeapElement<RFIDRC522Element>;
+      'leap-rfid-sensor': LeapElement<RFIDRC522Element>;
     }
   }
 }
+

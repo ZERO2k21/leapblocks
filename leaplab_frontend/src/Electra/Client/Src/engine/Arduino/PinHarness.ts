@@ -3032,5 +3032,41 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
         "y": 11
       }
     ]
+  },
+  "rfid-rc522": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 110,
+      "height": 160
+    },
+    "pins": [
+      { "name": "SDA", "x": 13, "y": 154 },
+      { "name": "SCK", "x": 25, "y": 154 },
+      { "name": "MOSI", "x": 37, "y": 154 },
+      { "name": "MISO", "x": 49, "y": 154 },
+      { "name": "IRQ", "x": 61, "y": 154 },
+      { "name": "GND", "x": 73, "y": 154 },
+      { "name": "RST", "x": 85, "y": 154 },
+      { "name": "3.3V", "x": 97, "y": 154 }
+    ]
+  },
+  "rfid-sensor": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 110,
+      "height": 160
+    },
+    "pins": [
+      { "name": "SDA", "x": 13, "y": 154 },
+      { "name": "SCK", "x": 25, "y": 154 },
+      { "name": "MOSI", "x": 37, "y": 154 },
+      { "name": "MISO", "x": 49, "y": 154 },
+      { "name": "IRQ", "x": 61, "y": 154 },
+      { "name": "GND", "x": 73, "y": 154 },
+      { "name": "RST", "x": 85, "y": 154 },
+      { "name": "3.3V", "x": 97, "y": 154 }
+    ]
   }
 };

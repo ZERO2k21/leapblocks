@@ -48,7 +48,9 @@ const COMPONENTS = [
   { id: 'photoresistor-sensor', name: 'Photoresistor', category: 'sensors', desc: 'Light sensor (LDR)' },
   { id: 'pir-motion-sensor', name: 'PIR Sensor', category: 'sensors', desc: 'Motion detector' },
   { id: 'ir-obstacle-sensor', name: 'IR Sensor', category: 'sensors', desc: 'IR Obstacle Avoidance (FC-51)' },
+  { id: 'rfid-rc522', name: 'RFID RC522', category: 'sensors', desc: '13.56MHz RFID Reader (RC522)' },
   { id: 'potentiometer', name: 'Potentiometer', category: 'inputs', desc: 'Variable resistor' },
+
   { id: 'pushbutton', name: 'Pushbutton', category: 'inputs', desc: 'Momentary switch' },
   { id: 'relay-module', name: 'Relay Module', category: 'outputs', desc: 'Single-channel relay' },
   { id: 'resistor', name: 'Resistor', category: 'inputs', desc: 'Passive resistor' },
@@ -86,6 +88,8 @@ const getComponentScale = (id: string, defaultScale: number): number => {
   if (id === 'ili9341') return 0.4;
   if (id === 'ili9341-touch') return 0.4;
   if (id == 'neopixel-matrix') return 0.4;
+  if (id === 'rfid-rc522' || id === 'rfid-sensor') return 0.45;
+
   const pinData = LEAP_PINS[id];
   if (!pinData || !pinData.viewBox) {
     return defaultScale; // Fallback to default scale

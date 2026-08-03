@@ -411,15 +411,18 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     });
   }, []);
 
+
+
   const onPaneClick = useCallback((event: React.MouseEvent) => {
     if (wireDraft) {
       const pos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       addWireWaypoint(pos);
-    } else if (!panDragEnabled) {
+    } else {
       store.setSelectedNode(null);
       store.setSelectedEdge(null);
     }
-  }, [wireDraft, addWireWaypoint, store, screenToFlowPosition, panDragEnabled]);
+  }, [wireDraft, addWireWaypoint, store, screenToFlowPosition]);
+
 
   const onEdgeClick = useCallback((_: any, edge: Edge) => {
     // Block edge selection while a waypoint drag is active on another wire
@@ -488,6 +491,8 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         onNodeClick={onNodeClick}
         onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick}
+
+
         onNodeContextMenu={onNodeContextMenu}
         onPaneContextMenu={onPaneContextMenu}
         nodeTypes={nodeTypes}

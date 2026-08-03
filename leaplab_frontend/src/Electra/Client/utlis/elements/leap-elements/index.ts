@@ -60,4 +60,6 @@ export { StepperMotorElement } from './stepper-motor-element';
 export { TiltSwitchElement } from './tilt-switch-element';
 export { L298NElement } from './l298n-element';
 export { DCMotorElement } from './dc-motor-element';
+export { RFIDRC522Element } from './rfid-rc522-element';
 export { Battery12VElement } from './battery-12v-element';
+

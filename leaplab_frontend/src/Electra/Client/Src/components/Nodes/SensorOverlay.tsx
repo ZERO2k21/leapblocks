@@ -5,6 +5,7 @@
  */
 import React from 'react';
 import { useForgeStore, getCircuitEngineSync } from '../../../utlis/store/useForgeStore';
+import { LEAP_PINS } from '../../engine/Arduino/PinHarness';
 
 const withEngine = (cb: (engine: any) => void) => {
   const engine = getCircuitEngineSync();
@@ -143,87 +144,34 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
 
 // Create context for unrotating sensor overlay cards
 export const RotationContext = React.createContext<number>(0);
+export const NodeDimensionsContext = React.createContext<{ width: number; height: number }>({ width: 150, height: 80 });
 
 // ── Compact theme-aware Card Wrapper sitting right above the component ──────
 interface CompactCardProps {
   borderColor?: string;
   children: React.ReactNode;
-  wrapperRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children, wrapperRef }) => {
+const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children }) => {
   const uiTheme = useForgeStore(state => state.uiTheme);
   const isLightTheme = uiTheme === 'light';
-  const rotation = React.useContext(RotationContext);
-
   const defaultBorder = isLightTheme ? '#cbd5e1' : (borderColor || 'rgba(255, 255, 255, 0.08)');
-  const cardRef = React.useRef<HTMLDivElement>(null);
-  const [positionStyle, setPositionStyle] = React.useState<React.CSSProperties>({
-    position: 'fixed',
-    visibility: 'hidden',
-  });
-
-  React.useLayoutEffect(() => {
-    const card = cardRef.current;
-    const wrapper = wrapperRef?.current;
-    if (!card || !wrapper) return;
-
-    const updatePosition = () => {
-      const rect = wrapper.getBoundingClientRect();
-      const nodeWidth = rect.width;
-      const nodeHeight = rect.height;
-      const R = rotation;
-
-      if (R === 0) {
-        setPositionStyle({
-          position: 'fixed',
-          left: `${rect.left + nodeWidth / 2}px`,
-          top: `${rect.top - 6}px`,
-          transform: 'translate(-50%, -100%)',
-          transformOrigin: 'bottom center',
-        });
-        return;
-      }
-
-      const R_rad = (R * Math.PI) / 180;
-      const Y_offset = -(nodeHeight / 2 + 6);
-
-      const x_local_from_center = Y_offset * Math.sin(R_rad);
-      const y_local_from_center = Y_offset * Math.cos(R_rad);
-
-      const centerX = rect.left + nodeWidth / 2;
-      const centerY = rect.top + nodeHeight / 2;
-
-      setPositionStyle({
-        position: 'fixed',
-        left: `${centerX + x_local_from_center}px`,
-        top: `${centerY + y_local_from_center}px`,
-        transform: `translate(-50%, -100%) rotate(${-R}deg)`,
-        transformOrigin: 'bottom center',
-      });
-    };
-
-    updatePosition();
-
-    const ro = new ResizeObserver(updatePosition);
-    ro.observe(wrapper);
-    ro.observe(card);
-
-    return () => ro.disconnect();
-  }, [rotation, wrapperRef]);
 
   return (
     <div
-      ref={cardRef}
       onPointerDown={e => e.stopPropagation()}
       onPointerUp={e => e.stopPropagation()}
       onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
-      className={`nodrag nopan w-[250px] backdrop-blur-md rounded-lg py-1.5 px-3.5 z-[9999] flex flex-col gap-1 select-none ${
+      className={`nodrag nopan w-[250px] backdrop-blur-md rounded-lg py-1.5 px-3.5 z-[9999] flex flex-col gap-1 select-none pointer-events-auto ${
         isLightTheme ? 'bg-white/92 shadow-sm' : 'bg-slate-900/92 shadow-xl'
       }`}
       style={{
-        ...positionStyle,
+        position: 'absolute',
+        left: '50%',
+        top: '-12px',
+        transform: 'translate(-50%, -100%)',
+        transformOrigin: 'bottom center',
         border: `1px solid ${defaultBorder}`,
       }}
     >
@@ -233,7 +181,7 @@ const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children, wrappe
 };
 
 // ── Main overlay ──────────────────────────────────────────────────────────────
-export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, currentValues, rotation = 0, wrapperRef }) => {
+export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, currentValues, rotation = 0 }) => {
   const updateNodeData = useForgeStore(state => state.updateNodeData);
   const uiTheme = useForgeStore(state => state.uiTheme);
   const isLightTheme = uiTheme === 'light';
@@ -244,6 +192,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   const isNTC = type === 'ntc-temperature-sensor';
   const isPIR = type === 'pir-motion-sensor';
   const isIRObstacle = type === 'ir-obstacle-sensor';
+  const isRFID = type === 'rfid-rc522' || type === 'rfid-sensor';
   const isMPU6050 = type === 'mpu6050';
   const isLDR = type === 'photoresistor-sensor';
   const isFlame = type === 'flame-sensor';
@@ -252,7 +201,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   const isBigSound = type === 'big-sound-sensor' || type === 'small-sound-sensor';
   const isHX711 = type === 'hx711';
 
-  if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isIRObstacle && !isMPU6050 && !isLDR && !isFlame && !isGas && !isHeartRate && !isBigSound && !isHX711) return null;
+  if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isIRObstacle && !isRFID && !isMPU6050 && !isLDR && !isFlame && !isGas && !isHeartRate && !isBigSound && !isHX711) return null;
 
   const renderContent = () => {
     // ── DHT Sensor ──────────────────────────────────────────────────────────
@@ -267,7 +216,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       };
 
       return (
-        <CompactCard borderColor="rgba(186, 242, 100, 0.2)" wrapperRef={wrapperRef}>
+        <CompactCard borderColor="rgba(186, 242, 100, 0.2)">
           <SliderRow
             label="TEMP"
             unit="°C"
@@ -307,7 +256,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       };
 
       return (
-        <CompactCard borderColor={motionDetected ? 'rgba(74,222,128,0.4)' : 'rgba(186,242,100,0.2)'} wrapperRef={wrapperRef}>
+        <CompactCard borderColor={motionDetected ? 'rgba(74,222,128,0.4)' : 'rgba(186,242,100,0.2)'}>
           <button
             onClick={toggle}
             className={`w-full py-1 rounded-md border-none cursor-pointer font-extrabold text-[9px] font-mono tracking-wider transition-all ${
@@ -338,7 +287,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       };
 
       return (
-        <CompactCard borderColor={obstacleDetected ? 'rgba(239,68,68,0.4)' : 'rgba(186,242,100,0.2)'} wrapperRef={wrapperRef}>
+        <CompactCard borderColor={obstacleDetected ? 'rgba(239,68,68,0.4)' : 'rgba(186,242,100,0.2)'}>
           <button
             onClick={toggle}
             className={`w-full py-1 rounded-md border-none cursor-pointer font-extrabold text-[9px] font-mono tracking-wider transition-all ${
@@ -348,6 +297,37 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
             }`}
           >
             {obstacleDetected ? '● OBSTACLE DETECTED' : '○ SIMULATE OBSTACLE'}
+          </button>
+        </CompactCard>
+      );
+    }
+
+    // ── RFID RC522 Card Reader ──────────────────────────────────────────────
+    if (isRFID) {
+      const cardPresent = currentValues?.cardPresent ?? false;
+      const cardUid = currentValues?.cardUid ?? 'E2 4B 89 1F';
+
+      const toggle = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const next = !cardPresent;
+        updateNodeData(nodeId, {
+          sensorValues: { ...currentValues, cardPresent: next, cardUid },
+        });
+        withEngine(engine => engine.pushInputSignal(nodeId, 'SDA', next));
+      };
+
+      return (
+        <CompactCard borderColor={cardPresent ? 'rgba(56,189,248,0.5)' : 'rgba(186,242,100,0.2)'}>
+          <button
+            onClick={toggle}
+            className={`w-full py-1 rounded-md border-none cursor-pointer font-extrabold text-[9px] font-mono tracking-wider transition-all ${
+              cardPresent
+                ? 'bg-sky-500/90 text-white shadow-[0_0_6px_rgba(56,189,248,0.4)]'
+                : (isLightTheme ? 'bg-slate-200 text-slate-700' : 'bg-slate-700/90 text-slate-400')
+            }`}
+          >
+            {cardPresent ? `● RFID TAG PRESENT (${cardUid})` : '○ PRESENT RFID TAG'}
           </button>
         </CompactCard>
       );
@@ -371,7 +351,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       };
 
       return (
-        <CompactCard borderColor="rgba(186, 242, 100, 0.2)" wrapperRef={wrapperRef}>
+        <CompactCard borderColor="rgba(186, 242, 100, 0.2)">
           <SliderRow label="ACCEL X" unit="g" min={-2} max={2} step={0.01} value={accelX} color="#38bdf8" onChange={v => update('accelX', v)} />
           <SliderRow label="ACCEL Y" unit="g" min={-2} max={2} step={0.01} value={accelY} color="#38bdf8" onChange={v => update('accelY', v)} />
           <SliderRow label="ACCEL Z" unit="g" min={-2} max={2} step={0.01} value={accelZ} color="#38bdf8" onChange={v => update('accelZ', v)} />
@@ -399,7 +379,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       };
 
       return (
-        <CompactCard borderColor="rgba(249,115,22,0.3)" wrapperRef={wrapperRef}>
+        <CompactCard borderColor="rgba(249,115,22,0.3)">
           <SliderRow
             label="TEMP"
             unit="°C"
@@ -442,7 +422,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       };
 
       return (
-        <CompactCard borderColor="rgba(251,191,36,0.3)" wrapperRef={wrapperRef}>
+        <CompactCard borderColor="rgba(251,191,36,0.3)">
           <SliderRow
             label="LIGHT"
             unit="lx"
@@ -485,7 +465,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       };
 
       return (
-        <CompactCard borderColor={flameOn ? 'rgba(249,115,22,0.4)' : 'rgba(186,242,100,0.2)'} wrapperRef={wrapperRef}>
+        <CompactCard borderColor={flameOn ? 'rgba(249,115,22,0.4)' : 'rgba(186,242,100,0.2)'}>
           <SliderRow
             label="FLAME"
             unit="%"
@@ -526,7 +506,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       };
 
       return (
-        <CompactCard borderColor={gasDetected ? 'rgba(251,146,60,0.4)' : 'rgba(186,242,100,0.2)'} wrapperRef={wrapperRef}>
+        <CompactCard borderColor={gasDetected ? 'rgba(251,146,60,0.4)' : 'rgba(186,242,100,0.2)'}>
           <SliderRow
             label="GAS"
             unit="%"
@@ -558,7 +538,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       };
 
       return (
-        <CompactCard borderColor="rgba(239,68,68,0.3)" wrapperRef={wrapperRef}>
+        <CompactCard borderColor="rgba(239,68,68,0.3)">
           <SliderRow
             label="PULSE"
             unit="bpm"
@@ -591,7 +571,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       };
 
       return (
-        <CompactCard borderColor={soundOn ? 'rgba(251,146,60,0.4)' : 'rgba(186,242,100,0.2)'} wrapperRef={wrapperRef}>
+        <CompactCard borderColor={soundOn ? 'rgba(251,146,60,0.4)' : 'rgba(186,242,100,0.2)'}>
           <SliderRow
             label="SOUND"
             unit="%"
@@ -625,7 +605,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       };
 
       return (
-        <CompactCard borderColor="rgba(186,242,100,0.2)" wrapperRef={wrapperRef}>
+        <CompactCard borderColor="rgba(186,242,100,0.2)">
           <SliderRow
             label="WEIGHT"
             unit="g"
@@ -676,7 +656,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
     };
 
       return (
-        <CompactCard borderColor="rgba(186, 242, 100, 0.2)" wrapperRef={wrapperRef}>
+        <CompactCard borderColor="rgba(186, 242, 100, 0.2)">
         <SliderRow
           label={config.label}
           unit={config.unit}
@@ -694,9 +674,15 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   const cardContent = renderContent();
   if (!cardContent) return null;
 
+  const pinData = LEAP_PINS[type];
+  const nodeW = (pinData?.viewBox?.width || 150) * 0.75;
+  const nodeH = (pinData?.viewBox?.height || 80) * 0.75;
+
   return (
     <RotationContext.Provider value={rotation}>
-      {cardContent}
+      <NodeDimensionsContext.Provider value={{ width: nodeW, height: nodeH }}>
+        {cardContent}
+      </NodeDimensionsContext.Provider>
     </RotationContext.Provider>
   );
 };

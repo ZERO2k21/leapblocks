@@ -279,7 +279,14 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.obstacleDetected = active;
     mappedProps.ledPower = true;
     mappedProps.ledSignal = active;
+  } else if (data.type === 'rfid-rc522' || data.type === 'rfid-sensor') {
+    // RFID-RC522 Sensor: reflect simulated card presence and UID
+    const active = data.sensorValues?.cardPresent ?? false;
+    mappedProps.cardPresent = active;
+    mappedProps.cardUid = data.sensorValues?.cardUid ?? 'DE AD BE EF';
+    mappedProps.ledPower = true;
   } else if (data.type === 'mpu6050') {
+
     // MPU6050: pass all 7 sensor values to the visual element
     const sv = data.sensorValues ?? {};
     mappedProps.accelX = sv.accelX ?? 0;
@@ -1049,16 +1056,14 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
       </div>
 
 
-      {/* ── SENSOR OVERLAY (sliders shown below the node — only when selected) ── */}
-      {isSelected && createPortal(
+      {/* ── SENSOR OVERLAY (sliders shown above the node — only when selected) ── */}
+      {isSelected && (
         <SensorOverlay
           nodeId={id}
           type={data.type}
           currentValues={data.sensorValues}
           rotation={data.rotation || 0}
-          wrapperRef={wrapperRef}
-        />,
-        document.body
+        />
       )}
     </div>
   );
