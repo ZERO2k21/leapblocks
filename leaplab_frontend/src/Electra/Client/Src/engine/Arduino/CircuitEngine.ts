@@ -1674,7 +1674,7 @@ class CircuitEngine {
           const isComplexPeripheral = ['stepper-motor', 'stepperMotor', 'a4988', 'biaxial-stepper', 'dht22', 'dht11', 'servo', 'hc-sr04',
             'mpu6050', 'ssd1306',
             'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c', 'neopixel', 'neopixel-matrix', 'led-ring', 'ks2e-m-dc5', 'relay-module',
-            '7segment', 'ili9341', 'pir-motion-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer', 'l298n',
+            '7segment', 'ili9341', 'pir-motion-sensor', 'ir-obstacle-sensor', 'heart-beat-sensor', 'hx711', 'ds1307', 'membrane-keypad', 'rotary-dialer', 'l298n',
             'ir-receiver', 'ir-remote'].includes(pType);
 
           // 1. Trace the electrical network — only for simple output peripherals
@@ -3178,6 +3178,13 @@ class CircuitEngine {
               simulationRunner.setVirtualInput(avrPin, initialMotion);
               console.log(`[FORGE CIRCUIT] PIR (${peripheralId}) initial state injected: ${initialMotion ? 'HIGH' : 'LOW'} on ${avrPin}`);
             }
+            // IR Obstacle sensor (Active-LOW: LOW when obstacle detected)
+            else if (type === 'ir-obstacle-sensor' && peripheralPinName === 'OUT') {
+              const obstacle = peripheralNode.data.sensorValues?.obstacleDetected ?? false;
+              const initialPinState = !obstacle;
+              simulationRunner.setVirtualInput(avrPin, initialPinState);
+              console.log(`[FORGE CIRCUIT] IR Obstacle (${peripheralId}) initial state injected: ${initialPinState ? 'HIGH' : 'LOW'} on ${avrPin}`);
+            }
             // Potentiometer & Slide Potentiometer
             else if ((type === 'potentiometer' || type === 'slide-potentiometer') && peripheralPinName === 'SIG') {
               this.pushInputSignal(peripheralId, 'SIG', true);
@@ -3721,7 +3728,7 @@ class CircuitEngine {
       // Digital-only sensors that should never use analog path
       const digitalOnlySensors = [
         'tilt-switch', 'pushbutton', 'pushbutton-6mm', 'slide-switch',
-        'dip-switch-8', 'pir-motion-sensor', 'membrane-keypad', 'rotary-dialer',
+        'dip-switch-8', 'pir-motion-sensor', 'ir-obstacle-sensor', 'membrane-keypad', 'rotary-dialer',
         'ky-040'  // KY-040 rotary encoder (CLK, DT, SW are all digital)
       ];
 
@@ -3932,7 +3939,7 @@ class CircuitEngine {
 
     // Categorize components
     const outputComponents = ['led', 'rgb-led', 'buzzer', 'servo', 'dc-motor', 'stepperMotor', 'relay-module', '7segment', 'neopixel'];
-    const inputComponents = ['button', 'potentiometer', 'ldr', 'pir-motion-sensor', 'dht11', 'dht22', 'hc-sr04', 'heart-beat-sensor'];
+    const inputComponents = ['button', 'potentiometer', 'ldr', 'pir-motion-sensor', 'ir-obstacle-sensor', 'dht11', 'dht22', 'hc-sr04', 'heart-beat-sensor'];
 
     const componentsWired = connectedNodes.filter(n => outputComponents.includes(n.data?.type)).length;
     const sensorsWired = connectedNodes.filter(n => inputComponents.includes(n.data?.type)).length;

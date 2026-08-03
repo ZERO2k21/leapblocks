@@ -243,6 +243,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   const isAnalog = ['potentiometer', 'slide-potentiometer', 'mq2', 'resistor', 'photoresistor'].includes(type);
   const isNTC = type === 'ntc-temperature-sensor';
   const isPIR = type === 'pir-motion-sensor';
+  const isIRObstacle = type === 'ir-obstacle-sensor';
   const isMPU6050 = type === 'mpu6050';
   const isLDR = type === 'photoresistor-sensor';
   const isFlame = type === 'flame-sensor';
@@ -251,7 +252,7 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   const isBigSound = type === 'big-sound-sensor' || type === 'small-sound-sensor';
   const isHX711 = type === 'hx711';
 
-  if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isMPU6050 && !isLDR && !isFlame && !isGas && !isHeartRate && !isBigSound && !isHX711) return null;
+  if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isIRObstacle && !isMPU6050 && !isLDR && !isFlame && !isGas && !isHeartRate && !isBigSound && !isHX711) return null;
 
   const renderContent = () => {
     // ── DHT Sensor ──────────────────────────────────────────────────────────
@@ -316,6 +317,37 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
             }`}
           >
             {motionDetected ? '● MOTION DETECTED' : '○ TRIGGER MOTION'}
+          </button>
+        </CompactCard>
+      );
+    }
+
+    // ── IR Obstacle Sensor ──────────────────────────────────────────────────
+    if (isIRObstacle) {
+      const obstacleDetected = currentValues?.obstacleDetected ?? false;
+
+      const toggle = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const next = !obstacleDetected;
+        updateNodeData(nodeId, {
+          sensorValues: { ...currentValues, obstacleDetected: next },
+        });
+        // FC-51 IR obstacle sensor is Active-LOW: OUT goes LOW (0V) when obstacle detected
+        withEngine(engine => engine.pushInputSignal(nodeId, 'OUT', !next));
+      };
+
+      return (
+        <CompactCard borderColor={obstacleDetected ? 'rgba(239,68,68,0.4)' : 'rgba(186,242,100,0.2)'} wrapperRef={wrapperRef}>
+          <button
+            onClick={toggle}
+            className={`w-full py-1 rounded-md border-none cursor-pointer font-extrabold text-[9px] font-mono tracking-wider transition-all ${
+              obstacleDetected
+                ? 'bg-red-500/90 text-white shadow-[0_0_6px_rgba(239,68,68,0.3)]'
+                : (isLightTheme ? 'bg-slate-200 text-slate-700' : 'bg-slate-700/90 text-slate-400')
+            }`}
+          >
+            {obstacleDetected ? '● OBSTACLE DETECTED' : '○ SIMULATE OBSTACLE'}
           </button>
         </CompactCard>
       );

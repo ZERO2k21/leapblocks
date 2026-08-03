@@ -32,6 +32,7 @@ import { AnalogJoystickElement } from './analog-joystick-element';
 import { SlidePotentiometerElement } from './slide-potentiometer-element';
 import { IRReceiverElement } from './ir-receiver-element';
 import { IRRemoteElement } from './ir-remote-element';
+import { IRObstacleSensorElement } from './ir-obstacle-sensor-element';
 import { PIRMotionSensorElement } from './pir-motion-sensor-element';
 import { NTCTemperatureSensorElement } from './ntc-temperature-sensor-element';
 import { HeartBeatSensorElement } from './heart-beat-sensor-element';
@@ -94,6 +95,7 @@ declare global {
       'leap-slide-potentiometer': LeapElement<SlidePotentiometerElement>;
       'leap-ir-receiver': LeapElement<IRReceiverElement>;
       'leap-ir-remote': LeapElement<IRRemoteElement>;
+      'leap-ir-obstacle-sensor': LeapElement<IRObstacleSensorElement>;
       'leap-pir-motion-sensor': LeapElement<PIRMotionSensorElement>;
       'leap-ntc-temperature-sensor': LeapElement<NTCTemperatureSensorElement>;
       'leap-heart-beat-sensor': LeapElement<HeartBeatSensorElement>;

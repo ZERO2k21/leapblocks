@@ -458,6 +458,18 @@ arduinoGenerator.forBlock['arduino_pir'] = function (block) {
 
 };
 
+arduinoGenerator.forBlock['arduino_ir_obstacle'] = function (block) {
+
+    const pin = block.getFieldValue('PIN');
+
+    (arduinoGenerator as any).addSetup(`pinMode_${pin}`, `  pinMode(${pin}, INPUT);`);
+
+    log('arduino_ir_obstacle', 'Generating', { pin });
+
+    return [`digitalRead(${pin}) == LOW`, ORDER_RELATIONAL];
+
+};
+
 
 
 arduinoGenerator.forBlock['arduino_digital_sensor'] = function (block) {
@@ -1700,6 +1712,12 @@ arduinoGenerator.forBlock['esp32_pir'] = function (block: any) {
     const pin = block.getFieldValue('PIN');
     (arduinoGenerator as any).addSetup(`pir_mode_${pin}`, `pinMode(${pin}, INPUT);`);
     return [`(digitalRead(${pin}) == HIGH)`, ORDER_ATOMIC];
+};
+
+arduinoGenerator.forBlock['esp32_ir_obstacle'] = function (block: any) {
+    const pin = block.getFieldValue('PIN');
+    (arduinoGenerator as any).addSetup(`ir_mode_${pin}`, `pinMode(${pin}, INPUT);`);
+    return [`(digitalRead(${pin}) == LOW)`, ORDER_ATOMIC];
 };
 
 arduinoGenerator.forBlock['esp32_digital_sensor'] = function (block: any) {

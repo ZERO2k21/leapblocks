@@ -2448,6 +2448,31 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       }
     ]
   },
+  "ir-obstacle-sensor": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 200,
+      "height": 62
+    },
+    "pins": [
+      {
+        "name": "VCC",
+        "x": 194,
+        "y": 15.5
+      },
+      {
+        "name": "OUT",
+        "x": 194,
+        "y": 31.0
+      },
+      {
+        "name": "GND",
+        "x": 194,
+        "y": 46.5
+      }
+    ]
+  },
   "potentiometer": {
     "viewBox": {
       "minX": 0,

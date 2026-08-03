@@ -291,6 +291,18 @@ export const esp32Blocks = [
         helpUrl: '',
     },
     {
+        type: 'esp32_ir_obstacle',
+        message0: '🚧 IR obstacle detected on pin %1?',
+        args0: [
+            { type: 'field_dropdown', name: 'PIN', options: ESP32_DIGITAL_PINS },
+        ],
+        inputsInline: true,
+        output: 'Boolean',
+        colour: COLORS.sensors,
+        tooltip: 'Check if an obstacle is detected by the IR sensor on ESP32',
+        helpUrl: '',
+    },
+    {
         type: 'esp32_digital_sensor',
         message0: '🌡️ read digital sensor %1 at %2',
         args0: [
@@ -676,6 +688,7 @@ export const esp32Toolbox = {
                 { kind: 'block', type: 'esp32_ldr' },
                 { kind: 'block', type: 'esp32_potentiometer' },
                 { kind: 'block', type: 'esp32_pir' },
+                { kind: 'block', type: 'esp32_ir_obstacle' },
             ],
         },
         { kind: 'sep' },

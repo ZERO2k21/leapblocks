@@ -46,6 +46,20 @@
 .blocklyPath {
   stroke-linecap: round !important;
   stroke-linejoin: round !important;
+  pointer-events: auto;
+}
+
+/* Ensure block icons and mutation icons are clickable */
+.blocklyIconGroup {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* Ensure input fields inside blocks receive pointer events */
+.blocklyEditableText,
+.blocklyEditableField {
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 /* Category colors - leap official */

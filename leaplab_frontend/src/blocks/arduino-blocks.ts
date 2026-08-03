@@ -1521,6 +1521,30 @@ export const arduinoBlocks = [
 
     {
 
+        type: 'arduino_ir_obstacle',
+
+        message0: '🚧 IR obstacle detected on pin %1?',
+
+        args0: [
+
+            { type: 'field_dropdown', name: 'PIN', options: [['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7']] },
+
+        ],
+
+        inputsInline: true,
+
+        output: 'Boolean',
+
+        colour: COLORS.sensors,
+
+        tooltip: 'Check if an obstacle is detected by the IR sensor',
+
+        helpUrl: '',
+
+    },
+
+    {
+
         type: 'arduino_digital_sensor',
 
         message0: '🌡️ read digital sensor %1 at %2',
@@ -1964,6 +1988,8 @@ export const arduinoToolbox = {
                 { kind: 'block', type: 'arduino_potentiometer' },
 
                 { kind: 'block', type: 'arduino_pir' },
+
+                { kind: 'block', type: 'arduino_ir_obstacle' },
 
             ],
 

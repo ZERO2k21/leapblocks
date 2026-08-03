@@ -47,6 +47,7 @@ const COMPONENTS = [
   { id: 'ssd1306', name: 'OLED SSD1306', category: 'displays', desc: '128x64 Graphics OLED' },
   { id: 'photoresistor-sensor', name: 'Photoresistor', category: 'sensors', desc: 'Light sensor (LDR)' },
   { id: 'pir-motion-sensor', name: 'PIR Sensor', category: 'sensors', desc: 'Motion detector' },
+  { id: 'ir-obstacle-sensor', name: 'IR Sensor', category: 'sensors', desc: 'IR Obstacle Avoidance (FC-51)' },
   { id: 'potentiometer', name: 'Potentiometer', category: 'inputs', desc: 'Variable resistor' },
   { id: 'pushbutton', name: 'Pushbutton', category: 'inputs', desc: 'Momentary switch' },
   { id: 'relay-module', name: 'Relay Module', category: 'outputs', desc: 'Single-channel relay' },

@@ -72,6 +72,7 @@ import { useProjectOperations } from './hooks/useProjectOperations';
 import { useAnimationControl } from './hooks/useAnimationControl';
 import { useHardwareControls } from './hooks/useHardwareControls';
 import { initBlocklyOnce, extractBroadcastValues, fixCostumeDropdownValues, resetBlocklyInitialized, BLOCKLY_MEDIA_PATH } from './utils/blocklyInit';
+import { useBlockClickListener } from './hooks/useBlockClickListener';
 
 import { stageManager } from '../engine/StageManager';
 import { spriteManager } from '../engine/SpriteManager';
@@ -929,7 +930,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         if (!workspaceRef.current) return;
 
-        if (event.type !== Blockly.Events.CLICK && event.type !== Blockly.Events.BLOCK_CHANGE) return;
+        // Block clicks are now handled by useBlockClickListener (DOM event delegation).
+        // This listener only handles BLOCK_CHANGE for real-time field edits.
+        if (event.type !== Blockly.Events.BLOCK_CHANGE) return;
 
 
 
@@ -941,242 +944,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
         if (!block) return;
 
-
-        // Animation block interaction on click
-
-        if (event.type === Blockly.Events.CLICK) {
-            // Use AnimationVM compiler for leap blocks (supports operators, variables, etc.)
-            if (!block.type.startsWith('arduino_')) {
-                console.log(`[APP] Running stack with AnimationVM for sprite ${selectedSpriteId}`);
-                setIsRunning(true);
-
-                // Ensure the current sprite workspace is saved and all sprite workspaces are loaded
-                saveCurrentSpriteWorkspace();
-                syncAllWorkspaces(); // Sync everything to the VM so broadcasts work across sprites
-
-                // Update active sprite for window.runtime.pen / window.runtime.sprite
-                if (selectedSpriteId) setActiveSpriteId(selectedSpriteId);
-
-                // Compile and execute via AnimationVM for correct operator/variable handling
-                const compiler = new AnimationCompiler(selectedSpriteId || '');
-                const script = compiler.compileStack(block);
-                if (script) {
-                    animationVM.runScript(script);
-                    return;
-                }
-            }
-
-            // Fallback: Preview single block action
-
-            previewBlockActionRef.current(block);
-
-        }
-
-        // Hardware block interaction (Arduino)
-
         if (editorMode !== 'stage' || !isConnected) return;
 
         if (!block.type.startsWith('arduino_')) return;
 
+        if (activeTab !== 'serial') setActiveTab('serial');
 
+        log.app('Real-time field change', { type: block.type, event: event.type });
 
-        if (event.type === Blockly.Events.CLICK && (block.type === 'arduino_setup' || block.type === 'arduino_loop')) {
-
-            console.log('[APP] Starting Arduino scripts from block click');
-
-            setIsRunning(true);
-
-            animationVM.triggerFlag();
-
-            addLog('Started Arduino script');
-
-            return;
-
-        }
-
-
-
-        if (event.type === Blockly.Events.BLOCK_CHANGE) {
-
-            if (activeTab !== 'serial') setActiveTab('serial');
-
-        }
-
-
-
-        log.app('Real-time interaction', { type: block.type, event: event.type });
-
-
-
-        try {
-
-            switch (block.type) {
-
-                case 'arduino_digital_write': {
-
-                    const pin = parseInt(block.getFieldValue('PIN'), 10);
-
-                    const val = block.getFieldValue('VALUE') === 'HIGH';
-
-                    await hardwareAdapter.setDigitalPin(pin, val);
-
-                    break;
-
-                }
-
-                case 'arduino_analog_write': {
-
-                    const pin = parseInt(block.getFieldValue('PIN'), 10);
-
-                    const val = parseInt(block.getFieldValue('VALUE'), 10);
-
-                    await hardwareAdapter.setPWM(pin, val);
-
-                    break;
-
-                }
-
-                case 'arduino_led': {
-
-                    const pin = parseInt(block.getFieldValue('PIN'), 10);
-
-                    const val = parseInt(block.getFieldValue('BRIGHTNESS'), 10);
-
-                    await hardwareAdapter.setPWM(pin, val);
-
-                    break;
-
-                }
-
-                case 'arduino_servo': {
-
-                    const pin = parseInt(block.getFieldValue('PIN'), 10);
-
-                    const angle = parseInt(block.getFieldValue('ANGLE'), 10);
-
-                    await hardwareAdapter.setServo(pin, angle);
-
-                    break;
-
-                }
-
-                case 'arduino_tone': {
-
-                    const pin = parseInt(block.getFieldValue('PIN'), 10);
-
-                    const freq = parseInt(block.getFieldValue('FREQ'), 10);
-
-                    await hardwareAdapter.playTone(pin, freq, 500);
-
-                    break;
-
-                }
-
-                case 'arduino_notone': {
-
-                    const pin = parseInt(block.getFieldValue('PIN'), 10);
-
-                    await hardwareAdapter.stopTone(pin);
-
-                    break;
-
-                }
-
-                case 'arduino_relay': {
-
-                    const pin = parseInt(block.getFieldValue('PIN'), 10);
-
-                    const state = block.getFieldValue('STATE') === 'HIGH';
-
-                    await hardwareAdapter.setDigitalPin(pin, state);
-
-                    break;
-
-                }
-
-                case 'arduino_motor': {
-
-                    const motor = block.getFieldValue('MOTOR');
-
-                    const motorId = motor === 'A' ? 1 : 2;
-
-                    const dir = block.getFieldValue('DIR');
-
-                    const speedVal = parseInt(block.getFieldValue('SPEED'), 10);
-
-                    let speed = 0;
-
-                    if (dir === 'forward') speed = speedVal;
-
-                    else if (dir === 'backward') speed = -speedVal;
-
-                    await hardwareAdapter.setMotor(motorId, speed);
-
-                    break;
-
-                }
-
-                case 'arduino_analog_read': {
-
-                    const pin = block.getFieldValue('PIN');
-
-                    const val = await hardwareAdapter.readAnalogPin(pin);
-
-                    addLog(`[Hardware] Read Analog ${pin}: ${val}`);
-
-                    break;
-
-                }
-
-                case 'arduino_digital_read': {
-
-                    const pin = parseInt(block.getFieldValue('PIN'), 10);
-
-                    const val = await hardwareAdapter.readDigitalPin(pin);
-
-                    addLog(`[Hardware] Read Digital ${pin}: ${val ? 'HIGH' : 'LOW'}`);
-
-                    break;
-
-                }
-
-                case 'arduino_button': {
-
-                    const pin = parseInt(block.getFieldValue('PIN'), 10);
-
-                    const val = await hardwareAdapter.readDigitalPin(pin);
-
-                    addLog(`[Hardware] Button on ${pin}: ${val ? 'Pressed' : 'Released'}`);
-
-                    break;
-
-                }
-
-                case 'arduino_digital_sensor': {
-
-                    const sensor = block.getFieldValue('SENSOR');
-
-                    const pin = parseInt(block.getFieldValue('PIN'), 10);
-
-                    const val = await hardwareAdapter.readDigitalPin(pin);
-
-                    const status = (sensor === 'IR' ? !val : val) ? 'Detected' : 'Not Detected';
-
-                    addLog(`[Hardware] ${sensor} Sensor on ${pin}: ${status} (Raw: ${val ? 'HIGH' : 'LOW'})`);
-
-                    break;
-
-                }
-
-            }
-
-        } catch (err) {
-
-            log.app('Interaction error', err);
-
-        }
-
-    }, [editorMode, isConnected, saveCurrentSpriteWorkspace, sprites, selectedSpriteId]);
+    }, [editorMode, isConnected, activeTab, setActiveTab]);
 
 
 
@@ -1302,6 +1078,21 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         setUploadProgress, setActiveTab, addLog
     );
 
+    // Full-block click listener — captures clicks on the ENTIRE block area
+    // (blocklyPath, inputs, icons, connections) via DOM event delegation
+    useBlockClickListener({
+        workspaceRef,
+        selectedSpriteId,
+        sprites,
+        editorMode,
+        isConnected,
+        activeTab,
+        setActiveTab,
+        setIsRunning,
+        addLog,
+        previewBlockActionRef,
+        syncAllWorkspacesRef,
+    });
 
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -1930,6 +1721,17 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 if (blocklyDiv.current) {
 
+                    // Configure Blockly connection snap behavior for multi-directional insertion
+                    (Blockly as any).config.snapRadius = 40;
+                    (Blockly as any).config.connectingSnapRadius = 60;
+                    (Blockly as any).config.currentConnectionPreference = 0;
+
+                    // Disable bumpNeighbours: during render it shoves any block within
+                    // snapRadius away from newly created blocks, so the target block is
+                    // displaced before the user drags onto it — breaking the insertion
+                    // marker preview from every direction but the first.
+                    (Blockly.BlockSvg.prototype as any).bumpNeighbours = () => {};
+
                     // Inject Blockly
 
                     const blocksWorkspace = Blockly.inject(blocklyDiv.current, {
@@ -1937,7 +1739,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         toolbox: getCurrentToolbox(),
                         media: BLOCKLY_MEDIA_PATH,
                         comments: true,
-
+                        move: { scrollbars: true, drag: true, wheel: true },
 
                         grid: { spacing: 20, length: 3, colour: '#e8e8e8', snap: true },
 

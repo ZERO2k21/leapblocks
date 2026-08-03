@@ -22,6 +22,7 @@ export { ILI9341Element } from './ili9341-element';
 export { ILI9341TouchElement } from './ili9341-touch-element'; // touch screen option
 export { IRReceiverElement } from './ir-receiver-element';
 export { IRRemoteElement } from './ir-remote-element';
+export { IRObstacleSensorElement } from './ir-obstacle-sensor-element';
 export { KS2EMDC5Element } from './ks2e-m-dc5-element';
 export { KY040Element } from './ky-040-element';
 export { LCD1602Element } from './lcd1602-element';

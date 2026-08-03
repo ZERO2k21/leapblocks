@@ -273,6 +273,12 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
   } else if (data.type === 'pir-motion-sensor') {
     // PIR: reflect the simulated motion state onto the visual element
     mappedProps.motionDetected = data.sensorValues?.motionDetected ?? false;
+  } else if (data.type === 'ir-obstacle-sensor') {
+    // IR Obstacle Sensor: reflect simulated obstacle state onto visual element
+    const active = data.sensorValues?.obstacleDetected ?? false;
+    mappedProps.obstacleDetected = active;
+    mappedProps.ledPower = true;
+    mappedProps.ledSignal = active;
   } else if (data.type === 'mpu6050') {
     // MPU6050: pass all 7 sensor values to the visual element
     const sv = data.sensorValues ?? {};
