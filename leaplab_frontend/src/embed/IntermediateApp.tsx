@@ -2211,6 +2211,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         // scrolling past the end of one category flows directly into the next
                         // one. Selecting a category jumps the flyout to that section instead of
                         // replacing the contents.
+                        let suppressScrollSpyUntil = 0;
                         try {
                             const toolboxAny = blocksWorkspace.getToolbox() as any;
                             const flyoutAny = flyout as any;
@@ -2317,6 +2318,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                             lastHighlightedCat = -1;
                                             return;
                                         }
+                                        if (Date.now() < suppressScrollSpyUntil) return;
                                         const list = getCategories();
                                         if (list.length === 0) return;
                                         const contents: any[] = flyoutAny.getContents?.() ?? [];
@@ -2428,6 +2430,17 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                             }
                                         }
                                         toolbox.selectItemByPosition(0);
+                                    }
+                                } else {
+                                    // A new category was clicked — directly highlight it
+                                    // so the scroll-spy doesn't momentarily show the wrong one.
+                                    suppressScrollSpyUntil = Date.now() + 300;
+                                    const toolbox = blocksWorkspace.getToolbox() as any;
+                                    if (toolbox) {
+                                        const cats: any[] = (toolbox.getToolboxItems?.() ?? [])
+                                            .filter((it: any) => it instanceof Blockly.ToolboxCategory);
+                                        const newItem = (event as any).newItem;
+                                        cats.forEach((c, idx) => c.setSelected?.(c === newItem || c.getId?.() === newItem));
                                     }
                                 }
                             }
