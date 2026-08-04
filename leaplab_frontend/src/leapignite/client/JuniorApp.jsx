@@ -169,7 +169,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
             id: "scene1",
             name: "Scene 1",
             background: "white",
-            backgroundImage: "assets/backdrops/default.jpg",
+            backgroundImage: "",
             backdropName: "Default",
             sprites: [
                 {

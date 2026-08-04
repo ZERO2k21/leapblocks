@@ -63,32 +63,7 @@ export const leapSprites: any[] = [
     ],
     "category": "leap"
   },
-  {
-    "id": "leap_anina_dance",
-    "name": "Anina Dance",
-    "emoji": "🤖",
-    "image": "assets/sprites/leap/anina_dance_anina_stance.png",
-    "costumes": [
-      "assets/sprites/leap/anina_dance_anina_stance.png",
-      "assets/sprites/leap/anina_dance_anina_top_stand.png",
-      "assets/sprites/leap/anina_dance_anina_top_r_step.png",
-      "assets/sprites/leap/anina_dance_anina_top_l_step.png",
-      "assets/sprites/leap/anina_dance_anina_top_freeze.png",
-      "assets/sprites/leap/anina_dance_anina_r_cross.png",
-      "assets/sprites/leap/anina_dance_anina_pop_front.png",
-      "assets/sprites/leap/anina_dance_anina_pop_down.png",
-      "assets/sprites/leap/anina_dance_anina_pop_left.png",
-      "assets/sprites/leap/anina_dance_anina_pop_right.png",
-      "assets/sprites/leap/anina_dance_anina_pop_l_arm.png",
-      "assets/sprites/leap/anina_dance_anina_pop_stand.png",
-      "assets/sprites/leap/anina_dance_anina_pop_r_arm.png"
-    ],
-    "tags": [
-      "people",
-      "dance"
-    ],
-    "category": "leap"
-  },
+
   {
     "id": "leap_apple",
     "name": "Apple",
@@ -729,7 +704,7 @@ export const leapSprites: any[] = [
     "image": "assets/sprites/leap/cat_cat_a.svg",
     "costumes": [
       "assets/sprites/leap/cat_cat_a.svg",
-      "assets/sprites/leap/cat_cat-b.svg"
+      "assets/sprites/leap/cat_cat_b.svg"
     ],
     "tags": [
       "animals",
