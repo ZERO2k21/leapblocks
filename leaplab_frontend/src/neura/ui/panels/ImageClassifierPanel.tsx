@@ -754,7 +754,15 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                 )}
                                 
                                 {/* Capture button */}
-                                <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2">
+                                <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={!canAddSamples}
+                                        className={`w-10 h-10 rounded-full border-2 border-white/90 flex items-center justify-center shadow-[0_2px_12px_rgba(0,0,0,0.25)] transition-all duration-200 bg-blue-500 hover:bg-blue-600 ${canAddSamples ? 'cursor-pointer opacity-100' : 'cursor-not-allowed opacity-50'}`}
+                                        title="Upload Image"
+                                    >
+                                        <span className="text-base">📁</span>
+                                    </button>
                                     <button
                                         onClick={handleCapture}
                                         onMouseDown={burstMode ? startBurstCapture : undefined}
@@ -762,7 +770,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                         onTouchStart={burstMode ? startBurstCapture : undefined}
                                         onTouchEnd={burstMode ? stopBurstCapture : undefined}
                                         disabled={!canAddSamples || isCapturing}
-                                        className={`w-12 h-12 rounded-full border-2 border-white/90 flex items-center justify-center shadow-[0_2px_12px_rgba(0,0,0,0.25)] transition-all duration-200 ${canAddSamples && !isCapturing ? 'cursor-pointer opacity-100' : 'cursor-not-allowed opacity-50'}`}
+                                        className={`w-14 h-14 rounded-full border-2 border-white/90 flex items-center justify-center shadow-[0_2px_12px_rgba(0,0,0,0.25)] transition-all duration-200 ${canAddSamples && !isCapturing ? 'cursor-pointer opacity-100' : 'cursor-not-allowed opacity-50'}`}
                                         style={{ background: isCapturing ? '#9ca3af' : (selectedClass?.color || '#630ed4') }}
                                     >
                                         <span className="text-lg">
@@ -824,22 +832,22 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                                     ? `Drag & drop images here, take photos, or click upload for "${selectedClass?.name || 'your class'}"`
                                                     : 'Select or create a class first, then drop images here'}
                                         </p>
-                                        <div className="flex items-center justify-center gap-2.5">
+                                        <div className="flex items-center justify-center gap-3">
                                             <button
                                                 onClick={startCamera}
-                                                className="flex items-center gap-1.5 py-3 px-5.5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.25)]"
+                                                className="flex items-center gap-1.5 py-3 px-6 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.25)] hover:shadow-[0_6px_20px_rgba(99,14,212,0.35)] transition-all duration-200"
                                             >
                                                 📷 Turn On Camera
                                             </button>
                                             <button
                                                 onClick={() => fileInputRef.current?.click()}
-                                                className="flex items-center gap-1.5 py-3 px-5.5 bg-white text-[#630ed4] rounded-xl text-xs font-bold border-2 border-[#630ed4] cursor-pointer"
+                                                className="flex items-center gap-1.5 py-3 px-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl text-xs font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(37,99,235,0.25)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.35)] transition-all duration-200"
                                             >
-                                                📂 Upload
+                                                📁 Upload Image
                                             </button>
                                         </div>
-                                        <p className="text-[11px] text-gray-400 mt-3.5">
-                                            PNG, JPG up to 10MB
+                                        <p className="text-[11px] text-gray-400 mt-3">
+                                            PNG, JPG up to 10MB • Drag & drop supported
                                         </p>
                                     </div>
                                 </div>

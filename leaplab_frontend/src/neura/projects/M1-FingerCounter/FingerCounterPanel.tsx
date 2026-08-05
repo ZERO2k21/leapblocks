@@ -55,6 +55,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
     const [testImage, setTestImage] = useState<string | null>(null)
     const [autoPredict, setAutoPredict] = useState(true)
     const testFileInputRef = useRef<HTMLInputElement>(null)
+    const collectFileInputRef = useRef<HTMLInputElement>(null)
     const [fingerFlags, setFingerFlags] = useState<number[]>([0, 0, 0, 0, 0])
 
     const showSaved = useCallback((msg: string) => {
@@ -517,6 +518,74 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
         }
     }, [cameraOn, isCapturing, mode, showSaved])
 
+    const handleCollectUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files
+        if (!files || files.length === 0) return
+        if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
+            mode.setSelectedClassId(mode.project.classes[0].id)
+        }
+        if (!mode.selectedClassId) { showSaved('⚠️ Create a class first!'); return }
+        const selectedCls = mode.getSelectedClass()
+        if (selectedCls && selectedCls.samples.length >= MAX_SAMPLES_PER_CLASS) {
+            showSaved('⚠️ Sample limit reached! (20 per class)')
+            if (collectFileInputRef.current) collectFileInputRef.current.value = ''
+            return
+        }
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i]
+            if (!file.type.startsWith('image/')) continue
+            const currentCls = mode.getSelectedClass()
+            if (currentCls && currentCls.samples.length >= MAX_SAMPLES_PER_CLASS) break
+            const dataUrl = await new Promise<string>((resolve) => {
+                const reader = new FileReader()
+                reader.onload = () => resolve(reader.result as string)
+                reader.readAsDataURL(file)
+            })
+            const img = new Image()
+            img.src = dataUrl
+            await new Promise<void>((resolve) => {
+                img.onload = () => resolve()
+                img.onerror = () => resolve()
+                setTimeout(() => resolve(), 3000)
+            })
+            if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+                setIsCapturing(true)
+                setCaptureStatus('detecting')
+                try {
+                    const tempCanvas = document.createElement('canvas')
+                    tempCanvas.width = img.naturalWidth
+                    tempCanvas.height = img.naturalHeight
+                    const ctx = tempCanvas.getContext('2d')
+                    if (ctx) {
+                        ctx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height)
+                        const keypoints = await classifierRef.current.detectHand(tempCanvas)
+                        if (keypoints && keypoints.length > 0) {
+                            const features = classifierRef.current.extractFeatures(keypoints)
+                            const added = mode.addSample(mode.selectedClassId!, { type: 'keypoints', data: JSON.stringify(Array.from(features)) })
+                            if (!added) {
+                                showSaved('⚠️ Sample limit reached! (20 per class)')
+                            } else {
+                                classifierRef.current.addSample(features, mode.getSelectedClass()?.name || '').catch(() => {})
+                                setCaptureStatus('success')
+                                showSaved(`📁 Uploaded to ${mode.getSelectedClass()?.name}! (${mode.getSelectedClass()?.samples.length || 0} total)`)
+                            }
+                        } else {
+                            setCaptureStatus('no-hand')
+                            showSaved('⚠️ No hand detected in image. Try another!')
+                        }
+                    }
+                } catch (err) {
+                    console.error('[FingerCounter] Upload error:', err)
+                    setCaptureStatus('error')
+                } finally {
+                    setIsCapturing(false)
+                    setTimeout(() => setCaptureStatus('idle'), 1500)
+                }
+            }
+        }
+        if (collectFileInputRef.current) collectFileInputRef.current.value = ''
+    }, [mode, showSaved])
+
     const canTrain = !!(mode.project && mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2))
     const selectedClass = mode.getSelectedClass()
 
@@ -549,7 +618,10 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
                                     <span className="text-4xl mb-2">🚫</span>
                                     <h3 className="text-sm font-bold text-gray-800 mb-1">Camera Access Needed</h3>
                                     <p className="text-xs text-gray-500 mb-3">{cameraError}</p>
-                                    <button onClick={startCamera} className="px-4 py-2 bg-[#0ea5e9] text-white rounded-xl text-xs font-bold">Try Again</button>
+                                    <div className="flex gap-2">
+                                        <button onClick={startCamera} className="px-4 py-2 bg-[#0ea5e9] text-white rounded-xl text-xs font-bold">🔄 Try Again</button>
+                                        <button onClick={() => collectFileInputRef.current?.click()} className="px-4 py-2 bg-blue-500 text-white rounded-xl text-xs font-bold hover:bg-blue-600">📁 Upload Only</button>
+                                    </div>
                                 </div>
                             )}
 
@@ -581,7 +653,11 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
                                         <span className="text-5xl mb-3">✋</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to collect hand gesture samples</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 bg-[#0ea5e9] text-white rounded-xl text-xs font-bold shadow-lg">📷 Turn On Camera</button>
+                                        <div className="flex gap-2">
+                                            <button onClick={startCamera} className="px-5 py-2.5 bg-[#0ea5e9] text-white rounded-xl text-xs font-bold shadow-lg">📷 Turn On Camera</button>
+                                            <button onClick={() => collectFileInputRef.current?.click()} className="px-5 py-2.5 bg-blue-500 text-white rounded-xl text-xs font-bold shadow-lg hover:bg-blue-600 transition-all">📁 Upload Image</button>
+                                        </div>
+                                        <p className="text-white/30 text-[9px] mt-3">PNG, JPG up to 10MB</p>
                                     </div>
                                 )}
                             </div>
@@ -594,7 +670,12 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
                                     className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-[#0ea5e9]'}`}>
                                     {isCapturing ? '⏳ Capturing...' : '📸 Capture'}
                                 </button>
+                                <button onClick={() => collectFileInputRef.current?.click()} disabled={!selectedClass || selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS}
+                                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold bg-blue-500 text-white disabled:opacity-40 hover:bg-blue-600 transition-all">
+                                    📁 Upload
+                                </button>
                             </div>
+                            <input ref={collectFileInputRef} type="file" accept="image/*" multiple onChange={handleCollectUpload} className="hidden" />
                         </div>
 
                         {/* Right Panel */}
