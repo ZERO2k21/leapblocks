@@ -103,7 +103,7 @@ export default function MenuBar({
 
                 return (
                     <>
-                    <div className="w-full bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 h-[68px] px-3 sm:px-6 flex items-center justify-between text-white select-none z-[100] relative font-sans shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] overflow-hidden gap-2">
+                    <div className="w-full bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 h-[68px] px-3 sm:px-6 flex items-center justify-between text-white select-none z-[100] relative font-sans shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] gap-2">
                         {/* ══ LEFT: Home button · Brand logo · Dropdown menus ══════════════ */}
                         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
 

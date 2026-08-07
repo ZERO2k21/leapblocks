@@ -48,7 +48,7 @@ export default function DropdownMenu({ label, icon: Icon, items, isOpen, onToggl
             </button>
 
             {isOpen && (
-                <div className="absolute top-full mt-1.5 left-0 bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl border border-white/60 min-w-[200px] overflow-hidden z-50 py-1.5 animate-[jrMenuSlideIn_0.18s_ease-out]">
+                <div className="absolute top-full mt-1.5 left-0 bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl border border-white/60 min-w-[200px] overflow-hidden z-[1000] py-1.5 animate-[jrMenuSlideIn_0.18s_ease-out]">
                     <style>{`
                         @keyframes jrMenuSlideIn {
                             from { opacity: 0; transform: translateY(-6px) scale(0.98); }

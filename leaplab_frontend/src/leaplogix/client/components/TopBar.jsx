@@ -114,7 +114,7 @@ export default function TopBar() {
         <TopbarShareButton size={18} onSave={ctx.handleSaveProject} projectName={ctx.projectName}>
             {({ onClick: handleShareClick, loading: shareLoading }) => (
                 <>
-                <header className="sticky top-0 h-[68px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] flex items-center px-3 sm:px-6 justify-between text-white z-[1000] shrink-0 flex-nowrap overflow-hidden shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] border-b border-sky-400/10">
+                <header className="sticky top-0 h-[68px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] flex items-center px-3 sm:px-6 justify-between text-white z-[1000] shrink-0 flex-nowrap shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] border-b border-sky-400/10">
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         <button onClick={() => {
                             sessionStorage.setItem('landingActiveTab', 'modules');
