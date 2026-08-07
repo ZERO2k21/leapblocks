@@ -192,16 +192,19 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   const isNTC = type === 'ntc-temperature-sensor';
   const isPIR = type === 'pir-motion-sensor';
   const isIRObstacle = type === 'ir-obstacle-sensor';
-  const isRFID = type === 'rfid-rc522' || type === 'rfid-sensor';
+  const isProximity = type === 'proximity-sensor';
   const isMPU6050 = type === 'mpu6050';
   const isLDR = type === 'photoresistor-sensor';
   const isFlame = type === 'flame-sensor';
   const isGas = type === 'gas-sensor';
+  const isRain = type === 'rain-sensor';
+  const isSoilMoisture = type === 'soil-moisture-sensor';
   const isHeartRate = type === 'heart-beat-sensor';
   const isBigSound = type === 'big-sound-sensor' || type === 'small-sound-sensor';
   const isHX711 = type === 'hx711';
+  const isEM18RFID = type === 'em18-rfid';
 
-  if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isIRObstacle && !isRFID && !isMPU6050 && !isLDR && !isFlame && !isGas && !isHeartRate && !isBigSound && !isHX711) return null;
+  if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isIRObstacle && !isProximity && !isMPU6050 && !isLDR && !isFlame && !isGas && !isRain && !isSoilMoisture && !isHeartRate && !isBigSound && !isHX711 && !isEM18RFID) return null;
 
   const renderContent = () => {
     // ── DHT Sensor ──────────────────────────────────────────────────────────
@@ -302,32 +305,32 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       );
     }
 
-    // ── RFID RC522 Card Reader ──────────────────────────────────────────────
-    if (isRFID) {
-      const cardPresent = currentValues?.cardPresent ?? false;
-      const cardUid = currentValues?.cardUid ?? 'E2 4B 89 1F';
+    // ── Proximity Sensor ──────────────────────────────────────────────────
+    if (isProximity) {
+      const objectDetected = currentValues?.obstacleDetected ?? false;
 
       const toggle = (e: React.MouseEvent) => {
         e.stopPropagation();
         e.preventDefault();
-        const next = !cardPresent;
+        const next = !objectDetected;
         updateNodeData(nodeId, {
-          sensorValues: { ...currentValues, cardPresent: next, cardUid },
+          sensorValues: { ...currentValues, obstacleDetected: next },
         });
-        withEngine(engine => engine.pushInputSignal(nodeId, 'SDA', next));
+        // Proximity sensor is Active-LOW: OUT goes LOW when object detected
+        withEngine(engine => engine.pushInputSignal(nodeId, 'OUT', !next));
       };
 
       return (
-        <CompactCard borderColor={cardPresent ? 'rgba(56,189,248,0.5)' : 'rgba(186,242,100,0.2)'}>
+        <CompactCard borderColor={objectDetected ? 'rgba(239,68,68,0.4)' : 'rgba(186,242,100,0.2)'}>
           <button
             onClick={toggle}
             className={`w-full py-1 rounded-md border-none cursor-pointer font-extrabold text-[9px] font-mono tracking-wider transition-all ${
-              cardPresent
-                ? 'bg-sky-500/90 text-white shadow-[0_0_6px_rgba(56,189,248,0.4)]'
+              objectDetected
+                ? 'bg-red-500/90 text-white shadow-[0_0_6px_rgba(239,68,68,0.3)]'
                 : (isLightTheme ? 'bg-slate-200 text-slate-700' : 'bg-slate-700/90 text-slate-400')
             }`}
           >
-            {cardPresent ? `● RFID TAG PRESENT (${cardUid})` : '○ PRESENT RFID TAG'}
+            {objectDetected ? '● OBJECT DETECTED' : '○ SIMULATE OBJECT'}
           </button>
         </CompactCard>
       );
@@ -529,6 +532,88 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       );
     }
 
+    // ── Rain Sensor ────────────────────────────────────────────────────────
+    if (isRain) {
+      const rainLevel = Number(currentValues?.value ?? 0);
+      const threshold = Number(currentValues?.threshold ?? 50);
+      const rainDetected = rainLevel > threshold;
+      const voltage = 5.0 * rainLevel / 100;
+
+      const handleChange = (key: 'value' | 'threshold', val: number) => {
+        const next = { ...currentValues, [key]: val };
+        updateNodeData(nodeId, { sensorValues: next });
+        withEngine(engine => {
+          engine.pushInputSignal(nodeId, 'AO', true);
+          const nowRain = (key === 'value' ? val : rainLevel) > (key === 'threshold' ? val : threshold);
+          engine.pushInputSignal(nodeId, 'DO', !nowRain);
+        });
+      };
+
+      return (
+        <CompactCard borderColor={rainDetected ? 'rgba(56,189,248,0.4)' : 'rgba(186,242,100,0.2)'}>
+          <SliderRow
+            label="RAIN"
+            unit="%"
+            min={0}
+            max={100}
+            step={1}
+            value={rainLevel}
+            color="#38bdf8"
+            onChange={v => handleChange('value', v)}
+          />
+          <div className="flex justify-between text-[9px] font-mono font-bold px-0.5">
+            <span className="text-slate-500">State</span>
+            <span className={`font-black ${rainDetected ? 'text-sky-400' : 'text-emerald-400'}`}>
+              {rainDetected ? 'WET' : 'DRY'}
+            </span>
+            <span className="text-slate-500">Vout</span>
+            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{voltage.toFixed(2)}V</span>
+          </div>
+        </CompactCard>
+      );
+    }
+
+    // ── Soil Moisture Sensor ─────────────────────────────────────────────
+    if (isSoilMoisture) {
+      const moisture = Number(currentValues?.value ?? 0);
+      const threshold = Number(currentValues?.threshold ?? 50);
+      const soilWet = moisture > threshold;
+      const voltage = 5.0 * moisture / 100;
+
+      const handleChange = (key: 'value' | 'threshold', val: number) => {
+        const next = { ...currentValues, [key]: val };
+        updateNodeData(nodeId, { sensorValues: next });
+        withEngine(engine => {
+          engine.pushInputSignal(nodeId, 'AO', true);
+          const nowWet = (key === 'value' ? val : moisture) > (key === 'threshold' ? val : threshold);
+          engine.pushInputSignal(nodeId, 'DO', !nowWet);
+        });
+      };
+
+      return (
+        <CompactCard borderColor={soilWet ? 'rgba(34,197,94,0.4)' : 'rgba(186,242,100,0.2)'}>
+          <SliderRow
+            label="MOISTURE"
+            unit="%"
+            min={0}
+            max={100}
+            step={1}
+            value={moisture}
+            color="#22c55e"
+            onChange={v => handleChange('value', v)}
+          />
+          <div className="flex justify-between text-[9px] font-mono font-bold px-0.5">
+            <span className="text-slate-500">State</span>
+            <span className={`font-black ${soilWet ? 'text-green-400' : 'text-emerald-400'}`}>
+              {soilWet ? 'WET' : 'DRY'}
+            </span>
+            <span className="text-slate-500">Vout</span>
+            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{voltage.toFixed(2)}V</span>
+          </div>
+        </CompactCard>
+      );
+    }
+
     // ── Heart Rate Sensor ────────────────────────────────────────────────────
     if (isHeartRate) {
       const bpm = Number(currentValues?.bpm ?? 72);
@@ -589,6 +674,65 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
             </span>
             <span className="text-slate-500">Vout</span>
             <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{voltage.toFixed(2)}V</span>
+          </div>
+        </CompactCard>
+      );
+    }
+
+    // ── EM-18 RFID Reader ──────────────────────────────────────────────────
+    if (isEM18RFID) {
+      const cardPresent = currentValues?.cardPresent ?? false;
+      const cardUid = currentValues?.cardUid ?? 'E24B891F00';
+
+      const toggleCard = () => {
+        const newState = !cardPresent;
+        updateNodeData(nodeId, {
+          sensorValues: { ...currentValues, cardPresent: newState },
+        });
+        withEngine(engine => engine.pushInputSignal(nodeId, 'TX', newState));
+      };
+
+      const handleUidChange = (uid: string) => {
+        updateNodeData(nodeId, {
+          sensorValues: { ...currentValues, cardUid: uid.replace(/\s/g, '').toUpperCase() },
+        });
+      };
+
+      return (
+        <CompactCard borderColor="rgba(34, 197, 94, 0.2)">
+          <div className="flex items-center justify-between px-1 py-0.5">
+            <span className="text-[9px] font-mono font-bold text-slate-500">CARD</span>
+            <button
+              onClick={toggleCard}
+              className={`px-2 py-0.5 rounded text-[9px] font-bold transition-colors ${
+                cardPresent
+                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                  : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+              }`}
+            >
+              {cardPresent ? 'PRESENT' : 'ABSENT'}
+            </button>
+          </div>
+          <div className="flex items-center justify-between px-1 py-0.5">
+            <span className="text-[9px] font-mono font-bold text-slate-500">UID</span>
+            <input
+              type="text"
+              value={cardUid}
+              onChange={(e) => handleUidChange(e.target.value)}
+              className={`w-24 px-1 py-0.5 text-[9px] font-mono rounded border ${
+                isLightTheme
+                  ? 'bg-white/50 border-sky-200 text-sky-700'
+                  : 'bg-black/30 border-slate-600 text-[#bef264]'
+              }`}
+              maxLength={10}
+              placeholder="E24B891F00"
+            />
+          </div>
+          <div className="flex justify-between text-[9px] font-mono font-bold px-0.5">
+            <span className="text-slate-500">Freq</span>
+            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>125 kHz</span>
+            <span className="text-slate-500">Range</span>
+            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>10 cm</span>
           </div>
         </CompactCard>
       );

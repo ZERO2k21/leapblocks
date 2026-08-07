@@ -11,6 +11,7 @@ import { MembraneKeypadElement } from './membrane-keypad-element';
 import { NeoPixelElement } from './neopixel-element';
 import { NeopixelMatrixElement } from './neopixel-matrix-element';
 import { PotentiometerElement } from './potentiometer-element';
+import { ProximitySensorElement } from './proximity-sensor-element';
 import { PushbuttonElement } from './pushbutton-element';
 import { Pushbutton6mmElement } from './pushbutton-6mm-element';
 import { ResistorElement } from './resistor-element';
@@ -19,6 +20,7 @@ import { RelayModuleElement } from './relay-module-element';
 import { SSD1306Element } from './ssd1306-element';
 import { ServoElement } from './servo-element';
 import { DHT22Element } from './dht22-element';
+import { SoilMoistureSensorElement } from './soil-moisture-sensor-element';
 // REMOVED: Only Arduino Uno and ESP32-C3 supported
 // import { ArduinoMegaElement } from './arduino-mega-element';
 // import { ArduinoNanoElement } from './arduino-nano-element';
@@ -56,7 +58,6 @@ import { StepperMotorElement } from './stepper-motor-element';
 import { HX711Element } from './hx711-element';
 import { KS2EMDC5Element } from './ks2e-m-dc5-element';
 import { BiaxialStepperElement } from './biaxial-stepper-element';
-import { RFIDRC522Element } from './rfid-rc522-element';
 import type React from 'react';
 
 type LeapElement<T> = Partial<T> & React.ClassAttributes<T>;
@@ -75,6 +76,7 @@ declare global {
       'leap-resistor': LeapElement<ResistorElement>;
       'leap-membrane-keypad': LeapElement<MembraneKeypadElement>;
       'leap-potentiometer': LeapElement<PotentiometerElement>;
+      'leap-proximity-sensor': LeapElement<ProximitySensorElement>;
       'leap-neopixel-matrix': LeapElement<NeopixelMatrixElement>;
       'leap-ssd1306': LeapElement<SSD1306Element>;
       'leap-buzzer': LeapElement<BuzzerElement>;
@@ -89,6 +91,7 @@ declare global {
       'leap-ds1307': LeapElement<Ds1307Element>;
       'leap-neopixel-ring': LeapElement<LEDRingElement>;
       'leap-slide-switch': LeapElement<SlideSwitchElement>;
+      'leap-soil-moisture-sensor': LeapElement<SoilMoistureSensorElement>;
       'leap-hc-sr04': LeapElement<HCSR04Element>;
       'leap-lcd2004': LeapElement<LCD2004Element>;
       'leap-lcd2004-i2c': LeapElement<LCD2004I2CElement>;
@@ -121,8 +124,6 @@ declare global {
       'leap-ks2e-m-dc5': LeapElement<KS2EMDC5Element>;
       'leap-relay-module': LeapElement<RelayModuleElement>;
       'leap-biaxial-stepper': LeapElement<BiaxialStepperElement>;
-      'leap-rfid-rc522': LeapElement<RFIDRC522Element>;
-      'leap-rfid-sensor': LeapElement<RFIDRC522Element>;
     }
   }
 }

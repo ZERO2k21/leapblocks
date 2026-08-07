@@ -129,7 +129,7 @@ const LIBRARY_STUBS = `
 var Adafruit_SSD1306 = (typeof Adafruit_SSD1306 !== 'undefined' && Adafruit_SSD1306) || class {
   constructor(){} begin(){return true;} clearDisplay(){} display(){}
   setTextSize(){} setTextColor(){} setCursor(){} print(){} println(){}
-  drawPixel(){} fillRect(){} drawRect(){} drawCircle(){} fillCircle(){}
+  drawPixel(){} fillRect(){} drawRect(){} drawLine(){} drawCircle(){} fillCircle(){}
   setRotation(){} invertDisplay(){} startscrollright(){} stopscroll(){}
 };
 var Adafruit_GFX = (typeof Adafruit_GFX !== 'undefined' && Adafruit_GFX) || class { constructor(){} };
@@ -160,7 +160,6 @@ var IRrecv = (typeof IRrecv !== 'undefined' && IRrecv) || class { constructor(){
 var decode_results = (typeof decode_results !== 'undefined' && decode_results) || class { constructor(){} };
 var SoftwareSerial = (typeof SoftwareSerial !== 'undefined' && SoftwareSerial) || class { constructor(){} begin(){} print(){} println(){} available(){return 0;} read(){return -1;} };
 var Stepper = (typeof Stepper !== 'undefined' && Stepper) || class { constructor(){} setSpeed(){} async step(){} };
-var MFRC522 = (typeof MFRC522 !== 'undefined' && MFRC522) || class { constructor(){} PCD_Init(){} PICC_IsNewCardPresent(){return false;} PICC_ReadCardSerial(){return false;} };
 var Keypad = (typeof Keypad !== 'undefined' && Keypad) || class {
   constructor(_keymap, _rowPins, _colPins, _rows, _cols) {
     this._keymap = _keymap || [];

@@ -48,8 +48,11 @@ const COMPONENTS = [
   { id: 'photoresistor-sensor', name: 'Photoresistor', category: 'sensors', desc: 'Light sensor (LDR)' },
   { id: 'pir-motion-sensor', name: 'PIR Sensor', category: 'sensors', desc: 'Motion detector' },
   { id: 'ir-obstacle-sensor', name: 'IR Sensor', category: 'sensors', desc: 'IR Obstacle Avoidance (FC-51)' },
-  { id: 'rfid-rc522', name: 'RFID RC522', category: 'sensors', desc: '13.56MHz RFID Reader (RC522)' },
   { id: 'potentiometer', name: 'Potentiometer', category: 'inputs', desc: 'Variable resistor' },
+  { id: 'proximity-sensor', name: 'Proximity Sensor', category: 'sensors', desc: 'IR proximity detector' },
+  { id: 'rain-sensor', name: 'Rain Sensor', category: 'sensors', desc: 'Rain detection sensor (AO + DO)' },
+  { id: 'soil-moisture-sensor', name: 'Soil Moisture', category: 'sensors', desc: 'Soil moisture sensor (AO + DO)' },
+  { id: 'em18-rfid', name: 'EM-18 RFID', category: 'sensors', desc: 'RFID reader (125 kHz, UART)' },
 
   { id: 'pushbutton', name: 'Pushbutton', category: 'inputs', desc: 'Momentary switch' },
   { id: 'relay-module', name: 'Relay Module', category: 'outputs', desc: 'Single-channel relay' },
@@ -88,7 +91,8 @@ const getComponentScale = (id: string, defaultScale: number): number => {
   if (id === 'ili9341') return 0.4;
   if (id === 'ili9341-touch') return 0.4;
   if (id == 'neopixel-matrix') return 0.4;
-  if (id === 'rfid-rc522' || id === 'rfid-sensor') return 0.45;
+  if (id === 'rain-sensor' || id === 'soil-moisture-sensor') return 0.45;
+  if (id === 'em18-rfid') return 0.6;
 
   const pinData = LEAP_PINS[id];
   if (!pinData || !pinData.viewBox) {

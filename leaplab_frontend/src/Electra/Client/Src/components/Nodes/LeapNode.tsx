@@ -210,6 +210,26 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.threshold = threshold;
     mappedProps.ledPower = true;
     mappedProps.ledD0 = gasDetected;
+  } else if (data.type === 'rain-sensor') {
+    // Rain sensor: pass rain level, threshold, and LED states
+    const sv = data.sensorValues ?? {};
+    const rainLevel = Number(sv.value ?? 0);
+    const threshold = Number(sv.threshold ?? 50);
+    const rainDetected = rainLevel > threshold;
+    mappedProps.value = rainLevel;
+    mappedProps.threshold = threshold;
+    mappedProps.ledPower = true;
+    mappedProps.ledDO = rainDetected;
+  } else if (data.type === 'soil-moisture-sensor') {
+    // Soil moisture sensor: pass moisture level, threshold, and LED states
+    const sv = data.sensorValues ?? {};
+    const moisture = Number(sv.value ?? 0);
+    const threshold = Number(sv.threshold ?? 50);
+    const soilWet = moisture > threshold;
+    mappedProps.value = moisture;
+    mappedProps.threshold = threshold;
+    mappedProps.ledPower = true;
+    mappedProps.ledDO = soilWet;
   } else if (data.type === 'heart-beat-sensor') {
     // Heart rate sensor: pass BPM, current beat phase, and live ADC value
     mappedProps.bpm = data.sensorValues?.bpm ?? 72;
@@ -279,12 +299,12 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.obstacleDetected = active;
     mappedProps.ledPower = true;
     mappedProps.ledSignal = active;
-  } else if (data.type === 'rfid-rc522' || data.type === 'rfid-sensor') {
-    // RFID-RC522 Sensor: reflect simulated card presence and UID
-    const active = data.sensorValues?.cardPresent ?? false;
-    mappedProps.cardPresent = active;
-    mappedProps.cardUid = data.sensorValues?.cardUid ?? 'DE AD BE EF';
+  } else if (data.type === 'proximity-sensor') {
+    // Proximity Sensor: reflect simulated object detection state
+    const active = data.sensorValues?.obstacleDetected ?? false;
+    mappedProps.detected = active;
     mappedProps.ledPower = true;
+    mappedProps.ledSignal = active;
   } else if (data.type === 'mpu6050') {
 
     // MPU6050: pass all 7 sensor values to the visual element

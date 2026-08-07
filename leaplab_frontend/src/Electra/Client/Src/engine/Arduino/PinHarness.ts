@@ -2423,6 +2423,19 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       }
     ]
   },
+  "proximity-sensor": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 132,
+      "height": 77
+    },
+    "pins": [
+      { "name": "VCC", "x": 130, "y": 34 },
+      { "name": "GND", "x": 130, "y": 44 },
+      { "name": "OUT", "x": 130, "y": 54 }
+    ]
+  },
   "pir-motion-sensor": {
     "viewBox": {
       "minX": 0,
@@ -3033,40 +3046,47 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       }
     ]
   },
-  "rfid-rc522": {
+  "em18-rfid": {
     "viewBox": {
       "minX": 0,
       "minY": 0,
-      "width": 110,
-      "height": 160
+      "width": 100,
+      "height": 105
     },
     "pins": [
-      { "name": "SDA", "x": 13, "y": 154 },
-      { "name": "SCK", "x": 25, "y": 154 },
-      { "name": "MOSI", "x": 37, "y": 154 },
-      { "name": "MISO", "x": 49, "y": 154 },
-      { "name": "IRQ", "x": 61, "y": 154 },
-      { "name": "GND", "x": 73, "y": 154 },
-      { "name": "RST", "x": 85, "y": 154 },
-      { "name": "3.3V", "x": 97, "y": 154 }
+      { "name": "VCC", "x": 15, "y": 95 },
+      { "name": "TX", "x": 30, "y": 95 },
+      { "name": "LED", "x": 45, "y": 95 },
+      { "name": "BUZZER", "x": 60, "y": 95 },
+      { "name": "GND", "x": 75, "y": 95 }
     ]
   },
-  "rfid-sensor": {
+  "rain-sensor": {
     "viewBox": {
       "minX": 0,
       "minY": 0,
-      "width": 110,
-      "height": 160
+      "width": 174,
+      "height": 61.5
     },
     "pins": [
-      { "name": "SDA", "x": 13, "y": 154 },
-      { "name": "SCK", "x": 25, "y": 154 },
-      { "name": "MOSI", "x": 37, "y": 154 },
-      { "name": "MISO", "x": 49, "y": 154 },
-      { "name": "IRQ", "x": 61, "y": 154 },
-      { "name": "GND", "x": 73, "y": 154 },
-      { "name": "RST", "x": 85, "y": 154 },
-      { "name": "3.3V", "x": 97, "y": 154 }
+      { "name": "VCC", "x": 174, "y": 14 },
+      { "name": "GND", "x": 174, "y": 22 },
+      { "name": "DO",  "x": 174, "y": 31 },
+      { "name": "AO",  "x": 174, "y": 40 }
+    ]
+  },
+  "soil-moisture-sensor": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 174,
+      "height": 61.5
+    },
+    "pins": [
+      { "name": "VCC", "x": 174, "y": 14 },
+      { "name": "GND", "x": 174, "y": 22 },
+      { "name": "DO",  "x": 174, "y": 31 },
+      { "name": "AO",  "x": 174, "y": 40 }
     ]
   }
 };

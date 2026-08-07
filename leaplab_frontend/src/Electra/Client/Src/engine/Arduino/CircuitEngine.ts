@@ -22,8 +22,9 @@ import { TiltSwitchEmulator } from './TiltSwitchEmulator';
 import { RotaryEncoderEmulator } from './RotaryEncoderEmulator';
 import { IRReceiverEmulator } from './IRReceiverEmulator';
 import { HX711Emulator } from './HX711Emulator';
+import { RFIDReaderEmulator } from './RFIDReaderEmulator';
 import { ESP32_BOARD_CONFIG, ESP32_BOARDS, type ESP32PinInfo } from './ESP32BoardConfig.js';
-import { createMFRC522Class, createIRremoteClass } from '../esp32c3/ArduinoLibraries';
+import { createIRremoteClass } from '../esp32c3/ArduinoLibraries';
 
 /** Simplified ECG pulse shape used by the heart-beat sensor emulator. Returns -1..+1 for phase 0..1 */
 function heartEcgPulse(phase: number): number {
@@ -98,6 +99,7 @@ class CircuitEngine {
   private rotaryEncoderEmulators = new Map<string, RotaryEncoderEmulator>();
   private irReceiverEmulators = new Map<string, IRReceiverEmulator>();
   private hx711Emulators = new Map<string, HX711Emulator>();
+  private rfidReaderEmulators = new Map<string, RFIDReaderEmulator>();
   private _pendingLibraryClasses = new Map<string, any>();
   public _displayElements = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
@@ -1103,9 +1105,6 @@ class CircuitEngine {
     this._pendingLibraryClasses.set('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
     console.log(`[LCD BRIDGE] RealLiquidCrystal_I2C stored in _pendingLibraryClasses`);
 
-    const RealMFRC522 = createMFRC522Class(this);
-    this._pendingLibraryClasses.set('MFRC522', RealMFRC522);
-
     const irRemote = createIRremoteClass(this);
     this._pendingLibraryClasses.set('IRrecv', irRemote.IRrecv);
     this._pendingLibraryClasses.set('decode_results', irRemote.decode_results);
@@ -1119,12 +1118,11 @@ class CircuitEngine {
       esp32Runtime.injectLibraryClass('LiquidCrystal_I2C', RealLiquidCrystal_I2C);
       esp32Runtime.injectLibraryClass('Adafruit_FT6206', RealAdafruit_FT6206);
       esp32Runtime.injectLibraryClass('TS_Point', RealTS_Point);
-      esp32Runtime.injectLibraryClass('MFRC522', RealMFRC522);
       esp32Runtime.injectLibraryClass('IRrecv', irRemote.IRrecv);
       esp32Runtime.injectLibraryClass('decode_results', irRemote.decode_results);
       esp32Runtime.injectLibraryClass('IrReceiver', irRemote.IrReceiver);
       this._wireI2CBus(esp32Runtime);
-      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + TFT_eSPI + Touch + LCD_I2C + MFRC522 + IRremote + wired I2C bus');
+      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + TFT_eSPI + Touch + LCD_I2C + IRremote + wired I2C bus');
 
     } else {
       console.log('[OLED/LCD BRIDGE] Runtime not yet created — classes queued for initTranspiled()');
@@ -2114,6 +2112,18 @@ class CircuitEngine {
                   // Create IR receiver emulator for this node
                   this.irReceiverEmulators.set(peripheralId, new IRReceiverEmulator(avrPin, peripheralId));
                   console.log(`[IR RECEIVER] Initialized emulator for node ${peripheralId} on pin ${avrPin}`);
+                }
+              }
+            }
+
+            // --- EM-18 RFID Reader Emulation ---
+            // RFID reader sends card data via TX pin (serial output)
+            if (peripheralNode.data?.type === 'em18-rfid') {
+              if (peripheralPinName === 'TX') {
+                if (!this.rfidReaderEmulators.has(peripheralId)) {
+                  // Create RFID reader emulator for this node
+                  this.rfidReaderEmulators.set(peripheralId, new RFIDReaderEmulator(avrPin, peripheralId));
+                  console.log(`[EM-18 RFID] Initialized emulator for node ${peripheralId} on pin ${avrPin}`);
                 }
               }
             }
@@ -3198,6 +3208,13 @@ class CircuitEngine {
               simulationRunner.setVirtualInput(avrPin, initialPinState);
               console.log(`[FORGE CIRCUIT] IR Obstacle (${peripheralId}) initial state injected: ${initialPinState ? 'HIGH' : 'LOW'} on ${avrPin}`);
             }
+            // Proximity Sensor (Active-LOW: LOW when object detected)
+            else if (type === 'proximity-sensor' && peripheralPinName === 'OUT') {
+              const detected = peripheralNode.data.sensorValues?.obstacleDetected ?? false;
+              const initialPinState = !detected;
+              simulationRunner.setVirtualInput(avrPin, initialPinState);
+              console.log(`[FORGE CIRCUIT] Proximity (${peripheralId}) initial state injected: ${initialPinState ? 'HIGH' : 'LOW'} on ${avrPin}`);
+            }
             // Potentiometer & Slide Potentiometer
             else if ((type === 'potentiometer' || type === 'slide-potentiometer') && peripheralPinName === 'SIG') {
               this.pushInputSignal(peripheralId, 'SIG', true);
@@ -3220,6 +3237,14 @@ class CircuitEngine {
             }
             // Gas Sensor
             else if (type === 'gas-sensor' && (peripheralPinName === 'AOUT' || peripheralPinName === 'DOUT')) {
+              this.pushInputSignal(peripheralId, peripheralPinName, true);
+            }
+            // Rain Sensor
+            else if (type === 'rain-sensor' && (peripheralPinName === 'AO' || peripheralPinName === 'DO')) {
+              this.pushInputSignal(peripheralId, peripheralPinName, true);
+            }
+            // Soil Moisture Sensor
+            else if (type === 'soil-moisture-sensor' && (peripheralPinName === 'AO' || peripheralPinName === 'DO')) {
               this.pushInputSignal(peripheralId, peripheralPinName, true);
             }
             // Sound Sensors
@@ -3657,6 +3682,32 @@ class CircuitEngine {
   }
 
   /**
+   * Present a card to an EM-18 RFID reader.
+   */
+  public presentRFIDCard(nodeId: string, uid?: string) {
+    const emulator = this.rfidReaderEmulators.get(nodeId);
+    if (emulator) {
+      emulator.presentCard(uid);
+      console.log(`[EM-18 RFID] Card presented to node ${nodeId}: ${emulator.cardUid}`);
+    } else {
+      console.warn(`[EM-18 RFID] Cannot present card: emulator not found for node ${nodeId}`);
+    }
+  }
+
+  /**
+   * Remove a card from an EM-18 RFID reader.
+   */
+  public removeRFIDCard(nodeId: string) {
+    const emulator = this.rfidReaderEmulators.get(nodeId);
+    if (emulator) {
+      emulator.removeCard();
+      console.log(`[EM-18 RFID] Card removed from node ${nodeId}`);
+    } else {
+      console.warn(`[EM-18 RFID] Cannot remove card: emulator not found for node ${nodeId}`);
+    }
+  }
+
+  /**
    * Push analog values from analog-joystick into CircuitEngine.
    */
   public pushJoystickAnalog(nodeId: string, x: number, y: number) {
@@ -3735,13 +3786,13 @@ class CircuitEngine {
         'potentiometer', 'slide-potentiometer', 'mq2',
         'ntc-temperature-sensor', 'photoresistor-sensor', 'flame-sensor',
         'gas-sensor', 'big-sound-sensor', 'small-sound-sensor', 'photoresistor',
-        'heart-beat-sensor',
+        'rain-sensor', 'soil-moisture-sensor', 'heart-beat-sensor',
       ];
 
       // Digital-only sensors that should never use analog path
       const digitalOnlySensors = [
         'tilt-switch', 'pushbutton', 'pushbutton-6mm', 'slide-switch',
-        'dip-switch-8', 'pir-motion-sensor', 'ir-obstacle-sensor', 'membrane-keypad', 'rotary-dialer',
+        'dip-switch-8', 'pir-motion-sensor', 'ir-obstacle-sensor', 'proximity-sensor', 'membrane-keypad', 'rotary-dialer',
         'ky-040'  // KY-040 rotary encoder (CLK, DT, SW are all digital)
       ];
 
@@ -3837,6 +3888,12 @@ class CircuitEngine {
         if (pType === 'big-sound-sensor' || pType === 'small-sound-sensor') {
           injectThresholdPin('DOUT', (sv?.value ?? 0) <= (sv?.threshold ?? 50), 'Sound DOUT');
         }
+        if (pType === 'rain-sensor') {
+          injectThresholdPin('DO', (sv?.value ?? 0) > (sv?.threshold ?? 50), 'Rain DO');
+        }
+        if (pType === 'soil-moisture-sensor') {
+          injectThresholdPin('DO', (sv?.value ?? 0) > (sv?.threshold ?? 50), 'Soil DO');
+        }
       } else {
         // --- Digital Mapping ---
         simulationRunner.setVirtualInput(mapping.avrPin, isHigh);
@@ -3894,6 +3951,14 @@ class CircuitEngine {
       case 'gas-sensor': {
         const concentration = sv?.value ?? 0;
         return vcc * Math.max(0, Math.min(100, concentration)) / 100;
+      }
+      case 'rain-sensor': {
+        const rainLevel = sv?.value ?? 0;
+        return vcc * Math.max(0, Math.min(100, rainLevel)) / 100;
+      }
+      case 'soil-moisture-sensor': {
+        const moisture = sv?.value ?? 0;
+        return vcc * Math.max(0, Math.min(100, moisture)) / 100;
       }
       case 'big-sound-sensor':
       case 'small-sound-sensor': {

@@ -208,6 +208,44 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
     const isResizingLogRef = useRef(false);
     const logAreaRef = useRef<HTMLDivElement>(null);
 
+    const [rightPanelWidth, setRightPanelWidth] = useState<number>(496);
+    const isResizingRightPanelRef = useRef(false);
+
+    const handleRightPanelResizeStart = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        isResizingRightPanelRef.current = true;
+        const startX = e.clientX;
+        const startWidth = rightPanelWidth;
+
+        const handleMouseMove = (me: MouseEvent) => {
+            if (!isResizingRightPanelRef.current) return;
+            const delta = startX - me.clientX;
+            const maxAllowed = Math.min(850, window.innerWidth - 300);
+            const minAllowed = 260;
+            const newWidth = Math.min(Math.max(startWidth + delta, minAllowed), maxAllowed);
+            setRightPanelWidth(newWidth);
+            if (workspaceRef.current) {
+                Blockly.svgResize(workspaceRef.current);
+            }
+        };
+
+        const handleMouseUp = () => {
+            isResizingRightPanelRef.current = false;
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            if (workspaceRef.current) {
+                Blockly.svgResize(workspaceRef.current);
+            }
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+    }, [rightPanelWidth]);
+
     const handleLogResizeStart = useCallback((e: React.MouseEvent) => {
         e.preventDefault();
         isResizingLogRef.current = true;
@@ -217,8 +255,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         const handleMouseMove = (me: MouseEvent) => {
             if (!isResizingLogRef.current) return;
             const delta = startY - me.clientY;
-            const maxAllowed = Math.max(200, window.innerHeight - 140);
-            const newHeight = Math.min(Math.max(startHeight + delta, 80), maxAllowed);
+            const maxAllowed = Math.max(150, window.innerHeight - 160);
+            const newHeight = Math.min(Math.max(startHeight + delta, 60), maxAllowed);
             setLogAreaHeight(newHeight);
         };
 
@@ -3476,12 +3514,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         </button>
 
-                        <button className={`${styles.iconBtn} ${stageLayout === 'small' ? styles.iconBtnActive : ''}`} onClick={() => { setStageLayout('small'); addLog("Switched to Small Stage mode"); }} title="Small Stage">
-
-                            <LayoutTemplate size={18} />
-
-                        </button>
-
                         <button className={`${styles.iconBtn} ${stageLayout === 'large' ? styles.iconBtnActive : ''}`} onClick={() => { setStageLayout('large'); addLog("Switched to Large Stage mode"); }} title="Large Stage">
 
                             <LayoutPanelLeft size={18} />
@@ -3678,13 +3710,38 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 {/* Right Panel — hidden in embed mode when sounds tab is active (full-screen sound editor) */}
                 {(isEmbedMode && workspaceTab === 'sounds') ? null : (
-                    <div className={`${styles.rightPanel} right-panel-responsive`} style={{
+                    <div className="flex shrink-0 h-full relative">
+                        {/* Horizontal Drag Handle for Panel Width */}
+                        {!isFullscreen && (
+                            <div
+                                onMouseDown={handleRightPanelResizeStart}
+                                title="Drag left or right to resize right panel width"
+                                style={{
+                                    width: '6px',
+                                    cursor: 'col-resize',
+                                    background: '#e5e7eb',
+                                    borderLeft: '1px solid #d1d5db',
+                                    borderRight: '1px solid #d1d5db',
+                                    position: 'relative',
+                                    zIndex: 30,
+                                    flexShrink: 0,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    height: '100%',
+                                    userSelect: 'none',
+                                }}
+                                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = '#4C97FF'; }}
+                                onMouseLeave={(e) => { if (!isResizingRightPanelRef.current) (e.currentTarget as HTMLDivElement).style.background = '#e5e7eb'; }}
+                            >
+                                <div style={{ width: '2px', height: '28px', background: '#9ca3af', borderRadius: '1px' }} />
+                            </div>
+                        )}
 
-                        width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '256px' : '496px'),
-
-                        transition: 'width 0.2s ease-in-out',
-
-                    }}>
+                        <div className={`${styles.rightPanel} right-panel-responsive`} style={{
+                            width: isFullscreen ? '100vw' : (stageLayout === 'small' ? '256px' : `${rightPanelWidth}px`),
+                            transition: isResizingRightPanelRef.current ? 'none' : 'width 0.15s ease-out',
+                        }}>
 
                         {/* Stage Container — only rendered in stage/fullscreen mode */}
                         {(editorMode === 'stage' || isFullscreen) && (
@@ -4072,6 +4129,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                         )}
 
+                    </div>
                     </div>
                 )}
 
