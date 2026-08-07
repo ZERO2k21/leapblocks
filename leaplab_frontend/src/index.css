@@ -580,7 +580,7 @@ label {
   -moz-osx-font-smoothing: auto !important;
   text-rendering: optimizeLegibility !important;
 }
-
-
-
+.blocklyScrollbarHandle {
+  display: none !important;
+}
 

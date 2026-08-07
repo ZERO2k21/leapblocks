@@ -1730,7 +1730,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     // snapRadius away from newly created blocks, so the target block is
                     // displaced before the user drags onto it — breaking the insertion
                     // marker preview from every direction but the first.
-                    (Blockly.BlockSvg.prototype as any).bumpNeighbours = () => {};
+                    (Blockly.BlockSvg.prototype as any).bumpNeighbours = () => { };
 
                     // Inject Blockly
 
@@ -1989,13 +1989,167 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             flyout.autoClose = false;
 
-                            // Lock the flyout scale so blocks inside don't zoom
-                            // with the main workspace viewport.
+                            // Keep the flyout scale pinned at 0.8 so blocks don't change size.
                             const FIXED_FLYOUT_SCALE = 0.8;
+                            let isDragging = false;
+                            let isMouseOverFlyout = false;
+
                             flyout.getFlyoutScale = () => FIXED_FLYOUT_SCALE;
                             if (flyout.getWorkspace()) {
                                 flyout.getWorkspace().setScale(FIXED_FLYOUT_SCALE);
                             }
+
+                            // ── FLYOUT OVERFLOW ────────────────────────────────────────────────
+                            // The flyout background panel keeps a compact 240px width.
+                            // When the cursor enters the flyout (or while dragging), wide blocks
+                            // that are clipped at 240px show in full length by overflowing into
+                            // the workspace area. Short blocks inside do not change size.
+                            const FIXED_FLYOUT_WIDTH = 240;
+                            const FLYOUT_RADIUS = flyout.CORNER_RADIUS ?? 8;
+
+                            flyout.getWidth = () => FIXED_FLYOUT_WIDTH;
+
+                            const origSetBackgroundPath = flyout.setBackgroundPath?.bind(flyout);
+                            if (origSetBackgroundPath) {
+                                flyout.setBackgroundPath = (w: number, h: number) => {
+                                    origSetBackgroundPath(FIXED_FLYOUT_WIDTH - 2 * FLYOUT_RADIUS, h);
+                                };
+                            }
+
+                            const origPositionAt = flyout.positionAt_.bind(flyout);
+                            flyout.positionAt_ = (w: number, h: number, x: number, y: number) => {
+                                origPositionAt(FIXED_FLYOUT_WIDTH, h, x, y);
+                            };
+
+                            const origReflow = flyout.reflowInternal_.bind(flyout);
+                            flyout.reflowInternal_ = () => {
+                                origReflow();
+                                flyout.width_ = FIXED_FLYOUT_WIDTH;
+                                flyout.position();
+                            };
+                            const origPos = flyout.position.bind(flyout);
+                            flyout.position = () => {
+                                origPos();
+                                flyout.width_ = FIXED_FLYOUT_WIDTH;
+                            };
+
+                            // Allow blocks to overflow visually past the flyout edge ONLY on hover.
+                            // The flyout is a SIBLING <svg class="blocklyFlyout blocklyToolboxFlyout">
+                            // next to .blocklySvg — it is NOT inside the main workspace svg. So the
+                            // overflow class must be toggled directly on flyout.svgGroup_.
+                            const flyoutSvg = flyout.svgGroup_ as HTMLElement | null;
+                            const mainSvg = document.querySelector('.blocklySvg') as HTMLElement | null;
+
+                            const unclipFlyout = () => {
+                                const els: (SVGElement | Element | null)[] = [
+                                    flyoutSvg,
+                                    flyoutSvg?.querySelector?.('.blocklyWorkspace') ?? null,
+                                    flyoutSvg?.querySelector?.('.blocklyBlockCanvas') ?? null,
+                                    ...(Array.from(flyoutSvg?.querySelectorAll?.('.blocklyBlockCanvas *') ?? [])),
+                                ];
+                                for (const el of els) {
+                                    if (!el) continue;
+                                    (el as SVGElement).style.clipPath = 'none';
+                                    (el as any).style.webkitClipPath = 'none';
+                                    el.removeAttribute?.('clip-path');
+                                }
+                                for (const root of [flyoutSvg, mainSvg]) {
+                                    if (!root) continue;
+                                    for (const rect of root.querySelectorAll('clipPath rect')) {
+                                        if (!rect.hasAttribute('data-leap-w')) {
+                                            rect.setAttribute('data-leap-w', rect.getAttribute('width') || '240');
+                                        }
+                                        rect.setAttribute('width', '9999');
+                                    }
+                                }
+                            };
+
+                            const reclipFlyout = () => {
+                                for (const root of [flyoutSvg, mainSvg]) {
+                                    if (!root) continue;
+                                    for (const rect of root.querySelectorAll('clipPath rect')) {
+                                        const w = rect.getAttribute('data-leap-w');
+                                        if (w) rect.setAttribute('width', w);
+                                    }
+                                }
+                            };
+
+                            const showOverflow = () => {
+                                if (!isMouseOverFlyout) {
+                                    isMouseOverFlyout = true;
+                                    flyoutSvg?.classList.add('show-flyout-overflow');
+                                    mainSvg?.classList.add('show-flyout-overflow');
+                                    // Bring the flyout group above the main block canvas so the
+                                    // overflowing blocks draw on top of the workspace.
+                                    if (flyoutSvg && flyoutSvg.parentNode) {
+                                        flyoutSvg.parentNode.appendChild(flyoutSvg);
+                                    }
+                                    unclipFlyout();
+                                    console.log('[FLYOUT] block overflow ON');
+                                }
+                            };
+                            const forceHideOverflow = () => {
+                                isMouseOverFlyout = false;
+                                flyoutSvg?.classList.remove('show-flyout-overflow');
+                                mainSvg?.classList.remove('show-flyout-overflow');
+                                reclipFlyout();
+                                console.log('[FLYOUT] block overflow OFF (retracted)');
+                            };
+
+                            const hideOverflow = () => {
+                                if (isMouseOverFlyout && !isDragging) {
+                                    forceHideOverflow();
+                                }
+                            };
+
+                            const containerEl = blocklyDiv.current;
+                            const flyoutEl = flyout.svgGroup_ as HTMLElement | null;
+                            const insideFlyout = (node: Node | null) => !!node && !!flyoutEl && (flyoutEl.contains(node) || flyoutSvg?.contains(node));
+
+                            const handlePointerMove = (e: PointerEvent) => {
+                                if (isDragging) return;
+                                const target = e.target as Node | null;
+                                const isTargetInside = insideFlyout(target);
+                                let isRectInside = false;
+                                if (flyoutEl) {
+                                    const rect = flyoutEl.getBoundingClientRect();
+                                    if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                                        isRectInside = true;
+                                    }
+                                }
+                                if (isTargetInside || isRectInside) {
+                                    showOverflow();
+                                } else {
+                                    hideOverflow();
+                                }
+                            };
+
+                            if (flyoutEl) {
+                                flyoutEl.addEventListener('pointerover', showOverflow);
+                                flyoutEl.addEventListener('pointerout', (e: PointerEvent) => {
+                                    if (!insideFlyout(e.relatedTarget as Node)) {
+                                        hideOverflow();
+                                    }
+                                });
+                            }
+                            if (containerEl) {
+                                containerEl.addEventListener('pointermove', handlePointerMove);
+                                containerEl.addEventListener('pointerleave', hideOverflow);
+                            }
+
+                            // Retract flyout overflow immediately when a block is being dragged
+                            // from the flyout into the workspace.
+                            blocksWorkspace.addChangeListener((event: any) => {
+                                if (event.type === Blockly.Events.BLOCK_DRAG) {
+                                    if (event.isStart) {
+                                        isDragging = true;
+                                        forceHideOverflow();
+                                    } else {
+                                        isDragging = false;
+                                        forceHideOverflow();
+                                    }
+                                }
+                            });
 
                             // Reset flyout scale after any viewport change (wheel zoom, pinch, etc.)
                             blocksWorkspace.addChangeListener((event: any) => {
@@ -2074,7 +2228,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             // Re-measure the rendered text and re-center it so it stays inside.
                             const fixFlyoutLabelWidths = () => {
                                 const contents: any[] = flyoutAny.getContents?.() ?? [];
-                                let maxRight = 0;
                                 for (const item of contents) {
                                     const lab = item.getElement?.();
                                     if (!lab?.svgText || item.getType() !== 'label') continue;
@@ -2088,17 +2241,6 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                         lab.svgText.setAttribute('x', String(w / 2));
                                         lab.width = w;
                                         lab.svgGroup?.querySelector('.blocklyFlyoutLabelBackground')?.setAttribute('width', String(w));
-                                    }
-                                    const rect = lab.getBoundingRectangle?.();
-                                    if (rect) maxRight = Math.max(maxRight, rect.right + (flyoutAny.MARGIN ?? 8));
-                                }
-                                if (maxRight > 0) {
-                                    const svg = flyoutAny.svgGroup_;
-                                    const curW = parseFloat(svg?.getAttribute('width') ?? '0') || 0;
-                                    if (maxRight > curW && svg) {
-                                        flyoutAny.width_ = maxRight;
-                                        svg.setAttribute('width', String(maxRight));
-                                        flyoutAny.position?.();
                                     }
                                 }
                             };
@@ -3448,7 +3590,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             <WorkspaceControls workspaceRef={workspaceRef} onAfterZoom={() => {
                                 const flyout = workspaceRef.current?.getFlyout() as any;
                                 if (flyout?.getWorkspace()) {
-                                    flyout.getWorkspace().setScale(0.8);
+                                    const targetScale = typeof flyout.getFlyoutScale === 'function' ? flyout.getFlyoutScale() : 0.8;
+                                    flyout.getWorkspace().setScale(targetScale);
                                 }
                             }} style={undefined} />
 

@@ -13,6 +13,7 @@ import { extractBroadcastValues } from '../utils/blocklyInit';
 import type { VariableMonitorState, ListMonitorState, TableMonitorState } from '../../types/intermediateTypes';
 import { normalizeVariableMonitor } from '../../types/intermediateTypes';
 import type { CompiledScript } from '../../vm/AnimationVM';
+import { fileService } from '../../Electra/Client/Src/services/FileService';
 
 export function useProjectOperations(
     sprites: Sprite[],
@@ -153,7 +154,6 @@ export function useProjectOperations(
     const handleSaveProject = useCallback(async (isSilent = false) => {
         const payload = buildProjectPayload();
         try {
-            const { fileService } = await import('../../Electra/Client/Src/services/FileService');
             await fileService.saveProject(projectName, 'intermediate', payload);
             addLog(`Project saved: ${projectName}`);
             if (!isSilent) {
@@ -168,13 +168,11 @@ export function useProjectOperations(
 
     const handleDownloadProject = useCallback(() => {
         const payload = buildProjectPayload();
-        const { fileService } = require('../../Electra/Client/Src/services/FileService');
         fileService.saveProjectLocally(projectName, 'intermediate', payload);
     }, [projectName, buildProjectPayload]);
 
     const loadProjectFromData = useCallback(async (data: any, source: string) => {
         try {
-            const { fileService } = await import('../../Electra/Client/Src/services/FileService');
             const validation = fileService.validateProject(data, 'intermediate');
             if (!validation.isValid) {
                 addLog(`Invalid project: ${validation.error}`);
@@ -316,7 +314,6 @@ export function useProjectOperations(
             if (!file) return;
 
             try {
-                const { fileService } = await import('../../Electra/Client/Src/services/FileService');
                 const data = await fileService.loadProject(file);
                 const validation = fileService.validateProject(data, 'intermediate');
 

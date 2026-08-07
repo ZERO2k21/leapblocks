@@ -461,7 +461,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
             <div className="flex items-center gap-2.5">
               <Logo height={44} />
               <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans uppercase border-l border-white/20 pl-2.5">
-                QUIZ
+                PLUS
               </span>
             </div>
           </div>
@@ -691,7 +691,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
             <div className="flex items-center gap-2.5 shrink-0">
               <Logo height={44} />
               <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans uppercase border-l border-white/20 pl-2.5">
-                QUIZ
+                PLUS
               </span>
             </div>
           </div>
@@ -1062,7 +1062,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
             <div className="flex items-center gap-2.5">
               <Logo height={44} />
               <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans uppercase border-l border-white/20 pl-2.5">
-                QUIZ
+                PLUS
               </span>
             </div>
           </div>

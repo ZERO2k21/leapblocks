@@ -386,6 +386,31 @@
 /* ICT Panel Touch Support - prevent browser scroll/zoom on Blockly elements.
    NOTE: .blocklyToolboxDiv is intentionally excluded so the category list can
    be touch-scrolled when many extensions are installed. */
+.blocklySvg {
+  overflow: hidden;
+}
+
+/* While the cursor is inside the flyout, let blocks that are wider than the
+   fixed flyout width render in full, overflowing into the workspace area.
+   Blockly renders the flyout as a SIBLING <svg class="blocklyFlyout
+   blocklyToolboxFlyout"> next to .blocklySvg (not a child), so the class is
+   applied to the flyout svg itself. */
+.blocklySvg.show-flyout-overflow {
+  overflow: visible !important;
+}
+.blocklyFlyout.show-flyout-overflow,
+.blocklyToolboxFlyout.show-flyout-overflow,
+.blocklyFlyout.show-flyout-overflow .blocklyFlyoutBackground,
+.blocklyFlyout.show-flyout-overflow .blocklyFlyoutLabel,
+.blocklyFlyout.show-flyout-overflow .blocklyWorkspace,
+.blocklyFlyout.show-flyout-overflow .blocklyBlockCanvas,
+.blocklyFlyout.show-flyout-overflow .blocklyBlockCanvas *,
+.blocklyFlyout.show-flyout-overflow * {
+  overflow: visible !important;
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+}
+
 .blocklySvg,
 .blocklyFlyout,
 .blocklyBlockCanvas,
@@ -823,8 +848,7 @@
 }
 
 .blocklyScrollbarHandle {
-  fill: #ddd !important;
-  rx: 4px !important;
+  display: none !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
