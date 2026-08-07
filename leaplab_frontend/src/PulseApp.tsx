@@ -62,7 +62,7 @@ const SESSION_KEY = 'pulse_quiz_session_v1';
 const clearQuizSession = () => {
   try {
     localStorage.removeItem(SESSION_KEY);
-  } catch {}
+  } catch { }
 };
 
 // ─── API helpers ───────────────────────────────────────────────
@@ -208,7 +208,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
         activeQuiz,
         deadline: deadlineRef.current,
       }));
-    } catch {}
+    } catch { }
   }, [view, attemptId, answers, activeQuiz]);
 
   // ── Timer (deadline-based: immune to setInterval drift & background throttling) ──
@@ -382,7 +382,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
   };
 
   // Use ref so timer always calls latest handleSubmit
-  const handleSubmitRef = useRef<() => Promise<void>>(async () => {});
+  const handleSubmitRef = useRef<() => Promise<void>>(async () => { });
 
   // ── Submit quiz ──
   const handleSubmit = async () => {
@@ -461,7 +461,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
             <div className="flex items-center gap-2.5">
               <Logo height={44} />
               <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans uppercase border-l border-white/20 pl-2.5">
-                PLUS
+                PULSE
               </span>
             </div>
           </div>
@@ -503,43 +503,45 @@ export default function PulseApp({ onBack }: PulseAppProps) {
           </div>
         )}
 
-        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
+        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
           {quizzes.map((quiz) => (
-            <div key={quiz.id} className="bg-white border-2 border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-indigo-300 transition-all flex flex-col justify-between">
-              <div className="p-5 flex-1 flex flex-col justify-between">
+            <div key={quiz.id} className="bg-white border-2 border-slate-200/80 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between min-h-[210px]">
+              <div className="p-6 flex-1 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-base font-extrabold m-0 text-slate-900 break-words">{quiz.title}</h3>
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-xl font-extrabold m-0 text-slate-900 tracking-tight break-words">{quiz.title}</h3>
                     {quiz.retakeAllowed === 1 && (
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 shrink-0">
+                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 shrink-0">
                         Retake
                       </span>
                     )}
                   </div>
                   {quiz.description && (
-                    <p className="text-xs text-slate-500 mt-1.5 mb-0 leading-relaxed break-words">{quiz.description}</p>
+                    <p className="text-xs text-slate-500 mt-2 mb-0 leading-relaxed break-words">{quiz.description}</p>
                   )}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                  <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 font-semibold gap-1">
+                <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col gap-3">
+                  <div className="flex items-center justify-between text-xs text-slate-600 font-bold gap-2 flex-wrap">
                     <span>📝 {quiz.questionCount} Questions</span>
                     <span>⭐ {quiz.totalPoints} Pts</span>
                     {quiz.timeLimitMinutes ? <span>⏱️ {quiz.timeLimitMinutes}m</span> : null}
                   </div>
 
                   {quiz.hasAttempted && quiz.lastScore !== null && (
-                    <div className="inline-flex items-center gap-1 py-1 px-2.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-700 w-fit">
+                    <div className="inline-flex items-center gap-1.5 py-1.5 px-3 bg-indigo-50/70 rounded-xl text-xs font-bold text-slate-700 border border-indigo-100/60 w-fit">
                       <span>Last Score:</span>
-                      <span className="text-indigo-600">{quiz.lastScore}/{quiz.lastMaxScore}</span>
+                      <span className="text-indigo-600 font-extrabold">{quiz.lastScore}/{quiz.lastMaxScore}</span>
                     </div>
                   )}
                 </div>
               </div>
 
               <button
-                className={`w-full py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white border-none text-xs font-extrabold tracking-wide uppercase cursor-pointer transition-all ${
-                  !quiz.canRetake && quiz.hasAttempted ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'opacity-100 shadow-sm'
+                className={`w-full py-4 text-xs font-extrabold tracking-widest uppercase cursor-pointer border-none transition-all ${
+                  !quiz.canRetake && quiz.hasAttempted
+                    ? 'bg-[#A5B4FC] text-white opacity-90 cursor-not-allowed'
+                    : 'bg-[#4F46E5] hover:bg-[#4338CA] text-white shadow-md'
                 }`}
                 onClick={() => setQuizToStart(quiz)}
                 disabled={!quiz.canRetake && quiz.hasAttempted}
@@ -892,9 +894,8 @@ export default function PulseApp({ onBack }: PulseAppProps) {
                     return (
                       <button
                         key={opt.id}
-                        className={`flex items-center gap-3 p-3 px-3.5 min-w-0 border-2 rounded-xl cursor-pointer text-left transition-all text-sm ${
-                          isSelected ? 'bg-indigo-50 border-indigo-600 text-indigo-600 font-medium' : 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-white'
-                        }`}
+                        className={`flex items-center gap-3 p-3 px-3.5 min-w-0 border-2 rounded-xl cursor-pointer text-left transition-all text-sm ${isSelected ? 'bg-indigo-50 border-indigo-600 text-indigo-600 font-medium' : 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-white'
+                          }`}
                         onClick={() => setAnswers((prev) => ({ ...prev, [currentQuestion.id]: opt.text || '' }))}
                       >
                         <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-200 font-bold text-xs shrink-0 text-slate-700">{String.fromCharCode(65 + optIdx)}</span>
@@ -978,9 +979,8 @@ export default function PulseApp({ onBack }: PulseAppProps) {
                       <button
                         key={q.id}
                         onClick={() => setCurrentQuestionIndex(idx)}
-                        className={`w-9 h-9 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center cursor-pointer ${styleClass} ${
-                          isCurrent ? 'ring-4 ring-indigo-500/40 border-2 border-indigo-600 scale-105' : ''
-                        }`}
+                        className={`w-9 h-9 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center cursor-pointer ${styleClass} ${isCurrent ? 'ring-4 ring-indigo-500/40 border-2 border-indigo-600 scale-105' : ''
+                          }`}
                         title={`Question ${idx + 1}: ${labelStatus}`}
                       >
                         {idx + 1}
@@ -999,11 +999,10 @@ export default function PulseApp({ onBack }: PulseAppProps) {
             type="button"
             onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}
             disabled={currentQuestionIndex === 0}
-            className={`py-2.5 px-6 rounded-xl border border-slate-300 font-extrabold text-sm transition-all cursor-pointer ${
-              currentQuestionIndex === 0
+            className={`py-2.5 px-6 rounded-xl border border-slate-300 font-extrabold text-sm transition-all cursor-pointer ${currentQuestionIndex === 0
                 ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400'
                 : 'bg-white text-slate-700 hover:bg-slate-100 shadow-sm'
-            }`}
+              }`}
           >
             ← Previous
           </button>
@@ -1020,9 +1019,8 @@ export default function PulseApp({ onBack }: PulseAppProps) {
             )}
 
             <button
-              className={`py-2.5 px-8 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white border-none rounded-xl text-sm font-extrabold cursor-pointer transition-all shadow-md shadow-green-600/20 ${
-                submitting ? 'opacity-50 cursor-not-allowed' : 'opacity-100'
-              }`}
+              className={`py-2.5 px-8 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white border-none rounded-xl text-sm font-extrabold cursor-pointer transition-all shadow-md shadow-green-600/20 ${submitting ? 'opacity-50 cursor-not-allowed' : 'opacity-100'
+                }`}
               onClick={() => setShowExitConfirm(true)}
               disabled={submitting}
             >

@@ -58,14 +58,14 @@ export default function MenuBar({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Progressive collapse breakpoints starting from 1780px down to ensure left-side (File/Edit/ProjectName) is never pushed off-screen:
-    const showCreoleap = windowWidth >= 1780;
-    const showAuthAndShare = windowWidth >= 1650;
-    const showPorts = windowWidth >= 1500;
+    // Progressive collapse breakpoints from 1800px down to prevent any element overlap:
+    const showCreoleap = windowWidth >= 1800;
+    const showBoardSelect = windowWidth >= 1720;
+    const showPorts = windowWidth >= 1680;
+    const showAuthAndShare = windowWidth >= 1600;
     const showModeAndUpload = windowWidth >= 1350;
-    const showBoardSelect = windowWidth >= 1180;
     const showFileEditMenus = windowWidth >= 900;
-    const showHamburgerBtn = windowWidth < 1780;
+    const showHamburgerBtn = windowWidth < 1800;
 
     const toggleMenu = (menuName) => {
         setOpenMenu((prev) => (prev === menuName ? null : menuName));
@@ -103,9 +103,9 @@ export default function MenuBar({
 
                 return (
                     <>
-                    <div className="w-full bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 h-[68px] px-3 flex items-center justify-between text-white select-none z-[100] relative font-sans shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]">
+                    <div className="w-full bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 h-[68px] px-3 sm:px-6 flex items-center justify-between text-white select-none z-[100] relative font-sans shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] overflow-hidden gap-2">
                         {/* ══ LEFT: Home button · Brand logo · Dropdown menus ══════════════ */}
-                        <div className="flex items-center gap-2.5 shrink-0">
+                        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
 
                             {/* Home icon button */}
                             <button
@@ -125,8 +125,8 @@ export default function MenuBar({
 
                             {/* Logo + brand label */}
                             <div className="flex items-center gap-2 shrink-0 drop-shadow-[0_0_12px_rgba(80,180,255,0.25)]">
-                                <Logo height={48} />
-                                <div className="text-white text-[22px] font-black tracking-[0.08em] font-sans">
+                                <Logo height={40} />
+                                <div className="hidden sm:block text-white text-[20px] lg:text-[22px] font-black tracking-[0.08em] font-sans">
                                     EMBED
                                 </div>
                             </div>
@@ -134,7 +134,7 @@ export default function MenuBar({
                             {/* Divider */}
                             <div className="w-px h-7 bg-white/10 shrink-0" />
 
-                            {/* Menus — progressively collapses into hamburger menu below 1670px */}
+                            {/* Menus — progressively collapses into hamburger menu below 1800px */}
                             {(showFileEditMenus || showBoardSelect) && (
                                 <div className="flex items-center gap-0.5">
                                     {showFileEditMenus && (
@@ -158,7 +158,7 @@ export default function MenuBar({
                                     {showBoardSelect && mode !== 'stage' && (
                                         <button
                                             onClick={onOpenBoardModal}
-                                            className="flex items-center gap-1.5 px-4 py-2 text-white text-sm font-semibold rounded-full transition-all tracking-wide cursor-pointer bg-transparent hover:bg-white/10"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-white text-sm font-semibold rounded-full transition-all tracking-wide cursor-pointer bg-transparent hover:bg-white/10"
                                             title="Select board"
                                         >
                                             <Cpu size={16} strokeWidth={2.2} className="opacity-90" />
@@ -171,7 +171,7 @@ export default function MenuBar({
                         </div>
 
                         {/* ══ CENTER: Project name pill ════════════════════════════════════ */}
-                        <div className="flex items-center justify-center px-3 overflow-hidden">
+                        <div className="flex items-center justify-center px-2 shrink min-w-0">
                             <ProjectNameInput
                                 value={projectName}
                                 onChange={(val) => onProjectNameChange?.(val)}
@@ -180,7 +180,7 @@ export default function MenuBar({
                         </div>
 
                         {/* ══ RIGHT: Ports · Toggle · Upload · CREOLEAP SVG · Hamburger ════════ */}
-                        <div className="flex items-center gap-2.5 shrink-0 overflow-hidden max-w-full">
+                        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
                             {/* Ports pill — only in upload mode when showPorts is true */}
                             {showPorts && mode === 'upload' && (
                                 <PortsControl
@@ -240,12 +240,12 @@ export default function MenuBar({
                                     <img
                                         src="assets/logo-creoleap.png"
                                         alt="CREOLEAP"
-                                        className="w-[145px] h-auto object-contain block shrink-0 drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)] brightness-120 contrast-105"
+                                        className="w-[135px] h-auto object-contain block shrink-0 drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)] brightness-120 contrast-105"
                                     />
                                 </div>
                             )}
 
-                            {/* Hamburger Menu Icon Button when windowWidth < 1670px */}
+                            {/* Hamburger Menu Icon Button when windowWidth < 1800px */}
                             {showHamburgerBtn && (
                                 <button
                                     onClick={() => setMobileMenuOpen(true)}
@@ -263,90 +263,114 @@ export default function MenuBar({
                         onClose={() => setMobileMenuOpen(false)}
                         theme="dark"
                     >
-                        <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">File Operations</div>
-                        {[
-                            { label: 'New Project', icon: File, onClick: () => onFileAction?.('new') },
-                            { label: 'Open Project', icon: FolderOpen, onClick: () => onFileAction?.('open') },
-                            { label: 'Save', icon: Save, onClick: () => onFileAction?.('save') },
-                            { label: 'Download .leap', icon: Download, onClick: () => onDownload?.() },
-                            { label: 'Share', icon: Share, onClick: () => { setMobileMenuOpen(false); handleShareClick(); } },
-                            {
-                                label: 'My Projects', icon: FolderOpen,
-                                onClick: () => {
-                                    sessionStorage.setItem('landingActiveTab', 'my-projects');
-                                    sessionStorage.setItem('myProjectsSelectedMode', 'intermediate');
-                                    onBack?.();
-                                }
-                            },
-                        ].map((item, i) => (
-                            <button key={i} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                                className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-white/10 hover:text-white"
-                            >
-                                {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
-                                {item.label}
-                            </button>
-                        ))}
-
-                        <div className="h-px bg-white/10 my-1" />
-
-                        <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Edit Operations</div>
-                        {[
-                            { label: 'Undo', icon: Undo, disabled: !canUndo, onClick: () => onUndo?.() },
-                            { label: 'Redo', icon: Redo, disabled: !canRedo, onClick: () => onRedo?.() },
-                        ].map((item, i) => (
-                            <button key={i} disabled={item.disabled} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                                className={`flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-[13px] font-medium text-left transition-all ${item.disabled ? 'opacity-40 cursor-not-allowed text-gray-400' : 'cursor-pointer text-gray-200 hover:bg-white/10 hover:text-white'}`}
-                            >
-                                {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
-                                {item.label}
-                            </button>
-                        ))}
-
-                        {mode !== 'stage' && (
+                        {!showFileEditMenus && (
                             <>
-                                <div className="h-px bg-white/10 my-1" />
+                                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50 mb-1">File Operations</div>
+                                {[
+                                    { label: 'New Project', icon: File, onClick: () => onFileAction?.('new') },
+                                    { label: 'Open Project', icon: FolderOpen, onClick: () => onFileAction?.('open') },
+                                    { label: 'Save', icon: Save, onClick: () => onFileAction?.('save') },
+                                    { label: 'Download .leap', icon: Download, onClick: () => onDownload?.() },
+                                    {
+                                        label: 'My Projects', icon: FolderOpen,
+                                        onClick: () => {
+                                            sessionStorage.setItem('landingActiveTab', 'my-projects');
+                                            sessionStorage.setItem('myProjectsSelectedMode', 'intermediate');
+                                            onBack?.();
+                                        }
+                                    },
+                                ].map((item, i) => (
+                                    <button key={i} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                                        className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-white/10 hover:text-white"
+                                    >
+                                        {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
+                                        {item.label}
+                                    </button>
+                                ))}
 
-                                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Board Selection</div>
+                                <div className="h-px bg-white/10 my-2" />
+
+                                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50 mb-1">Edit Operations</div>
+                                {[
+                                    { label: 'Undo', icon: Undo, disabled: !canUndo, onClick: () => onUndo?.() },
+                                    { label: 'Redo', icon: Redo, disabled: !canRedo, onClick: () => onRedo?.() },
+                                ].map((item, i) => (
+                                    <button key={i} disabled={item.disabled} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                                        className={`flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-[13px] font-medium text-left transition-all ${item.disabled ? 'opacity-40 cursor-not-allowed text-gray-400' : 'cursor-pointer text-gray-200 hover:bg-white/10 hover:text-white'}`}
+                                    >
+                                        {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
+                                        {item.label}
+                                    </button>
+                                ))}
+                                <div className="h-px bg-white/10 my-2" />
+                            </>
+                        )}
+
+                        {!showBoardSelect && mode !== 'stage' && (
+                            <>
+                                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50 mb-1">Board Selection</div>
                                 <button onClick={() => { setMobileMenuOpen(false); onOpenBoardModal?.(); }}
-                                    className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg text-[13px] font-medium cursor-pointer text-left transition-all bg-transparent text-gray-200 hover:bg-white/10 hover:text-white"
+                                    className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg text-[13px] font-medium cursor-pointer text-left transition-all bg-transparent text-gray-200 hover:bg-white/10 hover:text-white mb-2"
                                 >
                                     <Cpu size={15} color="#a78bfa" strokeWidth={2} />
                                     <span className="flex-1">Select Board</span>
                                     <span className="text-xs text-sky-300 font-semibold">{boardName}</span>
                                 </button>
+                                <div className="h-px bg-white/10 my-2" />
                             </>
                         )}
 
-                        <div className="h-px bg-white/10 my-1" />
-
-                        <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Actions</div>
-                        <ModeToggle mode={mode} onModeChange={onModeChange} />
+                        {!showModeAndUpload && (
+                            <>
+                                <div className="text-[11px] font-bold uppercase tracking-wider opacity-50 mb-1">Actions</div>
+                                <ModeToggle mode={mode} onModeChange={onModeChange} />
+                                <div className="h-px bg-white/10 my-2" />
+                            </>
+                        )}
 
                         {mode === 'upload' && (
                             <>
-                                <PortsControl
-                                    ports={ports}
-                                    selectedPort={selectedPort}
-                                    onPortSelect={onPortSelect}
-                                    onRefreshPorts={onRefreshPorts}
-                                    onConnect={onConnect}
-                                    isConnected={isConnected}
-                                />
-                                <ActionButton
-                                    variant="warning"
-                                    icon={<Upload size={13} strokeWidth={2.5} />}
-                                    label={isUploading ? 'Uploading…' : 'UPLOAD'}
-                                    onClick={() => { onUpload?.(); setMobileMenuOpen(false); }}
-                                    disabled={isUploading}
-                                    loading={isUploading}
-                                    title="Upload to board"
-                                />
+                                {!showPorts && (
+                                    <PortsControl
+                                        ports={ports}
+                                        selectedPort={selectedPort}
+                                        onPortSelect={onPortSelect}
+                                        onRefreshPorts={onRefreshPorts}
+                                        onConnect={onConnect}
+                                        isConnected={isConnected}
+                                    />
+                                )}
+                                {!showModeAndUpload && (
+                                    <ActionButton
+                                        variant="warning"
+                                        icon={<Upload size={13} strokeWidth={2.5} />}
+                                        label={isUploading ? 'Uploading…' : 'UPLOAD'}
+                                        onClick={() => { onUpload?.(); setMobileMenuOpen(false); }}
+                                        disabled={isUploading}
+                                        loading={isUploading}
+                                        title="Upload to board"
+                                    />
+                                )}
+                                <div className="h-px bg-white/10 my-2" />
                             </>
                         )}
 
-                        <div className="mt-auto flex flex-col gap-2 pt-4">
-                            <LeapLabAuthButton variant="dark" size="sm" style={{ width: '100%', height: 34, borderRadius: '9999px', boxSizing: 'border-box' }} />
-                        </div>
+                        {!showAuthAndShare && (
+                            <>
+                                <button
+                                    onClick={() => { setMobileMenuOpen(false); handleShareClick(); }}
+                                    disabled={shareLoading}
+                                    className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-white/10 hover:text-white mb-2"
+                                >
+                                    <Share size={15} color="#a78bfa" strokeWidth={2} />
+                                    Share Project
+                                </button>
+
+                                <div className="mt-auto flex flex-col gap-2 pt-3 border-t border-white/10">
+                                    <LeapLabAuthButton variant="dark" size="sm" style={{ width: '100%', height: 34, borderRadius: '9999px', boxSizing: 'border-box' }} />
+                                </div>
+                            </>
+                        )}
                     </MobileDrawer>
                     </>
                 );

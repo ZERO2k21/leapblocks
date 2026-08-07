@@ -114,27 +114,27 @@ export default function TopBar() {
         <TopbarShareButton size={18} onSave={ctx.handleSaveProject} projectName={ctx.projectName}>
             {({ onClick: handleShareClick, loading: shareLoading }) => (
                 <>
-                <header className="sticky top-0 h-[68px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] flex items-center px-7 justify-between text-white z-[1000] shrink-0 flex-nowrap shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] border-b border-sky-400/10">
-                    <div className="flex items-center gap-2.25 shrink-0">
+                <header className="sticky top-0 h-[68px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] flex items-center px-3 sm:px-6 justify-between text-white z-[1000] shrink-0 flex-nowrap overflow-hidden shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] border-b border-sky-400/10">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         <button onClick={() => {
                             sessionStorage.setItem('landingActiveTab', 'modules');
                             sessionStorage.removeItem('myProjectsSelectedMode');
                             ctx.onBack();
-                        }} className="flex items-center justify-center w-10 h-10 bg-white/10 border border-white/10 rounded-xl text-white cursor-pointer transition-all shrink-0 hover:bg-white/20" title="Back to Home">
-                            <Home size={20} strokeWidth={2.2} />
+                        }} className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-white/10 border border-white/10 rounded-xl text-white cursor-pointer transition-all shrink-0 hover:bg-white/20" title="Back to Home">
+                            <Home size={18} strokeWidth={2.2} />
                         </button>
-                        <div className="flex items-center gap-2.25 shrink-0 cursor-pointer" onClick={() => {
+                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 cursor-pointer" onClick={() => {
                             sessionStorage.setItem('landingActiveTab', 'modules');
                             sessionStorage.removeItem('myProjectsSelectedMode');
                             ctx.onBack();
                         }}>
-                            <Logo height={48} />
-                            <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans border-l border-white/15 pl-2">LOGIX</span>
+                            <Logo height={40} />
+                            <span className="hidden sm:inline text-white text-[18px] lg:text-[22px] font-black tracking-[0.08em] font-sans border-l border-white/15 pl-2">LOGIX</span>
                         </div>
 
-                        {showDesktopMenus && (
+                        {windowWidth >= 768 && (
                             <>
-                                <div className="h-8 w-px bg-white/15 mr-1" />
+                                <div className="h-8 w-px bg-white/15 mx-1" />
 
                                 <DropdownMenu label="File" isOpen={openMenuId === 'file'} onToggle={() => setOpenMenuId(openMenuId === 'file' ? null : 'file')} onClose={() => setOpenMenuId(null)}
                                     items={[
@@ -164,9 +164,9 @@ export default function TopBar() {
                                         { label: 'Redo', icon: Redo, shortcut: 'Ctrl+Y', onClick: () => ctx.editorRef.current?.trigger('keyboard', 'redo', null) },
                                     ]} />
 
-                                {showMenuItems && ["Board", "Connect"].map((menuLabel) => (
+                                {windowWidth >= 1400 && ["Board", "Connect"].map((menuLabel) => (
                                     <button key={menuLabel}
-                                        className="bg-transparent border-none text-white font-sans text-[15px] font-medium cursor-pointer opacity-90 px-2.5 py-1.5 rounded-md transition-all hover:bg-white/10"
+                                        className="bg-transparent border-none text-white font-sans text-[15px] font-medium cursor-pointer opacity-90 px-2 py-1.5 rounded-md transition-all hover:bg-white/10"
                                         onClick={() => {
                                             if (menuLabel === "Board") ctx.setIsBoardModalOpen(true);
                                             if (menuLabel === "Connect" && ctx.workflowMode === "upload") ctx.handleConnectToBoard();
@@ -178,31 +178,21 @@ export default function TopBar() {
                         )}
                     </div>
 
-                    <div className="h-7 w-px bg-white/15 shrink-0" />
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-1 justify-end min-w-0">
+                        <div className="shrink min-w-0">
+                            <ProjectNameInput
+                                value={ctx.projectName}
+                                onChange={ctx.setProjectName}
+                                onSave={ctx.handleSaveProject}
+                            />
+                        </div>
 
-                    <div className="flex items-center gap-2.25 flex-1 justify-end">
-                        <ProjectNameInput
-                            value={ctx.projectName}
-                            onChange={ctx.setProjectName}
-                            onSave={ctx.handleSaveProject}
-                        />
-
-                        {windowWidth >= 1710 && (<>
-                        <ModeSwitcher
-                            modes={[
-                                { id: 'ide', label: 'IDE' },
-                                { id: 'stage', label: 'Stage' },
-                                { id: 'upload', label: 'Upload' },
-                            ]}
-                            activeMode={ctx.workflowMode}
-                            onChange={ctx.setWorkflowMode}
-                        />
-
+                        {/* RUN / STOP BUTTON IS ALWAYS VISIBLE IN TOPBAR AT ALL SCREEN SIZES */}
                         {ctx.isRunning ? (
                             <ActionButton
                                 variant="danger"
                                 icon={<Square size={12} fill="#fff" stroke="none" />}
-                                label="Stop"
+                                label={windowWidth < 520 ? "" : "Stop"}
                                 onClick={ctx.handleStop}
                                 title="Stop (Escape)"
                             />
@@ -210,169 +200,194 @@ export default function TopBar() {
                             <ActionButton
                                 variant="success"
                                 icon={<Play size={12} fill="#fff" stroke="none" />}
-                                label="Run"
+                                label={windowWidth < 520 ? "" : "Run"}
                                 onClick={ctx.handleRun}
                                 title="Run Code (Ctrl+Enter or F5)"
                             />
                         )}
 
-                        <ActionButton
-                            variant="subtle"
-                            icon={<Upload size={13} strokeWidth={2.5} />}
-                            label={ctx.workflowMode === "upload" ? "Upload Code" : "Open Upload"}
-                            onClick={() => {
-                                if (ctx.workflowMode !== "upload") ctx.setWorkflowMode("upload");
-                                else ctx.handleUploadFirmware();
-                            }}
-                        />
-
-                        <button
-                            type="button"
-                            title="Share project"
-                            onClick={handleShareClick}
-                            disabled={shareLoading}
-                            className="bg-transparent border-none text-white/70 cursor-pointer px-2.5 py-1.5 rounded-md flex items-center transition-all hover:text-white"
-                        >
-                            {shareLoading ? (
-                                <span className="inline-block rounded-full border-2 border-current border-t-transparent animate-spin w-4.5 h-4.5" />
-                            ) : (
-                                <Share size={18} strokeWidth={2.2} />
-                            )}
-                        </button>
-
-                        <LeapLabAuthButton variant="dark" size="sm" style={{ height: 34, borderRadius: '9999px', boxSizing: 'border-box' }} />
-                        </>)}
-                    </div>
-
-                    {showCreoleap && (
-                        <div className="flex items-center shrink-0 h-full">
-                            <img
-                                src="assets/logo-creoleap.png"
-                                alt="CREOLEAP"
-                                className="w-[145px] h-auto object-contain block shrink-0 brightness-[1.14] contrast-[1.05] drop-shadow-[0_0_20px_rgba(167,139,250,0.7)]"
+                        {windowWidth >= 1000 && (
+                            <ModeSwitcher
+                                modes={[
+                                    { id: 'ide', label: 'IDE' },
+                                    { id: 'stage', label: 'Stage' },
+                                    { id: 'upload', label: 'Upload' },
+                                ]}
+                                activeMode={ctx.workflowMode}
+                                onChange={ctx.setWorkflowMode}
                             />
-                        </div>
-                    )}
+                        )}
 
-                    {!showDesktopMenus && (
-                        <button
-                            onClick={() => setMobileMenuOpen(true)}
-                            className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 border border-white/15 text-white cursor-pointer ml-2 shrink-0 hover:bg-white/20"
-                        >
-                            <MenuIcon size={20} strokeWidth={2.2} />
-                        </button>
-                    )}
+                        {windowWidth >= 1400 && (
+                            <ActionButton
+                                variant="subtle"
+                                icon={<Upload size={13} strokeWidth={2.5} />}
+                                label={ctx.workflowMode === "upload" ? "Upload Code" : "Open Upload"}
+                                onClick={() => {
+                                    if (ctx.workflowMode !== "upload") ctx.setWorkflowMode("upload");
+                                    else ctx.handleUploadFirmware();
+                                }}
+                            />
+                        )}
+
+                        {windowWidth >= 1200 && (
+                            <button
+                                type="button"
+                                title="Share project"
+                                onClick={handleShareClick}
+                                disabled={shareLoading}
+                                className="bg-transparent border-none text-white/70 cursor-pointer px-2 py-1.5 rounded-md flex items-center transition-all hover:text-white shrink-0"
+                            >
+                                {shareLoading ? (
+                                    <span className="inline-block rounded-full border-2 border-current border-t-transparent animate-spin w-4.5 h-4.5" />
+                                ) : (
+                                    <Share size={18} strokeWidth={2.2} />
+                                )}
+                            </button>
+                        )}
+
+                        {windowWidth >= 1600 && (
+                            <div className="shrink-0">
+                                <LeapLabAuthButton variant="dark" size="sm" style={{ height: 34, borderRadius: '9999px', boxSizing: 'border-box' }} />
+                            </div>
+                        )}
+
+                        {windowWidth >= 1800 && (
+                            <div className="flex items-center shrink-0 h-full ml-1">
+                                <img
+                                    src="assets/logo-creoleap.png"
+                                    alt="CREOLEAP"
+                                    className="w-[130px] h-auto object-contain block shrink-0 brightness-[1.14] contrast-[1.05] drop-shadow-[0_0_20px_rgba(167,139,250,0.7)]"
+                                />
+                            </div>
+                        )}
+
+                        {windowWidth < 1800 && (
+                            <button
+                                onClick={() => setMobileMenuOpen(true)}
+                                className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 border border-white/15 text-white cursor-pointer ml-0.5 shrink-0 hover:bg-white/20"
+                                title="Open Menu"
+                            >
+                                <MenuIcon size={18} strokeWidth={2.2} />
+                            </button>
+                        )}
+                    </div>
                 </header>
                 <MobileDrawer
                     isOpen={mobileMenuOpen}
                     onClose={() => setMobileMenuOpen(false)}
                     theme="dark"
                 >
-                    <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">File Operations</div>
-                    {[
-                        { label: 'New Project', icon: File, onClick: ctx.handleNewProject },
-                        { label: 'Open from your computer', icon: FolderOpen, onClick: ctx.handleOpenProject },
-                        { label: 'Open Python File', icon: FileCode2, onClick: ctx.handleOpenPythonFile },
-                        { label: 'Save to your computer', icon: Save, onClick: ctx.handleSaveProject },
-                        { label: 'Download .leap file', icon: Download, onClick: ctx.handleDownloadProject },
-                        { label: 'Share', icon: Share, onClick: () => { setMobileMenuOpen(false); handleShareClick(); } },
-                        {
-                            label: 'My Projects', icon: FolderOpen,
-                            onClick: () => {
-                                sessionStorage.setItem('landingActiveTab', 'my-projects');
-                                sessionStorage.setItem('myProjectsSelectedMode', 'python');
-                                ctx.onBack();
-                            }
-                        },
-                    ].map((item, i) => (
-                        <button key={i} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                            className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
-                        >
-                            {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
-                            {item.label}
-                        </button>
-                    ))}
+                    {windowWidth < 768 && (
+                        <>
+                            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50 mb-1">File Operations</div>
+                            {[
+                                { label: 'New Project', icon: File, onClick: ctx.handleNewProject },
+                                { label: 'Open from your computer', icon: FolderOpen, onClick: ctx.handleOpenProject },
+                                { label: 'Open Python File', icon: FileCode2, onClick: ctx.handleOpenPythonFile },
+                                { label: 'Save to your computer', icon: Save, onClick: ctx.handleSaveProject },
+                                { label: 'Download .leap file', icon: Download, onClick: ctx.handleDownloadProject },
+                                {
+                                    label: 'My Projects', icon: FolderOpen,
+                                    onClick: () => {
+                                        sessionStorage.setItem('landingActiveTab', 'my-projects');
+                                        sessionStorage.setItem('myProjectsSelectedMode', 'python');
+                                        ctx.onBack();
+                                    }
+                                },
+                            ].map((item, i) => (
+                                <button key={i} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                                    className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
+                                >
+                                    {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
+                                    {item.label}
+                                </button>
+                            ))}
 
-                    <div className="h-px bg-white/10 my-1" />
+                            <div className="h-px bg-white/10 my-2" />
 
-                    <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Edit Operations</div>
-                    {[
-                        { label: 'Undo', icon: Undo, onClick: () => ctx.editorRef.current?.trigger('keyboard', 'undo', null) },
-                        { label: 'Redo', icon: Redo, onClick: () => ctx.editorRef.current?.trigger('keyboard', 'redo', null) },
-                    ].map((item, i) => (
-                        <button key={i} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
-                            className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
-                        >
-                            {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
-                            {item.label}
-                        </button>
-                    ))}
+                            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50 mb-1">Edit Operations</div>
+                            {[
+                                { label: 'Undo', icon: Undo, onClick: () => ctx.editorRef.current?.trigger('keyboard', 'undo', null) },
+                                { label: 'Redo', icon: Redo, onClick: () => ctx.editorRef.current?.trigger('keyboard', 'redo', null) },
+                            ].map((item, i) => (
+                                <button key={i} onClick={() => { item.onClick?.(); setMobileMenuOpen(false); }}
+                                    className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
+                                >
+                                    {item.icon && <item.icon size={15} color="#a78bfa" strokeWidth={2} />}
+                                    {item.label}
+                                </button>
+                            ))}
+                            <div className="h-px bg-white/10 my-2" />
+                        </>
+                    )}
 
-                    <div className="h-px bg-white/10 my-1" />
+                    {windowWidth < 1400 && (
+                        <>
+                            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50 mb-1">Board Controls</div>
+                            {["Board", "Connect"].map((label) => (
+                                <button key={label} onClick={() => {
+                                    if (label === "Board") ctx.setIsBoardModalOpen(true);
+                                    if (label === "Connect" && ctx.workflowMode === "upload") ctx.handleConnectToBoard();
+                                    setMobileMenuOpen(false);
+                                }}
+                                    className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                            <div className="h-px bg-white/10 my-2" />
+                        </>
+                    )}
 
-                    <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Controls</div>
-                    {["Board", "Connect"].map((label) => (
-                        <button key={label} onClick={() => {
-                            if (label === "Board") ctx.setIsBoardModalOpen(true);
-                            if (label === "Connect" && ctx.workflowMode === "upload") ctx.handleConnectToBoard();
+                    {windowWidth < 900 && (
+                        <>
+                            <div className="text-[11px] font-bold uppercase tracking-wider opacity-50 mb-1">Workspace Mode</div>
+                            <ModeSwitcher
+                                modes={[
+                                    { id: 'ide', label: 'IDE' },
+                                    { id: 'stage', label: 'Stage' },
+                                    { id: 'upload', label: 'Upload' },
+                                ]}
+                                activeMode={ctx.workflowMode}
+                                onChange={(mode) => {
+                                    ctx.setWorkflowMode(mode);
+                                    setMobileMenuOpen(false);
+                                }}
+                            />
+                            <div className="h-px bg-white/10 my-2" />
+                        </>
+                    )}
+
+                    {windowWidth < 1400 && (
+                        <button onClick={() => {
+                            if (ctx.workflowMode !== "upload") ctx.setWorkflowMode("upload");
+                            else ctx.handleUploadFirmware();
                             setMobileMenuOpen(false);
                         }}
-                            className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
+                            className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-purple-600/20 text-purple-300 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/30 mb-2"
                         >
-                            {label}
-                        </button>
-                    ))}
-
-                    <div className="h-px bg-white/10 my-1" />
-
-                    <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Actions</div>
-                    <ModeSwitcher
-                        modes={[
-                            { id: 'ide', label: 'IDE' },
-                            { id: 'stage', label: 'Stage' },
-                            { id: 'upload', label: 'Upload' },
-                        ]}
-                        activeMode={ctx.workflowMode}
-                        onChange={ctx.setWorkflowMode}
-                    />
-                    {ctx.isRunning ? (
-                        <button onClick={() => { ctx.handleStop(); setMobileMenuOpen(false); }}
-                            className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-red-500/20 text-red-500 text-[13px] font-semibold cursor-pointer text-left transition-all hover:bg-red-500/30"
-                        >
-                            <Square size={12} fill="#ef4444" stroke="none" /> Stop
-                        </button>
-                    ) : (
-                        <button onClick={() => { ctx.handleRun(); setMobileMenuOpen(false); }}
-                            className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-emerald-500/20 text-emerald-500 text-[13px] font-semibold cursor-pointer text-left transition-all hover:bg-emerald-500/30"
-                        >
-                            <Play size={12} fill="#22c55e" stroke="none" /> Run
+                            <Upload size={13} strokeWidth={2.5} color="#a78bfa" />
+                            {ctx.workflowMode === "upload" ? "Upload Code" : "Open Upload"}
                         </button>
                     )}
-                    <button onClick={() => {
-                        if (ctx.workflowMode !== "upload") ctx.setWorkflowMode("upload");
-                        else ctx.handleUploadFirmware();
-                        setMobileMenuOpen(false);
-                    }}
-                        className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-purple-600/20 text-purple-300 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/30"
-                    >
-                        <Upload size={13} strokeWidth={2.5} color="#a78bfa" />
-                        {ctx.workflowMode === "upload" ? "Upload Code" : "Open Upload"}
-                    </button>
 
-                    <div className="h-px bg-white/10 my-1" />
+                    {windowWidth < 900 && (
+                        <button
+                            onClick={() => { setMobileMenuOpen(false); handleShareClick(); }}
+                            disabled={shareLoading}
+                            className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white mb-2"
+                        >
+                            <Share size={15} color="#a78bfa" strokeWidth={2} />
+                            Share Project
+                        </button>
+                    )}
 
-                    <button
-                        onClick={() => { setMobileMenuOpen(false); handleShareClick(); }}
-                        disabled={shareLoading}
-                        className="flex items-center gap-2.5 w-full p-2 px-2.5 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
-                    >
-                        <Share size={15} color="#a78bfa" strokeWidth={2} />
-                        Share
-                    </button>
-
-                    <div className="mt-auto flex flex-col gap-2">
-                        <LeapLabAuthButton variant="dark" size="sm" style={{ width: '100%', height: 34, borderRadius: '9999px', boxSizing: 'border-box' }} />
-                    </div>
+                    {windowWidth < 1200 && (
+                        <div className="mt-auto pt-3 border-t border-white/10 flex flex-col gap-2">
+                            <LeapLabAuthButton variant="dark" size="sm" style={{ width: '100%', height: 34, borderRadius: '9999px', boxSizing: 'border-box' }} />
+                        </div>
+                    )}
                 </MobileDrawer>
                 </>
             )}
