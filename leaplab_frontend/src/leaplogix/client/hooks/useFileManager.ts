@@ -23,9 +23,11 @@ interface UseFileManagerProps {
   setSelectedSpriteId: (id: string) => void
   setBackdropImg: (img: string | null) => void
   resetStage: () => void
+  workflowMode?: string
+  setWorkflowMode?: (mode: string) => void
 }
 
-export function useFileManager({ addLog, sprites, backdrop, setSprites, setSelectedSpriteId, setBackdropImg, resetStage }: UseFileManagerProps) {
+export function useFileManager({ addLog, sprites, backdrop, setSprites, setSelectedSpriteId, setBackdropImg, resetStage, workflowMode, setWorkflowMode }: UseFileManagerProps) {
   const [projectName, setProjectName] = useState("My Project")
   const [activeFile, setActiveFile] = useState(DEFAULT_ACTIVE_FILE)
   const [projectFiles, setProjectFiles] = useState<Record<string, string>>(DEFAULT_FILES)
@@ -38,13 +40,19 @@ export function useFileManager({ addLog, sprites, backdrop, setSprites, setSelec
     resetStage()
   }, [resetStage])
 
+  const buildPayload = useCallback(() => ({
+    mode: "python",
+    workflowMode: workflowMode || "ide",
+    editorMode: workflowMode || "ide",
+    version: "1.0",
+    projectFiles,
+    activeFile,
+    sprites,
+    backdrop,
+  }), [workflowMode, projectFiles, activeFile, sprites, backdrop])
+
   const handleSaveProject = useCallback(async () => {
-    const payload = {
-      projectFiles,
-      activeFile,
-      sprites,
-      backdrop,
-    }
+    const payload = buildPayload()
     try {
       await fileService.saveProject(projectName, "python", payload)
       showToast("Project saved successfully!", "success")
@@ -52,17 +60,12 @@ export function useFileManager({ addLog, sprites, backdrop, setSprites, setSelec
       console.error('[useFileManager] Failed to save project:', err)
       alert((err as { message?: string })?.message || 'Failed to save project. Please make sure you are signed in.')
     }
-  }, [projectName, projectFiles, activeFile, sprites, backdrop])
+  }, [projectName, buildPayload])
 
   const handleDownloadProject = useCallback(() => {
-    const payload = {
-      projectFiles,
-      activeFile,
-      sprites,
-      backdrop,
-    }
+    const payload = buildPayload()
     fileService.saveProjectLocally(projectName, "python", payload)
-  }, [projectName, projectFiles, activeFile, sprites, backdrop])
+  }, [projectName, buildPayload])
 
   const loadProjectData = useCallback((data: any) => {
     try {
@@ -70,6 +73,11 @@ export function useFileManager({ addLog, sprites, backdrop, setSprites, setSelec
       if (!validation.isValid) {
         alert(validation.error)
         return
+      }
+
+      const savedMode = data.workflowMode || data.editorMode
+      if (savedMode && (savedMode === "ide" || savedMode === "upload") && setWorkflowMode) {
+        setWorkflowMode(savedMode)
       }
 
       const nextProjectFiles = data.projectFiles && Object.keys(data.projectFiles).length ? data.projectFiles : DEFAULT_FILES
@@ -87,7 +95,7 @@ export function useFileManager({ addLog, sprites, backdrop, setSprites, setSelec
     } catch (err) {
       alert('Failed to load project: ' + (err as Error).message)
     }
-  }, [setSprites, setSelectedSpriteId, setBackdropImg, resetStage])
+  }, [setSprites, setSelectedSpriteId, setBackdropImg, resetStage, setWorkflowMode])
 
   const handleOpenProject = useCallback(() => {
     const input = document.createElement("input")
@@ -112,16 +120,16 @@ export function useFileManager({ addLog, sprites, backdrop, setSprites, setSelec
     if (!pendingProject || pendingProject.mode !== 'python') return
 
     let cancelled = false
-    ;(async () => {
-      try {
-        if (cancelled) return
-        loadProjectData(pendingProject.data)
-        clearPendingProject()
-      } catch (err) {
-        console.error('[useFileManager] Failed to load project from cloud:', err)
-        alert('Failed to load project: ' + (err as Error).message)
-      }
-    })()
+      ; (async () => {
+        try {
+          if (cancelled) return
+          loadProjectData(pendingProject.data)
+          clearPendingProject()
+        } catch (err) {
+          console.error('[useFileManager] Failed to load project from cloud:', err)
+          alert('Failed to load project: ' + (err as Error).message)
+        }
+      })()
 
     return () => { cancelled = true }
   }, [loadProjectData])

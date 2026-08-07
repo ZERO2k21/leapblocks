@@ -51,6 +51,14 @@ function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
         handleShellSubmit, handleShellKey,
     } = useTerminal();
 
+    // ── UI State ────────────────────────────────────────────────────────────
+    const [workflowMode, setWorkflowMode] = useState("ide");
+    const [activePanel, setActivePanel] = useState("terminal");
+    const [sidePanel, setSidePanel] = useState("files");
+    const [spriteFilter, setSpriteFilter] = useState("");
+    const [installedExtensions, setInstalledExtensions] = useState([]);
+    const [editorCursor, setEditorCursor] = useState({ line: 1, col: 1 });
+
     // ── File Manager ────────────────────────────────────────────────────────
     const {
         projectName, setProjectName, activeFile, setActiveFile,
@@ -58,7 +66,10 @@ function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
         handleNewProject, handleSaveProject, handleDownloadProject, handleOpenProject, handleShareProject,
         handleDeleteFile, handleCreateNewFile, handleCreateNewTextFile,
         handleRenameFile, handleOpenPythonFile,
-    } = useFileManager({ addLog, sprites, backdrop, setSprites, setSelectedSpriteId, setBackdropImg, resetStage });
+    } = useFileManager({
+        addLog, sprites, backdrop, setSprites, setSelectedSpriteId, setBackdropImg, resetStage,
+        workflowMode, setWorkflowMode
+    });
 
     // ── Python Execution ────────────────────────────────────────────────────
     const {
@@ -70,14 +81,6 @@ function LogixAppInner({ onBack, onSwitchToNotebook, onSwitchToBlocks, onSwitchT
 
     // ── Upload Mode ─────────────────────────────────────────────────────────
     const upload = useUploadMode({ addLog });
-
-    // ── UI State ────────────────────────────────────────────────────────────
-    const [workflowMode, setWorkflowMode] = useState("ide");
-    const [activePanel, setActivePanel] = useState("terminal");
-    const [sidePanel, setSidePanel] = useState("files");
-    const [spriteFilter, setSpriteFilter] = useState("");
-    const [installedExtensions, setInstalledExtensions] = useState([]);
-    const [editorCursor, setEditorCursor] = useState({ line: 1, col: 1 });
     const monacoRef = useRef(null);
     const editorRef = useRef(null);
 

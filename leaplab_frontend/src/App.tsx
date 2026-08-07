@@ -70,7 +70,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
             if (isEmbedded()) {
                 window.parent.postMessage({ type: 'leaplab-error', error: error?.message || String(error) }, '*');
             }
-        } catch {}
+        } catch { }
     }
     render() {
         if (this.state.hasError) {
@@ -223,11 +223,11 @@ export default function App() {
                         const data = JSON.parse(ev.target?.result as string);
                         const detectedMode: AppMode =
                             data.mode === 'junior' ? 'junior' :
-                            data.mode === 'python' ? 'python' :
-                            data.mode === 'creova' ? 'creova' :
-                            data.mode === 'electra' ? 'electra' :
-                            data.mode === 'neura' ? 'neura' :
-                            'intermediate';
+                                data.mode === 'python' ? 'python' :
+                                    data.mode === 'creova' ? 'creova' :
+                                        data.mode === 'electra' ? 'electra' :
+                                            data.mode === 'neura' ? 'neura' :
+                                                'intermediate';
 
                         useCloudProjectStore.getState().setPendingProject({
                             mode: detectedMode,
@@ -363,11 +363,11 @@ export default function App() {
 
                 const detectedMode: AppMode =
                     project.mode === 'junior' ? 'junior' :
-                    project.mode === 'python' ? 'python' :
-                    project.mode === 'creova' ? 'creova' :
-                    project.mode === 'electra' ? 'electra' :
-                    project.mode === 'neura' ? 'neura' :
-                    'intermediate';
+                        project.mode === 'python' ? 'python' :
+                            project.mode === 'creova' ? 'creova' :
+                                project.mode === 'electra' ? 'electra' :
+                                    project.mode === 'neura' ? 'neura' :
+                                        'intermediate';
 
                 setMode(detectedMode);
             } catch (err: any) {

@@ -10,7 +10,7 @@ import { migrateWorkspaceBlocks } from '../../utils/blocklyMigration';
 import { normalizeAssetPath, resolveAssetPath } from '../utils/assetPaths';
 import { EXTENSIONS, registerExtensions } from '../../extensions/extensionDefinitions';
 import { extractBroadcastValues } from '../utils/blocklyInit';
-import type { VariableMonitorState, ListMonitorState, TableMonitorState } from '../../types/intermediateTypes';
+import type { VariableMonitorState, ListMonitorState, TableMonitorState, EditorMode } from '../../types/intermediateTypes';
 import { normalizeVariableMonitor } from '../../types/intermediateTypes';
 import type { CompiledScript } from '../../vm/AnimationVM';
 import { fileService } from '../../Electra/Client/Src/services/FileService';
@@ -41,6 +41,8 @@ export function useProjectOperations(
     setCompiledScripts: React.Dispatch<React.SetStateAction<CompiledScript[]>>,
     setIsRunning: React.Dispatch<React.SetStateAction<boolean>>,
     loadSpriteWorkspace: (spriteId: string) => void,
+    editorMode?: EditorMode,
+    setEditorMode?: React.Dispatch<React.SetStateAction<EditorMode>>
 ) {
 
     const executeNewProject = useCallback(() => {
@@ -133,6 +135,9 @@ export function useProjectOperations(
         });
 
         return {
+            mode: 'intermediate',
+            editorMode: editorMode || 'stage',
+            version: '1.0',
             sprites: spritesData,
             workspaces: workspacesData,
             backdrops: stageManager.getAllBackdrops().map(b => ({
@@ -149,7 +154,7 @@ export function useProjectOperations(
             },
             installedExtensions: Array.from(installedExtensionsRef.current)
         };
-    }, [sprites, variableMonitors, listMonitors, tableMonitors, sensingMonitors, spriteWorkspacesRef, workspaceRef, activeSpriteIdRef, installedExtensionsRef]);
+    }, [sprites, variableMonitors, listMonitors, tableMonitors, sensingMonitors, spriteWorkspacesRef, workspaceRef, activeSpriteIdRef, installedExtensionsRef, editorMode]);
 
     const handleSaveProject = useCallback(async (isSilent = false) => {
         const payload = buildProjectPayload();
@@ -177,6 +182,10 @@ export function useProjectOperations(
             if (!validation.isValid) {
                 addLog(`Invalid project: ${validation.error}`);
                 return;
+            }
+
+            if (data.editorMode && (data.editorMode === 'stage' || data.editorMode === 'upload') && setEditorMode) {
+                setEditorMode(data.editorMode);
             }
 
             if (!data.sprites || !data.workspaces) {

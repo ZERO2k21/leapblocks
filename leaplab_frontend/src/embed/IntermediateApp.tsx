@@ -1020,7 +1020,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
         tableMonitors, setTableMonitors,
         sensingMonitors, setSensingMonitors,
         setCompiledScripts, setIsRunning,
-        loadSpriteWorkspace
+        loadSpriteWorkspace,
+        editorMode, setEditorMode
     );
 
     const handleNewProject = useCallback(() => {
