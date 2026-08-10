@@ -22,7 +22,6 @@ import { TiltSwitchEmulator } from './TiltSwitchEmulator';
 import { RotaryEncoderEmulator } from './RotaryEncoderEmulator';
 import { IRReceiverEmulator } from './IRReceiverEmulator';
 import { HX711Emulator } from './HX711Emulator';
-import { RFIDReaderEmulator } from './RFIDReaderEmulator';
 import { ESP32_BOARD_CONFIG, ESP32_BOARDS, type ESP32PinInfo } from './ESP32BoardConfig.js';
 import { createIRremoteClass } from '../esp32c3/ArduinoLibraries';
 
@@ -99,7 +98,6 @@ class CircuitEngine {
   private rotaryEncoderEmulators = new Map<string, RotaryEncoderEmulator>();
   private irReceiverEmulators = new Map<string, IRReceiverEmulator>();
   private hx711Emulators = new Map<string, HX711Emulator>();
-  private rfidReaderEmulators = new Map<string, RFIDReaderEmulator>();
   private _pendingLibraryClasses = new Map<string, any>();
   public _displayElements = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
@@ -1188,6 +1186,7 @@ class CircuitEngine {
     this.unifiedStepperEmulators.clear();
     this.ili9341Slaves.forEach(s => s.detach());
     this.ili9341Slaves.clear();
+
     this.ft6206Slaves.clear();
     this.mpu6050Slaves.clear();
     this.ssd1306Slaves.clear();
@@ -2112,18 +2111,6 @@ class CircuitEngine {
                   // Create IR receiver emulator for this node
                   this.irReceiverEmulators.set(peripheralId, new IRReceiverEmulator(avrPin, peripheralId));
                   console.log(`[IR RECEIVER] Initialized emulator for node ${peripheralId} on pin ${avrPin}`);
-                }
-              }
-            }
-
-            // --- EM-18 RFID Reader Emulation ---
-            // RFID reader sends card data via TX pin (serial output)
-            if (peripheralNode.data?.type === 'em18-rfid') {
-              if (peripheralPinName === 'TX') {
-                if (!this.rfidReaderEmulators.has(peripheralId)) {
-                  // Create RFID reader emulator for this node
-                  this.rfidReaderEmulators.set(peripheralId, new RFIDReaderEmulator(avrPin, peripheralId));
-                  console.log(`[EM-18 RFID] Initialized emulator for node ${peripheralId} on pin ${avrPin}`);
                 }
               }
             }
@@ -3678,32 +3665,6 @@ class CircuitEngine {
       emulator.transmit(address, command, false);
     } else {
       console.warn(`[IR RECEIVER] Cannot send signal: emulator not found for node ${nodeId}`);
-    }
-  }
-
-  /**
-   * Present a card to an EM-18 RFID reader.
-   */
-  public presentRFIDCard(nodeId: string, uid?: string) {
-    const emulator = this.rfidReaderEmulators.get(nodeId);
-    if (emulator) {
-      emulator.presentCard(uid);
-      console.log(`[EM-18 RFID] Card presented to node ${nodeId}: ${emulator.cardUid}`);
-    } else {
-      console.warn(`[EM-18 RFID] Cannot present card: emulator not found for node ${nodeId}`);
-    }
-  }
-
-  /**
-   * Remove a card from an EM-18 RFID reader.
-   */
-  public removeRFIDCard(nodeId: string) {
-    const emulator = this.rfidReaderEmulators.get(nodeId);
-    if (emulator) {
-      emulator.removeCard();
-      console.log(`[EM-18 RFID] Card removed from node ${nodeId}`);
-    } else {
-      console.warn(`[EM-18 RFID] Cannot remove card: emulator not found for node ${nodeId}`);
     }
   }
 

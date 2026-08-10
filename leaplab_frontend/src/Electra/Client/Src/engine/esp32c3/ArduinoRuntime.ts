@@ -534,6 +534,8 @@ export class ArduinoRuntime {
       }
     }
 
+    this.flushSerial(); // Flush setup() serial output immediately
+
     // Start loop() — runs as FreeRTOS task 0 (the "idle" task equivalent)
     this.runLoop();
   }
@@ -585,7 +587,7 @@ export class ArduinoRuntime {
       // but yield to the browser periodically to keep the UI responsive.
       // If loop() calls delay(), it awaits a setTimeout internally, which
       // naturally yields — so we don't need extra rAF in that case.
-      const BATCH_SIZE = 60; // Max iterations before yielding to rAF
+      const BATCH_SIZE = 10; // Max iterations before yielding to rAF
       let lastYieldTime = performance.now();
 
       for (let i = 0; i < BATCH_SIZE && this.running; i++) {
@@ -610,6 +612,8 @@ export class ArduinoRuntime {
         if (this.running) {
           await this.runFreeRTOSTasks();
         }
+
+        this.flushSerial(); // Flush serial output every iteration
 
         // If loop() called delay(), the await already yielded to the browser.
         // No need to continue batching — the delay handled the timing.
@@ -1084,16 +1088,19 @@ export class ArduinoRuntime {
           const text = String(val);
           self.serialBuffer += text;
           self.pendingSerialOutput += text;
+          self.flushSerial();
         },
         println(val: any = ''): void {
           const text = String(val) + '\n';
           self.serialBuffer += text;
           self.pendingSerialOutput += text;
+          self.flushSerial();
         },
         write(val: any): void {
           const text = typeof val === 'number' ? String.fromCharCode(val) : String(val);
           self.serialBuffer += text;
           self.pendingSerialOutput += text;
+          self.flushSerial();
         },
         available(): number {
           return self.serialInputBuffer.length;

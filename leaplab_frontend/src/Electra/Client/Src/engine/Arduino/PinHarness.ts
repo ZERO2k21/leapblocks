@@ -3046,21 +3046,6 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       }
     ]
   },
-  "em18-rfid": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 100,
-      "height": 105
-    },
-    "pins": [
-      { "name": "VCC", "x": 15, "y": 95 },
-      { "name": "TX", "x": 30, "y": 95 },
-      { "name": "LED", "x": 45, "y": 95 },
-      { "name": "BUZZER", "x": 60, "y": 95 },
-      { "name": "GND", "x": 75, "y": 95 }
-    ]
-  },
   "rain-sensor": {
     "viewBox": {
       "minX": 0,

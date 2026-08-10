@@ -202,9 +202,8 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   const isHeartRate = type === 'heart-beat-sensor';
   const isBigSound = type === 'big-sound-sensor' || type === 'small-sound-sensor';
   const isHX711 = type === 'hx711';
-  const isEM18RFID = type === 'em18-rfid';
 
-  if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isIRObstacle && !isProximity && !isMPU6050 && !isLDR && !isFlame && !isGas && !isRain && !isSoilMoisture && !isHeartRate && !isBigSound && !isHX711 && !isEM18RFID) return null;
+  if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isIRObstacle && !isProximity && !isMPU6050 && !isLDR && !isFlame && !isGas && !isRain && !isSoilMoisture && !isHeartRate && !isBigSound && !isHX711) return null;
 
   const renderContent = () => {
     // ── DHT Sensor ──────────────────────────────────────────────────────────
@@ -674,65 +673,6 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
             </span>
             <span className="text-slate-500">Vout</span>
             <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{voltage.toFixed(2)}V</span>
-          </div>
-        </CompactCard>
-      );
-    }
-
-    // ── EM-18 RFID Reader ──────────────────────────────────────────────────
-    if (isEM18RFID) {
-      const cardPresent = currentValues?.cardPresent ?? false;
-      const cardUid = currentValues?.cardUid ?? 'E24B891F00';
-
-      const toggleCard = () => {
-        const newState = !cardPresent;
-        updateNodeData(nodeId, {
-          sensorValues: { ...currentValues, cardPresent: newState },
-        });
-        withEngine(engine => engine.pushInputSignal(nodeId, 'TX', newState));
-      };
-
-      const handleUidChange = (uid: string) => {
-        updateNodeData(nodeId, {
-          sensorValues: { ...currentValues, cardUid: uid.replace(/\s/g, '').toUpperCase() },
-        });
-      };
-
-      return (
-        <CompactCard borderColor="rgba(34, 197, 94, 0.2)">
-          <div className="flex items-center justify-between px-1 py-0.5">
-            <span className="text-[9px] font-mono font-bold text-slate-500">CARD</span>
-            <button
-              onClick={toggleCard}
-              className={`px-2 py-0.5 rounded text-[9px] font-bold transition-colors ${
-                cardPresent
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                  : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
-              }`}
-            >
-              {cardPresent ? 'PRESENT' : 'ABSENT'}
-            </button>
-          </div>
-          <div className="flex items-center justify-between px-1 py-0.5">
-            <span className="text-[9px] font-mono font-bold text-slate-500">UID</span>
-            <input
-              type="text"
-              value={cardUid}
-              onChange={(e) => handleUidChange(e.target.value)}
-              className={`w-24 px-1 py-0.5 text-[9px] font-mono rounded border ${
-                isLightTheme
-                  ? 'bg-white/50 border-sky-200 text-sky-700'
-                  : 'bg-black/30 border-slate-600 text-[#bef264]'
-              }`}
-              maxLength={10}
-              placeholder="E24B891F00"
-            />
-          </div>
-          <div className="flex justify-between text-[9px] font-mono font-bold px-0.5">
-            <span className="text-slate-500">Freq</span>
-            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>125 kHz</span>
-            <span className="text-slate-500">Range</span>
-            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>10 cm</span>
           </div>
         </CompactCard>
       );

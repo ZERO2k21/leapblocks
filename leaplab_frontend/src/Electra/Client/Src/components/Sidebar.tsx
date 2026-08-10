@@ -56,7 +56,6 @@ const COMPONENTS = [
   { id: 'proximity-sensor', name: 'Proximity Sensor', category: 'sensors', desc: 'IR proximity detector' },
   { id: 'rain-sensor', name: 'Rain Sensor', category: 'sensors', desc: 'Rain detection sensor (AO + DO)' },
   { id: 'soil-moisture-sensor', name: 'Soil Moisture', category: 'sensors', desc: 'Soil moisture sensor (AO + DO)' },
-  { id: 'em18-rfid', name: 'EM-18 RFID', category: 'sensors', desc: 'RFID reader (125 kHz, UART)' },
   { id: 'ntc-temperature-sensor', name: 'NTC Thermistor', category: 'sensors', desc: 'Temperature sensor' },
 
   // INPUTS

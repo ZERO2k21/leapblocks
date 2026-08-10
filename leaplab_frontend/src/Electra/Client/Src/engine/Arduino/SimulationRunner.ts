@@ -73,9 +73,50 @@ class SimulationRunner {
   private readonly MHZ = 16e6;
   private lastClampedStepCycles = 0;
 
+  // Serial output batching — flush to the store at most ~once per frame
+  // instead of one Zustand update + React re-render per character.
+  private pendingSerial = '';
+  private pendingSerialTimer: number | null = null;
+
   public reportClampedStep() {
     if (this.cpu) {
       this.lastClampedStepCycles = this.cpu.cycles;
+    }
+  }
+
+  /**
+   * Buffer incoming serial characters and flush them to the store in one
+   * batch per frame. Flushing per-character caused ~960 Zustand updates/sec
+   * at 9600 baud, each triggering a React re-render, which throttled the
+   * rAF tick and made serial output crawl.
+   */
+  private bufferSerial(char: string): void {
+    this.pendingSerial += char;
+    if (this.pendingSerialTimer !== null) return;
+    this.pendingSerialTimer = window.setTimeout(() => {
+      this.pendingSerialTimer = null;
+      if (this.pendingSerial) {
+        const data = this.pendingSerial;
+        this.pendingSerial = '';
+        import('../../../utlis/store/useForgeStore').then(({ useForgeStore }) => {
+          useForgeStore.getState().appendSerial(data);
+        });
+      }
+    }, 16);
+  }
+
+  /** Push any buffered serial output to the store immediately (e.g. on stop). */
+  private flushSerialOutput(): void {
+    if (this.pendingSerialTimer !== null) {
+      clearTimeout(this.pendingSerialTimer);
+      this.pendingSerialTimer = null;
+    }
+    if (this.pendingSerial) {
+      const data = this.pendingSerial;
+      this.pendingSerial = '';
+      import('../../../utlis/store/useForgeStore').then(({ useForgeStore }) => {
+        useForgeStore.getState().appendSerial(data);
+      });
     }
   }
 
@@ -138,9 +179,7 @@ class SimulationRunner {
     if (config.hasUSART) {
       this.usart = new AVRUSART(this.cpu!, usart0Config, config.frequency);
       this.usartEmulator = new USARTEmulator(this.usart, (char) => {
-        import('../../../utlis/store/useForgeStore').then(({ useForgeStore }) => {
-          useForgeStore.getState().appendSerial(char);
-        });
+        this.bufferSerial(char);
       });
     }
 
@@ -411,6 +450,7 @@ class SimulationRunner {
     // ── AVR path ──────────────────────────────────────────────────
     if (!this.isRunning) return;
     this.isRunning = false;
+    this.flushSerialOutput();
     if (this.tickInterval !== null) {
       cancelAnimationFrame(this.tickInterval);
       this.tickInterval = null;
