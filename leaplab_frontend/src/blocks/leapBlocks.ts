@@ -842,10 +842,11 @@ const leapBlocks = [
             ]
         }],
         previousStatement: null,
-        nextStatement: 'any',
+        nextStatement: null,
         colour: '#FFAB19',
         tooltip: 'Stops the currently running scripts.',
-        helpUrl: 'https://en.leap-wiki.info/wiki/Stop_%28block%29'
+        helpUrl: 'https://en.leap-wiki.info/wiki/Stop_%28block%29',
+        extensions: ['control_stop_mutator']
     },
     {
         type: 'control_start_as_clone',

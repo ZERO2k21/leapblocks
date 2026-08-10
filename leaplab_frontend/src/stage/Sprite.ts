@@ -1002,34 +1002,85 @@ export class Sprite {
         ctx.save();
         ctx.font = 'bold 13px Arial';
         const metrics = ctx.measureText(text);
-        const padding = 10;
-        const bubbleWidth = metrics.width + padding * 2 + 10;
-        const bubbleHeight = 28;
+        const padding = 12;
+        const minWidth = type === 'think' ? 64 : 40;
+        const bubbleWidth = Math.max(metrics.width + padding * 2 + 10, minWidth);
+        const bubbleHeight = 30;
         const bubbleX = x - bubbleWidth / 2;
         const bubbleY = y - 75;
 
-        // Bubble background
-        ctx.fillStyle = type === 'think' ? '#f0f0f0' : '#ffffff';
-        ctx.strokeStyle = '#555';
-        ctx.lineWidth = 1.5;
+        if (type === 'think') {
+            const bx = bubbleX;
+            const by = bubbleY;
+            const bw = bubbleWidth;
+            const bh = bubbleHeight;
 
-        ctx.beginPath();
-        if (ctx.roundRect) {
-            ctx.roundRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight, 12);
+            // Render Cloud Outline Body
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#4b5563';
+            ctx.lineWidth = 1.8;
+
+            ctx.beginPath();
+            // Top puffs
+            ctx.arc(bx + bw * 0.2, by + 4, bh * 0.42, Math.PI, Math.PI * 1.85);
+            ctx.arc(bx + bw * 0.5, by - 2, bh * 0.52, Math.PI * 1.1, Math.PI * 1.9);
+            ctx.arc(bx + bw * 0.8, by + 4, bh * 0.42, Math.PI * 1.15, Math.PI * 2);
+
+            // Right puff
+            ctx.arc(bx + bw - 1, by + bh * 0.5, bh * 0.46, -Math.PI * 0.35, Math.PI * 0.35);
+
+            // Bottom puffs
+            ctx.arc(bx + bw * 0.8, by + bh - 2, bh * 0.4, Math.PI * 0.05, Math.PI * 0.85);
+            ctx.arc(bx + bw * 0.5, by + bh + 2, bh * 0.48, Math.PI * 0.1, Math.PI * 0.9);
+            ctx.arc(bx + bw * 0.2, by + bh - 2, bh * 0.4, Math.PI * 0.15, Math.PI * 0.95);
+
+            // Left puff
+            ctx.arc(bx + 1, by + bh * 0.5, bh * 0.46, Math.PI * 0.65, Math.PI * 1.35);
+
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Thought tail: 3 small trailing circles from cloud down to sprite
+            const tailCircles = [
+                { cx: x - 4, cy: by + bh + 7, r: 5 },
+                { cx: x - 10, cy: by + bh + 16, r: 3.5 },
+                { cx: x - 15, cy: by + bh + 23, r: 2.2 }
+            ];
+
+            for (const c of tailCircles) {
+                ctx.beginPath();
+                ctx.arc(c.cx, c.cy, c.r, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = '#4b5563';
+                ctx.lineWidth = 1.8;
+                ctx.fill();
+                ctx.stroke();
+            }
         } else {
-            ctx.rect(bubbleX, bubbleY, bubbleWidth, bubbleHeight);
-        }
-        ctx.fill();
-        ctx.stroke();
+            // Speech Bubble (Say) - Rounded rectangle with pointer tail
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 1.5;
 
-        // Tail / pointer
-        ctx.beginPath();
-        ctx.moveTo(x - 6, bubbleY + bubbleHeight - 2);
-        ctx.lineTo(x, bubbleY + bubbleHeight + 10);
-        ctx.lineTo(x + 6, bubbleY + bubbleHeight - 2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight, 12);
+            } else {
+                ctx.rect(bubbleX, bubbleY, bubbleWidth, bubbleHeight);
+            }
+            ctx.fill();
+            ctx.stroke();
+
+            // Tail / pointer
+            ctx.beginPath();
+            ctx.moveTo(x - 6, bubbleY + bubbleHeight - 2);
+            ctx.lineTo(x, bubbleY + bubbleHeight + 10);
+            ctx.lineTo(x + 6, bubbleY + bubbleHeight - 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
 
         // Text
         ctx.fillStyle = '#222';

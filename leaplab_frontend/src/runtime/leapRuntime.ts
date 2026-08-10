@@ -323,11 +323,15 @@ export class LeapRuntime {
                         await this.executeBlock(inputs.SUBSTACK, spriteId);
                     }
                     break;
-                case 'control_stop':
-                    const stopType = fields.STOP_OPTION ? fields.STOP_OPTION.value : 'all';
-                    if (stopType === 'all') this.stopAll();
-                    // TODO: Implement 'this script' and 'other scripts in sprite'
+                case 'control_stop': {
+                    const stopType = fields.STOP_OPTION ? (fields.STOP_OPTION.value || fields.STOP_OPTION) : 'all';
+                    if (stopType === 'all') {
+                        this.stopAll();
+                    } else if (stopType === 'this script' || stopType === 'this') {
+                        return; // Exit script execution loop
+                    }
                     break;
+                }
 
                 // ═══════════════════════════════════════════════════════════════════════
                 // DATA (Variables & Lists)

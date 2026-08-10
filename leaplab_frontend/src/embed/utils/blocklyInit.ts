@@ -87,6 +87,35 @@ export function initBlocklyOnce() {
             });
         });
     }
+
+    if (!Blockly.Extensions.isRegistered('control_stop_mutator')) {
+        Blockly.Extensions.register('control_stop_mutator', function (this: any) {
+            const updateShape = (optionValue: string) => {
+                const hasNext = optionValue === 'other scripts in sprite' || optionValue === 'other scripts';
+                try {
+                    if (hasNext) {
+                        this.setNextStatement(true);
+                    } else {
+                        if (this.nextConnection && this.nextConnection.isConnected()) {
+                            this.nextConnection.disconnect();
+                        }
+                        this.setNextStatement(false);
+                    }
+                } catch (_) {}
+            };
+
+            this.setOnChange(function (this: any, event: any) {
+                if (event.type === Blockly.Events.BLOCK_CHANGE && event.blockId === this.id && (event.name === 'STOP_OPTION' || event.name === 'MODE')) {
+                    updateShape(event.newValue);
+                }
+            });
+
+            setTimeout(() => {
+                const val = this.getFieldValue('STOP_OPTION') || this.getFieldValue('MODE');
+                updateShape(val);
+            }, 10);
+        });
+    }
 }
 
 /**

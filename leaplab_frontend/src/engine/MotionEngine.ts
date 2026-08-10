@@ -5,7 +5,7 @@
  */
 import { Sprite } from '../stage/Sprite';
 import { spriteManager } from './SpriteManager';
-
+import { animationVM } from '../vm/AnimationVM';
 import { STAGE_CONFIG } from './StageConfig';
 
 class MotionEngine {
@@ -95,31 +95,7 @@ class MotionEngine {
     }
 
     isTouching(sprite: Sprite, target: string): boolean {
-        if (target === '_mouse_') {
-            return sprite.isPointInSprite((window as any).mouseX || 0, (window as any).mouseY || 0);
-        }
-        if (target === '_edge_') {
-            const margin = 10;
-            return sprite.x <= STAGE_CONFIG.MIN_X + margin || 
-                   sprite.x >= STAGE_CONFIG.MAX_X - margin || 
-                   sprite.y <= STAGE_CONFIG.MIN_Y + margin || 
-                   sprite.y >= STAGE_CONFIG.MAX_Y - margin;
-        }
-        const targetSprite = spriteManager.getSpriteByName(target) || spriteManager.getSprite(target);
-        if (!targetSprite) return false;
-
-        // AABB collision using actual costume dimensions
-        const dx = Math.abs(sprite.x - targetSprite.x);
-        const dy = Math.abs(sprite.y - targetSprite.y);
-
-        const spriteScale = sprite.size / 100;
-        const targetScale = targetSprite.size / 100;
-        const spriteWidth = (sprite.currentCostume?.width || 40) * spriteScale;
-        const spriteHeight = (sprite.currentCostume?.height || 40) * spriteScale;
-        const targetWidth = (targetSprite.currentCostume?.width || 40) * targetScale;
-        const targetHeight = (targetSprite.currentCostume?.height || 40) * targetScale;
-
-        return dx <= (spriteWidth + targetWidth) / 2 && dy <= (spriteHeight + targetHeight) / 2;
+        return animationVM.isTouching(target, sprite.id);
     }
 
     distanceTo(sprite: Sprite, target: string): number {

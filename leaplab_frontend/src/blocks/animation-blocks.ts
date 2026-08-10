@@ -770,16 +770,22 @@ export const animationBlocks = [
     },
     {
         type: 'control_stop',
-        message0: '🛑 stop %1',
+        message0: 'stop %1',
         args0: [{
             type: 'field_dropdown',
             name: 'STOP_OPTION',
-            options: [['all', 'all'], ['this script', 'this script'], ['other scripts in sprite', 'other scripts']],
+            options: [
+                ['all', 'all'],
+                ['this script', 'this script'],
+                ['other scripts in sprite', 'other scripts in sprite']
+            ]
         }],
         previousStatement: null,
+        nextStatement: null,
         colour: COLORS.control,
         tooltip: 'Stop scripts',
         helpUrl: '',
+        extensions: ['control_stop_mutator']
     },
     {
         type: 'control_if_else',

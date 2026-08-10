@@ -41,6 +41,7 @@ const COMPONENTS = [
   { id: 'led-ring', name: 'LED Ring', category: 'outputs', desc: 'NeoPixel Ring' },
   { id: 'microsd-card', name: 'MicroSD Card', category: 'sensors', desc: 'SD card module' },
   { id: 'mpu6050', name: 'MPU6050', category: 'sensors', desc: 'Accelerometer & Gyro' },
+  { id: 'mfrc522', name: 'RFID RC522', category: 'sensors', desc: '13.56MHz RFID reader' },
   { id: 'neopixel', name: 'NeoPixel', category: 'outputs', desc: 'Addressable RGB LED' },
   { id: 'neopixel-matrix', name: 'NeoPixel Matrix', category: 'outputs', desc: 'RGB LED Matrix' },
   { id: 'ntc-temperature-sensor', name: 'NTC Thermistor', category: 'sensors', desc: 'Temperature sensor' },
@@ -52,8 +53,6 @@ const COMPONENTS = [
   { id: 'proximity-sensor', name: 'Proximity Sensor', category: 'sensors', desc: 'IR proximity detector' },
   { id: 'rain-sensor', name: 'Rain Sensor', category: 'sensors', desc: 'Rain detection sensor (AO + DO)' },
   { id: 'soil-moisture-sensor', name: 'Soil Moisture', category: 'sensors', desc: 'Soil moisture sensor (AO + DO)' },
-  { id: 'em18-rfid', name: 'EM-18 RFID', category: 'sensors', desc: 'RFID reader (125 kHz, UART)' },
-
   { id: 'pushbutton', name: 'Pushbutton', category: 'inputs', desc: 'Momentary switch' },
   { id: 'relay-module', name: 'Relay Module', category: 'outputs', desc: 'Single-channel relay' },
   { id: 'resistor', name: 'Resistor', category: 'inputs', desc: 'Passive resistor' },
@@ -82,6 +81,7 @@ const getComponentScale = (id: string, defaultScale: number): number => {
   if (id === 'ds1307') return 0.8;
   if (id === 'microsd-card') return 0.8;
   if (id === 'hx711') return 0.4;
+  if (id === 'mfrc522') return 0.5;
   if (id === '7segment') return 0.8;
   if (id === 'lcd1602') return 0.25;
   if (id === 'lcd1602-i2c') return 0.25;
@@ -92,8 +92,6 @@ const getComponentScale = (id: string, defaultScale: number): number => {
   if (id === 'ili9341-touch') return 0.4;
   if (id == 'neopixel-matrix') return 0.4;
   if (id === 'rain-sensor' || id === 'soil-moisture-sensor') return 0.45;
-  if (id === 'em18-rfid') return 0.6;
-
   const pinData = LEAP_PINS[id];
   if (!pinData || !pinData.viewBox) {
     return defaultScale; // Fallback to default scale

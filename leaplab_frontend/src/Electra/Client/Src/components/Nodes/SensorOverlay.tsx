@@ -202,9 +202,9 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   const isHeartRate = type === 'heart-beat-sensor';
   const isBigSound = type === 'big-sound-sensor' || type === 'small-sound-sensor';
   const isHX711 = type === 'hx711';
-  const isEM18RFID = type === 'em18-rfid';
+  const isRFID = type === 'mfrc522';
 
-  if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isIRObstacle && !isProximity && !isMPU6050 && !isLDR && !isFlame && !isGas && !isRain && !isSoilMoisture && !isHeartRate && !isBigSound && !isHX711 && !isEM18RFID) return null;
+  if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isIRObstacle && !isProximity && !isMPU6050 && !isLDR && !isFlame && !isGas && !isRain && !isSoilMoisture && !isHeartRate && !isBigSound && !isHX711 && !isRFID) return null;
 
   const renderContent = () => {
     // ── DHT Sensor ──────────────────────────────────────────────────────────
@@ -679,65 +679,6 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
       );
     }
 
-    // ── EM-18 RFID Reader ──────────────────────────────────────────────────
-    if (isEM18RFID) {
-      const cardPresent = currentValues?.cardPresent ?? false;
-      const cardUid = currentValues?.cardUid ?? 'E24B891F00';
-
-      const toggleCard = () => {
-        const newState = !cardPresent;
-        updateNodeData(nodeId, {
-          sensorValues: { ...currentValues, cardPresent: newState },
-        });
-        withEngine(engine => engine.pushInputSignal(nodeId, 'TX', newState));
-      };
-
-      const handleUidChange = (uid: string) => {
-        updateNodeData(nodeId, {
-          sensorValues: { ...currentValues, cardUid: uid.replace(/\s/g, '').toUpperCase() },
-        });
-      };
-
-      return (
-        <CompactCard borderColor="rgba(34, 197, 94, 0.2)">
-          <div className="flex items-center justify-between px-1 py-0.5">
-            <span className="text-[9px] font-mono font-bold text-slate-500">CARD</span>
-            <button
-              onClick={toggleCard}
-              className={`px-2 py-0.5 rounded text-[9px] font-bold transition-colors ${
-                cardPresent
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                  : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
-              }`}
-            >
-              {cardPresent ? 'PRESENT' : 'ABSENT'}
-            </button>
-          </div>
-          <div className="flex items-center justify-between px-1 py-0.5">
-            <span className="text-[9px] font-mono font-bold text-slate-500">UID</span>
-            <input
-              type="text"
-              value={cardUid}
-              onChange={(e) => handleUidChange(e.target.value)}
-              className={`w-24 px-1 py-0.5 text-[9px] font-mono rounded border ${
-                isLightTheme
-                  ? 'bg-white/50 border-sky-200 text-sky-700'
-                  : 'bg-black/30 border-slate-600 text-[#bef264]'
-              }`}
-              maxLength={10}
-              placeholder="E24B891F00"
-            />
-          </div>
-          <div className="flex justify-between text-[9px] font-mono font-bold px-0.5">
-            <span className="text-slate-500">Freq</span>
-            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>125 kHz</span>
-            <span className="text-slate-500">Range</span>
-            <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>10 cm</span>
-          </div>
-        </CompactCard>
-      );
-    }
-
     // ── HX711 Load Cell ─────────────────────────────────────────────────────
     if (isHX711) {
       const weight = Number(currentValues?.weight ?? 0);
@@ -766,6 +707,137 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
             <span className="text-slate-500">Max</span>
             <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{maxWeight}g</span>
           </div>
+        </CompactCard>
+      );
+    }
+
+    // ── RFID RC522 Card ─────────────────────────────────────────────────────
+    if (isRFID) {
+      const cardPresent = currentValues?.cardPresent ?? false;
+      const uid: number[] = currentValues?.uid ?? [];
+      const cardName: string = currentValues?.cardName ?? '';
+      const customUid: string = currentValues?.customUid ?? '';
+
+      const CARD_PRESETS = [
+        { name: 'Card A (Default)', uid: [0xA1, 0xB2, 0xC3, 0xD4] },
+        { name: 'Card B (Admin)', uid: [0x11, 0x22, 0x33, 0x44] },
+        { name: 'Key Fob', uid: [0xDE, 0xAD, 0xBE, 0xEF] },
+        { name: 'Custom', uid: [] },
+      ];
+
+      const [selectedPreset, setSelectedPreset] = React.useState(0);
+      const [customInput, setCustomInput] = React.useState('A1 B2 C3 D4');
+
+      const handlePresentCard = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (cardPresent) {
+          // Remove card
+          updateNodeData(nodeId, {
+            sensorValues: { ...currentValues, cardPresent: false, uid: [], cardName: '' },
+          });
+          withEngine(engine => engine.removeRFIDCard?.(nodeId));
+        } else {
+          // Present card
+          let uidBytes: number[] = [];
+          let name = '';
+          if (selectedPreset < CARD_PRESETS.length - 1) {
+            uidBytes = CARD_PRESETS[selectedPreset].uid;
+            name = CARD_PRESETS[selectedPreset].name;
+          } else {
+            // Custom UID
+            uidBytes = customInput.split(/[\s,]+/).map(h => parseInt(h.trim(), 16)).filter(n => !isNaN(n) && n >= 0 && n <= 255);
+            if (uidBytes.length === 0) uidBytes = [0xA1, 0xB2, 0xC3, 0xD4];
+            name = `Custom (${uidBytes.map(b => b.toString(16).toUpperCase().padStart(2, '0')).join(' ')})`;
+          }
+          updateNodeData(nodeId, {
+            sensorValues: { ...currentValues, cardPresent: true, uid: uidBytes, cardName: name, customUid: customInput },
+          });
+          withEngine(engine => engine.presentRFIDCard?.(nodeId, uidBytes, name));
+        }
+      };
+
+      const handlePresetChange = (idx: number) => {
+        setSelectedPreset(idx);
+        // If card is already present, re-present with new preset
+        if (cardPresent) {
+          let uidBytes: number[] = [];
+          let name = '';
+          if (idx < CARD_PRESETS.length - 1) {
+            uidBytes = CARD_PRESETS[idx].uid;
+            name = CARD_PRESETS[idx].name;
+          } else {
+            uidBytes = customInput.split(/[\s,]+/).map(h => parseInt(h.trim(), 16)).filter(n => !isNaN(n) && n >= 0 && n <= 255);
+            if (uidBytes.length === 0) uidBytes = [0xA1, 0xB2, 0xC3, 0xD4];
+            name = `Custom (${uidBytes.map(b => b.toString(16).toUpperCase().padStart(2, '0')).join(' ')})`;
+          }
+          updateNodeData(nodeId, {
+            sensorValues: { ...currentValues, cardPresent: true, uid: uidBytes, cardName: name },
+          });
+          withEngine(engine => engine.presentRFIDCard?.(nodeId, uidBytes, name));
+        }
+      };
+
+      const uidHex = uid.length > 0 ? uid.map(b => b.toString(16).toUpperCase().padStart(2, '0')).join(' ') : '---';
+
+      return (
+        <CompactCard borderColor={cardPresent ? 'rgba(34,197,94,0.4)' : 'rgba(186,242,100,0.2)'}>
+          {/* Card Preset Selector */}
+          <div className="flex flex-col gap-1 mb-1">
+            <span className={`text-[8px] font-bold uppercase tracking-wider ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Card Preset</span>
+            <div className="flex gap-1 flex-wrap">
+              {CARD_PRESETS.map((preset, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => { e.stopPropagation(); handlePresetChange(idx); }}
+                  className={`px-1.5 py-0.5 rounded text-[8px] font-bold border-none cursor-pointer transition-all ${
+                    selectedPreset === idx
+                      ? 'bg-cyan-500/90 text-white'
+                      : (isLightTheme ? 'bg-slate-200 text-slate-600' : 'bg-slate-700/90 text-slate-400')
+                  }`}
+                >
+                  {preset.name.split(' ')[0]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom UID Input (only when Custom is selected) */}
+          {selectedPreset === CARD_PRESETS.length - 1 && (
+            <div className="flex items-center gap-1 mb-1">
+              <span className={`text-[8px] font-bold ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>UID:</span>
+              <input
+                type="text"
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                placeholder="A1 B2 C3 D4"
+                className={`flex-1 border rounded px-1 py-0.5 text-[9px] font-mono font-bold outline-none ${
+                  isLightTheme ? 'bg-slate-100 border-slate-300 text-slate-900' : 'bg-slate-800 border-slate-700 text-slate-50'
+                }`}
+              />
+            </div>
+          )}
+
+          {/* UID Display */}
+          <div className="flex items-center justify-between mb-1">
+            <span className={`text-[8px] font-bold ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>UID</span>
+            <span className={`text-[10px] font-mono font-extrabold ${cardPresent ? 'text-emerald-400' : (isLightTheme ? 'text-slate-400' : 'text-slate-600')}`}>
+              {uidHex}
+            </span>
+          </div>
+
+          {/* Present / Remove Button */}
+          <button
+            onClick={handlePresentCard}
+            className={`w-full py-1.5 rounded-md border-none cursor-pointer font-extrabold text-[9px] font-mono tracking-wider transition-all ${
+              cardPresent
+                ? 'bg-emerald-400/90 text-slate-900 shadow-[0_0_6px_rgba(74,222,128,0.3)]'
+                : (isLightTheme ? 'bg-slate-200 text-slate-700' : 'bg-slate-700/90 text-slate-400')
+            }`}
+          >
+            {cardPresent ? `● REMOVE CARD` : '○ PRESENT CARD'}
+          </button>
         </CompactCard>
       );
     }

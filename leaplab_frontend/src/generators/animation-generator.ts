@@ -1413,6 +1413,8 @@ export class AnimationCompiler {
                 const stopOption = block.getFieldValue('STOP_OPTION') || block.getFieldValue('MODE');
                 if (stopOption === 'this script' || stopOption === 'this') {
                     step = { type: 'stop_this_script' };
+                } else if (stopOption === 'other scripts in sprite' || stopOption === 'other scripts' || stopOption === 'other') {
+                    step = { type: 'stop_other_scripts_in_sprite' };
                 } else {
                     step = { type: 'stop_all' };
                 }

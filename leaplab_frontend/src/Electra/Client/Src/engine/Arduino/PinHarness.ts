@@ -2208,6 +2208,24 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       }
     ]
   },
+  "mfrc522": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 40,
+      "height": 30
+    },
+    "pins": [
+      { "name": "VCC",  "x": 0,  "y": 5 },
+      { "name": "RST",  "x": 0,  "y": 10 },
+      { "name": "GND",  "x": 0,  "y": 15 },
+      { "name": "IRQ",  "x": 0,  "y": 20 },
+      { "name": "MISO", "x": 0,  "y": 25 },
+      { "name": "MOSI", "x": 40, "y": 15 },
+      { "name": "SCK",  "x": 40, "y": 20 },
+      { "name": "SS",   "x": 40, "y": 25 }
+    ]
+  },
   "nano-rp2040-connect": {
     "viewBox": {
       "minX": 0,
@@ -3044,21 +3062,6 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
         "x": 79,
         "y": 11
       }
-    ]
-  },
-  "em18-rfid": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 100,
-      "height": 105
-    },
-    "pins": [
-      { "name": "VCC", "x": 15, "y": 95 },
-      { "name": "TX", "x": 30, "y": 95 },
-      { "name": "LED", "x": 45, "y": 95 },
-      { "name": "BUZZER", "x": 60, "y": 95 },
-      { "name": "GND", "x": 75, "y": 95 }
     ]
   },
   "rain-sensor": {

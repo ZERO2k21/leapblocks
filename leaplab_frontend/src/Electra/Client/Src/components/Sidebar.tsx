@@ -53,10 +53,10 @@ const COMPONENTS = [
   { id: 'pir-motion-sensor', name: 'PIR Sensor', category: 'sensors', desc: 'Motion detector' },
   { id: 'ir-obstacle-sensor', name: 'IR Sensor', category: 'sensors', desc: 'IR Obstacle Avoidance (FC-51)' },
   { id: 'mpu6050', name: 'MPU6050', category: 'sensors', desc: 'Accelerometer & Gyro' },
+  { id: 'mfrc522', name: 'RFID RC522', category: 'sensors', desc: '13.56MHz RFID reader' },
   { id: 'proximity-sensor', name: 'Proximity Sensor', category: 'sensors', desc: 'IR proximity detector' },
   { id: 'rain-sensor', name: 'Rain Sensor', category: 'sensors', desc: 'Rain detection sensor (AO + DO)' },
   { id: 'soil-moisture-sensor', name: 'Soil Moisture', category: 'sensors', desc: 'Soil moisture sensor (AO + DO)' },
-  { id: 'em18-rfid', name: 'EM-18 RFID', category: 'sensors', desc: 'RFID reader (125 kHz, UART)' },
   { id: 'ntc-temperature-sensor', name: 'NTC Thermistor', category: 'sensors', desc: 'Temperature sensor' },
 
   // INPUTS

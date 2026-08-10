@@ -45,6 +45,7 @@ import { GasSensorElement } from './gas-sensor-element';
 // import { NanoRP2040ConnectElement } from './nano-rp2040-connect-element';
 import { SmallSoundSensorElement } from './small-sound-sensor-element';
 import { BigSoundSensorElement } from './big-sound-sensor-element';
+import { MFRC522Element } from './mfrc522-element';
 import { MPU6050Element } from './mpu6050-element';
 import { ESP32C3Element } from './esp32-c3-element';
 import { KY040Element } from './ky-040-element';
@@ -111,6 +112,7 @@ declare global {
       'leap-small-sound-sensor': LeapElement<SmallSoundSensorElement>;
       'leap-big-sound-sensor': LeapElement<BigSoundSensorElement>;
       'leap-mpu6050': LeapElement<MPU6050Element>;
+      'leap-mfrc522': LeapElement<MFRC522Element>;
       'leap-esp32-c3': LeapElement<ESP32C3Element>;
       'leap-ky-040': LeapElement<KY040Element>;
       'leap-photoresistor-sensor': LeapElement<PhotoresistorSensorElement>;
