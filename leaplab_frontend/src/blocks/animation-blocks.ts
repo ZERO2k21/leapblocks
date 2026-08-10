@@ -2039,6 +2039,184 @@ export const animationToolbox = {
         },
         {
             kind: 'leapbloxCategory',
+            name: 'Control',
+            colour: COLORS.control,
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'control_wait',
+                    inputs: {
+                        SECS: { shadow: { type: 'math_number', fields: { NUM: 1 } } }
+                    }
+                },
+                { kind: 'label', text: '── Loops ──' },
+                {
+                    kind: 'block',
+                    type: 'control_repeat',
+                    inputs: {
+                        TIMES: { shadow: { type: 'math_number', fields: { NUM: 10 } } }
+                    }
+                },
+                { kind: 'block', type: 'control_forever' },
+                { kind: 'block', type: 'control_repeat_until' },
+                { kind: 'label', text: '── Conditions ──' },
+                { kind: 'block', type: 'control_if' },
+                { kind: 'block', type: 'control_if_else' },
+                { kind: 'block', type: 'control_wait_until' },
+                { kind: 'label', text: '── Cloning ──' },
+                { kind: 'block', type: 'control_create_clone' },
+                { kind: 'block', type: 'control_delete_clone' },
+                { kind: 'label', text: '── Stop ──' },
+                { kind: 'block', type: 'control_stop' },
+            ],
+        },
+        {
+            kind: 'leapbloxCategory',
+            name: 'Operators',
+            colour: COLORS.operators,
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'operator_add',
+                    inputs: {
+                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_subtract',
+                    inputs: {
+                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_multiply',
+                    inputs: {
+                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_divide',
+                    inputs: {
+                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                    },
+                },
+                { kind: 'label', text: '── Random ──' },
+                {
+                    kind: 'block',
+                    type: 'operator_random',
+                    inputs: {
+                        FROM: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                        TO: { shadow: { type: 'math_number', fields: { NUM: 10 } } },
+                    },
+                },
+                { kind: 'label', text: '── Compare ──' },
+                {
+                    kind: 'block',
+                    type: 'operator_gt',
+                    inputs: {
+                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_lt',
+                    inputs: {
+                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_equals',
+                    inputs: {
+                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
+                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
+                    },
+                },
+                { kind: 'label', text: '── Logic ──' },
+                { kind: 'block', type: 'operator_and' },
+                { kind: 'block', type: 'operator_or' },
+                { kind: 'block', type: 'operator_not' },
+                { kind: 'label', text: '── Strings ──' },
+                {
+                    kind: 'block',
+                    type: 'operator_join',
+                    inputs: {
+                        STRING1: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
+                        STRING2: { shadow: { type: 'text', fields: { TEXT: 'b' } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_letter_of',
+                    inputs: {
+                        LETTER: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                        STRING: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_length',
+                    inputs: {
+                        STRING: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_contains',
+                    inputs: {
+                        STRING1: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
+                        STRING2: { shadow: { type: 'text', fields: { TEXT: 'b' } } },
+                    },
+                },
+                { kind: 'label', text: '── Math ──' },
+                {
+                    kind: 'block',
+                    type: 'operator_mod',
+                    inputs: {
+                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_round',
+                    inputs: {
+                        NUM: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_mathop',
+                    inputs: {
+                        NUM: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                    },
+                },
+                {
+                    kind: 'block',
+                    type: 'operator_round_to_decimals',
+                    inputs: {
+                        NUM: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                    },
+                },
+            ],
+        },
+        {
+            kind: 'leapbloxCategory',
+            name: 'Variables',
+            colour: COLORS.data,
+            custom: 'LEAP_VARIABLES'
+        },
+        {
+            kind: 'leapbloxCategory',
             name: 'Motion',
             colour: COLORS.motion,
             contents: [
@@ -2242,189 +2420,9 @@ export const animationToolbox = {
         },
         {
             kind: 'leapbloxCategory',
-            name: 'Control',
-            colour: COLORS.control,
-            contents: [
-                // Note: Control blocks are registered from leapBlocks.ts which uses field_number
-                // (not input_value), so no shadow inputs should be specified here.
-                {
-                    kind: 'block',
-                    type: 'control_wait',
-                    inputs: {
-                        SECS: { shadow: { type: 'math_number', fields: { NUM: 1 } } }
-                    }
-                },
-                { kind: 'label', text: '── Loops ──' },
-                {
-                    kind: 'block',
-                    type: 'control_repeat',
-                    inputs: {
-                        TIMES: { shadow: { type: 'math_number', fields: { NUM: 10 } } }
-                    }
-                },
-                { kind: 'block', type: 'control_forever' },
-                { kind: 'block', type: 'control_repeat_until' },
-                { kind: 'label', text: '── Conditions ──' },
-                { kind: 'block', type: 'control_if' },
-                { kind: 'block', type: 'control_if_else' },
-                { kind: 'block', type: 'control_wait_until' },
-                { kind: 'label', text: '── Cloning ──' },
-                { kind: 'block', type: 'control_create_clone' },
-                { kind: 'block', type: 'control_delete_clone' },
-                { kind: 'label', text: '── Stop ──' },
-                { kind: 'block', type: 'control_stop' },
-            ],
-        },
-        {
-            kind: 'leapbloxCategory',
             name: 'Sensing',
             colour: COLORS.sensing,
             custom: 'LEAP_SENSING'
-        },
-        {
-            kind: 'leapbloxCategory',
-            name: 'Operators',
-            colour: COLORS.operators,
-            contents: [
-                {
-                    kind: 'block',
-                    type: 'operator_add',
-                    inputs: {
-                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                    },
-                },
-                {
-                    kind: 'block',
-                    type: 'operator_subtract',
-                    inputs: {
-                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                    },
-                },
-                {
-                    kind: 'block',
-                    type: 'operator_multiply',
-                    inputs: {
-                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                    },
-                },
-                {
-                    kind: 'block',
-                    type: 'operator_divide',
-                    inputs: {
-                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                    },
-                },
-                { kind: 'label', text: '── Random ──' },
-                {
-                    kind: 'block',
-                    type: 'operator_random',
-                    inputs: {
-                        FROM: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
-                        TO: { shadow: { type: 'math_number', fields: { NUM: 10 } } },
-                    },
-                },
-                { kind: 'label', text: '── Compare ──' },
-                {
-                    kind: 'block',
-                    type: 'operator_gt',
-                    inputs: {
-                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
-                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
-                    },
-                },
-                {
-                    kind: 'block',
-                    type: 'operator_lt',
-                    inputs: {
-                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
-                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
-                    },
-                },
-                {
-                    kind: 'block',
-                    type: 'operator_equals',
-                    inputs: {
-                        OPERAND1: { shadow: { type: 'text', fields: { TEXT: '0' } } },
-                        OPERAND2: { shadow: { type: 'text', fields: { TEXT: '50' } } },
-                    },
-                },
-                { kind: 'label', text: '── Logic ──' },
-                { kind: 'block', type: 'operator_and' },
-                { kind: 'block', type: 'operator_or' },
-                { kind: 'block', type: 'operator_not' },
-                { kind: 'label', text: '── Strings ──' },
-                {
-                    kind: 'block',
-                    type: 'operator_join',
-                    inputs: {
-                        STRING1: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
-                        STRING2: { shadow: { type: 'text', fields: { TEXT: 'b' } } },
-                    },
-                },
-                {
-                    kind: 'block',
-                    type: 'operator_letter_of',
-                    inputs: {
-                        LETTER: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
-                        STRING: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
-                    },
-                },
-                {
-                    kind: 'block',
-                    type: 'operator_length',
-                    inputs: {
-                        STRING: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
-                    },
-                },
-                {
-                    kind: 'block',
-                    type: 'operator_contains',
-                    inputs: {
-                        STRING1: { shadow: { type: 'text', fields: { TEXT: 'a' } } },
-                        STRING2: { shadow: { type: 'text', fields: { TEXT: 'b' } } },
-                    },
-                },
-                { kind: 'label', text: '── Math ──' },
-                {
-                    kind: 'block',
-                    type: 'operator_mod',
-                    inputs: {
-                        NUM1: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                        NUM2: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
-                    },
-                },
-                {
-                    kind: 'block',
-                    type: 'operator_round',
-                    inputs: {
-                        NUM: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                    },
-                },
-                {
-                    kind: 'block',
-                    type: 'operator_mathop',
-                    inputs: {
-                        NUM: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
-                    },
-                },
-                {
-                    kind: 'block',
-                    type: 'operator_round_to_decimals',
-                    inputs: {
-                        NUM: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
-                    },
-                },
-            ],
-        },
-        {
-            kind: 'leapbloxCategory',
-            name: 'Variables',
-            colour: COLORS.data,
-            custom: 'LEAP_VARIABLES'
         },
         {
             kind: 'leapbloxCategory',
