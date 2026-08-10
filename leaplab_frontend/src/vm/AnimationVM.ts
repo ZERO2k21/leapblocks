@@ -20,6 +20,7 @@ import { STAGE_CONFIG } from '../engine/StageConfig';
 
 export interface VMContext {
     sprite: Sprite;
+    scriptId?: string;
     isRunning: boolean;
     keysPressed: Set<string>;
     mouseX: number;
@@ -89,6 +90,7 @@ export type ScriptStep = (
     | { type: 'repeat_until'; condition: () => boolean; body: ScriptStep[] }
     | { type: 'stop_all' }
     | { type: 'stop_this_script' }
+    | { type: 'stop_other_scripts_in_sprite' }
     | { type: 'create_clone'; target: string }
     | { type: 'delete_clone' }
     // Events
@@ -931,6 +933,7 @@ export class AnimationVM {
 
         const context: VMContext = {
             sprite,
+            scriptId: id,
             isRunning: true,
             keysPressed: this.keysPressed,
             mouseX: this.mouseX,
@@ -1272,6 +1275,18 @@ export class AnimationVM {
 
             case 'stop_this_script':
                 throw new DOMException('Aborted', 'AbortError');
+
+            case 'stop_other_scripts_in_sprite': {
+                const currentId = ctx.scriptId;
+                const targetSpriteId = sprite.id;
+                for (const [sId, sData] of this.runningScripts.entries()) {
+                    if (sData.spriteId === targetSpriteId && sId !== currentId) {
+                        sData.controller.abort();
+                        this.runningScripts.delete(sId);
+                    }
+                }
+                break;
+            }
 
             case 'create_clone': {
                 // Determine which sprite to clone
@@ -2578,8 +2593,19 @@ export class AnimationVM {
 
         if (target === '_mouse_') {
             const { hw, hh } = getHalfDims(fromSprite);
-            return Math.abs(this.mouseX - fromSprite.x) < hw &&
-                Math.abs(this.mouseY - fromSprite.y) < hh;
+            if (Math.abs(this.mouseX - fromSprite.x) >= hw || Math.abs(this.mouseY - fromSprite.y) >= hh) {
+                return false;
+            }
+            // Pixel-accurate check for mouse pointer
+            const spriteData = this.renderSpriteToImageData(fromSprite);
+            if (!spriteData) return true;
+            const cx = Math.floor(this.mouseX + STAGE_CONFIG.WIDTH / 2);
+            const cy = Math.floor(STAGE_CONFIG.HEIGHT / 2 - this.mouseY);
+            if (cx >= 0 && cx < STAGE_CONFIG.WIDTH && cy >= 0 && cy < STAGE_CONFIG.HEIGHT) {
+                const idx = (cy * STAGE_CONFIG.WIDTH + cx) * 4 + 3;
+                return spriteData.data[idx] > 10;
+            }
+            return false;
         } else if (target === '_edge_') {
             const { hw, hh } = getHalfDims(fromSprite);
             // Stage bounds: X from -240 to 240, Y from -155 to 155 (480x310)
@@ -2595,11 +2621,48 @@ export class AnimationVM {
                 const fromDims = getHalfDims(fromSprite);
                 const otherDims = getHalfDims(other);
 
-                // AABB (Axis-Aligned Bounding Box) overlap test
+                // Broad-phase: AABB (Axis-Aligned Bounding Box) overlap test
                 const overlapX = Math.abs(fromSprite.x - other.x) < (fromDims.hw + otherDims.hw);
                 const overlapY = Math.abs(fromSprite.y - other.y) < (fromDims.hh + otherDims.hh);
 
-                if (overlapX && overlapY) return true;
+                if (!overlapX || !overlapY) continue;
+
+                // Narrow-phase: Pixel-accurate visual collision detection
+                const spriteDataA = this.renderSpriteToImageData(fromSprite);
+                const spriteDataB = this.renderSpriteToImageData(other);
+
+                if (!spriteDataA || !spriteDataB) return true; // Fallback if rendering fails
+
+                const pixelsA = spriteDataA.data;
+                const pixelsB = spriteDataB.data;
+                const w = STAGE_CONFIG.WIDTH;
+                const h = STAGE_CONFIG.HEIGHT;
+
+                // Calculate overlapping pixel bounding box on the canvas
+                const minX_A = fromSprite.x - fromDims.hw + w / 2;
+                const maxX_A = fromSprite.x + fromDims.hw + w / 2;
+                const minY_A = h / 2 - (fromSprite.y + fromDims.hh);
+                const maxY_A = h / 2 - (fromSprite.y - fromDims.hh);
+
+                const minX_B = other.x - otherDims.hw + w / 2;
+                const maxX_B = other.x + otherDims.hw + w / 2;
+                const minY_B = h / 2 - (other.y + otherDims.hh);
+                const maxY_B = h / 2 - (other.y - otherDims.hh);
+
+                const startPx = Math.max(0, Math.floor(Math.max(minX_A, minX_B)));
+                const endPx = Math.min(w, Math.ceil(Math.min(maxX_A, maxX_B)));
+                const startPy = Math.max(0, Math.floor(Math.max(minY_A, minY_B)));
+                const endPy = Math.min(h, Math.ceil(Math.min(maxY_A, maxY_B)));
+
+                for (let py = startPy; py < endPy; py++) {
+                    const rowOffset = py * w;
+                    for (let px = startPx; px < endPx; px++) {
+                        const idx = (rowOffset + px) * 4 + 3;
+                        if (pixelsA[idx] > 10 && pixelsB[idx] > 10) {
+                            return true;
+                        }
+                    }
+                }
             }
         }
 
