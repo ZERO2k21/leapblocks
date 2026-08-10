@@ -108,12 +108,18 @@ class MotionEngine {
         const targetSprite = spriteManager.getSpriteByName(target) || spriteManager.getSprite(target);
         if (!targetSprite) return false;
 
-        // Simple AABB collision
+        // AABB collision using actual costume dimensions
         const dx = Math.abs(sprite.x - targetSprite.x);
         const dy = Math.abs(sprite.y - targetSprite.y);
-        const combinedWidth = (sprite.size / 100 * 40 + targetSprite.size / 100 * 40) / 2;
-        const combinedHeight = (sprite.size / 100 * 40 + targetSprite.size / 100 * 40) / 2;
-        return dx <= combinedWidth && dy <= combinedHeight;
+
+        const spriteScale = sprite.size / 100;
+        const targetScale = targetSprite.size / 100;
+        const spriteWidth = (sprite.currentCostume?.width || 40) * spriteScale;
+        const spriteHeight = (sprite.currentCostume?.height || 40) * spriteScale;
+        const targetWidth = (targetSprite.currentCostume?.width || 40) * targetScale;
+        const targetHeight = (targetSprite.currentCostume?.height || 40) * targetScale;
+
+        return dx <= (spriteWidth + targetWidth) / 2 && dy <= (spriteHeight + targetHeight) / 2;
     }
 
     distanceTo(sprite: Sprite, target: string): number {
