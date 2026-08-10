@@ -201,6 +201,7 @@ export class CPU {
     const entry: AVRClockEventEntry = maybeEntry ?? { cycles, callback, next: null };
     entry.cycles = cycles;
     entry.callback = callback;
+    entry.next = null;
     let { nextClockEvent: clockEvent } = this;
     let lastItem = null;
     while (clockEvent && clockEvent.cycles < cycles) {

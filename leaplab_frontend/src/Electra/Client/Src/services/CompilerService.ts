@@ -158,6 +158,7 @@ var Adafruit_MPU6050 = (typeof Adafruit_MPU6050 !== 'undefined' && Adafruit_MPU6
 var Adafruit_Sensor = (typeof Adafruit_Sensor !== 'undefined' && Adafruit_Sensor) || class { constructor(){} };
 var IRrecv = (typeof IRrecv !== 'undefined' && IRrecv) || class { constructor(){} enableIRIn(){} decode(){return false;} resume(){} };
 var decode_results = (typeof decode_results !== 'undefined' && decode_results) || class { constructor(){} };
+var MFRC522 = (typeof MFRC522 !== 'undefined' && MFRC522) || class { constructor() { this.uid = { size: 0, uidByte: [] }; } PCD_Init() {} PCD_Reset() {} PICC_IsNewCardPresent() { return false; } PICC_ReadCardSerial() { return false; } PICC_HaltA() {} PICC_GetType() { return 0x08; } PICC_GetTypeName(t) { return 'MIFARE 1K'; } PICC_DumpToSerial() {} PICC_DumpDetailsToSerial() {} PICC_DumpMifareClassicToSerial() {} PCD_Authenticate() { return false; } MIFARE_Read() { return false; } MIFARE_Write() { return false; } MIFARE_DumpClassic1K() { return false; } PCD_StopCrypto1() {} PCD_CalculateCRC() { return true; } PCD_ReadRegister() { return 0x92; } };
 var SoftwareSerial = (typeof SoftwareSerial !== 'undefined' && SoftwareSerial) || class { constructor(){} begin(){} print(){} println(){} available(){return 0;} read(){return -1;} };
 var Stepper = (typeof Stepper !== 'undefined' && Stepper) || class { constructor(){} setSpeed(){} async step(){} };
 var Keypad = (typeof Keypad !== 'undefined' && Keypad) || class {

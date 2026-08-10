@@ -3462,8 +3462,12 @@ class CircuitEngine {
    * Called by SensorOverlay when user clicks "Present Card".
    */
   public presentRFIDCard(nodeId: string, uid: number[], cardName: string) {
-    // Update static shared state so all RealMFRC522 instances see the card
+    // Update static shared state so all RealMFRC522 instances see the card (transpiled path)
     RealMFRC522.presentCard(uid, cardName);
+    // Also update AVR8js SPI slave peripheral (AVR binary path)
+    if (simulationRunner?.mfrc522Slave) {
+      simulationRunner.mfrc522Slave.presentCard(uid, cardName);
+    }
     // Also update the Forge store so the element visually shows card state
     const { updateNodeData, nodes } = useForgeStore.getState();
     const node = nodes.find((n: any) => n.id === nodeId);
