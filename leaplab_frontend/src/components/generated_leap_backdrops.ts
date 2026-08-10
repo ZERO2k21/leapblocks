@@ -520,8 +520,8 @@ export const leapBackdrops: any[] = [
     ],
     "assetId": "4b98c07876ed8997c3762e75790507b4",
     "bitmapResolution": 1,
-    "dataFormat": "svg",
-    "md5ext": "4b98c07876ed8997c3762e75790507b4.svg",
+    "dataFormat": "png",
+    "md5ext": "4b98c07876ed8997c3762e75790507b4.png",
     "rotationCenterX": 240,
     "rotationCenterY": 180
   },
@@ -651,8 +651,8 @@ export const leapBackdrops: any[] = [
     ],
     "assetId": "108160d0e44d1c340182e31c9dc0758a",
     "bitmapResolution": 1,
-    "dataFormat": "svg",
-    "md5ext": "108160d0e44d1c340182e31c9dc0758a.svg",
+    "dataFormat": "png",
+    "md5ext": "108160d0e44d1c340182e31c9dc0758a.png",
     "rotationCenterX": 240,
     "rotationCenterY": 180
   },
@@ -787,10 +787,11 @@ export const leapBackdrops: any[] = [
       "education",
       "learning"
     ],
+    "id": "school",
     "assetId": "1dea69ac0f62cf538d368a7bde1372ac",
     "bitmapResolution": 2,
     "dataFormat": "png",
-    "md5ext": "1dea69ac0f62cf538d368a7bde1372ac.png",
+    "md5ext": "school.png",
     "rotationCenterX": 480,
     "rotationCenterY": 360
   },
@@ -1094,8 +1095,8 @@ export const leapBackdrops: any[] = [
     ],
     "assetId": "5fa9385a60b904672d0e46e9d768bb32",
     "bitmapResolution": 1,
-    "dataFormat": "svg",
-    "md5ext": "5fa9385a60b904672d0e46e9d768bb32.svg",
+    "dataFormat": "png",
+    "md5ext": "5fa9385a60b904672d0e46e9d768bb32.png",
     "rotationCenterX": 240,
     "rotationCenterY": 180
   },
