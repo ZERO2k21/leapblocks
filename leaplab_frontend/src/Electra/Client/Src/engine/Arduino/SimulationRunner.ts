@@ -75,6 +75,9 @@ class SimulationRunner {
   private readonly MHZ = 16e6;
   private lastClampedStepCycles = 0;
 
+  // Debug instrumentation: track last seen D2 pin value to log changes
+  private _lastD2Debug = -1;
+
   // Serial output batching — flush to the store at most ~once per frame
   // instead of one Zustand update + React re-render per character.
   private pendingSerial = '';
@@ -162,7 +165,16 @@ class SimulationRunner {
       // hasn't been called since the last setPin.
       this.cpu!.readHooks[portConfig.PIN] = () => {
         port.refreshPinRegister();
-        return this.cpu!.data[portConfig.PIN];
+        const val = this.cpu!.data[portConfig.PIN];
+        // Instrumentation: log PIR pin reads on change only
+        if (letter === 'D') {
+          const bit2 = (val >> 2) & 1;
+          if (bit2 !== this._lastD2Debug) {
+            console.log(`[PIR-DEBUG] PIN D read: bit2=${bit2} (${bit2 ? 'HIGH' : 'LOW'}) cpu.data[PIN]=0x${val.toString(16)} DDR=0x${this.cpu!.data[portConfig.DDR].toString(16)}`);
+            this._lastD2Debug = bit2;
+          }
+        }
+        return val;
       };
     });
 
@@ -855,6 +867,7 @@ class SimulationRunner {
     const portLetter = pinId.charAt(1);
     const bit = parseInt(pinId.charAt(2), 10);
     const port = this.ports.get(portLetter);
+    console.log(`[PIR-DEBUG] setVirtualInput("${pinId}", ${isHigh}) → portLetter="${portLetter}" bit=${bit} portExists=${!!port}`);
     if (port) port.setPin(bit, isHigh);
     this.setPinState(pinId, isHigh ? 'HIGH' : 'LOW');
   }

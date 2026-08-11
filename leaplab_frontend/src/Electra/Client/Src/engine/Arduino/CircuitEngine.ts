@@ -2047,7 +2047,7 @@ class CircuitEngine {
                 const pulseCycles = simulationRunner.getCycles() - pwmStartCycles;
                 const durationUs = pulseCycles / 16;
                 if (durationUs >= 400 && durationUs <= 2600) {
-                  const angle = Math.max(0, Math.min(180, ((durationUs - 1000) / 1000) * 180));
+                  const angle = Math.max(0, Math.min(180, Math.round(((durationUs - 544) / (2400 - 544)) * 180)));
                   const currentAngle = peripheralNode.data?.angle ?? 0;
                   if (Math.abs(currentAngle - angle) >= 0.5) {
                     updateNodeData(peripheralId, { angle });
@@ -3786,6 +3786,7 @@ class CircuitEngine {
     if (!boardNode) return;
 
     const cleanBoardPin = boardPinName.replace(/__target$/, '');
+    console.log(`[PIR-DEBUG] pushInputSignal: node=${nodeId} pin=${pinName} isHigh=${isHigh} → boardPinName="${boardPinName}" cleanBoardPin="${cleanBoardPin}" boardType="${boardNode.data?.type}"`);
     const isESP32 = boardNode.data?.type === 'esp32-c3' || boardNode.data?.type === 'esp32';
 
     // ── ESP32 path ────────────────────────────────────────────────────────

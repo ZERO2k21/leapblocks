@@ -485,6 +485,15 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     el.angle = angle;
   }, [data.type, data.angle]);
 
+  // Imperatively set pir-motion-sensor motionDetected property on Lit element.
+  useEffect(() => {
+    if (!elementRef.current || data.type !== 'pir-motion-sensor') return;
+    const el = elementRef.current;
+    const motionDetected = !!(data.sensorValues?.motionDetected);
+    el.motionDetected = motionDetected;
+    if (typeof el.requestUpdate === 'function') el.requestUpdate();
+  }, [data.type, data.sensorValues?.motionDetected]);
+
   // Imperatively set dc-motor speed and direction as DOM properties.
   useEffect(() => {
     if (!elementRef.current || data.type !== 'dc-motor') return;

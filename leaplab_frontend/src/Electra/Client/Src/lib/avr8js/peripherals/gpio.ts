@@ -347,9 +347,14 @@ export class AVRIOPort {
    */
   setPin(index: number, value: boolean) {
     const bitMask = 1 << index;
+    const prevValue = this.pinValue;
     this.pinValue &= ~bitMask;
     if (value) {
       this.pinValue |= bitMask;
+    }
+    // Instrumentation: log pin changes for D2 (PIR)
+    if (index === 2 && (prevValue ^ this.pinValue) & bitMask) {
+      console.log(`[PIR-DEBUG] setPin(${index}, ${value}) → pinValue: 0x${prevValue.toString(16)} → 0x${this.pinValue.toString(16)} (bit${index}=${value ? 'HIGH' : 'LOW'})`);
     }
     this.updatePinRegister(this.cpu.data[this.portConfig.DDR]);
   }
