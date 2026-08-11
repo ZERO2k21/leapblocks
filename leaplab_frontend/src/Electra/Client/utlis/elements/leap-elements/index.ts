@@ -36,7 +36,6 @@ export { LEDElement } from './led-element';
 export { LEDRingElement } from './led-ring-element';
 export { MembraneKeypadElement } from './membrane-keypad-element';
 export { MicrosdCardElement } from './microsd-card-element';
-export { MFRC522Element } from './mfrc522-element';
 export { MPU6050Element } from './mpu6050-element';
 // export { NanoRP2040ConnectElement } from './nano-rp2040-connect-element';
 export { NeoPixelElement } from './neopixel-element';

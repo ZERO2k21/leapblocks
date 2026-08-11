@@ -14,7 +14,6 @@ import { BLINK_HEX } from './TestSketches';
 import { USARTEmulator } from './USARTEmulator';
 import { BOARDS } from './BoardConfig';
 import { ESP32C3SimulationRunner } from '../esp32c3/ESP32C3SimulationRunner';
-import { MFRC522SPISlave } from './MFRC522SPISlave';
 
 export type PinState = 'HIGH' | 'LOW' | 'FLOATING' | number;
 export type PinListener = (state: PinState) => void;
@@ -38,7 +37,6 @@ class SimulationRunner {
   private adc: AVRADC | null = null;
   private twi: AVRTWI | null = null;
   private spi: AVRSPI | null = null;
-  public mfrc522Slave: MFRC522SPISlave | null = null;
   private eeprom: AVREEPROM | null = null;
   private eepromBackend: EEPROMMemoryBackend | null = null;
   private watchdog: AVRWatchdog | null = null;
@@ -216,9 +214,6 @@ class SimulationRunner {
     // Attach SPI
     if (config.hasSPI) {
       this.spi = new AVRSPI(this.cpu!, spiConfig, config.frequency);
-      this.mfrc522Slave = new MFRC522SPISlave(this.spi);
-      this.mfrc522Slave.attach();
-      console.log('[FORGE ENGINE] MFRC522 SPI slave peripheral attached to AVRSPI');
     }
 
     // Attach EEPROM
@@ -684,9 +679,6 @@ class SimulationRunner {
       pinReg = this.cpu.data[port.portConfig.PIN];
     }
 
-    if (portLetter === 'B' && (state & (1 << 2)) !== 0) {
-      this.mfrc522Slave?.resetFrame();
-    }
 
     for (let bit = 0; bit < 8; bit++) {
       const bitMask = 1 << bit;

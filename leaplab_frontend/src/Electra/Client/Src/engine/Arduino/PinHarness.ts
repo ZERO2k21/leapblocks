@@ -2208,24 +2208,6 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
       }
     ]
   },
-  "mfrc522": {
-    "viewBox": {
-      "minX": 0,
-      "minY": 0,
-      "width": 40,
-      "height": 30
-    },
-    "pins": [
-      { "name": "VCC",  "x": 0,  "y": 5 },
-      { "name": "RST",  "x": 0,  "y": 10 },
-      { "name": "GND",  "x": 0,  "y": 15 },
-      { "name": "IRQ",  "x": 0,  "y": 20 },
-      { "name": "MISO", "x": 0,  "y": 25 },
-      { "name": "MOSI", "x": 40, "y": 15 },
-      { "name": "SCK",  "x": 40, "y": 20 },
-      { "name": "SS",   "x": 40, "y": 25 }
-    ]
-  },
   "nano-rp2040-connect": {
     "viewBox": {
       "minX": 0,
@@ -3082,14 +3064,14 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "viewBox": {
       "minX": 0,
       "minY": 0,
-      "width": 174,
-      "height": 61.5
+      "width": 540,
+      "height": 480
     },
     "pins": [
-      { "name": "VCC", "x": 174, "y": 14 },
-      { "name": "GND", "x": 174, "y": 22 },
-      { "name": "DO",  "x": 174, "y": 31 },
-      { "name": "AO",  "x": 174, "y": 40 }
+      { "name": "AO",  "x": 295, "y": 450 },
+      { "name": "DO",  "x": 315, "y": 450 },
+      { "name": "GND", "x": 335, "y": 450 },
+      { "name": "VCC", "x": 355, "y": 450 }
     ]
   }
 };

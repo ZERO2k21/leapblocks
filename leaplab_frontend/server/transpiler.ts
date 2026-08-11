@@ -128,7 +128,6 @@ if (typeof IRrecv === 'undefined') IRrecv = class { constructor() {} enableIRIn(
 if (typeof decode_results === 'undefined') decode_results = class { constructor() { this.value = 0; } };
 if (typeof SoftwareSerial === 'undefined') SoftwareSerial = class { constructor() {} begin() {} print(v) { Serial.print(v); } println(v) { Serial.println(v); } available() { return 0; } read() { return -1; } };
 if (typeof Stepper === 'undefined') Stepper = class { constructor() {} setSpeed() {} step() {} };
-if (typeof MFRC522 === 'undefined') MFRC522 = class { constructor() { this.uid = { size: 0, uidByte: [] }; } PCD_Init() {} PCD_Reset() {} PICC_IsNewCardPresent() { return false; } PICC_ReadCardSerial() { return false; } PICC_HaltA() {} PICC_GetType() { return 0x08; } PICC_GetTypeName(t) { return 'MIFARE 1K'; } PICC_DumpToSerial() {} PICC_DumpDetailsToSerial() {} PICC_DumpMifareClassicToSerial() {} PCD_Authenticate() { return false; } MIFARE_Read() { return false; } MIFARE_Write() { return false; } MIFARE_DumpClassic1K() { return false; } PCD_StopCrypto1() {} PCD_CalculateCRC() { return true; } PCD_ReadRegister() { return 0x92; } };
 if (typeof Keypad === 'undefined') Keypad = class { constructor() {} getKey() { return null; } };
 if (typeof makeKeymap === 'undefined') makeKeymap = (k) => k;
 if (typeof U8g2_SSD1306_128X64_NONAME_F_HW_I2C === 'undefined') U8g2_SSD1306_128X64_NONAME_F_HW_I2C = class { constructor() {} begin() {} clearBuffer() {} sendBuffer() {} setFont() {} drawStr() {} setCursor() {} print() {} println() {} };
@@ -173,12 +172,6 @@ if (typeof RAD_TO_DEG === 'undefined') RAD_TO_DEG = 180 / Math.PI;
 if (typeof LSBFIRST === 'undefined') LSBFIRST = 0;
 if (typeof MSBFIRST === 'undefined') MSBFIRST = 1;
 
-// MFRC522 constants
-if (typeof PICC_TYPE_UNKNOWN === 'undefined') PICC_TYPE_UNKNOWN = 0x00;
-if (typeof PICC_TYPE_MIFARE_1K === 'undefined') PICC_TYPE_MIFARE_1K = 0x08;
-if (typeof PICC_TYPE_MIFARE_4K === 'undefined') PICC_TYPE_MIFARE_4K = 0x18;
-if (typeof PICC_TYPE_MIFARE_UL === 'undefined') PICC_TYPE_MIFARE_UL = 0x00;
-if (typeof PICC_TYPE_TNP3XXX === 'undefined') PICC_TYPE_TNP3XXX = 0x01;
 
 ${code}
 
