@@ -216,6 +216,59 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(path.join(__dirname, '../build/index.html'));
   }
+
+  // ── Electron-level keyboard blocking for quiz security ──
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    // Block F1-F12
+    if (input.type === 'keyDown' && /^F\d{1,2}$/.test(input.key)) {
+      event.preventDefault();
+    }
+
+    // Block Ctrl+key combos
+    if (input.control || input.meta) {
+      const blocked = ['c', 'v', 'x', 'a', 'p', 's', 'u', 'j', 'n', 't', 'w', 'r', 'l', 'h', 'd', 'g', 'o', 'i', 'b', 'e', 'f', 'm'];
+      if (blocked.includes(input.key.toLowerCase())) {
+        event.preventDefault();
+      }
+      // Ctrl+Shift combos (DevTools, etc.)
+      if (input.shift && ['i', 'j', 'c', 'n', 'p', 't', 'w'].includes(input.key.toLowerCase())) {
+        event.preventDefault();
+      }
+    }
+
+    // Block Alt+key combos
+    if (input.alt && !input.control && !input.meta) {
+      const blockedAlt = ['F4', 'Tab'];
+      if (blockedAlt.includes(input.key)) {
+        event.preventDefault();
+      }
+    }
+
+    // Block PrintScreen
+    if (input.key === 'PrintScreen') {
+      event.preventDefault();
+    }
+    // Note: Escape is NOT blocked here — handled by renderer for submit dialog
+  });
+
+  // ── Block right-click context menu at Electron level ──
+  mainWindow.webContents.on('context-menu', (event) => {
+    event.preventDefault();
+  });
+
+  // ── Disable DevTools in production ──
+  if (!isDev) {
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      // Block F12
+      if (input.key === 'F12') {
+        event.preventDefault();
+      }
+      // Block Ctrl+Shift+I/J/C
+      if ((input.control || input.meta) && input.shift && ['i', 'j', 'c'].includes(input.key.toLowerCase())) {
+        event.preventDefault();
+      }
+    });
+  }
 }
 
 app.whenReady().then(async () => {
@@ -245,6 +298,46 @@ app.on('before-quit', () => {
   stopBuildServer();
   stopCompileServer();
   qemuManager.stopQemu();
+});
+
+// ── Quiz Security IPC Handlers ──
+
+// Enable fullscreen lock mode (blocks Escape, disables DevTools)
+let quizSecurityEnabled = false;
+
+ipcMain.handle('quiz-security-enable', () => {
+  quizSecurityEnabled = true;
+  if (mainWindow) {
+    mainWindow.setKiosk(true);
+    mainWindow.setMenuBarVisibility(false);
+  }
+  return { success: true };
+});
+
+// Disable fullscreen lock mode (restores normal behavior)
+ipcMain.handle('quiz-security-disable', () => {
+  quizSecurityEnabled = false;
+  if (mainWindow) {
+    mainWindow.setKiosk(false);
+    mainWindow.setMenuBarVisibility(true);
+  }
+  return { success: true };
+});
+
+// Force fullscreen
+ipcMain.handle('quiz-fullscreen-enter', () => {
+  if (mainWindow) {
+    mainWindow.setFullScreen(true);
+  }
+  return { success: true };
+});
+
+// Exit fullscreen
+ipcMain.handle('quiz-fullscreen-exit', () => {
+  if (mainWindow) {
+    mainWindow.setFullScreen(false);
+  }
+  return { success: true };
 });
 
 // IPC Handlers

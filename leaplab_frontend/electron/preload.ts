@@ -22,6 +22,11 @@ export interface ElectronAPI {
   readBinFile: (filePath: string) => Promise<ArrayBuffer>;
   platform: string;
   isElectron: boolean;
+  // Quiz security
+  quizSecurityEnable: () => Promise<any>;
+  quizSecurityDisable: () => Promise<any>;
+  quizFullscreenEnter: () => Promise<any>;
+  quizFullscreenExit: () => Promise<any>;
 }
 
 contextBridge.exposeInMainWorld("electronAPI", {
@@ -61,6 +66,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   // ── Read compiled .bin file for ESP32-C3 firmware scanner ────────────────
   readBinFile: (filePath: string) => ipcRenderer.invoke('read-bin-file', filePath),
+
+  // ── Quiz security ──────────────────────────────────────────────────────
+  quizSecurityEnable: () => ipcRenderer.invoke('quiz-security-enable'),
+  quizSecurityDisable: () => ipcRenderer.invoke('quiz-security-disable'),
+  quizFullscreenEnter: () => ipcRenderer.invoke('quiz-fullscreen-enter'),
+  quizFullscreenExit: () => ipcRenderer.invoke('quiz-fullscreen-exit'),
 
   platform: process.platform,
   isElectron: true

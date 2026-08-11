@@ -205,7 +205,7 @@ export const SpritePanel: React.FC<SpritePanelProps> = ({
 
           {/* Scrollable grid */}
           <div
-            className={`p-4 grid grid-cols-4 gap-3.5 content-start flex-1 max-h-[220px]
+            className={`p-4 grid grid-cols-4 gap-3.5 content-start flex-1 min-h-0
               overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent`}
           >
             {normalSprites.map((sprite) => {

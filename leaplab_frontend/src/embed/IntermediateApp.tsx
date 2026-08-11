@@ -101,7 +101,7 @@ import { useCloudProjectStore } from '../store/cloudProjectStore';
 import { showToast } from '../leapignite/client/components/Toast';
 
 
-import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal } from 'lucide-react';
+import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal, Puzzle, Plus } from 'lucide-react';
 
 
 import { styles } from '../styles/intermediateStyles';
@@ -3380,74 +3380,63 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
             {/* Unified Toolbar - Tabs on left, Stage controls on right */}
 
-            {appMode === 'blocks' && editorMode === 'stage' && (
+            {appMode === 'blocks' && (editorMode === 'stage' || editorMode === 'upload') && (
 
                 <div className={styles.unifiedToolbar}>
 
                     {/* Left: Workspace Tabs */}
 
-                    <div style={{ display: 'flex', height: '100%', alignItems: 'flex-end', paddingLeft: '20px', flex: 1 }}>
+                    <div style={{ display: 'flex', height: '100%', alignItems: 'center', paddingLeft: '20px', flex: 1 }}>
+                        <div className="flex items-end h-full gap-1">
+                            <button
+                                className={workspaceTab === 'blocks' ? styles.tabActive : styles.tab}
+                                onClick={() => handleWorkspaceTabChange('blocks')}
+                            >
+                                <LayoutTemplate size={18} color={workspaceTab === 'blocks' ? '#855CD6' : '#999'} /> Blocks
+                            </button>
 
+                            {editorMode === 'stage' && (
+                                <>
+                                    <button
+                                        className={workspaceTab === 'python' ? styles.tabActive : styles.tab}
+                                        onClick={() => {
+                                            if (onOpenPython) {
+                                                onOpenPython();
+                                            } else {
+                                                handleWorkspaceTabChange('python');
+                                            }
+                                        }}
+                                    >
+                                        <Terminal size={18} color={workspaceTab === 'python' ? '#855CD6' : '#999'} /> Python
+                                    </button>
+
+                                    <button
+                                        className={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
+                                        onClick={() => handleWorkspaceTabChange('costumes')}
+                                    >
+                                        <Pen size={18} color={workspaceTab === 'costumes' ? '#855CD6' : '#999'} /> {selectedSpriteId === 'stage' ? 'Backdrops' : 'Costumes'}
+                                    </button>
+
+                                    <button
+                                        className={workspaceTab === 'sounds' ? styles.tabActive : styles.tab}
+                                        onClick={() => handleWorkspaceTabChange('sounds')}
+                                    >
+                                        <Volume2 size={18} color={workspaceTab === 'sounds' ? '#855CD6' : '#999'} /> Sounds
+                                    </button>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Modern Professional Extensions Button placed in empty space of tab bar */}
                         <button
-
-                            className={workspaceTab === 'blocks' ? styles.tabActive : styles.tab}
-
-                            onClick={() => handleWorkspaceTabChange('blocks')}
-
+                            onClick={() => setShowExtensionLibrary(true)}
+                            className="ml-4 px-3.5 py-1.5 bg-gradient-to-r from-[#855CD6] via-[#9165E7] to-[#9D70F0] hover:from-[#7548C7] hover:via-[#8455DC] hover:to-[#9162E5] text-white rounded-lg font-bold text-[12px] flex items-center gap-1.5 shadow-[0_2px_8px_rgba(133,92,214,0.35)] hover:shadow-[0_4px_14px_rgba(133,92,214,0.5)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 border border-white/20 outline-none cursor-pointer select-none"
+                            title="Add Extensions (Add custom blocks & categories)"
                         >
-
-                            <LayoutTemplate size={18} color={workspaceTab === 'blocks' ? '#855CD6' : '#999'} /> Blocks
-
+                            <Puzzle size={15} className="text-white shrink-0 stroke-[2.5]" />
+                            <span>Extensions</span>
+                            <span className="ml-0.5 bg-white/25 px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none">+</span>
                         </button>
-
-                        <button
-
-                            className={workspaceTab === 'python' ? styles.tabActive : styles.tab}
-
-                            onClick={() => {
-
-                                if (onOpenPython) {
-
-                                    onOpenPython();
-
-                                } else {
-
-                                    handleWorkspaceTabChange('python');
-
-                                }
-
-                            }}
-
-                        >
-
-                            <Terminal size={18} color={workspaceTab === 'python' ? '#855CD6' : '#999'} /> Python
-
-                        </button>
-
-                        <button
-
-                            className={workspaceTab === 'costumes' ? styles.tabActive : styles.tab}
-
-                            onClick={() => handleWorkspaceTabChange('costumes')}
-
-                        >
-
-                            <Pen size={18} color={workspaceTab === 'costumes' ? '#855CD6' : '#999'} /> {selectedSpriteId === 'stage' ? 'Backdrops' : 'Costumes'}
-
-                        </button>
-
-                        <button
-
-                            className={workspaceTab === 'sounds' ? styles.tabActive : styles.tab}
-
-                            onClick={() => handleWorkspaceTabChange('sounds')}
-
-                        >
-
-                            <Volume2 size={18} color={workspaceTab === 'sounds' ? '#855CD6' : '#999'} /> Sounds
-
-                        </button>
-
                     </div>
 
 
@@ -3472,61 +3461,63 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                    {/* Right: Stage Controls */}
+                    {/* Right: Stage Controls (Only in Stage Mode) */}
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '12px', paddingLeft: '12px' }}>
+                    {editorMode === 'stage' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '12px', paddingLeft: '12px' }}>
 
-                        <div className={styles.actionButtons}>
+                            <div className={styles.actionButtons}>
 
-                            <button className={styles.runButtonTop} onClick={handleRunClick} title="Run">
+                                <button className={styles.runButtonTop} onClick={handleRunClick} title="Run">
 
-                                <svg viewBox="0 0 24 24" width="22" height="22"><path fill="#4CBB17" d="M5 3v18M19 8l-14-5v10l14 5V8z" stroke="#4CBB17" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+                                    <svg viewBox="0 0 24 24" width="22" height="22"><path fill="#4CBB17" d="M5 3v18M19 8l-14-5v10l14 5V8z" stroke="#4CBB17" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+
+                                </button>
+
+                                <button className={styles.stopButtonTop} onClick={handleStopClick} title="Stop">
+
+                                    <svg viewBox="0 0 24 24" width="22" height="22"><polygon fill="#EC5959" points="7.3,2 16.7,2 22,7.3 22,16.7 16.7,22 7.3,22 2,16.7 2,7.3" /></svg>
+
+                                </button>
+
+                            </div>
+
+
+
+
+
+
+
+                            <div style={{ width: '1px', height: '22px', background: '#d9d9d9' }} />
+
+
+
+                            <button className={`${styles.iconBtn} ${isCameraOn ? styles.iconBtnActive : ''}`} onClick={() => setIsCameraOn(!isCameraOn)} title="Toggle Camera">
+
+                                {isCameraOn ? <Camera size={18} /> : <CameraOff size={18} />}
 
                             </button>
 
-                            <button className={styles.stopButtonTop} onClick={handleStopClick} title="Stop">
+                            <button className={`${styles.iconBtn} ${showGrid ? styles.iconBtnActive : ''}`} onClick={() => setShowGrid(!showGrid)} title="Toggle Grid">
 
-                                <svg viewBox="0 0 24 24" width="22" height="22"><polygon fill="#EC5959" points="7.3,2 16.7,2 22,7.3 22,16.7 16.7,22 7.3,22 2,16.7 2,7.3" /></svg>
+                                <Grid3X3 size={18} />
+
+                            </button>
+
+                            <button className={`${styles.iconBtn} ${stageLayout === 'large' ? styles.iconBtnActive : ''}`} onClick={() => { setStageLayout('large'); addLog("Switched to Large Stage mode"); }} title="Large Stage">
+
+                                <LayoutPanelLeft size={18} />
+
+                            </button>
+
+                            <button className={`${styles.iconBtn} ${isFullscreen ? styles.iconBtnActive : ''}`} onClick={handleFullscreen} title="Fullscreen">
+
+                                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
 
                             </button>
 
                         </div>
-
-
-
-
-
-
-
-                        <div style={{ width: '1px', height: '22px', background: '#d9d9d9' }} />
-
-
-
-                        <button className={`${styles.iconBtn} ${isCameraOn ? styles.iconBtnActive : ''}`} onClick={() => setIsCameraOn(!isCameraOn)} title="Toggle Camera">
-
-                            {isCameraOn ? <Camera size={18} /> : <CameraOff size={18} />}
-
-                        </button>
-
-                        <button className={`${styles.iconBtn} ${showGrid ? styles.iconBtnActive : ''}`} onClick={() => setShowGrid(!showGrid)} title="Toggle Grid">
-
-                            <Grid3X3 size={18} />
-
-                        </button>
-
-                        <button className={`${styles.iconBtn} ${stageLayout === 'large' ? styles.iconBtnActive : ''}`} onClick={() => { setStageLayout('large'); addLog("Switched to Large Stage mode"); }} title="Large Stage">
-
-                            <LayoutPanelLeft size={18} />
-
-                        </button>
-
-                        <button className={`${styles.iconBtn} ${isFullscreen ? styles.iconBtnActive : ''}`} onClick={handleFullscreen} title="Fullscreen">
-
-                            {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
-
-                        </button>
-
-                    </div>
+                    )}
 
                 </div>
 
@@ -3629,6 +3620,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             }} style={undefined} />
 
                             <WorkspaceTrash workspaceRef={workspaceRef} />
+
+
                         </>
                     )}
 
@@ -3747,7 +3740,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         {(editorMode === 'stage' || isFullscreen) && (
                             <div ref={stageContainerRef} className={`${!isFullscreen ? styles.stageContainer : ''} stage-container-responsive`} style={{
                                 width: isFullscreen ? '100vw' : '100%',
-                                height: isFullscreen ? '100vh' : (stageLayout === 'small' ? '155px' : 'auto'),
+                                height: isFullscreen ? '100vh' : '100%',
+                                flex: isFullscreen ? 'none' : '1 1 0%',
                                 transition: isFullscreen ? 'none' : 'all 0.2s ease-in-out',
                                 position: isFullscreen ? 'fixed' : 'relative',
                                 top: isFullscreen ? 0 : 'auto',
@@ -3759,7 +3753,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 justifyContent: 'flex-start',
                                 background: isFullscreen ? '#f0f0f0' : 'transparent',
                                 overflowX: 'hidden',
-                                overflowY: 'hidden',
+                                overflowY: 'auto',
                                 gap: 0,
                             }}>
 
@@ -3858,14 +3852,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     const CANVAS_HEIGHT = 310;
 
                                     const TOOLBAR_H = 48;
-                                    const fsScale = isFullscreen
+                                    const stageScale = isFullscreen
                                         ? Math.min(
                                             window.innerWidth / CANVAS_WIDTH,
                                             (window.innerHeight - TOOLBAR_H) / CANVAS_HEIGHT
                                         )
-                                        : 1;
-                                    const displayW = isFullscreen ? Math.round(CANVAS_WIDTH * fsScale) : CANVAS_WIDTH;
-                                    const displayH = isFullscreen ? Math.round(CANVAS_HEIGHT * fsScale) : CANVAS_HEIGHT;
+                                        : (stageLayout === 'small' ? 0.5 : Math.max(0.3, (rightPanelWidth - 16) / CANVAS_WIDTH));
+
+                                    const displayW = Math.round(CANVAS_WIDTH * stageScale);
+                                    const displayH = Math.round(CANVAS_HEIGHT * stageScale);
 
                                     return (
                                         <div style={{
@@ -3882,7 +3877,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                             {/* Stage canvas - display container */}
                                             <div style={{
                                                 width: isFullscreen ? `${displayW}px` : '100%',
-                                                height: isFullscreen ? `${displayH}px` : 'auto',
+                                                height: `${displayH}px`,
                                                 background: 'white',
                                                 boxShadow: isFullscreen ? '0 4px 32px rgba(0,0,0,0.18)' : 'none',
                                                 borderRadius: isFullscreen ? '4px' : '0',
@@ -3897,7 +3892,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                                 <div style={{
                                                     width: `${CANVAS_WIDTH}px`,
                                                     height: `${CANVAS_HEIGHT}px`,
-                                                    transform: isFullscreen ? `scale(${fsScale})` : 'none',
+                                                    transform: `scale(${stageScale})`,
                                                     transformOrigin: 'center center',
                                                     flex: '0 0 auto',
                                                     overflow: 'visible',
@@ -4137,37 +4132,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-            {/* Add Extension Button - Fixed bottom-right corner */}
-            {((editorMode === 'stage' && workspaceTab === 'blocks') || editorMode === 'upload') && (
-                <div className="add-extension-btn-container fixed bottom-4 right-4 z-[1000]">
-                    <button
-                        onClick={() => setShowExtensionLibrary(true)}
-                        className="group flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#855CD6] to-[#9B6FE8] hover:from-[#7348C4] hover:to-[#8A5DD6] rounded-xl border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
-                        style={{
-                            width: '52px',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            backdropFilter: 'blur(10px)'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.width = '180px';
-                            e.currentTarget.style.paddingRight = '16px';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.width = '52px';
-                            e.currentTarget.style.paddingRight = '12px';
-                        }}
-                        title="Add Extension"
-                    >
-                        <div className="w-8 h-8 flex items-center justify-center text-white flex-shrink-0">
-                            <Library size={20} strokeWidth={2.5} />
-                        </div>
-                        <div className="text-left whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75">
-                            <div className="text-xs font-semibold text-white leading-tight">Extensions</div>
-                            <div className="text-[10px] text-white/80 leading-tight">Add blocks</div>
-                        </div>
-                    </button>
-                </div>
-            )}
+
 
             {/* Custom Prompt Modal */}
 

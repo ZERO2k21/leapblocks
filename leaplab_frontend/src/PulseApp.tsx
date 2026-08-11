@@ -132,6 +132,8 @@ export default function PulseApp({ onBack }: PulseAppProps) {
   const [awaySeconds, setAwaySeconds] = useState(0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [quizToStart, setQuizToStart] = useState<Quiz | null>(null);
+  const [showEscapeDialog, setShowEscapeDialog] = useState(false);
+  const escapeDialogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Network & resume state
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -322,10 +324,435 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     };
   }, [view]);
 
+  // ── Fullscreen mode — enter on quiz start, LOCK until submit ──
+  const quizSubmittedRef = useRef(false);
+
+  useEffect(() => {
+    if (view === 'taking') {
+      quizSubmittedRef.current = false;
+
+      // Enable Electron-level security (blocks Escape, DevTools, etc.)
+      if ((window as any).electronAPI?.quizSecurityEnable) {
+        (window as any).electronAPI.quizSecurityEnable();
+      }
+
+      const el = document.documentElement;
+
+      const enterFS = () => {
+        // Try Electron first
+        if ((window as any).electronAPI?.quizFullscreenEnter) {
+          (window as any).electronAPI.quizFullscreenEnter();
+        } else {
+          // Fallback to browser fullscreen API
+          const fs = el.requestFullscreen || (el as any).webkitRequestFullscreen || (el as any).msRequestFullscreen;
+          if (fs && !document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+            fs.call(el).catch(() => {});
+          }
+        }
+      };
+
+      // Enter fullscreen on quiz start
+      enterFS();
+
+      // Re-enter fullscreen if user exits (Escape, browser UI, etc.)
+      const onFullscreenChange = () => {
+        if (quizSubmittedRef.current) return;
+        if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+          // Immediately re-enter
+          enterFS();
+        }
+      };
+
+      document.addEventListener('fullscreenchange', onFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+
+      return () => {
+        document.removeEventListener('fullscreenchange', onFullscreenChange);
+        document.removeEventListener('webkitfullscreenchange', onFullscreenChange);
+      };
+    }
+
+    if (view === 'result' || view === 'list') {
+      // Disable Electron-level security
+      if ((window as any).electronAPI?.quizSecurityDisable) {
+        (window as any).electronAPI.quizSecurityDisable();
+      }
+
+      // Exit fullscreen via Electron IPC
+      if ((window as any).electronAPI?.quizFullscreenExit) {
+        (window as any).electronAPI.quizFullscreenExit();
+      } else {
+        // Fallback to browser fullscreen API
+        if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
+          const exitFS = document.exitFullscreen || (document as any).webkitExitFullscreen || (document as any).msExitFullscreen;
+          if (exitFS) {
+            exitFS.call(document).catch(() => {});
+          }
+        }
+      }
+    }
+  }, [view]);
+
+  // ── Block keyboard shortcuts (PrintScreen, Ctrl+C/P/S/U/A, F12, DevTools, etc.) ──
+  useEffect(() => {
+    if (view !== 'taking') return;
+
+    const el = document.documentElement;
+
+    const blockKeys = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      const ctrl = e.ctrlKey || e.metaKey;
+      const shift = e.shiftKey;
+      const alt = e.altKey;
+      const isMeta = e.metaKey;
+
+      // PrintScreen & Alt+PrintScreen
+      if (key === 'printscreen' || e.code === 'PrintScreen') {
+        e.preventDefault();
+        return false;
+      }
+
+      // Escape — show submit dialog, or auto-submit if already open
+      if (key === 'escape') {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (showEscapeDialog) {
+          // Second Escape press — auto-submit
+          if (escapeDialogTimerRef.current) {
+            clearTimeout(escapeDialogTimerRef.current);
+            escapeDialogTimerRef.current = null;
+          }
+          setShowEscapeDialog(false);
+          handleSubmitRef.current();
+        } else {
+          // First Escape press — show dialog
+          setShowEscapeDialog(true);
+          // Auto-close dialog after 5 seconds (no submit)
+          escapeDialogTimerRef.current = setTimeout(() => {
+            setShowEscapeDialog(false);
+            escapeDialogTimerRef.current = null;
+          }, 5000);
+        }
+        return false;
+      }
+
+      // Windows key / Meta key
+      if (isMeta && !ctrl && !alt && !shift) {
+        e.preventDefault();
+        return false;
+      }
+
+      // Ctrl/Cmd combos — broad blocklist
+      if (ctrl || isMeta) {
+        const blocked = [
+          'c', 'v', 'x', 'a', 'p', 's', 'u', 'j',   // copy/paste/print/save/view-source
+          'n', 't', 'w', 'r', 'l', 'h', 'd', 'g',   // new-window/new-tab/close/refresh/last-pass/devtools
+          'o', 'i', 'b', 'e', 'f', 'm',               // open/info-bookmarks/edit/find/menu
+        ];
+        if (blocked.includes(key)) {
+          e.preventDefault();
+          return false;
+        }
+        // Ctrl+Shift combos (DevTools, Incognito, etc.)
+        if (shift) {
+          const blockedShift = ['i', 'j', 'c', 'n', 'p', 't', 'w', 'delete'];
+          if (blockedShift.includes(key)) {
+            e.preventDefault();
+            return false;
+          }
+        }
+      }
+
+      // Alt combos (menu bar, navigation, etc.)
+      if (alt) {
+        const blockedAlt = ['f4', 'tab', 'escape', 'arrowleft', 'arrowright'];
+        if (blockedAlt.includes(key)) {
+          e.preventDefault();
+          return false;
+        }
+        // Alt+PrintScreen
+        if (key === 'printscreen' || e.code === 'PrintScreen') {
+          e.preventDefault();
+          return false;
+        }
+      }
+
+      // ALL function keys (F1–F12)
+      if (/^f\d{1,2}$/.test(key)) {
+        e.preventDefault();
+        return false;
+      }
+
+      // Space & arrow keys (prevent page scroll)
+      if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key) && !ctrl && !alt) {
+        // allow arrow keys inside inputs
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
+          e.preventDefault();
+          return false;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', blockKeys, { capture: true });
+    return () => window.removeEventListener('keydown', blockKeys, { capture: true });
+  }, [view]);
+
+  // ── Disable right-click context menu ──
+  useEffect(() => {
+    if (view !== 'taking') return;
+
+    const disableContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      return false;
+    };
+
+    window.addEventListener('contextmenu', disableContextMenu);
+    return () => window.removeEventListener('contextmenu', disableContextMenu);
+  }, [view]);
+
+  // ── Disable drag ──
+  useEffect(() => {
+    if (view !== 'taking') return;
+
+    const disableDrag = (e: DragEvent) => {
+      e.preventDefault();
+      return false;
+    };
+
+    window.addEventListener('dragstart', disableDrag);
+    return () => window.removeEventListener('dragstart', disableDrag);
+  }, [view]);
+
+  // ── Block window.open, window.print, document.view-source ──
+  useEffect(() => {
+    if (view !== 'taking') return;
+
+    const origOpen = window.open;
+    const origPrint = window.print;
+
+    window.open = (() => null) as any;
+    window.print = (() => {}) as any;
+
+    // Disable print media stylesheet injection
+    const printStyle = document.createElement('style');
+    printStyle.textContent = '@media print { * { display: none !important; } body { display: none !important; } }';
+    document.head.appendChild(printStyle);
+
+    return () => {
+      window.open = origOpen;
+      window.print = origPrint;
+      printStyle.remove();
+    };
+  }, [view]);
+
+  // ── Screenshot detection via visibilitychange + show warning overlay ──
+  useEffect(() => {
+    if (view !== 'taking') return;
+
+    let screenshotTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const onVisibilityChange = () => {
+      // On some OSes, PrintScreen triggers a brief visibility change
+      if (document.hidden) {
+        // Create warning overlay
+        const warning = document.createElement('div');
+        warning.id = 'screenshot-warning';
+        Object.assign(warning.style, {
+          position: 'fixed',
+          inset: '0',
+          zIndex: '99999',
+          background: 'rgba(0,0,0,0.85)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          color: 'white',
+          fontFamily: 'sans-serif',
+        });
+        warning.innerHTML = `
+          <div style="font-size:48px;margin-bottom:16px;">&#x26A0;&#xFE0F;</div>
+          <div style="font-size:24px;font-weight:800;margin-bottom:8px;">Screenshot Detected!</div>
+          <div style="font-size:14px;opacity:0.8;">Taking screenshots is not allowed during the quiz.</div>
+        `;
+        document.body.appendChild(warning);
+
+        // Remove after 2 seconds
+        screenshotTimeout = setTimeout(() => {
+          warning.remove();
+        }, 2000);
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (screenshotTimeout) clearTimeout(screenshotTimeout);
+      const existing = document.getElementById('screenshot-warning');
+      if (existing) existing.remove();
+    };
+  }, [view]);
+
+  // ── Screenshot-protective transparent overlay (blocks screen-capture tools) ──
+  useEffect(() => {
+    if (view !== 'taking') return;
+
+    const overlay = document.createElement('div');
+    overlay.setAttribute('aria-hidden', 'true');
+    Object.assign(overlay.style, {
+      position: 'fixed',
+      inset: '0',
+      zIndex: '9998',
+      pointerEvents: 'none',
+      background: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.015) 2px, rgba(0,0,0,0.015) 4px)',
+      mixBlendMode: 'multiply',
+    });
+    document.body.appendChild(overlay);
+
+    return () => { overlay.remove(); };
+  }, [view]);
+
+  // ── Window resize prevention — lock viewport size ──
+  useEffect(() => {
+    if (view !== 'taking') return;
+
+    const lockSize = () => {
+      window.moveTo(0, 0);
+      window.resizeTo(screen.availWidth, screen.availHeight);
+    };
+
+    const onResize = () => {
+      lockSize();
+    };
+
+    window.addEventListener('resize', onResize);
+    lockSize();
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+    };
+  }, [view]);
+
+  // ── Developer tools detection via debugger timing ──
+  useEffect(() => {
+    if (view !== 'taking') return;
+
+    const threshold = 100; // ms
+    const id = setInterval(() => {
+      const start = performance.now();
+      // eslint-disable-next-line no-debugger
+      debugger;
+      const elapsed = performance.now() - start;
+      if (elapsed > threshold) {
+        // DevTools is open — show warning
+        const warning = document.createElement('div');
+        warning.id = 'devtools-warning';
+        Object.assign(warning.style, {
+          position: 'fixed',
+          inset: '0',
+          zIndex: '99999',
+          background: 'rgba(0,0,0,0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          color: 'white',
+          fontFamily: 'sans-serif',
+          textAlign: 'center',
+          padding: '40px',
+        });
+        warning.innerHTML = `
+          <div style="font-size:48px;margin-bottom:16px;">&#x1F6A7;</div>
+          <div style="font-size:24px;font-weight:800;margin-bottom:8px;">Developer Tools Detected!</div>
+          <div style="font-size:14px;opacity:0.8;">Please close Developer Tools and continue your quiz.</div>
+        `;
+        document.body.appendChild(warning);
+        setTimeout(() => warning.remove(), 3000);
+      }
+    }, 2000);
+
+    return () => clearInterval(id);
+  }, [view]);
+
+  // ── Disable image drag & context menu on images ──
+  useEffect(() => {
+    if (view !== 'taking') return;
+
+    const disableImageInteraction = (e: Event) => {
+      e.preventDefault();
+      return false;
+    };
+
+    document.querySelectorAll('img').forEach((img) => {
+      img.setAttribute('draggable', 'false');
+      img.addEventListener('contextmenu', disableImageInteraction);
+      img.addEventListener('dragstart', disableImageInteraction);
+    });
+
+    return () => {
+      document.querySelectorAll('img').forEach((img) => {
+        img.removeEventListener('contextmenu', disableImageInteraction);
+        img.removeEventListener('dragstart', disableImageInteraction);
+      });
+    };
+  }, [view]);
+
+  // ── Body-level protections during quiz ──
+  useEffect(() => {
+    if (view !== 'taking') return;
+
+    const body = document.body;
+    const html = document.documentElement;
+
+    // Save original values
+    const origBodyOverflow = body.style.overflow;
+    const origBodyUserSelect = body.style.userSelect;
+    const origBodyWebkitUserSelect = (body.style as any).webkitUserSelect;
+    const origBodyMozUserSelect = (body.style as any).mozUserSelect;
+    const origBodyMsUserSelect = (body.style as any).msUserSelect;
+    const origHtmlOverflow = html.style.overflow;
+
+    // Apply protections
+    body.style.overflow = 'hidden';
+    body.style.userSelect = 'none';
+    (body.style as any).webkitUserSelect = 'none';
+    (body.style as any).mozUserSelect = 'none';
+    (body.style as any).msUserSelect = 'none';
+    html.style.overflow = 'hidden';
+
+    // Disable copy on body
+    const disableCopy = (e: Event) => { e.preventDefault(); return false; };
+    body.addEventListener('copy', disableCopy);
+    body.addEventListener('cut', disableCopy);
+    body.addEventListener('paste', disableCopy);
+
+    return () => {
+      body.style.overflow = origBodyOverflow;
+      body.style.userSelect = origBodyUserSelect;
+      (body.style as any).webkitUserSelect = origBodyWebkitUserSelect;
+      (body.style as any).mozUserSelect = origBodyMozUserSelect;
+      (body.style as any).msUserSelect = origBodyMsUserSelect;
+      html.style.overflow = origHtmlOverflow;
+      body.removeEventListener('copy', disableCopy);
+      body.removeEventListener('cut', disableCopy);
+      body.removeEventListener('paste', disableCopy);
+    };
+  }, [view]);
+
   // ── Start quiz ──
   const startQuiz = async (quizId: string) => {
     if (!token) return;
     setError(null);
+
+    // Request fullscreen immediately (requires user gesture from button click)
+    const el = document.documentElement;
+    const fs = el.requestFullscreen || (el as any).webkitRequestFullscreen || (el as any).msRequestFullscreen;
+    if (fs && !document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+      fs.call(el).catch(() => {});
+    }
+
     try {
       // Fetch quiz details
       const quizRes = await apiGet(`${QUIZZES_PATH}/${quizId}`, token);
@@ -402,6 +829,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
       });
 
       setResult(res.data);
+      quizSubmittedRef.current = true;
       setView('result');
       setTimeLeft(null);
       pendingSubmitRef.current = false;
@@ -673,7 +1101,19 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     const currentQuestion = activeQuiz.questions[currentQuestionIndex] || activeQuiz.questions[0];
 
     return (
-      <div className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900">
+      <div
+        className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900"
+        style={{
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          MozUserSelect: 'none',
+          msUserSelect: 'none',
+          WebkitTouchCallout: 'none',
+        }}
+        onCopy={(e) => { e.preventDefault(); return false; }}
+        onCut={(e) => { e.preventDefault(); return false; }}
+        onPaste={(e) => { e.preventDefault(); return false; }}
+      >
         {/* TopBar */}
         <header className="sticky top-0 z-[200] flex items-center justify-between px-5 h-[68px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 text-white shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] select-none">
           {/* Left Section: Exit + Logo + Module Name */}
@@ -865,12 +1305,76 @@ export default function PulseApp({ onBack }: PulseAppProps) {
           </div>
         )}
 
+        {/* Escape Key Submit Dialog */}
+        {showEscapeDialog && (
+          <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
+            <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border-2 border-slate-200 text-center">
+              <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-3xl font-extrabold mx-auto mb-4">
+                ⚠️
+              </div>
+              <h2 className="text-xl font-extrabold text-slate-900 m-0 mb-2">
+                Submit Quiz?
+              </h2>
+              <p className="text-sm text-slate-500 m-0 mb-1 font-medium">
+                Press <span className="font-bold text-slate-700">Escape</span> again to submit, or wait to continue.
+              </p>
+              <p className="text-xs text-amber-600 m-0 mb-5 font-semibold">
+                Auto-closing in 5 seconds...
+              </p>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (escapeDialogTimerRef.current) {
+                      clearTimeout(escapeDialogTimerRef.current);
+                      escapeDialogTimerRef.current = null;
+                    }
+                    setShowEscapeDialog(false);
+                  }}
+                  className="flex-1 py-3 px-4 rounded-xl border-2 border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-sm font-extrabold cursor-pointer transition-colors"
+                >
+                  Continue Quiz
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (escapeDialogTimerRef.current) {
+                      clearTimeout(escapeDialogTimerRef.current);
+                      escapeDialogTimerRef.current = null;
+                    }
+                    setShowEscapeDialog(false);
+                    handleSubmit();
+                  }}
+                  disabled={submitting}
+                  className="flex-1 py-3 px-4 rounded-xl border-none bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-extrabold cursor-pointer transition-all shadow-md"
+                >
+                  {submitting ? 'Submitting...' : 'Submit Quiz'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Side-by-side Question & Overview Container */}
         <div className="p-4 flex flex-col md:flex-row gap-6 pb-28 max-w-6xl mx-auto items-start">
           {/* LEFT COLUMN: Active Question View */}
           <div className="flex-1 min-w-0 w-full">
             {currentQuestion && (
-              <div key={currentQuestion.id} className="bg-white border-2 border-slate-200 rounded-2xl p-5 shadow-sm">
+              <div key={currentQuestion.id} className="relative bg-white border-2 border-slate-200 rounded-2xl p-5 shadow-sm">
+                {/* Screenshot-protective overlay on question area */}
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 10,
+                    pointerEvents: 'none',
+                    background: 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.012) 3px, rgba(0,0,0,0.012) 6px)',
+                    mixBlendMode: 'multiply',
+                    borderRadius: 'inherit',
+                  }}
+                />
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs font-extrabold text-indigo-600 bg-indigo-50 py-1 px-2.5 rounded-md">
                     Question {currentQuestionIndex + 1} of {totalQuestions}
@@ -884,7 +1388,10 @@ export default function PulseApp({ onBack }: PulseAppProps) {
                       src={getImageUrl(currentQuestion.questionMediaUrl)!}
                       alt="Question"
                       className="w-full h-full object-contain"
+                      draggable="false"
+                      onContextMenu={(e) => e.preventDefault()}
                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      style={{ pointerEvents: 'none' }}
                     />
                   </div>
                 )}
@@ -906,7 +1413,10 @@ export default function PulseApp({ onBack }: PulseAppProps) {
                               src={getImageUrl(opt.mediaUrl)!}
                               alt=""
                               className="w-full h-full object-contain"
+                              draggable="false"
+                              onContextMenu={(e) => e.preventDefault()}
                               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                              style={{ pointerEvents: 'none' }}
                             />
                           </div>
                         )}

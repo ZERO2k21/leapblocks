@@ -43,7 +43,7 @@ export const styles: Record<string, string> = {
     costumePlaceholder: "text-center text-gray-500",
     soundsEditor: "flex-1 flex flex-col overflow-hidden bg-[#f9f9f9]",
     soundPlaceholder: "text-center text-gray-500",
-    rightPanel: "w-[450px] shrink-0 bg-[#f5f5f5] border-l border-gray-300 flex flex-col gap-2 p-2 overflow-hidden h-full",
+    rightPanel: "w-[450px] shrink-0 bg-[#f5f5f5] border-l border-gray-300 flex flex-col gap-2 p-2 overflow-y-auto h-full",
     assetsContainer: "flex gap-2 items-center justify-center",
     stageContainer: "bg-white rounded-lg overflow-hidden shadow-sm",
     stageHeader: "flex justify-between items-center px-2.5 py-1.5 bg-gray-50 border-b border-gray-200 text-xs font-medium",
