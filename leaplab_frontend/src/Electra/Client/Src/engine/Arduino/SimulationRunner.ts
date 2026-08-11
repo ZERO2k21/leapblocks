@@ -164,16 +164,9 @@ class SimulationRunner {
       // Without this, the PIN register can contain stale values if updatePinRegister
       // hasn't been called since the last setPin.
       this.cpu!.readHooks[portConfig.PIN] = () => {
+        this.applyVirtualInputs();
         port.refreshPinRegister();
         const val = this.cpu!.data[portConfig.PIN];
-        // Instrumentation: log PIR pin reads on change only
-        if (letter === 'D') {
-          const bit2 = (val >> 2) & 1;
-          if (bit2 !== this._lastD2Debug) {
-            console.log(`[PIR-DEBUG] PIN D read: bit2=${bit2} (${bit2 ? 'HIGH' : 'LOW'}) cpu.data[PIN]=0x${val.toString(16)} DDR=0x${this.cpu!.data[portConfig.DDR].toString(16)}`);
-            this._lastD2Debug = bit2;
-          }
-        }
         return val;
       };
     });
@@ -472,6 +465,10 @@ class SimulationRunner {
       cancelAnimationFrame(this.tickInterval);
       this.tickInterval = null;
     }
+
+    // Reset CPU & virtual inputs so next start() initializes clean state
+    this.cpu = null;
+    this.virtualInputs.clear();
 
     // Broadcast LOW to visually turn off LEDs/peripherals immediately
     this.pinStates.forEach((_, pinId) => {

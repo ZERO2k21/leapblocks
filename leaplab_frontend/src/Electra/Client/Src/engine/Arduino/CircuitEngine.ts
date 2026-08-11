@@ -1503,10 +1503,25 @@ class CircuitEngine {
         }
       }
 
-      // Register MFRC522 RFID reader — track node ID for store updates
-      if (node.data?.type === 'mfrc522') {
-        const nodeId = node.id;
-        console.log(`[MFRC522] Registered node: ${nodeId}`);
+      // Register PIR motion sensor
+      if (node.data?.type === 'pir-motion-sensor') {
+        const motion = node.data?.sensorValues?.motionDetected ?? false;
+        this.pushInputSignal(node.id, 'OUT', motion);
+        console.log(`[PIR] Registered pir-motion-sensor during syncCircuitGraph: nodeId=${node.id}, initial motionDetected=${motion}`);
+      }
+
+      // Register IR obstacle sensor (Active-LOW: HIGH when clear, LOW when obstacle detected)
+      if (node.data?.type === 'ir-obstacle-sensor') {
+        const obstacle = node.data?.sensorValues?.obstacleDetected ?? false;
+        this.pushInputSignal(node.id, 'OUT', !obstacle);
+        console.log(`[IR-OBSTACLE] Registered ir-obstacle-sensor during syncCircuitGraph: nodeId=${node.id}, initial obstacleDetected=${obstacle}`);
+      }
+
+      // Register Proximity sensor (Active-LOW)
+      if (node.data?.type === 'proximity-sensor') {
+        const objectDet = node.data?.sensorValues?.obstacleDetected ?? false;
+        this.pushInputSignal(node.id, 'OUT', !objectDet);
+        console.log(`[PROXIMITY] Registered proximity-sensor during syncCircuitGraph: nodeId=${node.id}, initial objectDetected=${objectDet}`);
       }
 
       // Register heart-beat sensor — drives OUT ADC channel with a time-varying pulse voltage
@@ -3196,22 +3211,25 @@ class CircuitEngine {
           const type = peripheralNode.data.type;
 
           setTimeout(() => {
+            const freshNode = useForgeStore.getState().nodes.find(n => n.id === peripheralId);
+            const nodeData = freshNode?.data || peripheralNode.data;
+
             // PIR motion sensor
             if (type === 'pir-motion-sensor' && peripheralPinName === 'OUT') {
-              const initialMotion = peripheralNode.data.sensorValues?.motionDetected ?? false;
+              const initialMotion = nodeData.sensorValues?.motionDetected ?? false;
               simulationRunner.setVirtualInput(avrPin, initialMotion);
               console.log(`[FORGE CIRCUIT] PIR (${peripheralId}) initial state injected: ${initialMotion ? 'HIGH' : 'LOW'} on ${avrPin}`);
             }
             // IR Obstacle sensor (Active-LOW: LOW when obstacle detected)
             else if (type === 'ir-obstacle-sensor' && peripheralPinName === 'OUT') {
-              const obstacle = peripheralNode.data.sensorValues?.obstacleDetected ?? false;
+              const obstacle = nodeData.sensorValues?.obstacleDetected ?? false;
               const initialPinState = !obstacle;
               simulationRunner.setVirtualInput(avrPin, initialPinState);
               console.log(`[FORGE CIRCUIT] IR Obstacle (${peripheralId}) initial state injected: ${initialPinState ? 'HIGH' : 'LOW'} on ${avrPin}`);
             }
             // Proximity Sensor (Active-LOW: LOW when object detected)
             else if (type === 'proximity-sensor' && peripheralPinName === 'OUT') {
-              const detected = peripheralNode.data.sensorValues?.obstacleDetected ?? false;
+              const detected = nodeData.sensorValues?.obstacleDetected ?? false;
               const initialPinState = !detected;
               simulationRunner.setVirtualInput(avrPin, initialPinState);
               console.log(`[FORGE CIRCUIT] Proximity (${peripheralId}) initial state injected: ${initialPinState ? 'HIGH' : 'LOW'} on ${avrPin}`);

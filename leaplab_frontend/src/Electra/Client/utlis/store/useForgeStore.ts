@@ -398,16 +398,19 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     console.log('[FORGE STORE] stopSimulation triggered.');
     const { nodes } = get();
     const cleanedNodes = nodes.map(node => {
-      if (node.data?.sensorValues?.touched) {
+      const sv = node.data?.sensorValues;
+      if (sv && (sv.touched || sv.motionDetected || sv.obstacleDetected)) {
         return {
           ...node,
           data: {
             ...node.data,
             sensorValues: {
-              ...node.data.sensorValues,
+              ...sv,
               touched: false,
               touchX: 0,
               touchY: 0,
+              motionDetected: false,
+              obstacleDetected: false,
             }
           }
         };
