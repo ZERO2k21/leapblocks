@@ -2489,18 +2489,18 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "pins": [
       {
         "name": "VCC",
-        "x": 194,
-        "y": 15.5
+        "x": 180,
+        "y": 17
       },
       {
         "name": "OUT",
-        "x": 194,
-        "y": 31.0
+        "x": 180,
+        "y": 27
       },
       {
         "name": "GND",
-        "x": 194,
-        "y": 46.5
+        "x": 180,
+        "y": 36
       }
     ]
   },
@@ -3068,14 +3068,14 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "viewBox": {
       "minX": 0,
       "minY": 0,
-      "width": 174,
-      "height": 61.5
+      "width": 540,
+      "height": 462
     },
     "pins": [
-      { "name": "VCC", "x": 174, "y": 14 },
-      { "name": "GND", "x": 174, "y": 22 },
-      { "name": "DO",  "x": 174, "y": 31 },
-      { "name": "AO",  "x": 174, "y": 40 }
+      { "name": "AO",  "x": 288, "y": 450 },
+      { "name": "DO",  "x": 307, "y": 450 },
+      { "name": "GND", "x": 326, "y": 450 },
+      { "name": "VCC", "x": 345, "y": 450 }
     ]
   },
   "soil-moisture-sensor": {

@@ -156,6 +156,7 @@ const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children }) => {
   const uiTheme = useForgeStore(state => state.uiTheme);
   const isLightTheme = uiTheme === 'light';
   const defaultBorder = isLightTheme ? '#cbd5e1' : (borderColor || 'rgba(255, 255, 255, 0.08)');
+  const rotation = React.useContext(RotationContext);
 
   return (
     <div
@@ -170,7 +171,7 @@ const CompactCard: React.FC<CompactCardProps> = ({ borderColor, children }) => {
         position: 'absolute',
         left: '50%',
         top: '-12px',
-        transform: 'translate(-50%, -100%)',
+        transform: `translate(-50%, -100%) rotate(${-rotation}deg)`,
         transformOrigin: 'bottom center',
         border: `1px solid ${defaultBorder}`,
       }}
