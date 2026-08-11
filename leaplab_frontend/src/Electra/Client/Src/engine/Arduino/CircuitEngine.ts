@@ -22,7 +22,6 @@ import { TiltSwitchEmulator } from './TiltSwitchEmulator';
 import { RotaryEncoderEmulator } from './RotaryEncoderEmulator';
 import { IRReceiverEmulator } from './IRReceiverEmulator';
 import { HX711Emulator } from './HX711Emulator';
-import { RealMFRC522 } from './RealMFRC522';
 import { ESP32_BOARD_CONFIG, ESP32_BOARDS, type ESP32PinInfo } from './ESP32BoardConfig.js';
 import { createIRremoteClass } from '../esp32c3/ArduinoLibraries';
 
@@ -99,7 +98,6 @@ class CircuitEngine {
   private rotaryEncoderEmulators = new Map<string, RotaryEncoderEmulator>();
   private irReceiverEmulators = new Map<string, IRReceiverEmulator>();
   private hx711Emulators = new Map<string, HX711Emulator>();
-  private mfrc522Instances = new Map<string, RealMFRC522>();
   private _pendingLibraryClasses = new Map<string, any>();
   public _displayElements = new Map<string, any>();
   private heartBeatTimers = new Map<string, number>(); // nodeId → requestAnimationFrame id
@@ -1110,9 +1108,6 @@ class CircuitEngine {
     this._pendingLibraryClasses.set('decode_results', irRemote.decode_results);
     this._pendingLibraryClasses.set('IrReceiver', irRemote.IrReceiver);
 
-    // Register MFRC522 RFID library for injection into transpiled JS
-    this._pendingLibraryClasses.set('MFRC522', RealMFRC522);
-    console.log(`[MFRC522] RealMFRC522 stored in _pendingLibraryClasses`);
 
     // If runtime already exists (re-sync case), inject immediately
     if (esp32Runtime) {
@@ -1125,9 +1120,8 @@ class CircuitEngine {
       esp32Runtime.injectLibraryClass('IRrecv', irRemote.IRrecv);
       esp32Runtime.injectLibraryClass('decode_results', irRemote.decode_results);
       esp32Runtime.injectLibraryClass('IrReceiver', irRemote.IrReceiver);
-      esp32Runtime.injectLibraryClass('MFRC522', RealMFRC522);
       this._wireI2CBus(esp32Runtime);
-      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + TFT_eSPI + Touch + LCD_I2C + IRremote + MFRC522 + wired I2C bus');
+      console.log('[OLED/LCD BRIDGE] ✓ Runtime exists — injected SSD1306 + ILI9341 + TFT_eSPI + Touch + LCD_I2C + IRremote + wired I2C bus');
 
     } else {
       console.log('[OLED/LCD BRIDGE] Runtime not yet created — classes queued for initTranspiled()');
@@ -1202,7 +1196,6 @@ class CircuitEngine {
     this.tiltSwitchEmulators.clear();
     this.rotaryEncoderEmulators.clear();
     this.hx711Emulators.clear();
-    this.mfrc522Instances.clear();
     this.touchQueues.clear();
     if (this.stepperIdleRaf !== null) {
       cancelAnimationFrame(this.stepperIdleRaf);
@@ -3475,55 +3468,6 @@ class CircuitEngine {
     console.log(`[FORGE CIRCUIT] Slide Switch (${nodeId}) position: ${value}, isOn: ${isOn}`);
   }
 
-  /**
-   * Present an RFID card to the RC522 reader.
-   * Called by SensorOverlay when user clicks "Present Card".
-   */
-  public presentRFIDCard(nodeId: string, uid: number[], cardName: string) {
-    // Update static shared state so all RealMFRC522 instances see the card (transpiled path)
-    RealMFRC522.presentCard(uid, cardName);
-    // Also update AVR8js SPI slave peripheral (AVR binary path)
-    if (simulationRunner?.mfrc522Slave) {
-      simulationRunner.mfrc522Slave.presentCard(uid, cardName);
-    }
-    // Also update the Forge store so the element visually shows card state
-    const { updateNodeData, nodes } = useForgeStore.getState();
-    const node = nodes.find((n: any) => n.id === nodeId);
-    if (node) {
-      updateNodeData(nodeId, {
-        sensorValues: {
-          ...node.data?.sensorValues,
-          cardPresent: true,
-          uid: [...uid],
-          cardName,
-        },
-      });
-    }
-    console.log(`[MFRC522] Card presented to ${nodeId}: ${cardName}`);
-  }
-
-  /**
-   * Remove an RFID card from the RC522 reader.
-   * Called by SensorOverlay when user clicks "Remove Card".
-   */
-  public removeRFIDCard(nodeId: string) {
-    // Clear static shared state
-    RealMFRC522.removeCard();
-    // Also update the Forge store
-    const { updateNodeData, nodes } = useForgeStore.getState();
-    const node = nodes.find((n: any) => n.id === nodeId);
-    if (node) {
-      updateNodeData(nodeId, {
-        sensorValues: {
-          ...node.data?.sensorValues,
-          cardPresent: false,
-          uid: [],
-          cardName: '',
-        },
-      });
-    }
-    console.log(`[MFRC522] Card removed from ${nodeId}`);
-  }
 
   /**
    * Update the pushbutton state (pressed or released).

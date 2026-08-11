@@ -316,11 +316,6 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     mappedProps.gyroY = sv.gyroY ?? 0;
     mappedProps.gyroZ = sv.gyroZ ?? 0;
     mappedProps.temp = sv.temp ?? 25;
-  } else if (data.type === 'mfrc522') {
-    // RFID RC522: pass card state to the visual element
-    mappedProps.cardPresent = data.sensorValues?.cardPresent ?? false;
-    mappedProps.uid = data.sensorValues?.uid ?? [];
-    mappedProps.cardName = data.sensorValues?.cardName ?? '';
   } else if (data.type === 'neopixel') {
     // Single NeoPixel: map decoded WS2812B RGB values (0-1 range)
     mappedProps.r = data.neopixelR ?? 0;
