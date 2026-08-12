@@ -140,6 +140,48 @@ export default function PulseApp({ onBack }: PulseAppProps) {
   const [resumedNotice, setResumedNotice] = useState(false);
   const pendingSubmitRef = useRef(false);
 
+  // Fullscreen state & toggle
+  const [isNativeFs, setIsNativeFs] = useState<boolean>(false);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+      const el = document.documentElement;
+      const fs = el.requestFullscreen || (el as any).webkitRequestFullscreen || (el as any).msRequestFullscreen;
+      if (fs) {
+        fs.call(el).then(() => setIsNativeFs(true)).catch(() => {});
+      }
+    } else {
+      const exitFs = document.exitFullscreen || (document as any).webkitExitFullscreen || (document as any).msExitFullscreen;
+      if (exitFs) {
+        exitFs.call(document).then(() => setIsNativeFs(false)).catch(() => {});
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsNativeFs(!!(document.fullscreenElement || (document as any).webkitFullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (view === 'taking') {
+      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+        const el = document.documentElement;
+        const fs = el.requestFullscreen || (el as any).webkitRequestFullscreen || (el as any).msRequestFullscreen;
+        if (fs) {
+          fs.call(el).catch(() => {});
+        }
+      }
+    }
+  }, [view]);
+
   // ── Fetch quizzes ──
   const fetchQuizzes = useCallback(async () => {
     if (!token) {
@@ -1102,7 +1144,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
 
     return (
       <div
-        className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900"
+        className="fixed inset-0 z-[99999] w-screen h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900 select-none flex flex-col justify-between"
         style={{
           userSelect: 'none',
           WebkitUserSelect: 'none',
@@ -1115,7 +1157,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
         onPaste={(e) => { e.preventDefault(); return false; }}
       >
         {/* TopBar */}
-        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 h-[60px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 text-white shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] select-none">
+        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 h-[60px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 text-white shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] select-none shrink-0">
           {/* Left Section: Exit + Logo + Module Name */}
           <div className="flex items-center gap-3 min-w-0">
             <button
@@ -1356,12 +1398,12 @@ export default function PulseApp({ onBack }: PulseAppProps) {
           </div>
         )}
 
-        {/* Side-by-side Question & Overview Container */}
-        <div className="px-4 py-3 flex flex-col md:flex-row gap-4 pb-20 max-w-6xl mx-auto items-start">
+        {/* Side-by-side Question & Overview Container (Full Screen Layout) */}
+        <div className="w-full flex-1 p-4 md:p-6 flex flex-col md:flex-row gap-6 pb-28 min-h-0 overflow-y-auto items-start">
           {/* LEFT COLUMN: Active Question View */}
-          <div className="flex-1 min-w-0 w-full">
+          <div className="flex-1 min-w-0 w-full flex flex-col">
             {currentQuestion && (
-              <div key={currentQuestion.id} className="relative bg-white border-2 border-slate-200 rounded-2xl p-4 shadow-sm">
+              <div key={currentQuestion.id} className="relative bg-white border-2 border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm flex-1 flex flex-col justify-between">
                 {/* Screenshot-protective overlay on question area */}
                 <div
                   aria-hidden="true"
@@ -1375,38 +1417,41 @@ export default function PulseApp({ onBack }: PulseAppProps) {
                     borderRadius: 'inherit',
                   }}
                 />
-                <div className="flex justify-between items-center mb-1.5">
-                  <span className="text-xs font-extrabold text-indigo-600 bg-indigo-50 py-1 px-2.5 rounded-md">
-                    Question {currentQuestionIndex + 1} of {totalQuestions}
-                  </span>
-                  <span className="text-xs text-slate-400 font-semibold">{currentQuestion.points} pt{currentQuestion.points !== 1 ? 's' : ''}</span>
-                </div>
-                <p className="text-sm font-semibold leading-relaxed mb-2 text-slate-900 break-words whitespace-pre-line">{currentQuestion.questionText}</p>
-                {currentQuestion.questionMediaUrl && getImageUrl(currentQuestion.questionMediaUrl) && (
-                  <div className="w-[256px] h-[319px] max-w-full rounded-xl overflow-hidden mb-2 bg-slate-100 flex items-center justify-center border border-slate-200">
-                    <img
-                      src={getImageUrl(currentQuestion.questionMediaUrl)!}
-                      alt="Question"
-                      className="w-full h-full object-contain"
-                      draggable="false"
-                      onContextMenu={(e) => e.preventDefault()}
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                      style={{ pointerEvents: 'none' }}
-                    />
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-xs font-extrabold text-indigo-600 bg-indigo-50 py-1.5 px-3 rounded-xl border border-indigo-100">
+                      Question {currentQuestionIndex + 1} of {totalQuestions}
+                    </span>
+                    <span className="text-xs font-bold text-slate-500 bg-slate-100 py-1 px-3 rounded-xl">{currentQuestion.points} pt{currentQuestion.points !== 1 ? 's' : ''}</span>
                   </div>
-                )}
-                <div className="flex flex-col gap-1.5">
+                  <p className="text-base sm:text-lg font-bold leading-relaxed mb-4 text-slate-900 break-words whitespace-pre-line">{currentQuestion.questionText}</p>
+                  {currentQuestion.questionMediaUrl && getImageUrl(currentQuestion.questionMediaUrl) && (
+                    <div className="w-full max-w-md h-[300px] rounded-2xl overflow-hidden mb-4 bg-slate-100 flex items-center justify-center border border-slate-200">
+                      <img
+                        src={getImageUrl(currentQuestion.questionMediaUrl)!}
+                        alt="Question"
+                        className="w-full h-full object-contain"
+                        draggable="false"
+                        onContextMenu={(e) => e.preventDefault()}
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                        style={{ pointerEvents: 'none' }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-3 mt-4">
                   {currentQuestion.options.map((opt, optIdx) => {
                     const isSelected = answers[currentQuestion.id] === opt.text;
                     return (
                       <button
                         key={opt.id}
-                        className={`flex items-center gap-2.5 py-2.5 px-3 min-w-0 border-2 rounded-xl cursor-pointer text-left transition-all text-sm ${isSelected ? 'bg-indigo-50 border-indigo-600 text-indigo-600 font-medium' : 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-white'
+                        className={`flex items-start gap-4 py-4 px-5 min-w-0 border-2 rounded-2xl cursor-pointer text-left transition-all text-base ${isSelected ? 'bg-indigo-50/80 border-indigo-600 text-indigo-900 font-extrabold shadow-sm' : 'bg-slate-50/80 border-slate-200 text-slate-800 hover:bg-white font-semibold'
                           }`}
                         onClick={() => setAnswers((prev) => ({ ...prev, [currentQuestion.id]: opt.text || '' }))}
                       >
-                        <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-200 font-bold text-[11px] shrink-0 text-slate-700">{String.fromCharCode(65 + optIdx)}</span>
-                        <span className="flex-1 min-w-0 break-words font-medium">{opt.text}</span>
+                        <span className={`w-8 h-8 flex items-center justify-center rounded-xl font-black text-xs shrink-0 mt-0.5 ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700'}`}>{String.fromCharCode(65 + optIdx)}</span>
+                        <span className="flex-1 min-w-0 break-words">{opt.text}</span>
                         {opt.mediaUrl && getImageUrl(opt.mediaUrl) && (
                           <div className="w-28 h-28 shrink-0 rounded-xl overflow-hidden bg-white border border-slate-200 p-1 flex items-center justify-center shadow-sm">
                             <img
@@ -1429,8 +1474,8 @@ export default function PulseApp({ onBack }: PulseAppProps) {
           </div>
 
           {/* RIGHT COLUMN: Question Overview Sidebar */}
-          <div className="w-full md:w-[300px] shrink-0 sticky top-16">
-            <div className="bg-white border-2 border-slate-200 rounded-2xl p-3 shadow-sm">
+          <div className="w-full md:w-[320px] lg:w-[380px] xl:w-[420px] shrink-0">
+            <div className="bg-white border-2 border-slate-200/90 rounded-3xl p-5 shadow-sm">
               <div className="flex items-center justify-between gap-2 mb-2 border-b border-slate-100 pb-2">
                 <span className="text-sm font-extrabold text-slate-800 tracking-wide">
                   📊 Question Overview
