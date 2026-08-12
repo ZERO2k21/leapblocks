@@ -755,10 +755,13 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
         [config.key]: val,
         sensorValues: { ...currentValues, [config.key]: val },
       });
+      // HC-SR04: distance is read from the store at each TRIG edge — pushing
+      // the ECHO pin HIGH would leave it stuck HIGH, making pulseIn wait for
+      // the engine's next scheduled LOW (1s timeout → zero readings).
+      if (type === 'hc-sr04') return;
       const outPin = type === 'photoresistor' || type === 'photoresistor-sensor' ? 'AO'
         : type === 'potentiometer' || type === 'slide-potentiometer' ? 'SIG'
-          : type === 'hc-sr04' ? 'ECHO'
-            : 'OUT';
+          : 'OUT';
       withEngine(engine => engine.pushInputSignal(nodeId, outPin, true));
     };
 

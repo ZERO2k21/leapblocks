@@ -18,6 +18,7 @@ import ReactFlow, {
   Panel
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import { useShallow } from 'zustand/react/shallow';
 import { useForgeStore } from '../../utlis/store/useForgeStore';
 import { LeapNode } from './Nodes/LeapNode';
 import { PartPicker } from './Library/PartPicker';
@@ -50,7 +51,32 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
 
   const { zoomIn, zoomOut, fitView, getNodes, setViewport, getViewport, screenToFlowPosition } = useReactFlow();
   const currentViewport = useViewport();
-  const store = useForgeStore();
+  const store = useForgeStore(useShallow(state => ({
+    isSimulating: state.isSimulating,
+    toggleSimulation: state.toggleSimulation,
+    nodes: state.nodes,
+    edges: state.edges,
+    addNode: state.addNode,
+    updateNodePosition: state.updateNodePosition,
+    uiTheme: state.uiTheme,
+    toggleUiTheme: state.toggleUiTheme,
+    viewport: state.viewport,
+    setViewportState: state.setViewportState,
+    wireDraft: state.wireDraft,
+    pendingSource: state.pendingSource,
+    addWireWaypoint: state.addWireWaypoint,
+    cancelWireDraft: state.cancelWireDraft,
+    setPendingSource: state.setPendingSource,
+    startWireDraft: state.startWireDraft,
+    setSelectedNode: state.setSelectedNode,
+    setSelectedEdge: state.setSelectedEdge,
+    isDraggingWaypoint: state.isDraggingWaypoint,
+    selectedNodeId: state.selectedNodeId,
+    selectedEdgeId: state.selectedEdgeId,
+    resetSimulation: state.resetSimulation,
+    showPartPicker: state.showPartPicker,
+    setShowPartPicker: state.setShowPartPicker,
+  })));
   const {
     isSimulating,
     toggleSimulation: toggleStoreSimulation,
@@ -68,6 +94,17 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     cancelWireDraft,
     setPendingSource,
     startWireDraft,
+  } = store;
+
+  const {
+    setSelectedNode,
+    setSelectedEdge,
+    isDraggingWaypoint,
+    selectedNodeId,
+    selectedEdgeId,
+    resetSimulation,
+    showPartPicker,
+    setShowPartPicker,
   } = store;
 
   // Ref-style bridge to WireDraftOverlay. The overlay registers its setMousePos
@@ -88,34 +125,34 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
       for (const change of changes) {
         if (change.type === 'select') {
           if (change.selected) {
-            store.setSelectedNode(change.id);
+            setSelectedNode(change.id);
           }
         }
       }
     },
-    [store, defaultOnNodesChange]
+    [setSelectedNode, defaultOnNodesChange]
   );
 
   // Wrap edge-change handler: block selection changes while dragging a waypoint
   const onEdgesChange = useCallback(
     (changes: any[]) => {
-      if (store.isDraggingWaypoint) {
+      if (isDraggingWaypoint) {
         changes = changes.filter((c: any) => c.type !== 'select');
       }
       defaultOnEdgesChange(changes);
     },
-    [store, defaultOnEdgesChange]
+    [isDraggingWaypoint, defaultOnEdgesChange]
   );
 
   // Sync store -> local React Flow state (preserving selection state during simulation updates)
   useEffect(() => {
-    const selectedId = store.selectedNodeId;
+    const selectedId = selectedNodeId;
     const nodesWithSelection = storeNodes.map(node => ({
       ...node,
       selected: node.id === selectedId
     }));
     setNodes(nodesWithSelection);
-  }, [storeNodes, store.selectedNodeId, setNodes]);
+  }, [storeNodes, selectedNodeId, setNodes]);
 
   useEffect(() => {
     setEdges(storeEdges);
@@ -311,9 +348,6 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   // See <WireDraftOverlay wireDraft={wireDraft} ... /> below.
 
   // ── Blur editor safely on node/edge selection changes to enable canvas hotkeys without event interruption ──
-  const selectedNodeId = store.selectedNodeId;
-  const selectedEdgeId = store.selectedEdgeId;
-
   useEffect(() => {
     if (selectedNodeId || selectedEdgeId) {
       const active = document.activeElement;
@@ -400,16 +434,16 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
     event.preventDefault();
     event.stopPropagation();
-    store.setSelectedNode(node.id);
-  }, [store]);
+    setSelectedNode(node.id);
+  }, [setSelectedNode]);
 
   const onPaneContextMenu = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
   }, []);
 
   const onNodeClick = useCallback((_: any, node: Node) => {
-    store.setSelectedNode(node.id);
-  }, [store]);
+    setSelectedNode(node.id);
+  }, [setSelectedNode]);
 
   // ── Double-click on empty canvas toggles pan-drag mode ───────────────
   const onContainerDoubleClick = useCallback((event: React.MouseEvent) => {
@@ -438,17 +472,17 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
       const pos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       addWireWaypoint(pos);
     } else {
-      store.setSelectedNode(null);
-      store.setSelectedEdge(null);
+      setSelectedNode(null);
+      setSelectedEdge(null);
     }
-  }, [wireDraft, addWireWaypoint, store, screenToFlowPosition]);
+  }, [wireDraft, addWireWaypoint, setSelectedNode, setSelectedEdge, screenToFlowPosition]);
 
 
   const onEdgeClick = useCallback((_: any, edge: Edge) => {
     // Block edge selection while a waypoint drag is active on another wire
-    if (store.isDraggingWaypoint) return;
-    store.setSelectedEdge(edge.id);
-  }, [store]);
+    if (isDraggingWaypoint) return;
+    setSelectedEdge(edge.id);
+  }, [isDraggingWaypoint, setSelectedEdge]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -844,7 +878,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
 
         {/* Reset Button */}
         <button
-          onClick={store.resetSimulation}
+          onClick={resetSimulation}
           className="canvas-btn secondary"
           title="Reset Simulation"
         >
@@ -908,12 +942,12 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         {/* Add Component (Part Picker) Button */}
         <button
           onClick={() => {
-            if (!store.showPartPicker && window.innerWidth <= 1024 && showEditor && onToggleEditor) {
+            if (!showPartPicker && window.innerWidth <= 1024 && showEditor && onToggleEditor) {
               onToggleEditor();
             }
-            store.setShowPartPicker(!store.showPartPicker);
+            setShowPartPicker(!showPartPicker);
           }}
-          className={`canvas-btn primary-add ${store.showPartPicker ? 'active' : ''}`}
+          className={`canvas-btn primary-add ${showPartPicker ? 'active' : ''}`}
           title="Toggle Components Panel"
         >
           <Plus size={20} />
