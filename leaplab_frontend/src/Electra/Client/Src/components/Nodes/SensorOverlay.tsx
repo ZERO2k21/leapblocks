@@ -221,10 +221,11 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
   const isGas = type === 'gas-sensor';
   const isRain = type === 'rain-sensor';
   const isSoilMoisture = type === 'soil-moisture-sensor';
+  const isWaterLevelFloat = type === 'water-level-float-sensor';
   const isHeartRate = type === 'heart-beat-sensor';
   const isBigSound = type === 'big-sound-sensor' || type === 'small-sound-sensor';
   const isHX711 = type === 'hx711';
-  if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isIRObstacle && !isProximity && !isMPU6050 && !isLDR && !isFlame && !isGas && !isRain && !isSoilMoisture && !isHeartRate && !isBigSound && !isHX711) return null;
+  if (!isDHT && !isDistance && !isAnalog && !isNTC && !isPIR && !isIRObstacle && !isProximity && !isMPU6050 && !isLDR && !isFlame && !isGas && !isRain && !isSoilMoisture && !isWaterLevelFloat && !isHeartRate && !isBigSound && !isHX711) return null;
 
   const renderContent = () => {
     // ── DHT Sensor ──────────────────────────────────────────────────────────
@@ -629,6 +630,50 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
             </span>
             <span className="text-slate-500">Vout</span>
             <span className={isLightTheme ? 'text-sky-600' : 'text-[#bef264]'}>{voltage.toFixed(2)}V</span>
+          </div>
+        </CompactCard>
+      );
+    }
+
+    // ── Water Level Float Sensor ──────────────────────────────────────────
+    if (isWaterLevelFloat) {
+      const level = Number(currentValues?.value ?? 0);
+      const threshold = Number(currentValues?.threshold ?? 50);
+      const isFull = level >= threshold;
+      const voltage = 5.0 * level / 100;
+
+      const handleChange = (key: 'value' | 'threshold', val: number) => {
+        const next = { ...currentValues, [key]: val };
+        updateNodeData(nodeId, { sensorValues: next, value: next.value });
+        withEngine(engine => {
+          const nowVal = key === 'value' ? val : level;
+          const nowThresh = key === 'threshold' ? val : threshold;
+          const nowFull = nowVal >= nowThresh;
+          engine.pushInputSignal(nodeId, 'S', nowFull);
+          engine.pushInputSignal(nodeId, 'OUT', nowFull);
+          engine.pushInputSignal(nodeId, 'AO', nowFull);
+        });
+      };
+
+      return (
+        <CompactCard borderColor={isFull ? 'rgba(56,189,248,0.4)' : 'rgba(148,163,184,0.2)'}>
+          <SliderRow
+            label="WATER LEVEL"
+            unit="%"
+            min={0}
+            max={100}
+            step={1}
+            value={level}
+            color="#38bdf8"
+            onChange={v => handleChange('value', v)}
+          />
+          <div className="flex justify-between text-[9px] font-mono font-bold px-0.5">
+            <span className="text-slate-500">State</span>
+            <span className={`font-black ${isFull ? 'text-sky-400' : 'text-slate-400'}`}>
+              {isFull ? 'TANK FULL (HIGH)' : 'TANK LOW (LOW)'}
+            </span>
+            <span className="text-slate-500">Vout</span>
+            <span className="text-sky-400 font-mono">{voltage.toFixed(2)}V</span>
           </div>
         </CompactCard>
       );

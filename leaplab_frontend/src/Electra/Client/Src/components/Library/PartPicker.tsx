@@ -64,6 +64,8 @@ const COMPONENTS = [
   { id: 'small-sound-sensor', name: 'Small Sound Sensor', category: 'sensors', desc: 'Microphone sensor' },
   { id: 'stepper-motor', name: 'Stepper Motor', category: 'outputs', desc: 'Step motor' },
   { id: 'tilt-switch', name: 'Tilt Switch', category: 'sensors', desc: 'Tilt detection switch' },
+  { id: 'water-pump', name: 'Water Pump', category: 'outputs', desc: 'Mini 3V-6V DC water pump' },
+  { id: 'water-level-float-sensor', name: 'Float Sensor', category: 'sensors', desc: 'Water level float sensor (AO + DO)' },
 ];
 
 const getComponentScale = (id: string, defaultScale: number): number => {

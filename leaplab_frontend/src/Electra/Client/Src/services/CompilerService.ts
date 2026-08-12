@@ -202,6 +202,217 @@ var Adafruit_NeoPixel = (typeof Adafruit_NeoPixel !== 'undefined' && Adafruit_Ne
   ColorHSV(h,s,v){return (Math.round((h||0)/256*6)%6)<<16|0;}
   gamma32(c){return c;} gamma8(v){return(v/255)*(v/255)*255|0;}
 };
+
+// ── ESP32 Wi-Fi & Networking Simulation Stubs ────────────────────────────────
+var WL_IDLE_STATUS = 0;
+var WL_NO_SSID_AVAIL = 1;
+var WL_SCAN_COMPLETED = 2;
+var WL_CONNECTED = 3;
+var WL_CONNECT_FAILED = 4;
+var WL_CONNECTION_LOST = 5;
+var WL_DISCONNECTED = 6;
+var WIFI_STA = 1;
+var WIFI_AP = 2;
+var WIFI_AP_STA = 3;
+var WIFI_OFF = 0;
+
+var IPAddress = (typeof IPAddress !== 'undefined' && IPAddress) || class {
+  constructor(a, b, c, d) {
+    if (typeof a === 'string') {
+      this._str = a;
+    } else {
+      this._str = (a || 192) + '.' + (b || 168) + '.' + (c || 1) + '.' + (d || 105);
+    }
+  }
+  toString() { return this._str; }
+};
+
+var WiFiClass = (typeof WiFiClass !== 'undefined' && WiFiClass) || class {
+  constructor() {
+    this._status = WL_DISCONNECTED;
+    this._ssid = '';
+    this._ip = new IPAddress('192.168.1.105');
+    this._mac = '24:0A:C4:00:01:10';
+  }
+  begin(ssid, password) {
+    this._ssid = ssid || 'Electra-GUEST';
+    this._status = WL_CONNECTED;
+    console.log('[ESP32 WiFi] 📶 Connecting to "' + this._ssid + '"... Connected! IP: ' + this._ip.toString());
+    return WL_CONNECTED;
+  }
+  status() {
+    return this._status;
+  }
+  localIP() {
+    return this._ip;
+  }
+  subnetMask() { return new IPAddress('255.255.255.0'); }
+  gatewayIP() { return new IPAddress('192.168.1.1'); }
+  dnsIP() { return new IPAddress('8.8.8.8'); }
+  macAddress() { return this._mac; }
+  SSID(i) { return i !== undefined ? 'Electra-GUEST' : this._ssid; }
+  RSSI(i) { return -55; }
+  mode(m) { return true; }
+  disconnect(off) { this._status = WL_DISCONNECTED; return true; }
+  scanNetworks() { return 3; }
+  isConnected() { return this._status === WL_CONNECTED; }
+};
+var WiFi = (typeof WiFi !== 'undefined' && WiFi) || new WiFiClass();
+
+var WiFiClient = (typeof WiFiClient !== 'undefined' && WiFiClient) || class {
+  constructor() { this._host = ''; this._port = 80; }
+  connect(host, port) {
+    this._host = host;
+    this._port = port || 80;
+    console.log('[ESP32 WiFiClient] 🔌 Connecting TCP socket to ' + this._host + ':' + this._port + '... Connected!');
+    return true;
+  }
+  connected() { return true; }
+  write(data) {
+    console.log('[ESP32 WiFiClient ⬆️ TX] ' + data);
+    return data ? data.length : 0;
+  }
+  print(data) {
+    console.log('[ESP32 WiFiClient ⬆️ TX] ' + data);
+    return true;
+  }
+  println(data) {
+    console.log('[ESP32 WiFiClient ⬆️ TX] ' + data);
+    return true;
+  }
+  available() { return 0; }
+  read() { return -1; }
+  stop() { console.log('[ESP32 WiFiClient 🔌] Connection closed'); }
+};
+
+var HTTPClient = (typeof HTTPClient !== 'undefined' && HTTPClient) || class {
+  constructor() {
+    this._url = '';
+    this._payload = '{"status":"ok","message":"Telemetry Received","pump_command":"AUTO"}';
+    this._headers = {};
+  }
+  begin(url) {
+    this._url = url;
+    console.log('[ESP32 HTTPClient 🌐] Initialized connection to ' + this._url);
+    return true;
+  }
+  addHeader(name, value) {
+    this._headers[name] = value;
+  }
+  GET() {
+    console.log('[CLOUD TX ⬆️] GET ' + this._url);
+    this._payload = '{"status":"ok","network":"Electra-GUEST","ip":"192.168.1.105"}';
+    console.log('[CLOUD RX ⬇️] Response 200 OK | Body: ' + this._payload);
+    return 200;
+  }
+  POST(payload) {
+    var body = typeof payload === 'string' ? payload : JSON.stringify(payload || {});
+    console.log('[CLOUD TX ⬆️] POST ' + this._url);
+    console.log('[CLOUD DATA 📦] Transmitting Payload: ' + body);
+
+    if (body.indexOf('LOW') !== -1 || (body.indexOf('"level":') !== -1 && parseInt((body.match(/"level":\s*(\d+)/) || [])[1] || '100', 10) < 50)) {
+      this._payload = '{"status":"ok","action":"PUMP_ON","relay_state":"HIGH","message":"Tank Low - Actuating Pump"}';
+    } else {
+      this._payload = '{"status":"ok","action":"PUMP_OFF","relay_state":"LOW","message":"Tank Full - Pump Standby"}';
+    }
+
+    console.log('[CLOUD RX ⬇️] Response 200 OK | Body: ' + this._payload);
+    return 200;
+  }
+  getString() {
+    return this._payload;
+  }
+  end() {
+    console.log('[ESP32 HTTPClient 🌐] HTTP session ended.');
+  }
+};
+
+// ── Blynk IoT Simulation Stubs ───────────────────────────────────────────────
+if (typeof V0 === 'undefined') { var V0 = 'V0', V1 = 'V1', V2 = 'V2', V3 = 'V3', V4 = 'V4', V5 = 'V5', V6 = 'V6', V7 = 'V7', V8 = 'V8', V9 = 'V9', V10 = 'V10'; }
+
+var BlynkParam = (typeof BlynkParam !== 'undefined' && BlynkParam) || class {
+  constructor(val) { this._val = val; }
+  asInt() { return parseInt(this._val || 0, 10); }
+  asFloat() { return parseFloat(this._val || 0); }
+  asString() { return String(this._val || ''); }
+};
+
+var BlynkClass = (typeof BlynkClass !== 'undefined' && BlynkClass) || class {
+  constructor() {
+    this._vPins = {};
+    this._connected = false;
+  }
+  begin(auth, ssid, pass, domain, port) {
+    this._connected = true;
+    var token = typeof auth === 'string' ? auth : 'YourAuthToken';
+    var wifiSsid = typeof ssid === 'string' ? ssid : 'Electra-GUEST';
+    console.log('[BLYNK IoT 💚] Initializing Blynk Cloud Session...');
+    console.log('[BLYNK IoT 💚] Auth Token: ' + token.substring(0, 6) + '...');
+    console.log('[BLYNK IoT 💚] Connected to blynk.cloud:80 via "' + wifiSsid + '"!');
+    return true;
+  }
+  run() {}
+  virtualWrite(vPin, val) {
+    var pinStr = String(vPin);
+    this._vPins[pinStr] = val;
+    console.log('[BLYNK TX ⬆️] Virtual Pin ' + pinStr + ' ➔ Transmitted Data: ' + val);
+  }
+  setProperty(vPin, prop, val) {
+    console.log('[BLYNK PROP 🎨] Virtual Pin ' + vPin + ' property "' + prop + '" set to: ' + val);
+  }
+  logEvent(eventCode, message) {
+    console.log('[BLYNK EVENT 🚨] Event "' + eventCode + '": ' + message);
+  }
+  connected() { return this._connected; }
+  connect() { this._connected = true; return true; }
+  disconnect() { this._connected = false; }
+};
+var Blynk = (typeof Blynk !== 'undefined' && Blynk) || new BlynkClass();
+
+// ── ThingSpeak IoT Simulation Stubs ──────────────────────────────────────────
+var ThingSpeakClass = (typeof ThingSpeakClass !== 'undefined' && ThingSpeakClass) || class {
+  constructor() {
+    this._fields = {};
+    this._status = '';
+    this._client = null;
+  }
+  begin(client) {
+    this._client = client;
+    console.log("[THINGSPEAK IoT] Initialized ThingSpeak Cloud API Client");
+    return true;
+  }
+  setField(fieldNum, val) {
+    this._fields[fieldNum] = val;
+    console.log("[THINGSPEAK FIELD] Field " + fieldNum + " set to: " + val);
+  }
+  setStatus(msg) {
+    this._status = msg;
+  }
+  writeFields(channelNumber, writeAPIKey) {
+    var key = typeof writeAPIKey === 'string' ? writeAPIKey : 'YOUR_API_KEY';
+    console.log("[THINGSPEAK TX] Transmitting Channel " + channelNumber + " Data to api.thingspeak.com (API Key: " + key.substring(0, 6) + "...)...");
+    console.log("[THINGSPEAK DATA] Payload Fields:", JSON.stringify(this._fields));
+    console.log("[THINGSPEAK RX] 200 OK | Entry ID: " + (Math.floor(Math.random() * 1000) + 100));
+    return 200;
+  }
+  writeField(channelNumber, fieldNum, val, writeAPIKey) {
+    this.setField(fieldNum, val);
+    return this.writeFields(channelNumber, writeAPIKey);
+  }
+  readFloatField(channelNumber, fieldNum, readAPIKey) {
+    var val = this._fields[fieldNum] !== undefined ? parseFloat(this._fields[fieldNum]) : 75.0;
+    console.log("[THINGSPEAK RX] Reading Channel " + channelNumber + " Field " + fieldNum + " Value: " + val);
+    return val;
+  }
+  readIntField(channelNumber, fieldNum, readAPIKey) {
+    return Math.round(this.readFloatField(channelNumber, fieldNum, readAPIKey));
+  }
+  readStringField(channelNumber, fieldNum, readAPIKey) {
+    return String(this._fields[fieldNum] || '');
+  }
+};
+var ThingSpeak = (typeof ThingSpeak !== 'undefined' && ThingSpeak) || new ThingSpeakClass();
+
 var Adafruit_ILI9341 = (typeof Adafruit_ILI9341 !== 'undefined' && Adafruit_ILI9341) || class {
   constructor(){} begin(){} setRotation(){} fillScreen(){} setCursor(){}
   setTextColor(){} setTextSize(){} print(){} println(){} drawPixel(){}
@@ -449,6 +660,8 @@ function clientSideTranspile(code: string): TranspileResult {
     js = js.replace(/\b(IRAM_ATTR|ICACHE_RAM_ATTR|DRAM_ATTR|PROGMEM_ATTR|__attribute__\s*\(\([^)]*\)\))\s+/g, '');
     // Strip PROGMEM keyword (used to store data in flash on AVR/ESP32)
     js = js.replace(/\bPROGMEM\b/g, '');
+    // Transpile BLYNK_WRITE(V1) { ... } macros to JS functions
+    js = js.replace(/\bBLYNK_WRITE\s*\(\s*(\w+)\s*\)\s*\{/g, 'function BLYNK_WRITE_$1(param) {');
     // Replace Arduino macros that are identity functions on ESP32
     // digitalPinToInterrupt(pin) → pin  (on ESP32, pin == interrupt number)
     js = js.replace(/\bdigitalPinToInterrupt\s*\(/g, '(');

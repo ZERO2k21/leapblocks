@@ -151,6 +151,18 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     // DC Motor: speed and direction from CircuitEngine
     mappedProps.speed = data.speed ?? 0;
     mappedProps.direction = data.direction ?? 'cw';
+  } else if (data.type === 'water-pump') {
+    // Water Pump: speed, running state, and direction from CircuitEngine
+    const hasPowerPin = data.pinStates?.pin_POS === true || data.pinStates?.pin_VCC === true || data.pinStates?.pin_1 === true;
+    mappedProps.speed = data.speed ?? (hasPowerPin ? 1.0 : 0);
+    mappedProps.running = data.running ?? (mappedProps.speed > 0 || hasPowerPin);
+    mappedProps.direction = data.direction ?? 'cw';
+  } else if (data.type === 'water-level-float-sensor') {
+    mappedProps.value = data.sensorValues?.value ?? data.value ?? 0;
+    mappedProps.threshold = data.threshold ?? 50;
+    mappedProps.state = data.state ?? (mappedProps.value >= mappedProps.threshold);
+    mappedProps.ledPower = data.ledPower ?? true;
+    mappedProps.ledSignal = data.ledSignal ?? mappedProps.state;
   } else if (data.type === 'stepper-motor') {
     mappedProps.angle = data.angle ?? 0;
     mappedProps.value = data.value ?? '';
@@ -496,6 +508,34 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     el.speed = data.speed ?? 0;
     el.direction = data.direction ?? 'cw';
   }, [data.type, data.speed, data.direction]);
+
+  // Imperatively set water-pump properties as DOM properties.
+  useEffect(() => {
+    if (!elementRef.current || data.type !== 'water-pump') return;
+    const el = elementRef.current;
+    const hasPowerPin = data.pinStates?.pin_POS === true || data.pinStates?.pin_VCC === true || data.pinStates?.pin_1 === true;
+    const spd = Number(data.speed ?? (hasPowerPin ? 1.0 : 0));
+    const isRunning = Boolean(data.running ?? (spd > 0 || hasPowerPin));
+    el.speed = spd;
+    el.running = isRunning;
+    el.direction = data.direction ?? 'cw';
+    if (typeof el.requestUpdate === 'function') el.requestUpdate();
+  }, [data.type, data.speed, data.running, data.direction, data.pinStates]);
+
+  // Imperatively set water-level-float-sensor properties as DOM properties.
+  useEffect(() => {
+    if (!elementRef.current || data.type !== 'water-level-float-sensor') return;
+    const el = elementRef.current;
+    const val = Number(data.sensorValues?.value ?? data.value ?? 0);
+    const thresh = Number(data.threshold ?? 50);
+    const isTriggered = Boolean(data.state ?? (val >= thresh));
+    el.value = val;
+    el.threshold = thresh;
+    el.state = isTriggered;
+    el.ledPower = data.ledPower ?? true;
+    el.ledSignal = data.ledSignal ?? isTriggered;
+    if (typeof el.requestUpdate === 'function') el.requestUpdate();
+  }, [data.type, data.value, data.sensorValues?.value, data.threshold, data.state, data.ledPower, data.ledSignal]);
 
   // Imperatively set stepper-motor angle as DOM property.
   // Same issue as servo — Lit @property({ type: Number }) needs a real number, not a string attribute.
