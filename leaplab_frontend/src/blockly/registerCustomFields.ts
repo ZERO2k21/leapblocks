@@ -23,24 +23,31 @@ function forceColourFieldUpdateVisual(field: any): void {
         const block = field.getSourceBlock?.();
         if (!block) return;
 
+        field.isDirty_ = true;
+
+        const colour = field.getValue?.();
+        const borderRect = field.borderRect_;
+        if (borderRect && colour && typeof colour === 'string') {
+            borderRect.style.setProperty('fill', colour, 'important');
+            borderRect.style.setProperty('fill-opacity', '1', 'important');
+            borderRect.style.display = 'block';
+        }
+
         // Method 1: Use applyColour if available (FieldColour override)
         if (typeof field.applyColour === 'function') {
             field.applyColour();
         }
 
-        // Method 2: Directly update the border rect SVG element
-        const borderRect = field.borderRect_;
-        if (borderRect && typeof field.getValue === 'function') {
-            const colour = field.getValue();
-            if (colour && typeof colour === 'string') {
-                borderRect.style.fill = colour;
-                borderRect.style.display = 'block';
-            }
+        if (borderRect && colour && typeof colour === 'string') {
+            borderRect.style.setProperty('fill', colour, 'important');
+            borderRect.style.setProperty('fill-opacity', '1', 'important');
         }
 
-        // Method 3: Also update via the block's applyColour which calls all fields
-        if (typeof block.applyColour === 'function') {
-            block.applyColour();
+        // Method 3: Trigger block render/queueRender if attached
+        if (typeof block.queueRender === 'function') {
+            block.queueRender();
+        } else if (typeof block.render === 'function') {
+            block.render();
         }
     } catch (_) {
         // Field may not be fully attached yet
@@ -53,12 +60,52 @@ function patchFieldColour(): void {
     if (_fieldColourPatched) return;
     _fieldColourPatched = true;
 
-    // ── Patch 1: doValueUpdate_ ──────────────────────────────────────────
-    // FieldColour sets isDirty_ = false which prevents the normal render
-    // cycle from calling applyColour(). We override doValueUpdate_ to
-    // force the colour swatch to update immediately AND schedule a
-    // follow-up update to survive any async re-renders triggered by
-    // Blockly events.
+    // ── Patch 1: initView ─────────────────────────────────────────────────
+    // Tag borderRect_ and fieldGroup_ with CSS classes and apply high-priority inline fill
+    const origInitView = FieldColour.prototype.initView;
+    FieldColour.prototype.initView = function (this: any) {
+        if (origInitView) origInitView.call(this);
+
+        if (this.borderRect_) {
+            this.borderRect_.classList.add('blocklyFieldColourRect');
+            const colour = typeof this.getValue === 'function' ? this.getValue() : null;
+            if (colour && typeof colour === 'string') {
+                this.borderRect_.style.setProperty('fill', colour, 'important');
+                this.borderRect_.style.setProperty('fill-opacity', '1', 'important');
+            }
+        }
+        if (this.fieldGroup_) {
+            this.fieldGroup_.classList.add('blocklyFieldColourGroup');
+        }
+    };
+
+    // ── Patch 2: applyColour ──────────────────────────────────────────────
+    // Ensure applyColour sets fill with 'important' to override any global CSS
+    const origApplyColour = (FieldColour.prototype as any).applyColour;
+    (FieldColour.prototype as any).applyColour = function (this: any) {
+        if (origApplyColour) {
+            try {
+                origApplyColour.call(this);
+            } catch (_) {}
+        }
+        const borderRect = this.borderRect_;
+        const colour = typeof this.getValue === 'function' ? this.getValue() : null;
+        if (borderRect && colour && typeof colour === 'string') {
+            borderRect.style.setProperty('fill', colour, 'important');
+            borderRect.style.setProperty('fill-opacity', '1', 'important');
+            borderRect.style.display = 'block';
+        }
+    };
+
+    // ── Patch 3: setValue ─────────────────────────────────────────────────
+    const origSetValue = FieldColour.prototype.setValue;
+    FieldColour.prototype.setValue = function (this: any, newValue: any) {
+        if (origSetValue) origSetValue.call(this, newValue);
+        this.isDirty_ = true;
+        forceColourFieldUpdateVisual(this);
+    };
+
+    // ── Patch 4: doValueUpdate_ ──────────────────────────────────────────
     // Walk the prototype chain to get the parent class's doValueUpdate_
     let parentDoValueUpdate: Function | null = null;
     let proto = Object.getPrototypeOf(FieldColour.prototype);
@@ -71,28 +118,23 @@ function patchFieldColour(): void {
     }
     (FieldColour.prototype as any).doValueUpdate_ = function (this: any, newValue: any) {
         if (parentDoValueUpdate) parentDoValueUpdate.call(this, newValue);
+        this.isDirty_ = true;
 
         // Immediate visual update
         forceColourFieldUpdateVisual(this);
 
-        // Deferred update: Blockly may fire BLOCK_CHANGE events that trigger
-        // an async re-render resetting the colour. Schedule a follow-up to
-        // re-apply after the current event loop.
+        // Deferred updates to survive async re-renders
         const self = this;
         setTimeout(function () {
             forceColourFieldUpdateVisual(self);
         }, 0);
 
-        // Double-deferred update: some Blockly operations use requestAnimationFrame
         requestAnimationFrame(function () {
             forceColourFieldUpdateVisual(self);
         });
     };
 
-    // ── Patch 2: showEditor_ ─────────────────────────────────────────────
-    // When the dropdown closes, the dispose callback may trigger a re-render
-    // that resets the colour. We wrap showEditor_ to add a post-close hook
-    // that re-applies the colour after the dropdown hides.
+    // ── Patch 5: showEditor_ ─────────────────────────────────────────────
     const origShowEditor = (FieldColour.prototype as any).showEditor_;
     (FieldColour.prototype as any).showEditor_ = function (this: any, e?: MouseEvent) {
         if (origShowEditor) origShowEditor.call(this, e);
@@ -106,7 +148,6 @@ function patchFieldColour(): void {
         } catch (_) {}
 
         // Hook into dropdown hide: re-apply colour after the dropdown closes
-        // because hideIfOwner may trigger a re-render with stale colour
         const self = this;
         const origHideIfOwner = Blockly.DropDownDiv.hideIfOwner;
         if (typeof origHideIfOwner === 'function' &&
@@ -114,9 +155,7 @@ function patchFieldColour(): void {
             (Blockly.DropDownDiv as any).__leapblocksHidePatched = true;
             (Blockly.DropDownDiv as any).hideIfOwner = function (owner: any) {
                 const result = origHideIfOwner.call(this, owner);
-                // Re-apply colour for any FieldColour that was the dropdown owner
-                if (owner && typeof owner.getValue === 'function' &&
-                    typeof owner.applyColour === 'function') {
+                if (owner && typeof owner.getValue === 'function') {
                     setTimeout(function () {
                         forceColourFieldUpdateVisual(owner);
                     }, 0);
@@ -125,8 +164,6 @@ function patchFieldColour(): void {
             };
         }
     };
-
-
 }
 
 export function registerCustomFields(): void {

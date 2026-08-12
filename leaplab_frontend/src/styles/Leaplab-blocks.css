@@ -519,14 +519,24 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* 1. INPUT FIELDS (Number/Text) - White background with dark text */
-.blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect),
-.blocklyEditableText:not(.blocklyDropdownTextParent)>rect {
+.blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect):not(.blocklyFieldColourRect):not(.blocklyFieldColourGroup rect):not(.blocklyFieldColour rect),
+.blocklyEditableText:not(.blocklyDropdownTextParent):not(.blocklyFieldColourGroup):not(.blocklyFieldColour)>rect {
   fill: #FFFFFF !important;
   fill-opacity: 1 !important;
   stroke: rgba(0, 0, 0, 0.15) !important;
   stroke-width: 1.5px !important;
   rx: 14px !important;
   ry: 14px !important;
+}
+
+/* 1b. COLOUR FIELDS - Swatch styling allowing inline color fill */
+.blocklyFieldColourRect,
+.blocklyFieldColourGroup rect,
+.blocklyFieldColour rect {
+  stroke: rgba(0, 0, 0, 0.25) !important;
+  stroke-width: 1.5px !important;
+  rx: 10px !important;
+  ry: 10px !important;
 }
 
 .blocklyEditableText:not(.blocklyDropdownTextParent) .blocklyText,
@@ -629,8 +639,8 @@
   font-weight: 700 !important;
 }
 
-/* Input fields in flyout should also be white for consistency */
-.blocklyFlyout .blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect) {
+/* Input fields in flyout should also be white for consistency (except color swatches) */
+.blocklyFlyout .blocklyFieldRect:not(.blocklyDropdownText + .blocklyFieldRect):not(.blocklyFieldColourRect):not(.blocklyFieldColourGroup rect):not(.blocklyFieldColour rect) {
   fill: #FFFFFF !important;
   fill-opacity: 1 !important;
   stroke: rgba(0, 0, 0, 0.15) !important;
