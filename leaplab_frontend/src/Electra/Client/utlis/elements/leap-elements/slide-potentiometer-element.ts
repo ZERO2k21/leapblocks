@@ -62,6 +62,7 @@ export class SlidePotentiometerElement extends LitElement {
     const tipOffsetX = tipMovementX + tipBaseOffsetX;
 
     return html`<svg
+      class="nodrag nopan"
       width="${travelLength + 25}mm"
       height="29mm"
       version="1.1"
@@ -208,12 +209,15 @@ export class SlidePotentiometerElement extends LitElement {
     inputEl?.focus();
   }
 
-  private down(): void {
+  private down = (e?: Event): void => {
+    if (e) {
+      e.stopPropagation();
+    }
     if (!this.isPressed) {
       this.updateCaseDisplayProperties();
     }
     this.isPressed = true;
-  }
+  };
 
   private up = () => {
     if (this.isPressed) {

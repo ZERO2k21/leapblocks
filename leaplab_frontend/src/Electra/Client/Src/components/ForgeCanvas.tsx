@@ -78,8 +78,23 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     wireOverlayUpdateRef.current = fn;
   }, []);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [nodes, setNodes, defaultOnNodesChange] = useNodesState([]);
   const [edges, setEdges, defaultOnEdgesChange] = useEdgesState([]);
+
+  // Wrap node-change handler: sync selection state with store and prevent spurious unselections on simulation updates
+  const onNodesChange = useCallback(
+    (changes: any[]) => {
+      defaultOnNodesChange(changes);
+      for (const change of changes) {
+        if (change.type === 'select') {
+          if (change.selected) {
+            store.setSelectedNode(change.id);
+          }
+        }
+      }
+    },
+    [store, defaultOnNodesChange]
+  );
 
   // Wrap edge-change handler: block selection changes while dragging a waypoint
   const onEdgesChange = useCallback(
@@ -92,10 +107,15 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     [store, defaultOnEdgesChange]
   );
 
-  // Sync store -> local React Flow state
+  // Sync store -> local React Flow state (preserving selection state during simulation updates)
   useEffect(() => {
-    setNodes(storeNodes);
-  }, [storeNodes, setNodes]);
+    const selectedId = store.selectedNodeId;
+    const nodesWithSelection = storeNodes.map(node => ({
+      ...node,
+      selected: node.id === selectedId
+    }));
+    setNodes(nodesWithSelection);
+  }, [storeNodes, store.selectedNodeId, setNodes]);
 
   useEffect(() => {
     setEdges(storeEdges);

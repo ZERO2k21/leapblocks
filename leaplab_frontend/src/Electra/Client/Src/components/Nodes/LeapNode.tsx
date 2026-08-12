@@ -179,8 +179,8 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                 mappedProps.xTotalDegrees = data.xTotalDegrees ?? 0;
                 mappedProps.yTotalDegrees = data.yTotalDegrees ?? 0;
   } else if (['potentiometer', 'slide-potentiometer', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(data.type)) {
-    // Analog sensors (and resistors) use the 'value' from sensorValues
-    mappedProps.value = data.sensorValues?.value ?? (data.type === 'ntc-temperature-sensor' ? 25 : 0);
+    // Analog sensors (and resistors) use the 'value' from sensorValues or data.value
+    mappedProps.value = data.sensorValues?.value ?? data.value ?? (data.type === 'ntc-temperature-sensor' ? 25 : 0);
   } else if (data.type === 'photoresistor-sensor') {
     // Photoresistor: pass lux value, threshold, and LED states
     const sv = data.sensorValues ?? {};
@@ -688,20 +688,26 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
     };
   }, [data.type, id, data.value]);
 
-  // Wire potentiometer / slide-potentiometer DOM input events into the store and circuit engine
+  // Wire potentiometer / slide-potentiometer DOM input events into the store and circuit engine.
+  // Single source of truth — reads fresh store state (no stale closures), updates both `value`
+  // and `sensorValues.value`, and re-injects the analog signal. Runs identically whether the
+  // simulation is running or not.
   useEffect(() => {
     const el = elementRef.current;
     if (!el || !['potentiometer', 'slide-potentiometer'].includes(data.type)) return;
 
     const handleInput = (e: Event) => {
       const value = (e as CustomEvent).detail ?? (el as any).value ?? 0;
-      const currentValues = useForgeStore.getState().nodes.find(n => n.id === id)?.data?.sensorValues || {};
+      const numVal = typeof value === 'number' ? value : parseFloat(value);
+      if (isNaN(numVal)) return;
+      const currentNode = useForgeStore.getState().nodes.find(n => n.id === id);
+      if (!currentNode) return;
+      const currentValues = currentNode.data?.sensorValues || {};
       useForgeStore.getState().updateNodeData(id, {
-        sensorValues: { ...currentValues, value: value },
+        value: numVal,
+        sensorValues: { ...currentValues, value: numVal },
       });
-
-      const outPin = data.type === 'potentiometer' || data.type === 'slide-potentiometer' ? 'SIG' : 'OUT';
-      withEngine(engine => engine.pushInputSignal(id, outPin, true));
+      withEngine(engine => engine.pushInputSignal(id, 'SIG', true));
     };
 
     el.addEventListener('input', handleInput);
@@ -854,8 +860,8 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
           simulating={isSimulating}
           {...mappedProps}
           onPinStateChange={(pinName: string, state: boolean) => {
-            console.log(`[LEAP NODE] Interaction event fired on Node ${data.id}, pin ${pinName} = ${state}`);
-            withEngine(engine => engine.pushInputSignal(data.id || '', pinName, state));
+            console.log(`[LEAP NODE] Interaction event fired on Node ${id}, pin ${pinName} = ${state}`);
+            withEngine(engine => engine.pushInputSignal(id, pinName, state));
           }}
         />
 

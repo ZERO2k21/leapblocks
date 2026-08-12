@@ -169,7 +169,7 @@ export const SelectionToolbar: React.FC = () => {
   const badgeInfo = getBadgeStyle();
 
   const isDistanceSensor = nodeType === 'hc-sr04';
-  const isAnalogSensor = ['potentiometer', 'slide-potentiometer', 'photoresistor', 'ntc-temperature-sensor', 'mq2', 'resistor'].includes(nodeType);
+  const isAnalogSensor = ['potentiometer', 'slide-potentiometer', 'photoresistor', 'ntc-temperature-sensor', 'mq2', 'resistor', 'photoresistor-sensor', 'flame-sensor', 'gas-sensor', 'rain-sensor', 'soil-moisture-sensor', 'heart-beat-sensor', 'big-sound-sensor', 'small-sound-sensor', 'hx711', 'dht11', 'dht22'].includes(nodeType);
   const isBuzzer = nodeType === 'buzzer';
 
   const hasControls = selectedNode
@@ -206,18 +206,59 @@ export const SelectionToolbar: React.FC = () => {
     if (isDistanceSensor) config = { label: 'Distance', unit: 'cm', min: 2, max: 400, step: 0.1, default: 100, key: 'distance' };
     else if (nodeType === 'potentiometer' || nodeType === 'slide-potentiometer') config = { label: 'Resistance', unit: '', min: 0, max: 1023, step: 1, default: 100, key: 'value' };
     else if (nodeType === 'resistor') config = { label: 'Resistance', unit: 'Ω', min: 0, max: 1000000, step: 100, default: 1000, key: 'value' };
-    else if (nodeType === 'photoresistor') config = { label: 'Light', unit: 'lux', min: 0, max: 1000, step: 1, default: 500, key: 'value' };
+    else if (nodeType === 'photoresistor' || nodeType === 'photoresistor-sensor') config = { label: 'Light', unit: 'lux', min: 0, max: 1000, step: 1, default: 500, key: 'value' };
     else if (nodeType === 'ntc-temperature-sensor') config = { label: 'Temp', unit: '°C', min: -40, max: 125, step: 0.5, default: 25, key: 'value' };
+    else if (nodeType === 'dht11' || nodeType === 'dht22') config = { label: 'Temp', unit: '°C', min: nodeType === 'dht11' ? 0 : -40, max: nodeType === 'dht11' ? 50 : 80, step: 0.5, default: 25, key: 'temperature' };
+    else if (['flame-sensor', 'gas-sensor', 'rain-sensor', 'soil-moisture-sensor', 'big-sound-sensor', 'small-sound-sensor', 'mq2'].includes(nodeType)) config = { label: 'Level', unit: '%', min: 0, max: 100, step: 1, default: 50, key: 'value' };
+    else if (nodeType === 'heart-beat-sensor') config = { label: 'Pulse', unit: 'bpm', min: 20, max: 200, step: 1, default: 72, key: 'bpm' };
+    else if (nodeType === 'hx711') config = { label: 'Weight', unit: 'g', min: 0, max: 5000, step: 1, default: 0, key: 'weight' };
     else if (isBuzzer) config = { label: 'Volume', unit: '', min: 0.01, max: 1.0, step: 0.01, default: 1.0, key: 'volume', isTopLevel: true };
     else config = { label: 'Value', unit: '', min: 0, max: 1023, step: 1, default: 100, key: 'value' };
 
-    const currentValue = config.isTopLevel ? (selectedNode?.data?.[config.key] ?? config.default ?? config.min) : (currentValues?.[config.key] ?? config.default ?? config.min);
+    const currentValue = config.isTopLevel
+      ? (selectedNode?.data?.[config.key] ?? config.default ?? config.min)
+      : (currentValues?.[config.key] ?? config.default ?? config.min);
+
+    const handleValueChange = (val: number) => {
+      if (!selectedNodeId) return;
+      if (config.isTopLevel) {
+        updateNodeData(selectedNodeId, { [config.key]: val });
+      } else {
+        const updated = { ...currentValues, [config.key]: val };
+        updateNodeData(selectedNodeId, {
+          [config.key]: val,
+          sensorValues: updated
+        });
+      }
+      import('../engine/Arduino/CircuitEngine').then(({ circuitEngine }) => {
+        if ((isAnalogSensor || isDistanceSensor) && circuitEngine) {
+          const outPin = (nodeType === 'photoresistor' || nodeType === 'photoresistor-sensor') ? 'AO'
+            : (nodeType === 'potentiometer' || nodeType === 'slide-potentiometer') ? 'SIG'
+              : isDistanceSensor ? 'ECHO'
+                : 'OUT';
+          circuitEngine.pushInputSignal(selectedNodeId, outPin, true);
+        }
+      });
+    };
 
     return (
       <div className="flex items-center gap-2 bg-slate-50 p-1.5 px-3 rounded-lg border border-slate-200">
         <Sliders size={13} className="text-slate-500" />
         <span className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.5px] min-w-[55px]">{config.label}</span>
-        <span className="text-[11px] text-slate-700 font-bold">{currentValue}{config.unit && <span className="ml-1 text-[9px] text-slate-500">{config.unit}</span>}</span>
+        <input
+          type="range"
+          min={config.min}
+          max={config.max}
+          step={config.step}
+          value={currentValue}
+          onInput={(e: any) => handleValueChange(parseFloat(e.target.value))}
+          onChange={(e) => handleValueChange(parseFloat(e.target.value))}
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          className="custom-slider-input"
+        />
+        <span className="text-[11px] text-slate-700 font-bold min-w-[35px]">{currentValue}{config.unit && <span className="ml-1 text-[9px] text-slate-500">{config.unit}</span>}</span>
       </div>
     );
   };

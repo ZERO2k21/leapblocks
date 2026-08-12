@@ -3727,13 +3727,24 @@ class CircuitEngine {
     console.log(`[FORGE CIRCUIT] Peripheral Node ${nodeId} requesting inject on pin ${pinName} to ${isHigh ? 'HIGH' : 'LOW'}`);
     const { edges, nodes } = useForgeStore.getState();
 
-    const wire = edges.find(e => {
-      const srcMatch = e.source === nodeId &&
-        (e.sourceHandle === pinName || e.sourceHandle === `${pinName}__target`);
-      const tgtMatch = e.target === nodeId &&
-        (e.targetHandle === pinName || e.targetHandle === `${pinName}__target`);
+    let wire = edges.find(e => {
+      const sHandle = (e.sourceHandle || '').replace(/__target$/, '');
+      const tHandle = (e.targetHandle || '').replace(/__target$/, '');
+      const srcMatch = e.source === nodeId && (e.sourceHandle === pinName || e.sourceHandle === `${pinName}__target` || sHandle === pinName);
+      const tgtMatch = e.target === nodeId && (e.targetHandle === pinName || e.targetHandle === `${pinName}__target` || tHandle === pinName);
       return srcMatch || tgtMatch;
     });
+
+    if (!wire) {
+      // Robust Fallback: find any connected wire on this node that is NOT VCC or GND
+      wire = edges.find(e => {
+        const isSrc = e.source === nodeId;
+        const isTgt = e.target === nodeId;
+        if (!isSrc && !isTgt) return false;
+        const handle = ((isSrc ? e.sourceHandle : e.targetHandle) || '').toUpperCase();
+        return !handle.includes('VCC') && !handle.includes('GND') && !handle.includes('5V') && !handle.includes('3V') && !handle.includes('POWER');
+      });
+    }
 
     if (!wire) {
       console.warn(`[FORGE CIRCUIT] Input: no wire found for node ${nodeId} pin ${pinName}`);
@@ -3786,7 +3797,7 @@ class CircuitEngine {
 
       // Only use analog path if it's an analog sensor AND not a digital-only sensor
       if (analogSensors.includes(pType) && !digitalOnlySensors.includes(pType)) {
-        const voltage = this.computeSensorVoltage(pType, sv, 3.3, pinName);
+        const voltage = this.computeSensorVoltage(pType, sv, 3.3, pinName, peripheralNode);
 
         // ESP32-C3 transpiled path — ArduinoRuntime.setAnalogInput works for any GPIO
         if (simulationRunner.isESP32C3Board) {
@@ -3843,7 +3854,7 @@ class CircuitEngine {
         const sv = peripheralNode?.data?.sensorValues;
 
         // Use shared voltage computation (5V for AVR)
-        const voltage = this.computeSensorVoltage(pType, sv, 5.0, pinName);
+        const voltage = this.computeSensorVoltage(pType, sv, 5.0, pinName, peripheralNode);
 
         simulationRunner.setAnalogInput(mapping.adcChannel!, voltage);
         console.log(`[FORGE CIRCUIT] Analog Signal: Peripheral[${nodeId}] pin ${pinName} -> ${voltage.toFixed(3)}V on ADC ch${mapping.adcChannel}`);
@@ -3896,19 +3907,20 @@ class CircuitEngine {
    * Compute the analog output voltage for a sensor given its type and current sensorValues.
    * vcc: supply voltage (5.0 for Arduino, 3.3 for ESP32)
    */
-  private computeSensorVoltage(pType: string, sv: any, vcc = 5.0, pinName?: string): number {
+  private computeSensorVoltage(pType: string, sv: any, vcc = 5.0, pinName?: string, peripheralNode?: any): number {
+    const dataVal = peripheralNode?.data?.value;
     switch (pType) {
       case 'potentiometer':
       case 'slide-potentiometer': {
         // Potentiometer value is 0-1023 (raw ADC)
         // Map to 0..VCC voltage
-        const rawValue = sv?.value ?? 0;
+        const rawValue = sv?.value ?? dataVal ?? 0;
         return (rawValue / 1023) * vcc;
       }
       case 'mq2': {
         // MQ2 gas sensor value is 0-1023 (raw ADC)
         // Map to 0..VCC voltage
-        const rawValue = sv?.value ?? 0;
+        const rawValue = sv?.value ?? dataVal ?? 0;
         return (rawValue / 1023) * vcc;
       }
       case 'analog-joystick': {
@@ -3920,7 +3932,7 @@ class CircuitEngine {
         return (vcc / 2) + (val * (vcc / 2));
       }
       case 'ntc-temperature-sensor': {
-        const tempC = sv?.value ?? 25;
+        const tempC = sv?.value ?? dataVal ?? 25;
         const R0 = 10000, B = 3950, T0 = 298.15, Rs = 10000;
         const T = tempC + 273.15;
         const R_ntc = R0 * Math.exp(B * (1 / T - 1 / T0));
@@ -3928,33 +3940,33 @@ class CircuitEngine {
       }
       case 'photoresistor-sensor':
       case 'photoresistor': {
-        const lux = sv?.value ?? 500;
+        const lux = sv?.value ?? dataVal ?? 500;
         const R_ldr = 500000 / Math.max(1, lux);
         return vcc * 10000 / (R_ldr + 10000);
       }
       case 'flame-sensor': {
-        const intensity = sv?.value ?? 0;
+        const intensity = sv?.value ?? dataVal ?? 0;
         return vcc * (1 - Math.max(0, Math.min(100, intensity)) / 100);
       }
       case 'gas-sensor': {
-        const concentration = sv?.value ?? 0;
+        const concentration = sv?.value ?? dataVal ?? 0;
         return vcc * Math.max(0, Math.min(100, concentration)) / 100;
       }
       case 'rain-sensor': {
-        const rainLevel = sv?.value ?? 0;
+        const rainLevel = sv?.value ?? dataVal ?? 0;
         return vcc * Math.max(0, Math.min(100, rainLevel)) / 100;
       }
       case 'soil-moisture-sensor': {
-        const moisture = sv?.value ?? 0;
+        const moisture = sv?.value ?? dataVal ?? 0;
         return vcc * Math.max(0, Math.min(100, moisture)) / 100;
       }
       case 'big-sound-sensor':
       case 'small-sound-sensor': {
-        const level = sv?.value ?? 0;
+        const level = sv?.value ?? dataVal ?? 0;
         return vcc * Math.max(0, Math.min(100, level)) / 100;
       }
       default: {
-        const val = sv?.value ?? 0;
+        const val = sv?.value ?? dataVal ?? 0;
         return val > vcc ? (val / 1023) * vcc : val;
       }
     }

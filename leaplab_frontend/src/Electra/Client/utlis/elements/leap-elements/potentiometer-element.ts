@@ -72,6 +72,7 @@ export class PotentiometerElement extends LitElement {
 
     return html`<svg
       role="slider"
+      class="nodrag nopan"
       width="20mm"
       height="20mm"
       version="1.1"
@@ -166,6 +167,7 @@ export class PotentiometerElement extends LitElement {
   }
 
   private down(event: MouseEvent) {
+    event.stopPropagation();
     const target = event.target as SVGElement | null;
     const isKnob = target && (target.id === 'knob' || target.id === 'knob-cap' || target.id === 'rotating');
 
@@ -175,10 +177,7 @@ export class PotentiometerElement extends LitElement {
 
     if (event.button === 0 || window.navigator.maxTouchPoints) {
       this.pressed = true;
-
-      event.stopPropagation();
       event.preventDefault();
-
       this.updateKnobMatrix();
     }
   }

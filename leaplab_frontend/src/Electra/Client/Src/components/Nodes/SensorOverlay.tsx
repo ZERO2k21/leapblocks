@@ -47,10 +47,15 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
   const [inputVal, setInputVal] = React.useState(value.toString());
   const lastUpdatedRef = React.useRef<number>(0);
   const timeoutRef = React.useRef<any>(null);
+  const lastValueRef = React.useRef<number>(parseFloat(value.toString()) || 0);
+  // True while the user is actively dragging/typing — external prop updates
+  // must NOT overwrite the in-progress value, otherwise the thumb snaps back
+  // to the last committed value (throttled up to 100ms) mid-drag.
+  const interactingRef = React.useRef(false);
 
-  // Keep input val in sync with props changes
+  // Keep input val in sync with props changes (skip while user is interacting)
   React.useEffect(() => {
-    if (parseFloat(inputVal) !== value) {
+    if (!interactingRef.current && parseFloat(inputVal) !== value) {
       setInputVal(value.toString());
     }
   }, [value]);
@@ -71,27 +76,26 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
+    lastValueRef.current = val;
     onChange(val);
+    lastUpdatedRef.current = Date.now();
+  };
+
+  // Flush any pending value immediately (e.g. when the pointer is released)
+  const flushPending = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    onChange(lastValueRef.current);
     lastUpdatedRef.current = Date.now();
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseFloat(e.target.value);
-    setInputVal(v.toString());
-
-    const now = Date.now();
-    const timeSinceLastUpdate = now - lastUpdatedRef.current;
-
-    // Throttle updates: send immediate updates at most every 100ms
-    if (timeSinceLastUpdate >= 100) {
+    if (!isNaN(v)) {
+      setInputVal(v.toString());
       sendUpdate(v);
-    } else {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      timeoutRef.current = setTimeout(() => {
-        sendUpdate(v);
-      }, 100 - timeSinceLastUpdate);
     }
   };
 
@@ -107,6 +111,7 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
   };
 
   const handleBlur = () => {
+    interactingRef.current = false;
     const v = clamp(min, max, parseFloat(inputVal) || 0);
     const rounded = step >= 1 ? Math.round(v) : parseFloat(v.toFixed(1));
     setInputVal(rounded.toString());
@@ -114,7 +119,12 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
   };
 
   return (
-    <div className="flex items-center gap-2 w-full select-none">
+    <div
+      className="flex items-center gap-2 w-full select-none"
+      onPointerDown={e => e.stopPropagation()}
+      onMouseDown={e => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
+    >
       <span className={`text-[9px] font-bold w-[45px] overflow-hidden text-ellipsis whitespace-nowrap ${isLightTheme ? 'text-slate-600' : 'text-slate-400'}`}>
         {label}
       </span>
@@ -124,7 +134,14 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
         max={max}
         step={step}
         value={parseFloat(inputVal) || 0}
+        onInput={handleChange}
         onChange={handleChange}
+        onPointerDown={(e) => { interactingRef.current = true; e.stopPropagation(); }}
+        onPointerUp={() => { interactingRef.current = false; flushPending(); }}
+        onMouseUp={() => { interactingRef.current = false; flushPending(); }}
+        onBlur={() => { interactingRef.current = false; }}
+        onMouseDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         className="flex-1 h-1 cursor-pointer rounded-xs outline-none"
         style={{ accentColor: color }}
       />
@@ -133,6 +150,10 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, unit, min, max, step = 1, 
         value={inputVal}
         onChange={handleTextChange}
         onBlur={handleBlur}
+        onFocus={() => { interactingRef.current = true; }}
+        onPointerDown={(e) => { interactingRef.current = true; e.stopPropagation(); }}
+        onMouseDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         className={`w-[65px] border rounded-md px-1 py-0.5 text-[10px] font-extrabold font-mono text-right outline-none ${
           isLightTheme ? 'bg-slate-100 border-slate-300 text-slate-900' : 'bg-slate-800 border-slate-700 text-slate-50'
         }`}
@@ -731,14 +752,14 @@ export const SensorOverlay: React.FC<SensorOverlayProps> = ({ nodeId, type, curr
 
     const handleChange = (val: number) => {
       updateNodeData(nodeId, {
+        [config.key]: val,
         sensorValues: { ...currentValues, [config.key]: val },
       });
-      if (isAnalog) {
-        const outPin = type === 'photoresistor' || type === 'photoresistor-sensor' ? 'AO'
-          : type === 'potentiometer' || type === 'slide-potentiometer' ? 'SIG'
+      const outPin = type === 'photoresistor' || type === 'photoresistor-sensor' ? 'AO'
+        : type === 'potentiometer' || type === 'slide-potentiometer' ? 'SIG'
+          : type === 'hc-sr04' ? 'ECHO'
             : 'OUT';
-        withEngine(engine => engine.pushInputSignal(nodeId, outPin, true));
-      }
+      withEngine(engine => engine.pushInputSignal(nodeId, outPin, true));
     };
 
       return (
