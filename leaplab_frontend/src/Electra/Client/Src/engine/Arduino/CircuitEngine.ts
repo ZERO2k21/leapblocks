@@ -123,23 +123,78 @@ class CircuitEngine {
       const pinName = (edge.source === nodeId ? edge.sourceHandle : edge.targetHandle)?.replace(/__target$/, '');
 
       // Common GND pin names
-      const gndPins = ['GND', 'GROUND', 'V-', 'VSS', 'C', 'Cathode', 'NEG', '-'];
-      if (pinName && gndPins.some(gnd => pinName.toUpperCase().includes(gnd.toUpperCase()))) {
-        // Verify the other end connects to a board GND or another grounded component
+      const gndPins = ['GND', 'GROUND', 'V-', 'VSS', 'C', 'Cathode', 'NEG', '-', 'BLACK'];
+      if (!pinName || gndPins.some(gnd => pinName.toUpperCase().includes(gnd.toUpperCase()))) {
+        // Verify the other end connects to a board GND or battery GND
         const otherNodeId = edge.source === nodeId ? edge.target : edge.source;
         const otherNode = nodes.find(n => n.id === otherNodeId);
 
         if (otherNode) {
           const otherPinName = (edge.source === nodeId ? edge.targetHandle : edge.sourceHandle)?.replace(/__target$/, '');
-          // Check if connected to board GND or power supply GND
-          if (otherPinName && gndPins.some(gnd => otherPinName.toUpperCase().includes(gnd.toUpperCase()))) {
-            return true;
+          const otherType = otherNode.data?.type || '';
+          if (['arduino-uno', 'esp32-c3', 'esp32', 'arduino-nano', 'arduino-mega', 'battery-12v', 'battery'].includes(otherType)) {
+            if (!otherPinName || gndPins.some(gnd => otherPinName.toUpperCase().includes(gnd.toUpperCase()))) {
+              return true;
+            }
           }
         }
       }
     }
 
     return false;
+  }
+
+  /**
+   * Evaluates speed, running state, and direction for DC Motors and Water Pumps.
+   * Handles both High-Side Switching (Relay on POS) and Low-Side Switching (Relay on NEG).
+   */
+  private checkMotorPower(
+    motorNodeId: string,
+    currentPinStates: Record<string, any>,
+    targetPinName?: string,
+    activeSignal?: boolean
+  ): { speed: number; running: boolean; direction: string } {
+    let posPowered = false;
+    let negGrounded = false;
+
+    // Check POS pin state or trace to power (12V Battery POS / Board 5V / 3V3)
+    if (targetPinName && ['POS', 'VCC', '1'].includes(targetPinName) && activeSignal !== undefined) {
+      posPowered = activeSignal;
+    } else if (currentPinStates['pin_POS'] || currentPinStates['pin_VCC'] || currentPinStates['pin_1']) {
+      posPowered = true;
+    } else {
+      const posTargets = this.traceNet(motorNodeId, 'POS');
+      posPowered = posTargets.some(t =>
+        (t.type.includes('battery') && (t.pinName.includes('POS') || t.pinName === '12V' || t.pinName === 'VCC' || t.pinName === '+' || t.pinName === '1')) ||
+        (['arduino-uno', 'esp32-c3', 'esp32'].includes(t.type) && ['5V', '3V3', '3.3V', 'VCC', 'VIN'].includes(t.pinName))
+      );
+    }
+
+    // Check NEG pin state or trace to ground (12V Battery NEG / Board GND)
+    if (targetPinName && ['NEG', 'GND', '2'].includes(targetPinName) && activeSignal !== undefined) {
+      negGrounded = activeSignal;
+    } else if (currentPinStates['pin_NEG'] || currentPinStates['pin_GND'] || currentPinStates['pin_2']) {
+      negGrounded = true;
+    } else {
+      const negTargets = this.traceNet(motorNodeId, 'NEG');
+      negGrounded = negTargets.some(t =>
+        (t.type.includes('battery') && (t.pinName.includes('NEG') || t.pinName === 'GND' || t.pinName === 'V-' || t.pinName === '-' || t.pinName === '2')) ||
+        (['arduino-uno', 'esp32-c3', 'esp32'].includes(t.type) && ['GND', 'GROUND', 'V-', 'VSS'].includes(t.pinName))
+      );
+    }
+
+    let speed = 0;
+    let running = false;
+    let direction = 'cw';
+
+    // Motor runs if both terminals form a closed circuit OR if activeSignal is passed on POS or NEG
+    if ((posPowered && negGrounded) || (targetPinName && activeSignal)) {
+      speed = 1.0;
+      running = true;
+      direction = 'cw';
+    }
+
+    return { speed, running, direction };
   }
 
   /**
@@ -188,7 +243,7 @@ class CircuitEngine {
     const queue = [{ id: startNodeId, pin: startPin, resistance: 0 }];
     const visited = new Set<string>();
 
-    const targetTypes = ['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'l298n', 'battery-12v', 'led-bar-graph'];
+    const targetTypes = ['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'water-pump', 'water-level-float-sensor', 'l298n', 'battery-12v', 'led-bar-graph'];
 
     while (queue.length > 0) {
       const current = queue.shift()!;
@@ -205,7 +260,7 @@ class CircuitEngine {
       if (current.id !== startNodeId && targetTypes.includes(nodeType)) {
         targets.push({ nodeId: current.id, pinName: cleanStartPin, resistance: current.resistance, type: nodeType });
         // Stop tracing "through" simple terminal components
-        if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'battery-12v', 'led-bar-graph'].includes(nodeType)) {
+        if (['led', 'buzzer', 'rgb-led', 'neopixel', 'neopixel-matrix', 'led-ring', 'dc-motor', 'water-pump', 'water-level-float-sensor', 'battery-12v', 'led-bar-graph'].includes(nodeType)) {
           continue;
         }
       }
@@ -270,7 +325,7 @@ class CircuitEngine {
 
       // 3. Always follow the wire connected to the CURRENT pin externally
       // This is critical for the start node and for nodes that aren't terminal components.
-      const isTerminal = ['led', 'buzzer', 'rgb-led', 'dc-motor', 'battery-12v'].includes(nodeType);
+      const isTerminal = ['led', 'buzzer', 'rgb-led', 'dc-motor', 'water-pump', 'battery-12v'].includes(nodeType);
       if (current.id === startNodeId || !isTerminal) {
         const outEdges = edges.filter(e =>
           (e.source === current.id && e.sourceHandle?.replace(/__target$/, '') === cleanStartPin) ||
@@ -1678,8 +1733,9 @@ class CircuitEngine {
           const isHigh = isAnalogState ? analogValue > 0 : state === 'HIGH';
           const currentStateStore = useForgeStore.getState();
 
-          // Identify peripheral type once
-          const pType = currentStateStore.nodes.find(n => n.id === peripheralId)?.data?.type;
+          // Identify peripheral node and type once for listener scope
+          const peripheralNode = currentStateStore.nodes.find(n => n.id === peripheralId);
+          const pType = peripheralNode?.data?.type;
 
           // ── ESP32 Servo: when Servo.write(angle) fires, state is the angle (0-180)
           if (isAnalogState && pType === 'servo') {
@@ -1731,6 +1787,9 @@ class CircuitEngine {
                   return false;
                 });
                 hasConnection = isCommonAnode || this.hasGroundConnection(target.nodeId);
+              } else if (target.type === 'dc-motor' || target.type === 'water-pump') {
+                // DC motors & water pumps handle internal voltage differential calculation directly
+                hasConnection = true;
               } else {
                 hasConnection = this.hasGroundConnection(target.nodeId);
               }
@@ -1913,23 +1972,14 @@ class CircuitEngine {
                   updates.intensity = intensity;
                   updates.hasSignal = pinStateValue;
                 }
-                else if (target.type === 'dc-motor') {
-                  // DC Motor logic: calculate speed and direction based on POS and NEG pins
-                  const pos = target.pinName === 'POS' ? pinStateValue : !!currentPinStates['pin_POS'];
-                  const neg = target.pinName === 'NEG' ? pinStateValue : !!currentPinStates['pin_NEG'];
-                  let speed = 0;
-                  let direction = 'cw';
+                else if (target.type === 'dc-motor' || target.type === 'water-pump') {
+                  // DC Motor / Water Pump logic: evaluate both high-side and low-side switching
+                  const res = this.checkMotorPower(target.nodeId, currentPinStates, target.pinName, pinStateValue);
+                  updates.speed = res.speed;
+                  updates.direction = res.direction;
+                  updates.running = res.running;
 
-                  if (pos && !neg) {
-                    speed = 1.0; // Full speed clockwise
-                    direction = 'cw';
-                  } else if (!pos && neg) {
-                    speed = 1.0; // Full speed counter-clockwise
-                    direction = 'ccw';
-                  }
-
-                  updates.speed = speed;
-                  updates.direction = direction;
+                  console.log(`[MOTOR ENGINE] ⚙️ Node ${target.nodeId} (${target.type}) → State: ${res.running ? 'RUNNING' : 'STOPPED'}, speed: ${res.speed.toFixed(2)}, dir: ${res.direction}, targetPin: ${target.pinName}=${pinStateValue}`);
                 }
 
                 updates.damaged = false;
@@ -1942,8 +1992,6 @@ class CircuitEngine {
           }
 
           // 2. Specialized Peripheral Emulation (Servo, LCD, etc. - keep original logic for these)
-          const peripheralNode = currentStateStore.nodes.find(n => n.id === peripheralId);
-
           if (peripheralNode) {
             // ... (rest of the specialized logic for HC-SR04, Servo, LCD, DHT)
             // Note: We only keep the physics simulation here. 
@@ -2236,34 +2284,40 @@ class CircuitEngine {
               const inHigh = !!buf['IN'];
               const wasEnergized = peripheralNode.data?.relayEnergized ?? false;
 
-              // Check if COM is connected to a power source (5V or 3V3)
-              const relayEdges = currentStateStore.edges.filter(e =>
-                e.source === peripheralId || e.target === peripheralId
-              );
-
-              const comEdge = relayEdges.find(e =>
-                (e.source === peripheralId && e.sourceHandle?.replace(/__target$/, '') === 'COM') ||
-                (e.target === peripheralId && e.targetHandle?.replace(/__target$/, '') === 'COM')
-              );
-
-              let comSignal = buf['COM'] ?? false;
-
-              // If COM is connected to a board's power pin (5V, 3V3), it's always HIGH
-              if (comEdge) {
-                const connectedNodeId = comEdge.source === peripheralId ? comEdge.target : comEdge.source;
-                const connectedPinRaw = comEdge.source === peripheralId ? comEdge.targetHandle : comEdge.sourceHandle;
-                const connectedPin = connectedPinRaw?.replace(/__target$/, '') || '';
-                const connectedNode = currentStateStore.nodes.find(n => n.id === connectedNodeId);
-
-                if (connectedNode && (connectedNode.data?.type === 'arduino-uno' || connectedNode.data?.type === 'esp32-c3' || connectedNode.data?.type === 'esp32')) {
-                  // Check if connected to a power pin
-                  if (connectedPin === '5V' || connectedPin === '3V3' || connectedPin === '3.3V' || connectedPin === 'VCC' || connectedPin === 'VIN') {
-                    comSignal = true;
-                    buf['COM'] = true;
-                    console.log(`[RELAY MODULE] COM connected to power pin ${connectedPin}, setting to HIGH`);
+              // Helper: Check if a relay terminal (COM, NO, NC) connects to a power source (5V, 3.3V, Battery POS)
+              const isTerminalPowered = (terminalName: string): boolean => {
+                const edges = currentStateStore.edges.filter(e =>
+                  e.source === peripheralId || e.target === peripheralId
+                );
+                for (const edge of edges) {
+                  const isSourceRelay = edge.source === peripheralId;
+                  const relayHandle = (isSourceRelay ? edge.sourceHandle : edge.targetHandle)?.replace(/__target$/, '') || '';
+                  if (!relayHandle || relayHandle === terminalName || relayHandle.includes(terminalName)) {
+                    const otherNodeId = isSourceRelay ? edge.target : edge.source;
+                    const otherHandle = (isSourceRelay ? edge.targetHandle : edge.sourceHandle)?.replace(/__target$/, '') || '';
+                    const otherNode = currentStateStore.nodes.find(n => n.id === otherNodeId);
+                    if (otherNode) {
+                      const nodeType = otherNode.data?.type || '';
+                      if (['arduino-uno', 'esp32-c3', 'esp32', 'arduino-nano', 'arduino-mega'].includes(nodeType)) {
+                        if (['5V', '3V3', '3.3V', 'VCC', 'VIN'].includes(otherHandle) || otherHandle.includes('5V') || otherHandle.includes('3V3')) {
+                          return true;
+                        }
+                  } else if (nodeType.includes('battery')) {
+                        if (!otherHandle || ['POS', '12V', 'VCC', '+', 'pin_POS', '1', 'pin_1', 'P1', 'V+'].includes(otherHandle) || otherHandle.includes('POS') || otherHandle === '1') {
+                          return true;
+                        }
+                      }
+                    }
                   }
                 }
-              }
+
+                // Fallback net tracing
+                const targets = this.traceNet(peripheralId, terminalName);
+                return targets.some(t =>
+                  (t.type.includes('battery') && (t.pinName.includes('POS') || t.pinName === '12V' || t.pinName === 'VCC' || t.pinName === '+' || t.pinName === '1')) ||
+                  (['arduino-uno', 'esp32-c3', 'esp32'].includes(t.type) && ['5V', '3V3', '3.3V', 'VCC', 'VIN'].includes(t.pinName))
+                );
+              };
 
               // When IN pin changes, update relay state
               if (peripheralPinName === 'IN' && inHigh !== wasEnergized) {
@@ -2274,32 +2328,65 @@ class CircuitEngine {
                 const activeContact = inHigh ? 'NO' : 'NC';
                 const inactiveContact = inHigh ? 'NC' : 'NO';
 
-                // Trace what's downstream of the active and inactive contacts
-                const activeTargets = this.traceNet(peripheralId, activeContact);
-                const inactiveTargets = this.traceNet(peripheralId, inactiveContact);
+                // Power can flow bidirectionally (COM -> NO/NC or NO/NC -> COM)
+                const isPowered = isTerminalPowered('COM') || isTerminalPowered(activeContact);
+                const activeSignal = isPowered;
 
-                console.log(`[RELAY MODULE] Found ${activeTargets.length} active targets for ${activeContact}, ${inactiveTargets.length} inactive targets for ${inactiveContact}`);
+                console.log(`[RELAY MODULE] Active contact (${activeContact}) powered: ${activeSignal}`);
 
-                // Get the signal level on COM from the buffer
-                const comSignal = buf['COM'] ?? false;
-                console.log(`[RELAY MODULE] COM signal: ${comSignal}, routing to ${activeContact}`);
+                // Downstream targets of active contact AND COM terminal (filter duplicates)
+                const rawActiveTargets = [
+                  ...this.traceNet(peripheralId, activeContact),
+                  ...this.traceNet(peripheralId, 'COM')
+                ];
+                const activeTargets = rawActiveTargets.filter((t, idx, arr) =>
+                  arr.findIndex(x => x.nodeId === t.nodeId && x.pinName === t.pinName) === idx && t.nodeId !== peripheralId
+                );
 
-                // Push signal to newly-active contact targets
-                activeTargets.forEach((target: { nodeId: string; pinName: string }) => {
+                const inactiveTargets = this.traceNet(peripheralId, inactiveContact).filter(t => t.nodeId !== peripheralId);
+
+                console.log(`[RELAY MODULE] Found ${activeTargets.length} active targets, ${inactiveTargets.length} inactive targets`);
+
+                // Push signal to active contact targets
+                activeTargets.forEach((target: { nodeId: string; pinName: string; type?: string }) => {
                   const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
                   if (!targetNode) return;
-                  const pinStates = { ...(targetNode.data?.pinStates || {}), [`pin_${target.pinName}`]: comSignal };
-                  console.log(`[RELAY MODULE] Setting ${target.nodeId} pin ${target.pinName} = ${comSignal}`);
-                  updateNodeData(target.nodeId, { pinStates, damaged: false });
+                  const currentPinStates = targetNode.data?.pinStates || {};
+                  const pinStates = { ...currentPinStates, [`pin_${target.pinName}`]: activeSignal };
+                  console.log(`[RELAY MODULE] Setting ${target.nodeId} pin ${target.pinName} = ${activeSignal}`);
+                  const updates: any = { pinStates, damaged: false };
+
+                  const targetType = target.type || targetNode.data?.type;
+                  if (targetType === 'dc-motor' || targetType === 'water-pump') {
+                    const res = this.checkMotorPower(target.nodeId, currentPinStates, target.pinName, activeSignal);
+                    updates.speed = res.speed;
+                    updates.direction = res.direction;
+                    updates.running = res.running;
+
+                    console.log(`[RELAY MOTOR ROUTE] 🔀 Target ${target.nodeId} (${targetType}) pin ${target.pinName} = ${activeSignal} → running: ${res.running}, speed: ${res.speed}`);
+                  }
+
+                  updateNodeData(target.nodeId, updates);
                 });
 
-                // Cut signal to newly-inactive contact targets
-                inactiveTargets.forEach((target: { nodeId: string; pinName: string }) => {
+                // Cut signal to inactive contact targets
+                inactiveTargets.forEach((target: { nodeId: string; pinName: string; type?: string }) => {
                   const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
                   if (!targetNode) return;
-                  const pinStates = { ...(targetNode.data?.pinStates || {}), [`pin_${target.pinName}`]: false };
+                  const currentPinStates = targetNode.data?.pinStates || {};
+                  const pinStates = { ...currentPinStates, [`pin_${target.pinName}`]: false };
                   console.log(`[RELAY MODULE] Cutting ${target.nodeId} pin ${target.pinName}`);
-                  updateNodeData(target.nodeId, { pinStates, damaged: false });
+                  const updates: any = { pinStates, damaged: false };
+
+                  const targetType = target.type || targetNode.data?.type;
+                  if (targetType === 'dc-motor' || targetType === 'water-pump') {
+                    const res = this.checkMotorPower(target.nodeId, currentPinStates, target.pinName, false);
+                    updates.speed = res.speed;
+                    updates.direction = res.direction;
+                    updates.running = res.running;
+                  }
+
+                  updateNodeData(target.nodeId, updates);
                 });
               }
 
@@ -2311,12 +2398,38 @@ class CircuitEngine {
                 console.log(`[RELAY MODULE] COM signal changed to ${isHigh}, routing to ${activeContact}, targets:`, activeTargets.length);
 
                 // Push signal to active contact targets
-                activeTargets.forEach((target: { nodeId: string; pinName: string }) => {
+                activeTargets.forEach((target: { nodeId: string; pinName: string; type?: string }) => {
                   const targetNode = currentStateStore.nodes.find(n => n.id === target.nodeId);
                   if (!targetNode) return;
-                  const pinStates = { ...(targetNode.data?.pinStates || {}), [`pin_${target.pinName}`]: isHigh };
+                  const currentPinStates = targetNode.data?.pinStates || {};
+                  const pinStates = { ...currentPinStates, [`pin_${target.pinName}`]: isHigh };
                   console.log(`[RELAY MODULE] Propagating to ${target.nodeId} pin ${target.pinName} = ${isHigh}`);
-                  updateNodeData(target.nodeId, { pinStates, damaged: false });
+                  const updates: any = { pinStates, damaged: false };
+
+                  const targetType = target.type || targetNode.data?.type;
+                  if (targetType === 'dc-motor' || targetType === 'water-pump') {
+                    const pos = (target.pinName === 'POS' || target.pinName === 'VCC') ? isHigh : (!!currentPinStates['pin_POS'] || !!currentPinStates['pin_VCC']);
+                    const neg = (target.pinName === 'NEG' || target.pinName === 'GND') ? isHigh : (!!currentPinStates['pin_NEG'] || !!currentPinStates['pin_GND']);
+                    let speed = 0;
+                    let direction = 'cw';
+                    let running = false;
+
+                    if (pos && !neg) {
+                      speed = 1.0;
+                      direction = 'cw';
+                      running = true;
+                    } else if (!pos && neg) {
+                      speed = 1.0;
+                      direction = 'ccw';
+                      running = true;
+                    }
+
+                    updates.speed = speed;
+                    updates.direction = direction;
+                    updates.running = running;
+                  }
+
+                  updateNodeData(target.nodeId, updates);
                 });
               }
             }
@@ -2418,19 +2531,22 @@ class CircuitEngine {
 
                   const newPinStates = { ...currentPinStates, [pinKey]: signal };
 
-                  if (target.type === 'dc-motor') {
-                    const pos = !!newPinStates['pin_POS'];
-                    const neg = !!newPinStates['pin_NEG'];
+                  if (target.type === 'dc-motor' || target.type === 'water-pump') {
+                    const pos = !!newPinStates['pin_POS'] || !!newPinStates['pin_VCC'];
+                    const neg = !!newPinStates['pin_NEG'] || !!newPinStates['pin_GND'];
                     let dSpeed = 0;
                     let direction = 'cw';
+                    let running = false;
                     if (pos && !neg) {
                       dSpeed = speed;
                       direction = 'cw';
+                      running = true;
                     } else if (!pos && neg) {
                       dSpeed = speed;
                       direction = 'ccw';
+                      running = true;
                     }
-                    updateNodeData(target.nodeId, { pinStates: newPinStates, speed: dSpeed, direction });
+                    updateNodeData(target.nodeId, { pinStates: newPinStates, speed: dSpeed, direction, running });
                   } else {
                     updateNodeData(target.nodeId, { pinStates: newPinStates });
                   }
@@ -3139,11 +3255,11 @@ class CircuitEngine {
         simulationRunner.addListener(avrPin, listener);
 
         // Log ESP32 listener mapping
-        const pType = nodes.find(n => n.id === peripheralId)?.data?.type;
+        const esp32PType = nodes.find(n => n.id === peripheralId)?.data?.type;
         if (isESP32Board) {
-          console.log(`[ESP32 LISTENER] Mapped listener for ${pinId} ← Board[${arduinoPinName}] → Peripheral[${peripheralId.slice(0, 8)}/${peripheralPinName}] (type=${pType || '?'})`);
+          console.log(`[ESP32 LISTENER] Mapped listener for ${pinId} ← Board[${arduinoPinName}] → Peripheral[${peripheralId.slice(0, 8)}/${peripheralPinName}] (type=${esp32PType || '?'})`);
         }
-        if (pType === '7segment') {
+        if (esp32PType === '7segment') {
           console.log(`[CIRCUIT 7SEG] Registered listener for ${avrPin} → peripheral pin ${peripheralPinName}`);
         }
 
@@ -3199,13 +3315,13 @@ class CircuitEngine {
 
         // Initial state injection for slider-based sensors once after the AVR has had a chance to
         // run setup() and configure DDR/ADC. We defer by one event-loop turn.
-        const peripheralNode = nodes.find(n => n.id === peripheralId);
-        if (peripheralNode && peripheralNode.data) {
-          const type = peripheralNode.data.type;
+        const initPeripheralNode = nodes.find(n => n.id === peripheralId);
+        if (initPeripheralNode && initPeripheralNode.data) {
+          const type = initPeripheralNode.data.type;
 
           setTimeout(() => {
             const freshNode = useForgeStore.getState().nodes.find(n => n.id === peripheralId);
-            const nodeData = freshNode?.data || peripheralNode.data;
+            const nodeData = freshNode?.data || initPeripheralNode.data;
 
             // PIR motion sensor
             if (type === 'pir-motion-sensor' && peripheralPinName === 'OUT') {
@@ -3258,6 +3374,14 @@ class CircuitEngine {
             // Soil Moisture Sensor
             else if (type === 'soil-moisture-sensor' && (peripheralPinName === 'AO' || peripheralPinName === 'DO')) {
               this.pushInputSignal(peripheralId, peripheralPinName, true);
+            }
+            // Water Level Float Sensor
+            else if (type === 'water-level-float-sensor' && (peripheralPinName === 'S' || peripheralPinName === 'AO' || peripheralPinName === 'OUT' || peripheralPinName === 'DO')) {
+              const val = Number(nodeData.sensorValues?.value ?? nodeData.value ?? 0);
+              const thresh = Number(nodeData.threshold ?? 50);
+              const isTriggered = val >= thresh;
+              this.pushInputSignal(peripheralId, peripheralPinName, isTriggered);
+              console.log(`[FORGE CIRCUIT] Water Level Float Sensor (${peripheralId}) pin ${peripheralPinName} injected: level=${val}%, thresh=${thresh}%, state=${isTriggered ? 'HIGH' : 'LOW'}`);
             }
             // Sound Sensors
             else if ((type === 'big-sound-sensor' || type === 'small-sound-sensor') && (peripheralPinName === 'AOUT' || peripheralPinName === 'DOUT')) {
@@ -3895,8 +4019,20 @@ class CircuitEngine {
         }
       } else {
         // --- Digital Mapping ---
-        simulationRunner.setVirtualInput(mapping.avrPin, isHigh);
-        console.log(`[FORGE CIRCUIT] Digital Signal: Peripheral[${nodeId}] pin ${pinName} -> ${isHigh ? 'HIGH' : 'LOW'} on ${mapping.avrPin}`);
+        const peripheralNode = nodes.find(n => n.id === nodeId);
+        const pType = peripheralNode?.data?.type;
+        const sv = peripheralNode?.data?.sensorValues;
+        const dataVal = peripheralNode?.data?.value;
+
+        let digitalSignal = isHigh;
+        if (pType === 'water-level-float-sensor') {
+          const val = Number(sv?.value ?? dataVal ?? 0);
+          const thresh = Number(sv?.threshold ?? peripheralNode?.data?.threshold ?? 50);
+          digitalSignal = val >= thresh;
+        }
+
+        simulationRunner.setVirtualInput(mapping.avrPin, digitalSignal);
+        console.log(`[FORGE CIRCUIT] Digital Signal: Peripheral[${nodeId}] (${pType}) pin ${pinName} -> ${digitalSignal ? 'HIGH' : 'LOW'} on ${mapping.avrPin}`);
       }
     } else {
       console.warn(`[FORGE CIRCUIT] pushInputSignal: could not map board pin '${cleanBoardPin}' to pin`);
@@ -3956,7 +4092,8 @@ class CircuitEngine {
         const rainLevel = sv?.value ?? dataVal ?? 0;
         return vcc * Math.max(0, Math.min(100, rainLevel)) / 100;
       }
-      case 'soil-moisture-sensor': {
+      case 'soil-moisture-sensor':
+      case 'water-level-float-sensor': {
         const moisture = sv?.value ?? dataVal ?? 0;
         return vcc * Math.max(0, Math.min(100, moisture)) / 100;
       }
@@ -4016,7 +4153,7 @@ class CircuitEngine {
     const connectedNodes = nodes.filter(n => connectedNodeIds.has(n.id));
 
     // Categorize components
-    const outputComponents = ['led', 'rgb-led', 'buzzer', 'servo', 'dc-motor', 'stepperMotor', 'relay-module', '7segment', 'neopixel'];
+    const outputComponents = ['led', 'rgb-led', 'buzzer', 'servo', 'dc-motor', 'water-pump', 'stepperMotor', 'relay-module', '7segment', 'neopixel'];
     const inputComponents = ['button', 'potentiometer', 'ldr', 'pir-motion-sensor', 'ir-obstacle-sensor', 'dht11', 'dht22', 'hc-sr04', 'heart-beat-sensor'];
 
     const componentsWired = connectedNodes.filter(n => outputComponents.includes(n.data?.type)).length;

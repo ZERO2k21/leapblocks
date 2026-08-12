@@ -872,22 +872,22 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     return (
       <div className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900">
         {/* TopBar */}
-        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 h-[68px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 text-white shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] select-none">
+        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 h-[60px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 text-white shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] select-none">
           {/* Left Section: Back + Logo + Module Name */}
           <div className="flex items-center gap-3.5">
             <button
               type="button"
               onClick={onBack}
-              className="flex items-center justify-center w-10 h-10 bg-[#94c5ff]/18 hover:bg-[#bfdbfe]/24 border border-[#94c5ff]/24 rounded-xl text-white cursor-pointer transition-all active:scale-95 shrink-0"
+              className="flex items-center justify-center w-9 h-9 bg-[#94c5ff]/18 hover:bg-[#bfdbfe]/24 border border-[#94c5ff]/24 rounded-xl text-white cursor-pointer transition-all active:scale-95 shrink-0"
               title="Back to Workspace"
             >
               <span className="text-base font-bold">←</span>
             </button>
 
-            <div className="h-7 w-px bg-white/15 my-auto" />
+            <div className="h-6 w-px bg-white/15 my-auto" />
 
             <div className="flex items-center gap-2.5">
-              <Logo height={44} />
+              <Logo height={38} />
               <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans uppercase border-l border-white/20 pl-2.5">
                 PULSE
               </span>
@@ -895,29 +895,29 @@ export default function PulseApp({ onBack }: PulseAppProps) {
           </div>
 
           {/* Right Section: Auth + Creoleap Logo */}
-          <div className="flex items-center gap-3.5">
-            <LeapLabAuthButton variant="dark" size="sm" style={{ height: 34, borderRadius: '9999px' }} />
+          <div className="flex items-center gap-2.5">
+            <LeapLabAuthButton variant="dark" size="sm" style={{ height: 30, borderRadius: '9999px' }} />
             <div className="hidden sm:block">
-              <CreoleapLogo height={32} />
+              <CreoleapLogo height={28} />
             </div>
           </div>
         </header>
 
         {/* Page Banner */}
-        <div className="p-6 pb-4 bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white shadow-sm border-b border-indigo-900/50">
+        <div className="px-5 py-4 bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white shadow-sm border-b border-indigo-900/50">
           <h1 className="text-2xl font-extrabold m-0 tracking-tight">Available Quizzes</h1>
           <p className="text-xs text-indigo-200 mt-1 mb-0 font-medium">Select a quiz to test your knowledge</p>
         </div>
 
         {loading && (
-          <div className="flex flex-col items-center justify-center py-15 px-6">
+          <div className="flex flex-col items-center justify-center py-10 px-6">
             <div className="w-8 h-8 border-3 border-slate-200 border-t-indigo-600 rounded-full animate-spin" />
             <p className="text-slate-400 text-sm mt-3">Loading quizzes...</p>
           </div>
         )}
 
         {error && (
-          <div className="m-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-center">
+          <div className="mx-5 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-center">
             <p className="m-0 text-sm font-medium">{error}</p>
             <button onClick={fetchQuizzes} className="mt-2 py-1.5 px-4 bg-red-600 hover:bg-red-700 text-white border-none rounded-lg cursor-pointer text-xs font-semibold transition-colors">
               Retry
@@ -926,18 +926,18 @@ export default function PulseApp({ onBack }: PulseAppProps) {
         )}
 
         {!loading && !error && quizzes.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-15 px-6">
+          <div className="flex flex-col items-center justify-center py-10 px-6">
             <p className="text-slate-400 text-base">No quizzes available yet</p>
           </div>
         )}
 
-        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
+        <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-w-7xl mx-auto">
           {quizzes.map((quiz) => (
-            <div key={quiz.id} className="bg-white border-2 border-slate-200/80 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between min-h-[210px]">
-              <div className="p-6 flex-1 flex flex-col justify-between">
+            <div key={quiz.id} className="bg-white border-2 border-slate-200/80 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between min-h-[180px]">
+              <div className="px-5 pt-4 pb-3 flex-1 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-xl font-extrabold m-0 text-slate-900 tracking-tight break-words">{quiz.title}</h3>
+                    <h3 className="text-lg font-extrabold m-0 text-slate-900 tracking-tight break-words">{quiz.title}</h3>
                     {quiz.retakeAllowed === 1 && (
                       <span className="text-xs font-bold px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 shrink-0">
                         Retake
@@ -949,7 +949,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
                   )}
                 </div>
 
-                <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col gap-3">
+                <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
                   <div className="flex items-center justify-between text-xs text-slate-600 font-bold gap-2 flex-wrap">
                     <span>📝 {quiz.questionCount} Questions</span>
                     <span>⭐ {quiz.totalPoints} Pts</span>
@@ -966,7 +966,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
               </div>
 
               <button
-                className={`w-full py-4 text-xs font-extrabold tracking-widest uppercase cursor-pointer border-none transition-all ${
+                className={`w-full py-3 text-xs font-extrabold tracking-widest uppercase cursor-pointer border-none transition-all ${
                   !quiz.canRetake && quiz.hasAttempted
                     ? 'bg-[#A5B4FC] text-white opacity-90 cursor-not-allowed'
                     : 'bg-[#4F46E5] hover:bg-[#4338CA] text-white shadow-md'
@@ -984,19 +984,19 @@ export default function PulseApp({ onBack }: PulseAppProps) {
         {quizToStart && (
           <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border-2 border-slate-200">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl font-extrabold mx-auto mb-3 border border-indigo-100 shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl font-extrabold mx-auto mb-2 border border-indigo-100 shadow-sm">
                 📝
               </div>
 
               <h2 className="text-xl font-extrabold text-center text-slate-900 m-0 mb-1">
                 Are you ready for this quiz??
               </h2>
-              <p className="text-xs text-center text-slate-500 m-0 mb-5 font-semibold">
+              <p className="text-xs text-center text-slate-500 m-0 mb-4 font-semibold">
                 Please review all quiz details before starting.
               </p>
 
               {/* Quiz Details Card */}
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-6 flex flex-col gap-3">
+              <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200 mb-4 flex flex-col gap-2">
                 <div>
                   <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Quiz Name</div>
                   <div className="text-base font-extrabold text-slate-900 mt-0.5">{quizToStart.title}</div>
@@ -1005,25 +1005,25 @@ export default function PulseApp({ onBack }: PulseAppProps) {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-200/80 text-xs">
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-200/80 text-xs">
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/60">
                     <span className="text-slate-400 font-semibold block text-[11px]">Total Questions</span>
                     <span className="text-slate-900 font-extrabold text-sm">{quizToStart.questionCount} Questions</span>
                   </div>
 
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/60">
                     <span className="text-slate-400 font-semibold block text-[11px]">Total Points</span>
                     <span className="text-indigo-600 font-extrabold text-sm">{quizToStart.totalPoints} Pts</span>
                   </div>
 
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/60">
                     <span className="text-slate-400 font-semibold block text-[11px]">Time Limit</span>
                     <span className="text-slate-900 font-extrabold text-sm">
                       {quizToStart.timeLimitMinutes ? `${quizToStart.timeLimitMinutes} Mins` : 'No Limit'}
                     </span>
                   </div>
 
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/60">
                     <span className="text-slate-400 font-semibold block text-[11px]">Retakes Allowed</span>
                     <span className="text-slate-900 font-extrabold text-sm">
                       {quizToStart.retakeAllowed === 1 ? 'Yes' : 'No'}
@@ -1042,7 +1042,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
               </div>
 
               {/* Quiz Rules Warning */}
-              <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3.5 mb-6 flex items-start gap-2.5 text-xs text-amber-900 shadow-sm">
+              <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3 mb-4 flex items-start gap-2.5 text-xs text-amber-900 shadow-sm">
                 <span className="text-base shrink-0 select-none">⚠️</span>
                 <div className="flex-1">
                   <div className="font-extrabold text-amber-950 text-[11px] uppercase tracking-wider mb-0.5">Important Rules</div>
@@ -1115,40 +1115,40 @@ export default function PulseApp({ onBack }: PulseAppProps) {
         onPaste={(e) => { e.preventDefault(); return false; }}
       >
         {/* TopBar */}
-        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 h-[68px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 text-white shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] select-none">
+        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 h-[60px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 text-white shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] select-none">
           {/* Left Section: Exit + Logo + Module Name */}
-          <div className="flex items-center gap-3.5 min-w-0">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={() => setShowExitConfirm(true)}
-              className="flex items-center justify-center h-10 px-3.5 bg-[#94c5ff]/18 hover:bg-[#bfdbfe]/24 border border-[#94c5ff]/24 rounded-xl text-white text-xs font-bold cursor-pointer transition-all active:scale-95 shrink-0"
+              className="flex items-center justify-center h-8 px-3 bg-[#94c5ff]/18 hover:bg-[#bfdbfe]/24 border border-[#94c5ff]/24 rounded-xl text-white text-xs font-bold cursor-pointer transition-all active:scale-95 shrink-0"
               title="Exit Quiz"
             >
               <span>←</span>
               <span>Exit</span>
             </button>
 
-            <div className="h-7 w-px bg-white/15 my-auto shrink-0" />
+            <div className="h-6 w-px bg-white/15 my-auto shrink-0" />
 
-            <div className="flex items-center gap-2.5 shrink-0">
-              <Logo height={44} />
-              <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans uppercase border-l border-white/20 pl-2.5">
-                PLUS
+            <div className="flex items-center gap-2 shrink-0">
+              <Logo height={38} />
+              <span className="text-white text-[20px] font-black tracking-[0.08em] font-sans uppercase border-l border-white/20 pl-2">
+                PULSE
               </span>
             </div>
           </div>
 
-          <h2 className="hidden md:block flex-1 min-w-0 truncate text-center text-base font-extrabold text-slate-100 px-4 m-0">
+          <h2 className="hidden md:block flex-1 min-w-0 truncate text-center text-sm font-extrabold text-slate-100 px-3 m-0">
             {activeQuiz.title}
           </h2>
 
-          <div className="flex items-center gap-3.5 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             {timeLeft !== null && (
-              <span className={`text-sm md:text-base font-black tabular-nums py-1.5 px-3.5 rounded-xl bg-white/10 border border-white/15 ${timeLeft < 60 ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}>
+              <span className={`text-xs md:text-sm font-black tabular-nums py-1 px-2.5 rounded-lg bg-white/10 border border-white/15 ${timeLeft < 60 ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}>
                 ⏱️ {formatTime(timeLeft)}
               </span>
             )}
-            <span className="text-xs text-slate-200 font-bold bg-white/10 px-3 py-1.5 rounded-xl border border-white/15">
+            <span className="text-[11px] text-slate-200 font-bold bg-white/10 px-2.5 py-1 rounded-lg border border-white/15">
               {answeredCount}/{totalQuestions} Answered
             </span>
           </div>
@@ -1191,23 +1191,23 @@ export default function PulseApp({ onBack }: PulseAppProps) {
 
         {leftDuringQuiz && (
           <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
-            <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 text-center">
-              <div className="w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-2xl font-extrabold mx-auto mb-3">!</div>
-              <h2 className="text-lg font-extrabold m-0 mb-2 text-slate-900">You left the quiz</h2>
+            <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-slate-200 text-center">
+              <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xl font-extrabold mx-auto mb-2">!</div>
+              <h2 className="text-lg font-extrabold m-0 mb-1 text-slate-900">You left the quiz</h2>
               <p className="text-sm text-slate-600 m-0 mb-1 font-medium">
                 The quiz timer kept running while you were away.
               </p>
               {awaySeconds > 0 && (
-                <p className="text-sm text-slate-500 m-0 mb-4 font-medium">
+                <p className="text-sm text-slate-500 m-0 mb-3 font-medium">
                   You were away for {formatTime(awaySeconds)}.
                 </p>
               )}
-              <p className="text-xs text-amber-600 m-0 mb-4 font-semibold">
+              <p className="text-xs text-amber-600 m-0 mb-3 font-semibold">
                 Warning {tabSwitchCountRef.current} of {MAX_TAB_SWITCH_WARNINGS}. On the next switch the quiz will be submitted automatically.
               </p>
               <button
                 onClick={() => setLeftDuringQuiz(false)}
-                className="w-full py-2.5 px-6 bg-indigo-600 hover:bg-indigo-700 text-white border-none rounded-xl text-sm font-bold cursor-pointer transition-colors"
+                className="w-full py-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white border-none rounded-xl text-sm font-bold cursor-pointer transition-colors"
               >
                 Continue Quiz
               </button>
@@ -1217,48 +1217,48 @@ export default function PulseApp({ onBack }: PulseAppProps) {
 
         {showExitConfirm && (
           <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
-            <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border-2 border-slate-200">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl font-extrabold mx-auto mb-3 border border-emerald-100 shadow-sm">
+            <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl border-2 border-slate-200">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl font-extrabold mx-auto mb-2 border border-emerald-100 shadow-sm">
                 🚀
               </div>
 
               <h2 className="text-xl font-extrabold text-center text-slate-900 m-0 mb-1">
                 Ready to Submit Quiz?
               </h2>
-              <p className="text-xs text-center text-slate-500 m-0 mb-5 font-semibold">
+              <p className="text-xs text-center text-slate-500 m-0 mb-4 font-semibold">
                 Please review your answer summary before final submission.
               </p>
 
               {/* Quiz Progress Details Box */}
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-5 flex flex-col gap-3">
+              <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200 mb-4 flex flex-col gap-2">
                 <div>
                   <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Quiz Name</div>
                   <div className="text-base font-extrabold text-slate-900 mt-0.5">{activeQuiz.title}</div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-200/80 text-xs">
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-200/80 text-xs">
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/60">
                     <span className="text-slate-400 font-semibold block text-[11px]">Answered</span>
                     <span className="text-emerald-600 font-extrabold text-sm">
                       {answeredCount} / {totalQuestions}
                     </span>
                   </div>
 
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/60">
                     <span className="text-slate-400 font-semibold block text-[11px]">Unanswered</span>
                     <span className={`font-extrabold text-sm ${totalQuestions - answeredCount > 0 ? 'text-amber-600' : 'text-slate-700'}`}>
                       {totalQuestions - answeredCount} / {totalQuestions}
                     </span>
                   </div>
 
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/60">
                     <span className="text-slate-400 font-semibold block text-[11px]">Visited / Read</span>
                     <span className="text-slate-900 font-extrabold text-sm">
                       {Object.keys(visitedQuestions).length} / {totalQuestions}
                     </span>
                   </div>
 
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/60">
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/60">
                     <span className="text-slate-400 font-semibold block text-[11px]">Time Left</span>
                     <span className="text-slate-900 font-extrabold text-sm">
                       {timeLeft !== null ? formatTime(timeLeft) : 'No Limit'}
@@ -1308,21 +1308,21 @@ export default function PulseApp({ onBack }: PulseAppProps) {
         {/* Escape Key Submit Dialog */}
         {showEscapeDialog && (
           <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
-            <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border-2 border-slate-200 text-center">
-              <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-3xl font-extrabold mx-auto mb-4">
+            <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border-2 border-slate-200 text-center">
+              <div className="w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-2xl font-extrabold mx-auto mb-3">
                 ⚠️
               </div>
-              <h2 className="text-xl font-extrabold text-slate-900 m-0 mb-2">
+              <h2 className="text-xl font-extrabold text-slate-900 m-0 mb-1">
                 Submit Quiz?
               </h2>
               <p className="text-sm text-slate-500 m-0 mb-1 font-medium">
                 Press <span className="font-bold text-slate-700">Escape</span> again to submit, or wait to continue.
               </p>
-              <p className="text-xs text-amber-600 m-0 mb-5 font-semibold">
+              <p className="text-xs text-amber-600 m-0 mb-4 font-semibold">
                 Auto-closing in 5 seconds...
               </p>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -1357,11 +1357,11 @@ export default function PulseApp({ onBack }: PulseAppProps) {
         )}
 
         {/* Side-by-side Question & Overview Container */}
-        <div className="p-4 flex flex-col md:flex-row gap-6 pb-28 max-w-6xl mx-auto items-start">
+        <div className="px-4 py-3 flex flex-col md:flex-row gap-4 pb-20 max-w-6xl mx-auto items-start">
           {/* LEFT COLUMN: Active Question View */}
           <div className="flex-1 min-w-0 w-full">
             {currentQuestion && (
-              <div key={currentQuestion.id} className="relative bg-white border-2 border-slate-200 rounded-2xl p-5 shadow-sm">
+              <div key={currentQuestion.id} className="relative bg-white border-2 border-slate-200 rounded-2xl p-4 shadow-sm">
                 {/* Screenshot-protective overlay on question area */}
                 <div
                   aria-hidden="true"
@@ -1375,15 +1375,15 @@ export default function PulseApp({ onBack }: PulseAppProps) {
                     borderRadius: 'inherit',
                   }}
                 />
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center mb-1.5">
                   <span className="text-xs font-extrabold text-indigo-600 bg-indigo-50 py-1 px-2.5 rounded-md">
                     Question {currentQuestionIndex + 1} of {totalQuestions}
                   </span>
                   <span className="text-xs text-slate-400 font-semibold">{currentQuestion.points} pt{currentQuestion.points !== 1 ? 's' : ''}</span>
                 </div>
-                <p className="text-sm font-semibold leading-relaxed mb-3 text-slate-900 break-words whitespace-pre-line">{currentQuestion.questionText}</p>
+                <p className="text-sm font-semibold leading-relaxed mb-2 text-slate-900 break-words whitespace-pre-line">{currentQuestion.questionText}</p>
                 {currentQuestion.questionMediaUrl && getImageUrl(currentQuestion.questionMediaUrl) && (
-                  <div className="w-[256px] h-[319px] max-w-full rounded-xl overflow-hidden mb-3 bg-slate-100 flex items-center justify-center border border-slate-200">
+                  <div className="w-[256px] h-[319px] max-w-full rounded-xl overflow-hidden mb-2 bg-slate-100 flex items-center justify-center border border-slate-200">
                     <img
                       src={getImageUrl(currentQuestion.questionMediaUrl)!}
                       alt="Question"
@@ -1395,20 +1395,20 @@ export default function PulseApp({ onBack }: PulseAppProps) {
                     />
                   </div>
                 )}
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1.5">
                   {currentQuestion.options.map((opt, optIdx) => {
                     const isSelected = answers[currentQuestion.id] === opt.text;
                     return (
                       <button
                         key={opt.id}
-                        className={`flex items-center gap-3 p-3 px-3.5 min-w-0 border-2 rounded-xl cursor-pointer text-left transition-all text-sm ${isSelected ? 'bg-indigo-50 border-indigo-600 text-indigo-600 font-medium' : 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-white'
+                        className={`flex items-center gap-2.5 py-2.5 px-3 min-w-0 border-2 rounded-xl cursor-pointer text-left transition-all text-sm ${isSelected ? 'bg-indigo-50 border-indigo-600 text-indigo-600 font-medium' : 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-white'
                           }`}
                         onClick={() => setAnswers((prev) => ({ ...prev, [currentQuestion.id]: opt.text || '' }))}
                       >
-                        <span className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-200 font-bold text-xs shrink-0 text-slate-700">{String.fromCharCode(65 + optIdx)}</span>
+                        <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-200 font-bold text-[11px] shrink-0 text-slate-700">{String.fromCharCode(65 + optIdx)}</span>
                         <span className="flex-1 min-w-0 break-words font-medium">{opt.text}</span>
                         {opt.mediaUrl && getImageUrl(opt.mediaUrl) && (
-                          <div className="w-40 h-40 shrink-0 rounded-xl overflow-hidden bg-white border border-slate-200 p-1.5 flex items-center justify-center shadow-sm">
+                          <div className="w-28 h-28 shrink-0 rounded-xl overflow-hidden bg-white border border-slate-200 p-1 flex items-center justify-center shadow-sm">
                             <img
                               src={getImageUrl(opt.mediaUrl)!}
                               alt=""
@@ -1429,9 +1429,9 @@ export default function PulseApp({ onBack }: PulseAppProps) {
           </div>
 
           {/* RIGHT COLUMN: Question Overview Sidebar */}
-          <div className="w-full md:w-[320px] shrink-0 sticky top-20">
-            <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between gap-2 mb-3 border-b border-slate-100 pb-3">
+          <div className="w-full md:w-[300px] shrink-0 sticky top-16">
+            <div className="bg-white border-2 border-slate-200 rounded-2xl p-3 shadow-sm">
+              <div className="flex items-center justify-between gap-2 mb-2 border-b border-slate-100 pb-2">
                 <span className="text-sm font-extrabold text-slate-800 tracking-wide">
                   📊 Question Overview
                 </span>
@@ -1441,22 +1441,22 @@ export default function PulseApp({ onBack }: PulseAppProps) {
               </div>
 
               {/* Status Badges & Counters */}
-              <div className="flex flex-col gap-1.5 text-xs font-semibold mb-4">
-                <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <div className="flex flex-col gap-1 text-xs font-semibold mb-3">
+                <div className="flex items-center justify-between p-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
                   <span className="inline-flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                     Answered
                   </span>
                   <span className="font-extrabold">{answeredCount}</span>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                <div className="flex items-center justify-between p-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
                   <span className="inline-flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                     Read (Unanswered)
                   </span>
                   <span className="font-extrabold">{visitedUnansweredCount}</span>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
+                <div className="flex items-center justify-between p-1.5 rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
                   <span className="inline-flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
                     Not Visited
@@ -1468,7 +1468,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
               {/* Question Number Palette Grid */}
               <div className="pt-2 border-t border-slate-100">
                 <div className="text-[11px] font-bold text-slate-400 mb-2 uppercase tracking-wider">Select Question</div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {activeQuiz.questions.map((q, idx) => {
                     const isCurrent = idx === currentQuestionIndex;
                     const isAns = !!answers[q.id];
@@ -1489,8 +1489,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
                       <button
                         key={q.id}
                         onClick={() => setCurrentQuestionIndex(idx)}
-                        className={`w-9 h-9 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center cursor-pointer ${styleClass} ${isCurrent ? 'ring-4 ring-indigo-500/40 border-2 border-indigo-600 scale-105' : ''
-                          }`}
+                        className={`w-8 h-8 rounded-xl font-extrabold text-[11px] transition-all flex items-center justify-center cursor-pointer ${styleClass} ${isCurrent ? 'ring-4 ring-indigo-500/40 border-2 border-indigo-600 scale-105' : ''}`}
                         title={`Question ${idx + 1}: ${labelStatus}`}
                       >
                         {idx + 1}
@@ -1504,7 +1503,7 @@ export default function PulseApp({ onBack }: PulseAppProps) {
         </div>
 
         {/* Bottom Navigation & Submit Bar */}
-        <div className="fixed bottom-0 left-0 right-0 p-3 px-6 bg-white border-t-2 border-slate-200 flex items-center justify-between z-50 shadow-lg">
+        <div className="fixed bottom-0 left-0 right-0 py-2.5 px-5 bg-white border-t-2 border-slate-200 flex items-center justify-between z-50 shadow-lg">
           <button
             type="button"
             onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}
@@ -1552,55 +1551,55 @@ export default function PulseApp({ onBack }: PulseAppProps) {
     return (
       <div className="h-screen overflow-y-auto bg-slate-50 font-sans text-slate-900">
         {/* TopBar */}
-        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 h-[68px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 text-white shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] select-none">
+        <header className="sticky top-0 z-[200] flex items-center justify-between px-5 h-[60px] bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 text-white shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] select-none">
           {/* Left Section: Back + Logo + Module Name */}
-          <div className="flex items-center gap-3.5">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => { setView('list'); setResult(null); setActiveQuiz(null); }}
-              className="flex items-center justify-center h-10 px-3.5 bg-[#94c5ff]/18 hover:bg-[#bfdbfe]/24 border border-[#94c5ff]/24 rounded-xl text-white text-xs font-bold cursor-pointer transition-all active:scale-95"
+              className="flex items-center justify-center h-8 px-3 bg-[#94c5ff]/18 hover:bg-[#bfdbfe]/24 border border-[#94c5ff]/24 rounded-xl text-white text-xs font-bold cursor-pointer transition-all active:scale-95"
               title="Back to Quizzes"
             >
               <span>←</span>
               <span className="ml-1">Quizzes</span>
             </button>
 
-            <div className="h-7 w-px bg-white/15 my-auto" />
+            <div className="h-6 w-px bg-white/15 my-auto" />
 
-            <div className="flex items-center gap-2.5">
-              <Logo height={44} />
-              <span className="text-white text-[22px] font-black tracking-[0.08em] font-sans uppercase border-l border-white/20 pl-2.5">
-                PLUS
+            <div className="flex items-center gap-2">
+              <Logo height={38} />
+              <span className="text-white text-[20px] font-black tracking-[0.08em] font-sans uppercase border-l border-white/20 pl-2">
+                PULSE
               </span>
             </div>
           </div>
 
           {/* Right Section: Auth + Creoleap Logo */}
-          <div className="flex items-center gap-3.5">
-            <LeapLabAuthButton variant="dark" size="sm" style={{ height: 34, borderRadius: '9999px' }} />
+          <div className="flex items-center gap-2.5">
+            <LeapLabAuthButton variant="dark" size="sm" style={{ height: 30, borderRadius: '9999px' }} />
             <div className="hidden sm:block">
-              <CreoleapLogo height={32} />
+              <CreoleapLogo height={28} />
             </div>
           </div>
         </header>
 
-        <div className="max-w-[400px] my-15 mx-auto p-10 bg-white rounded-3xl border-2 border-slate-200 text-center shadow-lg">
-          <div className={`w-18 h-18 rounded-full flex items-center justify-center text-4xl font-extrabold mx-auto mb-4 ${passed ? 'bg-green-100 text-green-600' : 'bg-red-50 text-red-600'}`}>
+        <div className="max-w-[400px] my-10 mx-auto p-7 bg-white rounded-3xl border-2 border-slate-200 text-center shadow-lg">
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl font-extrabold mx-auto mb-3 ${passed ? 'bg-green-100 text-green-600' : 'bg-red-50 text-red-600'}`}>
             {passed ? '✓' : '✗'}
           </div>
-          <h2 className="text-2xl font-extrabold m-0 text-slate-900">
+          <h2 className="text-xl font-extrabold m-0 text-slate-900">
             {passed ? 'Congratulations!' : 'Keep Practicing!'}
           </h2>
-          <p className="text-sm text-slate-500 mt-1 mb-0">
+          <p className="text-xs text-slate-500 mt-1 mb-0">
             {passed ? 'You passed the quiz.' : 'You did not pass this time.'}
           </p>
 
-          <div className="mt-6 flex items-baseline justify-center gap-1">
-            <span className="text-5xl font-extrabold text-indigo-600">{result.score}</span>
-            <span className="text-2xl text-slate-400">/</span>
-            <span className="text-2xl text-slate-400 font-semibold">{result.maxScore}</span>
+          <div className="mt-4 flex items-baseline justify-center gap-1">
+            <span className="text-4xl font-extrabold text-indigo-600">{result.score}</span>
+            <span className="text-xl text-slate-400">/</span>
+            <span className="text-xl text-slate-400 font-semibold">{result.maxScore}</span>
           </div>
-          <p className="text-base text-slate-500 font-semibold mt-1 mb-0">{percentage}%</p>
+          <p className="text-sm text-slate-500 font-semibold mt-0.5 mb-0">{percentage}%</p>
 
           {result.timeTakenSeconds && (
             <p className="text-xs text-slate-400 mt-2 mb-0">
@@ -1608,8 +1607,8 @@ export default function PulseApp({ onBack }: PulseAppProps) {
             </p>
           )}
 
-          <div className="mt-6">
-            <button onClick={() => { setView('list'); setResult(null); setActiveQuiz(null); }} className="py-3 px-8 bg-indigo-600 hover:bg-indigo-700 text-white border-none rounded-xl text-sm font-bold cursor-pointer transition-colors shadow-sm">
+          <div className="mt-4">
+            <button onClick={() => { setView('list'); setResult(null); setActiveQuiz(null); }} className="py-2.5 px-6 bg-indigo-600 hover:bg-indigo-700 text-white border-none rounded-xl text-sm font-bold cursor-pointer transition-colors shadow-sm">
               Back to Quizzes
             </button>
           </div>

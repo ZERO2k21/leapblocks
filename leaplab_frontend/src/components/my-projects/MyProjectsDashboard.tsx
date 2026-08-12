@@ -756,8 +756,9 @@ const SavedProjectCardVisual: React.FC<SavedProjectCardVisualProps> = ({ project
                             mappedProps.angle = node.data.angle ?? 0;
                         } else if (['potentiometer', 'slide-potentiometer'].includes(elementType)) {
                             mappedProps.value = node.data.sensorValues?.value ?? 0;
-                        } else if (['dc-motor', 'motor', 'stepper-motor'].includes(elementType)) {
+                        } else if (['dc-motor', 'water-pump', 'motor', 'stepper-motor'].includes(elementType)) {
                             mappedProps.speed = 0;
+                            mappedProps.running = false;
                             mappedProps.animating = false;
                         }
 

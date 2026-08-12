@@ -38,6 +38,7 @@ const COMPONENTS = [
   { id: 'stepper-motor', name: 'Stepper Motor', category: 'outputs', desc: 'NEMA bipolar stepper' },
   { id: 'a4988', name: 'A4988 Driver', category: 'outputs', desc: 'Stepper motor driver' },
   { id: 'relay-module', name: 'Relay Module', category: 'outputs', desc: 'Single-channel relay' },
+  { id: 'water-pump', name: 'Water Pump', category: 'outputs', desc: 'Mini 3V-6V DC water pump' },
 
   // DISPLAYS
   { id: 'lcd1602', name: 'LCD 1602', category: 'displays', desc: '16x2 Character display (parallel)' },
@@ -56,6 +57,7 @@ const COMPONENTS = [
   { id: 'proximity-sensor', name: 'Proximity Sensor', category: 'sensors', desc: 'IR proximity detector' },
   { id: 'rain-sensor', name: 'Rain Sensor', category: 'sensors', desc: 'Rain detection sensor (AO + DO)' },
   { id: 'soil-moisture-sensor', name: 'Soil Moisture', category: 'sensors', desc: 'Soil moisture sensor (AO + DO)' },
+  { id: 'water-level-float-sensor', name: 'Float Switch', category: 'sensors', desc: 'Water level float sensor (AO + DO)' },
   { id: 'ntc-temperature-sensor', name: 'NTC Thermistor', category: 'sensors', desc: 'Temperature sensor' },
 
   // INPUTS

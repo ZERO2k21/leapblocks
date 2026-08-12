@@ -16,7 +16,8 @@ import { PushbuttonElement } from './pushbutton-element';
 import { Pushbutton6mmElement } from './pushbutton-6mm-element';
 import { ResistorElement } from './resistor-element';
 import { RotaryDialerElement } from './rotary-dialer-element';
-import { RelayModuleElement } from './relay-module-element';
+import { WaterPumpElement } from './water-pump-element';
+import { WaterLevelFloatSensorElement } from './water-level-float-sensor-element';
 import { SSD1306Element } from './ssd1306-element';
 import { ServoElement } from './servo-element';
 import { DHT22Element } from './dht22-element';
@@ -124,6 +125,8 @@ declare global {
       'leap-ks2e-m-dc5': LeapElement<KS2EMDC5Element>;
       'leap-relay-module': LeapElement<RelayModuleElement>;
       'leap-biaxial-stepper': LeapElement<BiaxialStepperElement>;
+      'leap-water-pump': LeapElement<WaterPumpElement>;
+      'leap-water-level-float-sensor': LeapElement<WaterLevelFloatSensorElement>;
     }
   }
 }

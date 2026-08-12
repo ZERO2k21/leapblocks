@@ -3064,14 +3064,43 @@ export const LEAP_PINS: Record<string, { viewBox: { minX: number, minY: number, 
     "viewBox": {
       "minX": 0,
       "minY": 0,
-      "width": 540,
+      "width": 480,
       "height": 480
     },
     "pins": [
-      { "name": "AO",  "x": 295, "y": 450 },
-      { "name": "DO",  "x": 315, "y": 450 },
-      { "name": "GND", "x": 335, "y": 450 },
-      { "name": "VCC", "x": 355, "y": 450 }
+      { "name": "VCC", "x": 88,  "y": 445 },
+      { "name": "GND", "x": 108, "y": 445 },
+      { "name": "DO",  "x": 128, "y": 445 },
+      { "name": "AO",  "x": 148, "y": 445 }
+    ]
+  },
+  "water-pump": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 180,
+      "height": 90
+    },
+    "pins": [
+      { "name": "POS", "x": 4, "y": 35 },
+      { "name": "NEG", "x": 4, "y": 55 }
+    ]
+  },
+  "water-level-float-sensor": {
+    "viewBox": {
+      "minX": 0,
+      "minY": 0,
+      "width": 200,
+      "height": 300
+    },
+    "pins": [
+      { "name": "S",   "x": 75,  "y": 8 },
+      { "name": "OUT", "x": 75,  "y": 8 },
+      { "name": "AO",  "x": 75,  "y": 8 },
+      { "name": "VCC", "x": 100, "y": 8 },
+      { "name": "+",   "x": 100, "y": 8 },
+      { "name": "GND", "x": 125, "y": 8 },
+      { "name": "-",   "x": 125, "y": 8 }
     ]
   }
 };

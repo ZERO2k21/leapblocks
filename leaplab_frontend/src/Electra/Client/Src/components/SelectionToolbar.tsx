@@ -128,12 +128,12 @@ export const SelectionToolbar: React.FC = () => {
         category = 'MCU BOARD';
         displayName = 'ARDUINO UNO';
         primary = '#06b6d4';
-      } else if (['hc-sr04', 'dht22', 'dht11', 'ntc-temperature-sensor', 'photoresistor-sensor', 'photoresistor', 'flame-sensor', 'gas-sensor', 'heart-beat-sensor', 'big-sound-sensor', 'small-sound-sensor', 'hx711', 'ky-040', 'pir-motion-sensor', 'mpu6050'].includes(t)) {
+      } else if (['hc-sr04', 'dht22', 'dht11', 'ntc-temperature-sensor', 'photoresistor-sensor', 'photoresistor', 'flame-sensor', 'gas-sensor', 'heart-beat-sensor', 'big-sound-sensor', 'small-sound-sensor', 'hx711', 'ky-040', 'pir-motion-sensor', 'mpu6050', 'water-level-float-sensor'].includes(t)) {
         category = 'SENSOR';
         primary = '#10b981';
-      } else if (['stepper-motor', 'dc-motor', 'servo', 'l298n', 'relay-module', 'steppermotor'].includes(t)) {
+      } else if (['stepper-motor', 'dc-motor', 'water-pump', 'servo', 'l298n', 'relay-module', 'steppermotor'].includes(t)) {
         category = 'MOTOR/ACTUATOR';
-        displayName = t === 'dc-motor' ? 'DC MOTOR' : displayName;
+        displayName = t === 'dc-motor' ? 'DC MOTOR' : t === 'water-pump' ? 'WATER PUMP' : displayName;
         primary = '#f43f5e';
       } else if (['ili9341', 'ili9341-touch', 'ssd1306', 'lcd1602', 'lcd2004', 'lcd1602-i2c', 'lcd2004-i2c'].includes(t)) {
         category = 'DISPLAY';

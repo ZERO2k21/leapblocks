@@ -109,8 +109,9 @@ export const CircuitAnalysisPanel: React.FC = () => {
                     power = voltage * current;
                     break;
                 case 'dc-motor':
+                case 'water-pump':
                     voltage = 5.0;
-                    current = 0.15;
+                    current = 0.2;
                     power = voltage * current;
                     break;
                 case 'relay':

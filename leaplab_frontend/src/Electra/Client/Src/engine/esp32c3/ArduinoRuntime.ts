@@ -302,8 +302,9 @@ export class ArduinoRuntime {
           return Math.round(((sv.value ?? 0) / 100) * 4095);
         }
 
-        if (t === 'soil-moisture-sensor') {
-          return Math.round(((sv.value ?? 0) / 100) * 4095);
+        if (t === 'soil-moisture-sensor' || t === 'water-level-float-sensor') {
+          const val = sv.value ?? n.data?.value ?? 0;
+          return Math.round(((val ?? 0) / 100) * 4095);
         }
 
         if (t === 'big-sound-sensor' || t === 'small-sound-sensor') {

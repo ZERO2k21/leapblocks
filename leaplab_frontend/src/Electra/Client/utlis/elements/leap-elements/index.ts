@@ -64,4 +64,7 @@ export { L298NElement } from './l298n-element';
 export { DCMotorElement } from './dc-motor-element';
 export { RainSensorElement } from './rain-sensor-element';
 export { Battery12VElement } from './battery-12v-element';
+export { WaterPumpElement } from './water-pump-element';
+export { WaterLevelFloatSensorElement } from './water-level-float-sensor-element';
+
 
