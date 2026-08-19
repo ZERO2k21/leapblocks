@@ -9,10 +9,10 @@ import * as fs from 'fs';
 import { spawn, fork } from 'child_process';
 import * as url from 'url';
 import { SerialManager } from './serial/SerialManager';
-import { ArduinoUploader } from './drivers/arduino-cli/ArduinoUploader';
+import { ArduinoUploader } from './drivers/platformio/ArduinoUploader';
 import { PythonManager } from './pythonBackend/PythonManager';
 import { join } from 'path';
-import { getBundledArduinoCliPath } from './utils/ensureArduinoCli';
+import { getPioPathIfAvailable, getBundledPioEnv } from './drivers/platformio/ensurePlatformIO';
 import { cleanupOldLogs } from './utils/fileLogger';
 import { checkForUpdate, downloadUpdate, installUpdate } from './update/updateChecker';
 import type { UpdateInfo, DownloadProgress } from './update/updateChecker';
@@ -83,7 +83,8 @@ function startCompileServer() {
     return;
   }
 
-  const arduinoCliPath = getBundledArduinoCliPath();
+  const pioPath = getPioPathIfAvailable() || undefined;
+  const pioEnv = getBundledPioEnv();
 
   // When running the TypeScript source, launch it through tsx:
   // node <tsx-cli.mjs> server/server.ts
@@ -107,7 +108,8 @@ function startCompileServer() {
     env: {
       ...process.env,
       PORT: '3001',
-      ARDUINO_CLI_PATH: arduinoCliPath,
+      PIO_CLI_PATH: pioPath,
+      ...pioEnv,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: false,

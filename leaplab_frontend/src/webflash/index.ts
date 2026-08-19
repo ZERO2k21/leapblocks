@@ -5,8 +5,8 @@
  *
  * WebFlasher — the browser-side upload path for LeapBlocks.
  *
- * In Electron the app flashes boards through the bundled arduino-cli. In the
- * browser (web build) there is no local compiler, so this module:
+ * In Electron the app flashes boards through the bundled PlatformIO pio.exe.
+ * In the browser (web build) there is no local compiler, so this module:
  *
  *   1. POSTs the sketch to the compiler server (CLOUD_COMPILER_URL),
  *      which returns an Intel HEX (AVR) or a base64 firmware .bin (ESP32).

@@ -126,97 +126,149 @@ function sanitizeApkName(name: string): string {
 }
 
 let isInitialized = true;
-let esp32CoreReady = false;
-let cachedCliVersion: string | null = null;
+let esp32PlatformReady = false;
+let cachedPioVersion: string | null = null;
+
+// ═══════════════════════════════════════════════════════════════════════
+// PLATFORMIO ADAPTER (Apache-2.0 — replaces the GPL-3.0 arduino-cli)
+// ═══════════════════════════════════════════════════════════════════════
+
+const PIO_BIN = process.env.PIO_CLI_PATH || 'pio';
+
+const FQBN_TO_PIO: Record<string, { board: string; platform: string }> = {
+  'arduino:avr:uno': { board: 'uno', platform: 'atmelavr' },
+  'arduino:avr:nano': { board: 'nanoatmega328', platform: 'atmelavr' },
+  'arduino:avr:mega': { board: 'megaatmega2560', platform: 'atmelavr' },
+  'arduino:avr:leonardo': { board: 'leonardo', platform: 'atmelavr' },
+  'esp32:esp32:esp32': { board: 'esp32dev', platform: 'espressif32' },
+  'esp32:esp32:esp32c3': { board: 'esp32-c3-devkitm-1', platform: 'espressif32' },
+  'esp32:esp32:esp32s2': { board: 'esp32-s2-saola-1', platform: 'espressif32' },
+  'esp32:esp32:esp32s3': { board: 'esp32-s3-devkitc-1', platform: 'espressif32' },
+  'esp32:esp32:esp32c6': { board: 'esp32-c6-devkitc-1', platform: 'espressif32' },
+  'esp32:esp32:esp32h2': { board: 'esp32-h2-devkitm-1', platform: 'espressif32' },
+  'esp32:esp32:esp32p4': { board: 'esp32-p4-devkitm-1', platform: 'espressif32' },
+};
+
+const ESP32_VARIANT_FALLBACK: Record<string, { board: string; platform: string }> = {
+  esp32: { board: 'esp32dev', platform: 'espressif32' },
+  esp32c3: { board: 'esp32-c3-devkitm-1', platform: 'espressif32' },
+  esp32s2: { board: 'esp32-s2-saola-1', platform: 'espressif32' },
+  esp32s3: { board: 'esp32-s3-devkitc-1', platform: 'espressif32' },
+  esp32c6: { board: 'esp32-c6-devkitc-1', platform: 'espressif32' },
+  esp32h2: { board: 'esp32-h2-devkitm-1', platform: 'espressif32' },
+  esp32p4: { board: 'esp32-p4-devkitm-1', platform: 'espressif32' },
+};
+
+function isEsp32Board(board: string): boolean {
+  return board.startsWith('esp32:');
+}
+
+/** FQBN → PlatformIO board/platform; throws for unsupported boards. */
+function pioTarget(fqbn: string): { board: string; platform: string } {
+  const exact = FQBN_TO_PIO[fqbn];
+  if (exact) return exact;
+  if (isEsp32Board(fqbn)) {
+    const variant = fqbn.split(':').pop() || 'esp32';
+    const hit = ESP32_VARIANT_FALLBACK[variant];
+    if (hit) return hit;
+  }
+  throw new Error(`Unsupported board FQBN for PlatformIO: ${fqbn}`);
+}
+
+/**
+ * Write a PlatformIO project (platformio.ini + src/main.ino) into projectDir.
+ */
+function createPioProject(
+  projectDir: string,
+  code: string,
+  target: { board: string; platform: string },
+  opts: { libDirs?: string[]; mergeBinaries?: boolean; uploadPort?: string } = {},
+): string {
+  const srcDir = path.join(projectDir, 'src');
+  fs.mkdirSync(srcDir, { recursive: true });
+  fs.writeFileSync(path.join(srcDir, 'main.ino'), code, 'utf-8');
+
+  const lines = [
+    `[env:${target.board}]`,
+    `platform = ${target.platform}`,
+    'framework = arduino',
+    `board = ${target.board}`,
+  ];
+  if (opts.libDirs?.length) {
+    lines.push('lib_extra_dirs =');
+    for (const dir of opts.libDirs) lines.push(`    ${dir.replace(/\\/g, '/')}`);
+  }
+  if (opts.mergeBinaries) lines.push('board_build.merge_binaries = yes');
+  if (opts.uploadPort) lines.push(`upload_port = ${opts.uploadPort}`);
+
+  fs.writeFileSync(path.join(projectDir, 'platformio.ini'), lines.join('\n') + '\n', 'utf-8');
+  return projectDir;
+}
+
+function getPioBuildDir(projectDir: string, board: string): string {
+  return path.join(projectDir, '.pio', 'build', board);
+}
+
+function listPioBuildFiles(projectDir: string, board: string): string[] {
+  const buildDir = getPioBuildDir(projectDir, board);
+  if (!fs.existsSync(buildDir)) return [];
+  return fs.readdirSync(buildDir);
+}
+
+function formatPioError(result: CLIResult): string {
+  const stderr = (result.stderr || '').trim();
+  const stdout = (result.stdout || '').trim();
+  const body = stderr || stdout || `pio exited with code ${result.code}`;
+  return body.length > 4000 ? body.slice(-4000) : body;
+}
 
 async function getCliVersion(): Promise<string> {
-  if (cachedCliVersion) return cachedCliVersion;
+  if (cachedPioVersion) return cachedPioVersion;
   try {
-    const { stdout } = await runCLI(['version', '--format', 'json']);
-    const parsed = JSON.parse(stdout || '{}');
-    cachedCliVersion = parsed.VersionString || parsed.version || stdout.trim().split('\n')[0];
+    const { stdout } = await runCLI(['--version']);
+    const match = stdout.match(/version\s+([^\s]+)/i);
+    cachedPioVersion = match ? match[1] : stdout.trim().split('\n')[0];
   } catch (err) {
-    cachedCliVersion = 'unknown';
+    cachedPioVersion = 'unknown';
   }
-  return cachedCliVersion!;
+  return cachedPioVersion!;
 }
 
-function getCliPath(): string {
-  if (process.env.ARDUINO_CLI_PATH) return process.env.ARDUINO_CLI_PATH;
-
-  const bundledLocal = path.join(__dirname, 'arduino-cli', process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli');
-  if (fs.existsSync(bundledLocal)) return bundledLocal;
-
-  const bundledParent = path.join(__dirname, '..', 'src', 'drivers', 'arduino-cli', process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli');
-  if (fs.existsSync(bundledParent)) return bundledParent;
-
-  return process.platform === 'win32' ? 'arduino-cli.exe' : 'arduino-cli';
+/**
+ * Ensure a PlatformIO platform is installed. `pio platform install` is
+ * idempotent (exits 0 when already installed); `pio run` also auto-installs
+ * platforms declared in platformio.ini.
+ */
+async function ensurePioPlatform(name: string): Promise<boolean> {
+  const { code, stderr } = await runCLI(['platform', 'install', name], 1_800_000);
+  if (code !== 0) console.error(`[SERVER] platform install ${name} failed:`, stderr.slice(-800));
+  return code === 0;
 }
 
-const CLI_PATH = getCliPath();
+async function ensureEsp32Platform(): Promise<boolean> {
+  if (esp32PlatformReady) return true;
+  esp32PlatformReady = await ensurePioPlatform('espressif32');
+  return esp32PlatformReady;
+}
 
-const CLI_CONFIG = (() => {
-  const bundledLocal = path.join(__dirname, 'arduino-cli.yaml');
-  if (fs.existsSync(bundledLocal)) return bundledLocal;
-  const bundledParent = path.join(__dirname, '..', 'src', 'drivers', 'arduino-cli', 'arduino-cli.yaml');
-  if (fs.existsSync(bundledParent)) return bundledParent;
-  return null;
-})();
-
+// Library dir: forge-lib/libraries (shared cache). Candidates in priority order.
 const FORGE_LIB_LIBRARIES = (() => {
-  const dataLocal = path.join(__dirname, 'arduino-cli', 'data', 'libraries');
-  if (fs.existsSync(dataLocal)) return dataLocal;
-
   const bundledLocal = path.join(__dirname, 'forge-lib', 'libraries');
   if (fs.existsSync(bundledLocal)) return bundledLocal;
 
   const bundledParent = path.join(__dirname, '..', 'forge-lib', 'libraries');
   if (fs.existsSync(bundledParent)) return bundledParent;
 
-  if (process.platform === 'linux') {
-    const linuxUser = path.join(os.homedir(), 'Arduino', 'libraries');
-    if (fs.existsSync(linuxUser)) return linuxUser;
-  }
+  if (process.env.PIO_LIB_DIRS && fs.existsSync(process.env.PIO_LIB_DIRS)) return process.env.PIO_LIB_DIRS;
 
-  const arduinoDataUser = process.env.ARDUINO_DIRECTORIES_USER;
-  if (arduinoDataUser) {
-    const dockerLibs = path.join(arduinoDataUser, 'libraries');
-    if (fs.existsSync(dockerLibs)) return dockerLibs;
-  }
+  const dockerLibs = path.join('/app/forge-lib/libraries');
+  if (fs.existsSync(dockerLibs)) return dockerLibs;
 
   return null;
 })();
 
-// ESP32 package indexes: the Espressif CDN is primary (proven reachable from
-// Render's build network); GitHub-hosted mirrors are fallbacks, since arduino-cli
-// aborts when ANY configured index 404s, each URL must be tried on its own.
-const ESP32_INDEX_URLS = [
-  'https://dl.espressif.com/dl/package_esp32_index.json',
-  'https://espressif.github.io/arduino-esp32/package_esp32_index.json',
-];
-
-async function updateIndexFor(url: string): Promise<boolean> {
-  const { code } = await runCLI(['core', 'update-index', '--additional-urls', url]);
-  return code === 0;
-}
-
-async function installESP32Core(): Promise<boolean> {
-  for (const url of ESP32_INDEX_URLS) {
-    console.log('[SERVER] update-index + core install esp32:esp32 via', url);
-    if (!(await updateIndexFor(url))) {
-      console.log('[SERVER]   index update failed for', url, '— trying next URL');
-      continue;
-    }
-    const { code } = await runCLI(['core', 'install', 'esp32:esp32', '--additional-urls', url]);
-    if (code === 0) return true;
-    console.log('[SERVER]   install failed for', url, '— trying next URL');
-  }
-  return false;
-}
-
-console.log(`[SERVER] arduino-cli: ${CLI_PATH}`);
-console.log(`[SERVER] config:      ${CLI_CONFIG || '(default)'}`);
-console.log(`[SERVER] libraries:   ${FORGE_LIB_LIBRARIES || '(none)'}`);
+console.log(`[SERVER] pio:          ${PIO_BIN}`);
+console.log(`[SERVER] libraries:    ${FORGE_LIB_LIBRARIES || '(none)'}`);
 
 export interface CLIResult {
   stdout: string;
@@ -224,20 +276,9 @@ export interface CLIResult {
   code: number;
 }
 
-// arduino-cli `core list --format json` returns `{"platforms": [...]}` (v1.x)
-// but older versions return a bare array — accept both shapes.
-function parseCoreList(stdout: string): any[] {
-  if (!stdout) return [];
-  const data = JSON.parse(stdout);
-  if (Array.isArray(data)) return data;
-  if (Array.isArray((data as any)?.platforms)) return (data as any).platforms;
-  return [];
-}
-
 function runCLI(args: string[], timeoutMs = 120_000): Promise<CLIResult> {
   return new Promise((resolve) => {
-    const cliArgs = CLI_CONFIG ? ['--config-file', CLI_CONFIG, ...args] : args;
-    const proc = spawn(CLI_PATH, cliArgs, { env: { ...process.env } });
+    const proc = spawn(PIO_BIN, args, { env: { ...process.env } });
     proc.unref();
     let stdout = '', stderr = '';
     let settled = false;
@@ -287,96 +328,24 @@ function runCommand(cmd: string, timeoutMs = 60_000): Promise<{ stdout: string; 
 }
 
 async function initCores(): Promise<void> {
-  console.log('[SERVER] Initializing arduino cores...');
+  console.log('[SERVER] Initializing PlatformIO platforms...');
   try {
     await getCliVersion();
 
-    const { stdout, stderr } = await runCLI(['core', 'list', '--format', 'json']);
-    console.log('[SERVER] Core list raw stdout:', JSON.stringify(stdout).slice(0, 2000));
-    if (stderr) console.log('[SERVER] Core list stderr:', stderr.slice(0, 1000));
-    console.log('[SERVER] Core list output length:', stdout.length);
-    let data: any;
-    try { data = JSON.parse(stdout || '{}'); } catch (e: any) { console.log('[SERVER] Core list JSON parse failed:', e.message); data = {}; }
-    const cores = parseCoreList(stdout);
-    console.log('[SERVER] Found', cores.length, 'installed cores');
-    cores.forEach((c: any, i: number) => {
-      console.log(`[SERVER]   core[${i}]: id=${c.id}, platform=${c.platform?.id || '(none)'}, version=${c.installedVersion || c.version || '?'}`);
-    });
+    const avrOk = await ensurePioPlatform('atmelavr');
+    console.log('[SERVER] atmelavr platform:', avrOk ? 'ready' : 'FAILED');
 
-    const hasAvr = cores.some((c: any) =>
-      (c.id && c.id.startsWith('arduino:avr')) ||
-      (c.platform?.id && c.platform.id.startsWith('arduino:avr'))
-    );
-    console.log('[SERVER] hasAvr =', hasAvr);
+    esp32PlatformReady = await ensurePioPlatform('espressif32');
+    console.log('[SERVER] espressif32 platform:', esp32PlatformReady ? 'ready' : 'FAILED');
 
-    if (!hasAvr) {
-      console.log('[SERVER] Installing arduino:avr core...');
-      await runCLI(['core', 'update-index']);
-      await runCLI(['core', 'install', 'arduino:avr']);
-    }
-
-    const hasEsp32 = cores.some((c: any) =>
-      (c.id && c.id.startsWith('esp32:')) ||
-      (c.platform?.id && c.platform.id.startsWith('esp32:'))
-    );
-    console.log('[SERVER] hasEsp32 =', hasEsp32);
-
-    if (!hasEsp32) {
-      console.log('[SERVER] Installing esp32:esp32 core (may take a few minutes)...');
-      const ok = await installESP32Core();
-      esp32CoreReady = ok;
-      console.log('[SERVER] ESP32 install result:', ok ? 'success' : 'FAILED');
-      if (!ok) {
-        const check = await runCLI(['core', 'list', '--format', 'json']);
-        console.log('[SERVER] Post-install core list raw:', JSON.stringify(check.stdout).slice(0, 2000));
-      }
-    } else {
-      esp32CoreReady = true;
-      console.log('[SERVER] ESP32 core already installed ✓');
-    }
-
-    console.log('[SERVER] Core initialization complete');
+    console.log('[SERVER] Platform initialization complete');
   } catch (e: any) {
-    console.warn('[SERVER] Core init warning:', e.message);
+    console.warn('[SERVER] Platform init warning:', e.message);
   }
 }
 
 async function ensureESP32Core(): Promise<boolean> {
-  if (esp32CoreReady) {
-    console.log('[SERVER] ensureESP32Core: already ready (cached)');
-    return true;
-  }
-  try {
-    console.log('[SERVER] ensureESP32Core: checking installed cores...');
-    const { stdout, code } = await runCLI(['core', 'list', '--format', 'json']);
-    if (code !== 0) {
-      console.error('[SERVER] ensureESP32Core: core list failed with code', code);
-      throw new Error('core list failed');
-    }
-    console.log('[SERVER] ensureESP32Core: core list output length =', stdout.length);
-    const cores = parseCoreList(stdout);
-    console.log('[SERVER] ensureESP32Core: parsed', cores.length, 'cores');
-    if (Array.isArray(cores)) {
-      cores.forEach((c: any, i: number) => {
-        console.log(`[SERVER]   core[${i}]: id=${c.id}, platform=${c.platform?.id || '(none)'}`);
-      });
-    }
-    const installed = Array.isArray(cores) && cores.some((c: any) =>
-      (c.id && c.id.startsWith('esp32:')) ||
-      (c.platform?.id && c.platform.id.startsWith('esp32:'))
-    );
-    console.log('[SERVER] ensureESP32Core: esp32 core installed =', installed);
-    if (installed) { esp32CoreReady = true; return true; }
-
-    console.log('[SERVER] ensureESP32Core: ESP32 core NOT found — installing now...');
-    console.log('[SERVER] ensureESP32Core: index URLs:', ESP32_INDEX_URLS.join(', '));
-    esp32CoreReady = await installESP32Core();
-    console.log('[SERVER] ensureESP32Core: install result:', esp32CoreReady ? 'success' : 'FAILED');
-    return esp32CoreReady;
-  } catch (e: any) {
-    console.error('[SERVER] ensureESP32Core error:', e.message);
-    return false;
-  }
+  return ensureEsp32Platform();
 }
 
 function migrateESP32LedcAPI(code: string): string {
@@ -701,69 +670,62 @@ app.post('/compile', async (req: Request, res: Response) => {
 
   return withCompileLock(async () => {
 
-  const isESP32 = board.startsWith('esp32:');
+  let target: { board: string; platform: string };
+  try {
+    target = pioTarget(board);
+  } catch (e: any) {
+    return res.status(400).json({ success: false, errors: e.message });
+  }
+  const isESP32 = isEsp32Board(board);
   const tempId = uuidv4();
   const tempDir = path.join(os.tmpdir(), `electra_${tempId}`);
-  const sketchDir = path.join(tempDir, 'sketch');
-  const sketchPath = path.join(sketchDir, 'sketch.ino');
+  const projectDir = path.join(tempDir, 'project');
 
   try {
-    fs.mkdirSync(sketchDir, { recursive: true });
-
     let processedCode = code;
     if (isESP32) {
       processedCode = processedCode.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
       processedCode = migrateESP32LedcAPI(processedCode);
       const coreOk = await ensureESP32Core();
       if (!coreOk) {
-        return res.json({ success: false, errors: 'ESP32 core not available on this server' });
+        return res.json({ success: false, errors: 'ESP32 platform not available on this server' });
       }
     }
 
-    fs.writeFileSync(sketchPath, processedCode);
-
-    const cliArgs = ['compile', '--fqbn', board, '--output-dir', tempDir];
-
-    if (!isESP32 && FORGE_LIB_LIBRARIES) {
-      cliArgs.push('--libraries', FORGE_LIB_LIBRARIES);
-    }
     if (libraries) {
       const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map((l: string) => l.trim());
       for (const lib of libList) {
         if (!lib) continue;
         if (FORGE_LIB_LIBRARIES) {
           const installedPath = path.join(FORGE_LIB_LIBRARIES, lib);
-          if (fs.existsSync(installedPath)) {
-            cliArgs.push('--libraries', installedPath);
-          } else {
-            try { await runCLI(['lib', 'install', lib]); } catch {}
-            if (fs.existsSync(installedPath)) {
-              cliArgs.push('--libraries', installedPath);
-            }
+          if (!fs.existsSync(installedPath)) {
+            try { await runCLI(['pkg', 'install', '--library', lib, '--storage-dir', FORGE_LIB_LIBRARIES]); } catch {}
           }
         } else {
-          try { await runCLI(['lib', 'install', lib]); } catch {}
+          try { await runCLI(['pkg', 'install', '--library', lib]); } catch {}
         }
       }
     }
 
-    cliArgs.push(sketchDir);
+    createPioProject(projectDir, processedCode, target, {
+      libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+    });
 
-    const { stdout, stderr, code: exitCode } = await runCLI(cliArgs, 900_000);
+    const { stdout, stderr, code: exitCode } = await runCLI(['run', '-d', projectDir, '-j', '2'], 900_000);
 
     if (exitCode !== 0) {
-      return res.json({ success: false, errors: stderr || stdout || `Exit code ${exitCode}` });
+      return res.json({ success: false, errors: formatPioError({ stdout, stderr, code: exitCode }) });
     }
 
-    const files = fs.readdirSync(tempDir);
+    const files = listPioBuildFiles(projectDir, target.board);
 
     if (isESP32) {
-      const binFile = files.find(f => f === 'sketch.ino.bin')
+      const binFile = files.find(f => f === 'firmware.bin')
         ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
       if (!binFile) {
         return res.json({ success: false, errors: `No .bin found. Files: ${files.join(', ')}` });
       }
-      const rawBin = fs.readFileSync(path.join(tempDir, binFile));
+      const rawBin = fs.readFileSync(path.join(getPioBuildDir(projectDir, target.board), binFile));
       const hexContent = binToIntelHex(rawBin);
       return res.json({ success: true, hex: hexContent, binBase64: rawBin.toString('base64') });
     } else {
@@ -771,7 +733,7 @@ app.post('/compile', async (req: Request, res: Response) => {
       if (!hexFile) {
         return res.json({ success: false, errors: `No .hex found. Files: ${files.join(', ')}` });
       }
-      const hexContent = fs.readFileSync(path.join(tempDir, hexFile), 'utf-8');
+      const hexContent = fs.readFileSync(path.join(getPioBuildDir(projectDir, target.board), hexFile), 'utf-8');
       return res.json({ success: true, hex: hexContent });
     }
   } catch (err: any) {
@@ -818,29 +780,28 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
 
   console.log(`[SERVER] Cache MISS, compiling for firmware ID: ${hash}`);
   return withCompileLock(async () => {
+    let target: { board: string; platform: string };
+    try {
+      target = pioTarget(board);
+    } catch (e: any) {
+      return res.status(400).json({ success: false, errors: e.message });
+    }
     const tempId = uuidv4();
     const tempDir = path.join(os.tmpdir(), `electra_${tempId}`);
-    const sketchDir = path.join(tempDir, 'sketch');
-    const sketchPath = path.join(sketchDir, 'sketch.ino');
+    const projectDir = path.join(tempDir, 'project');
 
   try {
-    fs.mkdirSync(sketchDir, { recursive: true });
-
     let processedCode = code;
     processedCode = processedCode.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
     processedCode = migrateESP32LedcAPI(processedCode);
 
-    console.log(`[SERVER] /compile/esp32: calling ensureESP32Core (current esp32CoreReady=${esp32CoreReady})...`);
+    console.log(`[SERVER] /compile/esp32: calling ensureESP32Core (current esp32PlatformReady=${esp32PlatformReady})...`);
     const coreOk = await ensureESP32Core();
     console.log(`[SERVER] /compile/esp32: ensureESP32Core returned ${coreOk}`);
     if (!coreOk) {
-      console.error('[SERVER] /compile/esp32: ESP32 core NOT available — rejecting request');
-      return res.json({ success: false, errors: 'ESP32 core not available on this server' });
+      console.error('[SERVER] /compile/esp32: ESP32 platform NOT available — rejecting request');
+      return res.json({ success: false, errors: 'ESP32 platform not available on this server' });
     }
-
-    fs.writeFileSync(sketchPath, processedCode);
-
-    const cliArgs = ['compile', '--fqbn', board, '--output-dir', tempDir];
 
     if (libraries) {
       const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map((l: string) => l.trim());
@@ -848,40 +809,38 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
         if (!lib) continue;
         if (FORGE_LIB_LIBRARIES) {
           const installedPath = path.join(FORGE_LIB_LIBRARIES, lib);
-          if (fs.existsSync(installedPath)) {
-            cliArgs.push('--libraries', installedPath);
-          } else {
-            try { await runCLI(['lib', 'install', lib]); } catch {}
-            if (fs.existsSync(installedPath)) {
-              cliArgs.push('--libraries', installedPath);
-            }
+          if (!fs.existsSync(installedPath)) {
+            try { await runCLI(['pkg', 'install', '--library', lib, '--storage-dir', FORGE_LIB_LIBRARIES]); } catch {}
           }
         } else {
-          try { await runCLI(['lib', 'install', lib]); } catch {}
+          try { await runCLI(['pkg', 'install', '--library', lib]); } catch {}
         }
       }
     }
 
-    cliArgs.push(sketchDir);
+    // NOTE: no board_build.merge_binaries here — the browser flashes
+    // firmware.bin + bootloader.bin + partitions.bin separately.
+    createPioProject(projectDir, processedCode, target, {
+      libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+    });
 
     // ESP32 builds are heavy: ~30s on a fast desktop, ~15-25 min on Render's
     // free tier (0.1 CPU / 512 MB). Cap parallelism so the 512 MB instance
     // doesn't thrash spawning one gcc per host core, and never kill the build
-    // before 30 minutes. Note: arduino-cli has no usable object cache, so the
-    // first compile of each sketch is always slow; afterwards the firmware
-    // cache (by sketch hash) serves it instantly.
-    cliArgs.push('--jobs', '2');
-    const { stdout, stderr, code: exitCode } = await runCLI(cliArgs, 1_800_000);
+    // before 30 minutes. Note: pio run has a build cache in .pio/build, and
+    // the firmware cache (by sketch hash) serves repeats instantly.
+    const { stdout, stderr, code: exitCode } = await runCLI(['run', '-d', projectDir, '-j', '2'], 1_800_000);
 
     if (exitCode !== 0) {
       console.error('[SERVER] /compile/esp32: COMPILE FAILED (exit', exitCode + ')');
       console.error('[SERVER] /compile/esp32: stderr:', (stderr || '').slice(-3000));
       console.error('[SERVER] /compile/esp32: stdout tail:', (stdout || '').slice(-1500));
-      return res.json({ success: false, errors: stderr || stdout || `Exit code ${exitCode}` });
+      return res.json({ success: false, errors: formatPioError({ stdout, stderr, code: exitCode }) });
     }
 
-    const files = fs.readdirSync(tempDir);
-    const binFile = files.find(f => f === 'sketch.ino.bin')
+    const buildDir = getPioBuildDir(projectDir, target.board);
+    const files = listPioBuildFiles(projectDir, target.board);
+    const binFile = files.find(f => f === 'firmware.bin')
       ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
 
     if (!binFile) {
@@ -889,14 +848,14 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
       return res.json({ success: false, errors: `No .bin found. Files: ${files.join(', ')}` });
     }
 
-    const binBuffer = fs.readFileSync(path.join(tempDir, binFile));
+    const binBuffer = fs.readFileSync(path.join(buildDir, binFile));
 
-    // arduino-cli also produces the bootloader and partition table — flash all
+    // PlatformIO also produces the bootloader and partition table — flash all
     // three so the board boots regardless of what was on the flash before.
-    const bootloaderFile = files.find(f => f.endsWith('.bootloader.bin'));
-    const partitionsFile = files.find(f => f.endsWith('.partitions.bin'));
-    const bootloaderBuffer = bootloaderFile ? fs.readFileSync(path.join(tempDir, bootloaderFile)) : null;
-    const partitionsBuffer = partitionsFile ? fs.readFileSync(path.join(tempDir, partitionsFile)) : null;
+    const bootloaderFile = files.find(f => f === 'bootloader.bin');
+    const partitionsFile = files.find(f => f === 'partitions.bin');
+    const bootloaderBuffer = bootloaderFile ? fs.readFileSync(path.join(buildDir, bootloaderFile)) : null;
+    const partitionsBuffer = partitionsFile ? fs.readFileSync(path.join(buildDir, partitionsFile)) : null;
 
     fs.writeFileSync(binPath, binBuffer);
     if (bootloaderBuffer) fs.writeFileSync(path.join(CACHE_DIR, `${hash}.bootloader.bin`), bootloaderBuffer);
@@ -941,17 +900,23 @@ app.post('/transpile', async (req: Request, res: Response) => {
   if (isInitialized && process.env.VALIDATE_TRANSPILE !== 'false') {
     const sketchId = `transpile_${Date.now()}`;
     const sketchDir = path.join(os.tmpdir(), 'electra', sketchId);
-    const sketchFile = path.join(sketchDir, `${sketchId}.ino`);
     try {
       fs.mkdirSync(sketchDir, { recursive: true });
-      fs.writeFileSync(sketchFile, code, 'utf8');
-      const cliArgs = ['compile', '--fqbn', board, '--output-dir', sketchDir, sketchDir];
-      const { code: exitCode, stderr } = await runCLI(cliArgs);
+      let target: { board: string; platform: string };
+      try {
+        target = pioTarget(board);
+      } catch (e: any) {
+        return res.json({ success: false, errors: (e as Error).message });
+      }
+      createPioProject(sketchDir, code, target, {
+        libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+      });
+      const { code: exitCode, stderr } = await runCLI(['run', '-d', sketchDir]);
       if (exitCode !== 0) {
-        return res.json({ success: false, errors: stderr || 'Compilation validation failed' });
+        return res.json({ success: false, errors: formatPioError({ stdout: '', stderr, code: exitCode }) });
       }
   } catch (err: any) {
-    console.error('[SERVER] /compile/esp32: EXCEPTION:', err.message);
+    console.error('[SERVER] /transpile: EXCEPTION:', err.message);
     return res.json({ success: false, errors: err.message });
   } finally {
       try { if (fs.existsSync(sketchDir)) fs.rmSync(sketchDir, { recursive: true, force: true }); } catch {}
@@ -970,20 +935,30 @@ app.post('/transpile', async (req: Request, res: Response) => {
 
 // GET /libraries/search
 app.get('/libraries/search', async (req: Request, res: Response) => {
-  const query = req.query.q as string;
+  const query = (req.query.q as string) || '';
   if (!query) return res.json([]);
   try {
-    const args = ['lib', 'search', query, '--format', 'json'];
-    if (CLI_CONFIG) args.splice(1, 0, '--config-file', CLI_CONFIG);
-    const { stdout } = await runCLI(args);
-    const data = JSON.parse(stdout || '{}');
-    const libs = (data.libraries || []).slice(0, 20).map((l: any) => ({
-      name: l.name,
-      author: l.latest?.author?.name || '',
-      description: l.latest?.sentence || '',
-      version: l.latest?.version || '',
-    }));
-    res.json(libs);
+    const url = new URL('https://api.registry.platformio.org/v3/search');
+    url.searchParams.set('query', query);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20_000);
+    try {
+      const response = await fetch(url.toString(), { signal: controller.signal });
+      if (!response.ok) throw new Error(`Registry HTTP ${response.status}`);
+      const data: any = await response.json();
+      const libs = (Array.isArray(data.items) ? data.items : [])
+        .filter((l: any) => l.type === 'library')
+        .slice(0, 20)
+        .map((l: any) => ({
+          name: l.name,
+          author: l.owner?.username || '',
+          description: l.description || '',
+          version: l.version?.name || '',
+        }));
+      res.json(libs);
+    } finally {
+      clearTimeout(timer);
+    }
   } catch {
     res.json([]);
   }
@@ -1026,11 +1001,14 @@ app.post('/libraries/install', async (req: Request, res: Response) => {
   console.log(`[SERVER] Installing library: ${name}`);
   if (FORGE_LIB_LIBRARIES) fs.mkdirSync(FORGE_LIB_LIBRARIES, { recursive: true });
 
-  const { stdout, stderr, code } = await runCLI(['lib', 'install', name]);
+  const args = FORGE_LIB_LIBRARIES
+    ? ['pkg', 'install', '--library', name, '--storage-dir', FORGE_LIB_LIBRARIES]
+    : ['pkg', 'install', '--library', name];
+  const { stdout, stderr, code } = await runCLI(args, 300_000);
   if (code === 0) {
     res.json({ success: true });
   } else {
-    res.status(500).json({ success: false, error: stderr || stdout || 'Installation failed' });
+    res.status(500).json({ success: false, error: formatPioError({ stdout, stderr, code }) });
   }
 });
 
@@ -1041,7 +1019,10 @@ app.delete('/libraries/remove', async (req: Request, res: Response) => {
 
   console.log(`[SERVER] Removing library: ${name}`);
 
-  const { code, stderr, stdout } = await runCLI(['lib', 'uninstall', name]);
+  // pio pkg uninstall has no --library/--storage-dir flags — the install
+  // target lives in forge-lib/libraries, so remove it manually (best effort)
+  // and also try a global uninstall to clean ~/.platformio.
+  const { code, stderr, stdout } = await runCLI(['pkg', 'uninstall', '--global', name]);
 
   let manualRemoved = false;
   if (FORGE_LIB_LIBRARIES && fs.existsSync(FORGE_LIB_LIBRARIES)) {
@@ -1203,8 +1184,8 @@ app.get('/health', async (_req: Request, res: Response) => {
     status: 'ok',
     port: PORT,
     uptime: Math.floor(process.uptime()),
-    arduinoCli: cliVersion,
-    esp32CoreReady,
+    platformio: cliVersion,
+    esp32PlatformReady,
     initialized: isInitialized,
     jobCount: jobs.size,
     apkBuilderExists,
@@ -1218,11 +1199,11 @@ app.get('/health', async (_req: Request, res: Response) => {
 // ─── Start ────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[LeapBlocks Server] Running on http://localhost:${PORT}`);
-  console.log(`[LeapBlocks Server] arduino-cli: ${CLI_PATH}`);
+  console.log(`[LeapBlocks Server] pio: ${PIO_BIN}`);
   initCores().then(() => {
-    if (!esp32CoreReady) {
+    if (!esp32PlatformReady) {
       ensureESP32Core().then(ok => {
-        console.log(`[LeapBlocks Server] ESP32 core: ${ok ? 'ready' : 'not installed'}`);
+        console.log(`[LeapBlocks Server] ESP32 platform: ${ok ? 'ready' : 'not installed'}`);
       });
     }
   });
