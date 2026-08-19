@@ -53,7 +53,7 @@ const getPrimaryUrl = (): string => {
   if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_COMPILER_URL) {
     return (import.meta as any).env.VITE_COMPILER_URL as string;
   }
-  return 'https://leapblocks-server.onrender.com';
+  return 'https://leapblocks-server-6qwr.onrender.com';
 };
 
 /** Primary cloud compiler URL. */
