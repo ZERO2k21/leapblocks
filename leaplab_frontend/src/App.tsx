@@ -443,6 +443,20 @@ export default function App() {
 
     const cancelSwitch = () => setSwitchPrompt(null);
 
+    const modeDisplayNames: Record<string, string> = {
+        intermediate: 'Embed',
+        python: 'Logix',
+        junior: 'Ignite',
+        electra: 'Electra',
+        neura: 'Neura',
+        vision3d: 'Vision 3D',
+        creova: 'Creova',
+        notebook: 'Notebook',
+        pulse: 'Pulse',
+    };
+
+    const getModeDisplayName = (mode: string) => modeDisplayNames[mode] || mode;
+
     const [exitPrompt, setExitPrompt] = useState<boolean>(false);
 
     const requestExit = () => {
@@ -516,7 +530,7 @@ export default function App() {
                         <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 flex flex-col">
                             <h2 className="m-0 mb-2.5 text-lg font-bold text-slate-900">Switching Coding Environment</h2>
                             <p className="m-0 mb-5 text-sm text-slate-600 leading-relaxed font-medium">
-                                You are switching from <strong className="text-slate-900 font-semibold">{switchPrompt.from}</strong> into <strong className="text-slate-900 font-semibold">{switchPrompt.to}</strong>.
+                                You are switching from <strong className="text-slate-900 font-semibold">{getModeDisplayName(switchPrompt.from)}</strong> into <strong className="text-slate-900 font-semibold">{getModeDisplayName(switchPrompt.to)}</strong>.
                                 {switchPrompt.tab ? ` (target tab: ${switchPrompt.tab})` : ''}
                                 The existing code in the current editor will stop running.
                             </p>
