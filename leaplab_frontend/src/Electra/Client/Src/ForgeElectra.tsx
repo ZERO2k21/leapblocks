@@ -9,7 +9,7 @@ import { Code, Library as LibraryIcon } from 'lucide-react';
 // Register official leap elements
 import '../utils/elements/leap-elements';
 import { useForgeStore, getSimulationRunner } from '../utils/store/useForgeStore';
-import { getElectraVars, getLightThemeVars } from './utils/electraTheme';
+import { getElectraVars, getLightThemeVars } from '../utils/electraTheme';
 
 // Lazy load complex inner components
 const ForgeCanvas = lazy(() => import('./components/ForgeCanvas'));
