@@ -2,6 +2,13 @@ import React, { useCallback, useState, useRef } from 'react'
 import { IgniteTopbar } from '../../Electra/Client/Src/components/Layout/Topbar'
 import { fileService } from '../../Electra/Client/Src/services/FileService'
 import type { ProjectType, NeuraProject } from '../types/neura.types'
+import {
+    ImageIcon, AudioIcon, PoseIcon, TextIcon, NumbersIcon, ObjectIcon,
+    VisionBadgeIcon, SoundBadgeIcon, MotionBadgeIcon, WordsBadgeIcon, MathBadgeIcon, SpotBadgeIcon,
+    AppleIcon, BananaIcon, OrangeIcon, SpeakerIcon, MusicIcon, MicIcon, HandIcon, PointingIcon, PeaceIcon,
+    YogaIcon, HappyFaceIcon, NeutralFaceIcon, SadFaceIcon, CalcIcon, PlusIcon, MinusIcon, BoxIcon, TargetIcon, PaletteIcon, BrushIcon,
+    BrainIcon, SparkleIcon, RocketIcon
+} from '../assets/icons/NeuraIcons'
 
 interface NeuraHomeProps {
     onSelect: (type: ProjectType, template?: { name: string; classes: string[] }) => void
@@ -11,8 +18,8 @@ interface NeuraHomeProps {
 const CLASSIFIER_TYPES: {
     type: ProjectType
     name: string
-    emoji: string
-    iconUrl: string
+    Icon: React.FC<{ size?: number; className?: string; color?: string }>
+    BadgeIcon: React.FC<{ size?: number; className?: string; color?: string }>
     description: string
     color: string
     gradient: string
@@ -22,170 +29,181 @@ const CLASSIFIER_TYPES: {
         {
             type: 'image-classifier',
             name: 'Image Detective',
-            emoji: '📸',
-            iconUrl: 'https://api.iconify.design/fluent-emoji/high-res/coloramera.png',
+            Icon: ImageIcon,
+            BadgeIcon: VisionBadgeIcon,
             description: 'Teach your computer to SEE and recognize things!',
             color: '#8B5CF6',
             gradient: 'from-[#630ed4] via-[#7c3aed] to-[#a855f7]',
-            badge: '👁️ Vision'
+            badge: 'Vision'
         },
         {
             type: 'audio-classifier',
             name: 'Sound Catcher',
-            emoji: '🎤',
-            iconUrl: 'https://api.iconify.design/fluent-emoji/high-res/color microphone.png',
+            Icon: AudioIcon,
+            BadgeIcon: SoundBadgeIcon,
             description: 'Train AI to LISTEN and tell sounds apart!',
             color: '#A855F7',
             gradient: 'from-[#7c3aed] via-[#a855f7] to-[#d946ef]',
-            badge: '👂 Sound'
+            badge: 'Sound'
         },
         {
             type: 'pose-classifier',
             name: 'Body & Hand Poses',
-            emoji: '🤸',
-            iconUrl: 'https://api.iconify.design/fluent-emoji/high-res/color person-raising-hand.png',
+            Icon: PoseIcon,
+            BadgeIcon: MotionBadgeIcon,
             description: 'Teach AI to read body poses AND hand gestures!',
             color: '#EA580C',
             gradient: 'from-[#c32c00] via-[#ef4444] to-[#f97316]',
-            badge: '💃 Motion',
+            badge: 'Motion',
             hasToggle: true
         },
         {
             type: 'text-classifier',
             name: 'Word Wizard',
-            emoji: '📝',
-            iconUrl: 'https://api.iconify.design/fluent-emoji/high-res/color memo.png',
+            Icon: TextIcon,
+            BadgeIcon: WordsBadgeIcon,
             description: 'Classify words and sentences with smart word magic!',
             color: '#059669',
             gradient: 'from-[#006c44] via-[#10b981] to-[#34d399]',
-            badge: '🔡 Words'
+            badge: 'Words'
         },
         {
             type: 'numbers-cr',
             name: 'Number Ninja',
-            emoji: '🔢',
-            iconUrl: 'https://api.iconify.design/fluent-emoji/high-res/color input-numbers.png',
+            Icon: NumbersIcon,
+            BadgeIcon: MathBadgeIcon,
             description: 'Understand numbers and patterns like a genius!',
             color: '#8B5CF6',
             gradient: 'from-[#a855f7] via-[#d946ef] to-[#f472b6]',
-            badge: '🔢 Math'
+            badge: 'Math'
         },
         {
             type: 'object-detection',
             name: 'Object Finder',
-            emoji: '🔍',
-            iconUrl: 'https://api.iconify.design/fluent-emoji/high-res/color magnifying-glass-tilted-left.png',
+            Icon: ObjectIcon,
+            BadgeIcon: SpotBadgeIcon,
             description: 'Find and spot multiple things in one picture!',
             color: '#4F46E5',
             gradient: 'from-[#630ed4] via-[#3b82f6] to-[#06b6d4]',
-            badge: '🎯 Spot'
+            badge: 'Spot'
         }
     ]
 
-const PROJECT_TEMPLATES = [
+const PROJECT_TEMPLATES: {
+    name: string
+    description: string
+    Icon: React.FC<{ size?: number; className?: string; color?: string }>
+    Icon2: React.FC<{ size?: number; className?: string; color?: string }>
+    Icon3: React.FC<{ size?: number; className?: string; color?: string }>
+    classes: string[]
+    color: string
+    bg: string
+    tag: string
+    projectType: ProjectType
+}[] = [
     // Image Classifier
     {
         name: 'Fruit Finder',
         description: 'Teach AI to recognize yummy fruits!',
-        icon: '🍎',
-        icon2: '🍌',
-        icon3: '🍊',
+        Icon: AppleIcon,
+        Icon2: BananaIcon,
+        Icon3: OrangeIcon,
         classes: ['Apple', 'Banana', 'Orange'],
         color: '#c32c00',
         bg: 'from-[#c32c00]/10 to-[#ef4444]/10',
-        tag: '🖼️ Image',
-        projectType: 'image-classifier' as ProjectType
+        tag: 'Image',
+        projectType: 'image-classifier'
     },
     // Audio Classifier
     {
         name: 'Sound Identifier',
         description: 'Recognize different sounds!',
-        icon: '🔊',
-        icon2: '🎵',
-        icon3: '🎤',
+        Icon: SpeakerIcon,
+        Icon2: MusicIcon,
+        Icon3: MicIcon,
         classes: ['Clap', 'Whistle', 'Snap', 'Click'],
         color: '#10b981',
         bg: 'from-[#10b981]/10 to-[#34d399]/10',
-        tag: '🔊 Audio',
-        projectType: 'audio-classifier' as ProjectType
+        tag: 'Audio',
+        projectType: 'audio-classifier'
     },
     // Hand Pose Classifier
     {
         name: 'Finger Counter',
         description: 'Count fingers with AI hand tracking!',
-        icon: '✋',
-        icon2: '☝️',
-        icon3: '🖖',
+        Icon: HandIcon,
+        Icon2: PointingIcon,
+        Icon3: PeaceIcon,
         classes: ['One', 'Two', 'Three', 'Four', 'Five'],
         color: '#0ea5e9',
         bg: 'from-[#0ea5e9]/10 to-[#38bdf8]/10',
-        tag: '✋ Hand Gesture',
-        projectType: 'finger-counter' as ProjectType
+        tag: 'Hand Gesture',
+        projectType: 'finger-counter'
     },
     // Body Pose Classifier
     {
         name: 'Yoga Poses',
         description: 'Check your yoga form!',
-        icon: '🧘',
-        icon2: '🧘‍♀️',
-        icon3: '🧘‍♂️',
+        Icon: YogaIcon,
+        Icon2: YogaIcon,
+        Icon3: YogaIcon,
         classes: ['Tree Pose', 'Warrior Pose', 'Mountain Pose', 'Cobra Pose', "Child's Pose"],
         color: '#06b6d4',
         bg: 'from-[#06b6d4]/10 to-[#22d3ee]/10',
-        tag: '🧘 Body Pose',
-        projectType: 'yoga-checker' as ProjectType
+        tag: 'Body Pose',
+        projectType: 'yoga-checker'
     },
     // Text Classifier
     {
         name: 'Sentiment Checker',
         description: 'Detect if text is happy, sad or neutral!',
-        icon: '😊',
-        icon2: '😐',
-        icon3: '😢',
+        Icon: HappyFaceIcon,
+        Icon2: NeutralFaceIcon,
+        Icon3: SadFaceIcon,
         classes: ['Happy', 'Neutral', 'Sad'],
         color: '#8b5cf6',
         bg: 'from-[#8b5cf6]/10 to-[#a78bfa]/10',
-        tag: '📝 Text',
-        projectType: 'text-classifier' as ProjectType
+        tag: 'Text',
+        projectType: 'text-classifier'
     },
     // Numbers Classifier
     {
         name: 'Number Ninja',
         description: 'Understand numbers and patterns!',
-        icon: '🔢',
-        icon2: '➕',
-        icon3: '➖',
+        Icon: CalcIcon,
+        Icon2: PlusIcon,
+        Icon3: MinusIcon,
         classes: ['Zero', 'One', 'Two', 'Three', 'Four', 'Five'],
         color: '#f59e0b',
         bg: 'from-[#f59e0b]/10 to-[#fbbf24]/10',
-        tag: '🔢 Numbers',
-        projectType: 'numbers-cr' as ProjectType
+        tag: 'Numbers',
+        projectType: 'numbers-cr'
     },
     // Object Detection
     {
         name: 'Object Finder',
         description: 'Find and spot multiple things!',
-        icon: '🔍',
-        icon2: '📦',
-        icon3: '🎯',
+        Icon: ObjectIcon,
+        Icon2: BoxIcon,
+        Icon3: TargetIcon,
         classes: ['Person', 'Object', 'Background'],
         color: '#4F46E5',
         bg: 'from-[#630ed4]/10 to-[#3b82f6]/10',
-        tag: '🎯 Detection',
-        projectType: 'object-detection' as ProjectType
+        tag: 'Detection',
+        projectType: 'object-detection'
     },
     // Virtual Drawing Canvas (Hand Pose)
     {
         name: 'Virtual Drawing Canvas',
         description: 'Draw on a whiteboard with hand gestures!',
-        icon: '🎨',
-        icon2: '✋',
-        icon3: '🖌️',
+        Icon: PaletteIcon,
+        Icon2: HandIcon,
+        Icon3: BrushIcon,
         classes: ['Draw', 'Erase', 'Move', 'Color Select'],
         color: '#10b981',
         bg: 'from-[#10b981]/10 to-[#34d399]/10',
-        tag: '✋ Hand Gesture',
-        projectType: 'drawing-canvas' as ProjectType
+        tag: 'Hand Gesture',
+        projectType: 'drawing-canvas'
     }
 ]
 
@@ -371,7 +389,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                             {/* Version Badge */}
                             <div className="inline-flex items-center rounded-full mb-6 bg-gradient-to-br from-white/95 to-purple-100/95 backdrop-blur-md p-2 py-2 pr-4.5 border border-purple-500/20 shadow-[0_4px_16px_rgba(139,92,246,0.1),0_1px_3px_rgba(0,0,0,0.04)] gap-2.5">
                                 <div className="flex items-center justify-center rounded-full w-7 h-7 bg-gradient-to-br from-purple-500 to-indigo-600 shadow-[0_2px_8px_rgba(139,92,246,0.4)] shrink-0">
-                                    <span className="text-xs">🧠</span>
+                                    <BrainIcon size={14} color="white" />
                                 </div>
                                 <span className="text-[11px] font-bold text-purple-700 tracking-wide">Your AI Learning Buddy!</span>
                                 <span className="text-[10px] font-bold text-white bg-gradient-to-br from-purple-500 to-violet-500 px-2.5 py-0.75 rounded-full tracking-wider shrink-0 leading-snug">
@@ -381,13 +399,13 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
 
                             {/* Main Title */}
                             <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-500 tracking-tight leading-tight mb-4 whitespace-nowrap">
-                                ⚡ Choose Your Superpower! ⚡
+                                Choose Your Superpower!
                             </h1>
 
                             <p className="text-gray-500 text-base sm:text-lg max-w-lg mx-auto leading-relaxed mb-6 text-center">
                                 Pick what you want to teach your AI buddy!
                                 <br />
-                                Each power uses different AI magic 🪄
+                                Each power uses different AI magic
                             </p>
 
                             {/* Superpower Icons Row */}
@@ -396,11 +414,11 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                     {CLASSIFIER_TYPES.map(item => (
                                         <div
                                             key={item.type}
-                                            className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-sm overflow-hidden bg-white text-base"
+                                            className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-sm overflow-hidden bg-white"
                                             style={{ background: `linear-gradient(135deg, ${item.color}10, ${item.color}05)` }}
                                             title={item.name}
                                         >
-                                            {item.emoji}
+                                            <item.Icon size={16} color={item.color} />
                                         </div>
                                     ))}
                                 </div>
@@ -453,14 +471,14 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                             <div className="flex-1 flex flex-col items-center justify-center w-full">
                                                 {/* Icon Container */}
                                                 <div
-                                                    className="flex items-center justify-center transition-transform duration-300 hover:scale-110 w-[min(80px,18vw)] h-[min(80px,18vw)] rounded-3xl mb-4 text-[min(42px,9vw)]"
+                                                    className="flex items-center justify-center transition-transform duration-300 hover:scale-110 w-[min(80px,18vw)] h-[min(80px,18vw)] rounded-3xl mb-4"
                                                     style={{
                                                         backgroundColor: `${item.color}10`,
                                                         border: `2px solid ${item.color}25`,
                                                         boxShadow: `0 6px 20px ${item.color}18`,
                                                     }}
                                                 >
-                                                    {item.emoji}
+                                                    <item.Icon size={40} color={item.color} />
                                                 </div>
 
                                                 {/* Badge */}
@@ -471,9 +489,9 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                                         boxShadow: `0 3px 12px ${item.color}35`,
                                                     }}
                                                 >
-                                                    <span className="text-xs leading-none">{item.badge.split(' ')[0]}</span>
+                                                    <item.BadgeIcon size={12} color="white" />
                                                     <span className="font-bold text-[11px] tracking-wider text-white uppercase">
-                                                        {item.badge.split(' ').slice(1).join(' ')}
+                                                        {item.badge}
                                                     </span>
                                                 </div>
 
@@ -527,7 +545,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                     <section className="w-full flex justify-center px-6 pt-8 pb-12">
                         <div className="w-full max-w-[1100px]">
                             <div className="text-center mb-10">
-                                <div className="text-4xl mb-3">🚀</div>
+                                <div className="text-4xl mb-3"><RocketIcon size={36} color="#630ed4" /></div>
                                 <h2 className="text-3xl md:text-4xl font-black text-gray-800 mb-3">
                                     Quick Start Projects
                                 </h2>
@@ -542,7 +560,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                     onClick={handleBlankProject}
                                     className="neura-blank-card group"
                                 >
-                                    <div className="text-4xl mb-3.5 group-hover:scale-125 transition-transform">✨</div>
+                                    <div className="text-4xl mb-3.5 group-hover:scale-125 transition-transform"><SparkleIcon size={32} color="#8B5CF6" /></div>
                                     <span className="font-bold text-gray-700 group-hover:text-purple-600 transition-colors text-sm">Create Blank Project</span>
                                     <span className="text-gray-400 mt-1.5 uppercase tracking-wider font-semibold text-[11px]">Start fresh!</span>
                                 </button>
@@ -557,9 +575,9 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                             className="flex items-center justify-center gap-3 p-8 px-4"
                                             style={{ backgroundColor: `${template.color}10` }}
                                         >
-                                            <span className="select-none transition-transform duration-300 hover:scale-110 text-3xl">{template.icon}</span>
-                                            <span className="select-none transition-transform duration-300 hover:scale-110 text-3xl">{template.icon2}</span>
-                                            <span className="select-none transition-transform duration-300 hover:scale-110 text-3xl">{template.icon3}</span>
+                                            <span className="select-none transition-transform duration-300 hover:scale-110"><template.Icon size={28} color={template.color} /></span>
+                                            <span className="select-none transition-transform duration-300 hover:scale-110"><template.Icon2 size={28} color={template.color} /></span>
+                                            <span className="select-none transition-transform duration-300 hover:scale-110"><template.Icon3 size={28} color={template.color} /></span>
                                         </div>
                                         <div
                                             className="bg-white p-4"
@@ -577,7 +595,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                     <footer className="py-8 border-t border-gray-100 bg-white/40 backdrop-blur-sm w-full flex justify-center">
                         <div className="w-full max-w-7xl px-6 sm:px-8 lg:px-10 flex flex-col md:flex-row justify-between items-center gap-4">
                             <div className="flex items-center gap-2">
-                                <span className="text-lg">🧠</span>
+                                <BrainIcon size={20} color="#8B5CF6" />
                                 <span className="text-sm font-bold bg-gradient-to-r from-purple-600 to-violet-500 bg-clip-text text-transparent">NEURA</span>
                             </div>
                             <p className="text-xs text-gray-400">Designed to inspire the next generation of AI innovators.</p>
@@ -602,7 +620,7 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                         {/* Header */}
                         <div className="text-center mb-8">
                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100 inline-flex items-center justify-center mb-4">
-                                <span className="text-2xl">✨</span>
+                                <SparkleIcon size={24} color="#8B5CF6" />
                             </div>
                             <h3 className="text-xl font-bold text-slate-900 mb-1.5">Select Project Type</h3>
                             <p className="text-sm text-gray-500">
@@ -619,13 +637,13 @@ export default function NeuraHome({ onSelect, onBack }: NeuraHomeProps) {
                                     className="group text-left flex items-center gap-3.5 p-4 rounded-2xl border border-gray-100 bg-white hover:border-violet-300 hover:bg-gradient-to-br hover:from-purple-50 hover:to-violet-50 hover:shadow-[0_4px_12px_rgba(99,14,212,0.08)] transition-all cursor-pointer"
                                 >
                                     <div
-                                        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-2xl group-hover:scale-105 transition-transform"
+                                        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform"
                                         style={{
                                             background: `linear-gradient(135deg, ${item.color}15, ${item.color}08)`,
                                             border: `1.5px solid ${item.color}25`,
                                         }}
                                     >
-                                        {item.emoji}
+                                        <item.Icon size={24} color={item.color} />
                                     </div>
                                     <div>
                                         <div className="font-semibold text-sm text-slate-900 group-hover:text-purple-700 transition-colors">

@@ -1,4 +1,5 @@
 import React from 'react'
+import { FolderIcon, ImageIcon2, ChartIcon, TargetIcon } from '../../assets/icons/NeuraIcons'
 
 interface StatsBarProps {
     totalClasses: number
@@ -13,7 +14,7 @@ export default function StatsBar({ totalClasses, totalImages, imagesPerClass, re
         return (
             <div className="w-full bg-white rounded-xl p-4 px-5 border border-gray-200 flex items-center gap-4 shrink-0">
                 <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center text-sm">📁</div>
+                    <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center"><FolderIcon size={14} color="#8B5CF6" /></div>
                     <div>
                         <span className="text-[11px] text-gray-500 block">classes</span>
                         <span className="text-base font-bold text-[#630ed4]">{totalClasses}</span>
@@ -21,7 +22,7 @@ export default function StatsBar({ totalClasses, totalImages, imagesPerClass, re
                 </div>
                 <div className="w-px h-7 bg-gray-200" />
                 <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-sm">🖼️</div>
+                    <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center"><ImageIcon2 size={14} color="#10b981" /></div>
                     <div>
                         <span className="text-[11px] text-gray-500 block">pics</span>
                         <span className="text-base font-bold text-emerald-600">{totalImages}</span>
@@ -29,7 +30,7 @@ export default function StatsBar({ totalClasses, totalImages, imagesPerClass, re
                 </div>
                 <div className="w-px h-7 bg-gray-200" />
                 <div className="flex items-center gap-1.5 p-1.5 px-3 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-lg">
-                    <span className="text-sm">🎯</span>
+                    <TargetIcon size={14} color="#10b981" />
                     <span className="text-sm font-bold text-emerald-600">{recommended}/cls</span>
                 </div>
                 <div className="w-px h-7 bg-gray-200" />
@@ -42,9 +43,9 @@ export default function StatsBar({ totalClasses, totalImages, imagesPerClass, re
     }
 
     const stats = [
-        { emoji: '📁', label: 'classes', value: totalClasses, colorClass: 'text-[#630ed4]', bgClass: 'bg-purple-50' },
-        { emoji: '🖼️', label: 'pics', value: totalImages, colorClass: 'text-emerald-600', bgClass: 'bg-emerald-50' },
-        { emoji: '📊', label: 'Avg', value: `${imagesPerClass}/class`, colorClass: 'text-amber-600', bgClass: 'bg-amber-50' },
+        { Icon: FolderIcon, iconColor: '#8B5CF6', label: 'classes', value: totalClasses, colorClass: 'text-[#630ed4]', bgClass: 'bg-purple-50' },
+        { Icon: ImageIcon2, iconColor: '#10b981', label: 'pics', value: totalImages, colorClass: 'text-emerald-600', bgClass: 'bg-emerald-50' },
+        { Icon: ChartIcon, iconColor: '#D97706', label: 'Avg', value: `${imagesPerClass}/class`, colorClass: 'text-amber-600', bgClass: 'bg-amber-50' },
     ]
 
     return (
@@ -54,8 +55,8 @@ export default function StatsBar({ totalClasses, totalImages, imagesPerClass, re
                 <div className="flex items-center gap-4">
                     {stats.map((stat) => (
                         <div key={stat.label} className="flex items-center gap-2">
-                            <div className={`w-7 h-7 rounded-lg ${stat.bgClass} flex items-center justify-center text-sm`}>
-                                {stat.emoji}
+                            <div className={`w-7 h-7 rounded-lg ${stat.bgClass} flex items-center justify-center`}>
+                                <stat.Icon size={14} color={stat.iconColor} />
                             </div>
                             <div>
                                 <span className="text-xs text-gray-500">{stat.label}: </span>
@@ -70,7 +71,7 @@ export default function StatsBar({ totalClasses, totalImages, imagesPerClass, re
 
                 {/* Goal */}
                 <div className="flex items-center gap-1.5 p-1.5 px-3 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-lg">
-                    <span className="text-sm">🎯</span>
+                    <TargetIcon size={14} color="#10b981" />
                     <span className="text-xs font-bold text-emerald-600">
                         Goal: {recommended}/class
                     </span>
