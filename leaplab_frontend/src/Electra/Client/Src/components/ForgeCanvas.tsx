@@ -234,49 +234,79 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     let downPos: { x: number; y: number } | null = null;
 
     const onMouseDown = (e: MouseEvent) => {
-      // Only track button 0 (left click) and only if the press started outside any handle
-      // (the handle's own onMouseDown starts the draft — we just need to detect drags).
       const target = e.target as HTMLElement | null;
-      if (target?.closest('.react-flow__handle')) return;
+      if (target?.closest('.react-flow__handle') || target?.closest('.leap-pin-dot')) return;
       downPos = { x: e.clientX, y: e.clientY };
     };
 
     const onMouseUp = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
-      // If the release lands on a pin handle, that handle's onMouseUp will complete the wire.
-      if (target?.closest('.react-flow__handle')) {
+      if (target?.closest('.react-flow__handle') || target?.closest('.leap-pin-dot')) {
         downPos = null;
         return;
       }
-      // Detect drag: moved more than 5px between mousedown and mouseup on empty space.
       if (downPos) {
         const dx = e.clientX - downPos.x;
         const dy = e.clientY - downPos.y;
         const moved = Math.hypot(dx, dy) > 5;
         downPos = null;
         if (moved) {
-          // User dragged from a pin and released on empty canvas — cancel the wire.
           cancelWireDraft();
           wireOverlayUpdateRef.current?.(null);
           return;
         }
-        // Otherwise: it was a click on the pane — let onPaneClick add the waypoint.
-        // But if a pin is armed (pendingSource) and we didn't move, the user effectively
-        // just clicked on empty space — clear the armed state so the next click is fresh.
         if (pendingSource) {
           setPendingSource(null);
         }
       } else if (pendingSource && !wireDraft) {
-        // Mouseup outside any tracked press (rare) — clear armed pin.
+        setPendingSource(null);
+      }
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('.react-flow__handle') || target?.closest('.leap-pin-dot')) return;
+      if (e.touches.length === 1) {
+        downPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('.react-flow__handle') || target?.closest('.leap-pin-dot')) {
+        downPos = null;
+        return;
+      }
+      if (downPos) {
+        const touch = e.changedTouches[0];
+        if (touch) {
+          const dx = touch.clientX - downPos.x;
+          const dy = touch.clientY - downPos.y;
+          const moved = Math.hypot(dx, dy) > 5;
+          downPos = null;
+          if (moved) {
+            cancelWireDraft();
+            wireOverlayUpdateRef.current?.(null);
+            return;
+          }
+        }
+        if (pendingSource) {
+          setPendingSource(null);
+        }
+      } else if (pendingSource && !wireDraft) {
         setPendingSource(null);
       }
     };
 
     document.addEventListener('mousedown', onMouseDown);
     document.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
     return () => {
       document.removeEventListener('mousedown', onMouseDown);
       document.removeEventListener('mouseup', onMouseUp);
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchend', onTouchEnd);
     };
   }, [wireDraft, pendingSource, cancelWireDraft, setPendingSource]);
 
@@ -288,7 +318,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
   // forced to reconcile on every frame. Only the small overlay re-renders.
   const rafRef = useRef<number | null>(null);
   const latestScreenPosRef = useRef<{ x: number; y: number } | null>(null);
-  const onContainerMouseMove = useCallback((event: React.MouseEvent) => {
+  const onContainerMouseMove = useCallback((event: React.MouseEvent | React.PointerEvent) => {
     const state = useForgeStore.getState();
     const activeWireDraft = state.wireDraft;
     const activePendingSource = state.pendingSource;
@@ -298,18 +328,21 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
     const target = event.currentTarget as HTMLElement | null;
     if (!target) return;
 
+    const clientX = (event as React.PointerEvent).clientX ?? (event as React.MouseEvent).clientX;
+    const clientY = (event as React.PointerEvent).clientY ?? (event as React.MouseEvent).clientY;
+
     // Promote pendingSource to wireDraft on drag (> 3px)
     if (activePendingSource && !activeWireDraft) {
       const vp = getViewport();
       const startScreenX = activePendingSource.sourcePosition
         ? activePendingSource.sourcePosition.x * vp.zoom + vp.x
-        : event.clientX;
+        : clientX;
       const startScreenY = activePendingSource.sourcePosition
         ? activePendingSource.sourcePosition.y * vp.zoom + vp.y
-        : event.clientY;
+        : clientY;
 
-      const dx = event.clientX - startScreenX;
-      const dy = event.clientY - startScreenY;
+      const dx = clientX - startScreenX;
+      const dy = clientY - startScreenY;
 
       if (Math.hypot(dx, dy) > 3) {
         startWireDraft(activePendingSource.nodeId, activePendingSource.pinName, activePendingSource.sourcePosition);
@@ -317,7 +350,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
       return;
     }
 
-    latestScreenPosRef.current = { x: event.clientX, y: event.clientY };
+    latestScreenPosRef.current = { x: clientX, y: clientY };
     if (rafRef.current !== null) return;
     rafRef.current = requestAnimationFrame(() => {
       rafRef.current = null;
@@ -528,11 +561,13 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         }`}
       style={{
         background: 'var(--lp-dark-bg)',
-        backgroundSize: '24px 24px'
+        backgroundSize: '24px 24px',
+        touchAction: wireDraft || pendingSource ? 'none' : 'auto'
       }}
       onDrop={onDrop}
       onDragOver={onDragOver}
       onMouseMove={onContainerMouseMove}
+      onPointerMove={onContainerMouseMove}
       onDoubleClick={onContainerDoubleClick}
     >
       <ReactFlow
@@ -850,12 +885,11 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
           .canvas-action-panel {
             top: 8px;
             right: 8px;
-            left: 8px;
+            left: auto;
             padding: 4px 8px;
             gap: 4px;
             border-radius: 16px;
-            flex-wrap: wrap;
-            justify-content: center;
+            flex-wrap: nowrap;
           }
           .canvas-btn {
             height: 32px;
@@ -866,7 +900,8 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
             width: 32px;
           }
           .sim-btn {
-            padding: 0 12px;
+            padding: 0 10px;
+            font-size: 10px;
           }
           .canvas-btn.primary-add {
             width: 32px;
@@ -884,26 +919,25 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         }
         @media (max-width: 480px) {
           .canvas-action-panel {
-            top: auto;
-            bottom: 12px;
+            top: 8px;
             right: 8px;
-            left: 8px;
-            padding: 6px 10px;
-            gap: 6px;
+            left: auto;
+            padding: 4px 6px;
+            gap: 4px;
           }
           .canvas-btn {
-            height: 36px;
-            border-radius: 18px;
+            height: 34px;
+            border-radius: 17px;
           }
           .canvas-btn.secondary {
-            width: 36px;
+            width: 34px;
           }
           .canvas-btn.primary-add {
-            width: 36px;
+            width: 34px;
           }
           .sim-btn {
-            padding: 0 14px;
-            font-size: 11px;
+            padding: 0 10px;
+            font-size: 10px;
           }
           .toolbar-hide-small {
             display: none !important;

@@ -96,6 +96,46 @@ export const WireEdge: React.FC<EdgeProps> = ({
     window.addEventListener('mouseup', onUp);
   }, [id, bendPoints, getZoom, updateEdgeData, setIsDraggingWaypoint]);
 
+  const onWaypointPointerDown = useCallback((e: React.PointerEvent, idx: number) => {
+    if (e.pointerType === 'mouse') return;
+    e.stopPropagation();
+    e.preventDefault();
+    (e.target as HTMLElement)?.setPointerCapture?.(e.pointerId);
+    setIsDraggingWaypoint(true);
+    draggingIdx.current = idx;
+    dragStart.current = {
+      mx: e.clientX,
+      my: e.clientY,
+      wx: bendPoints[idx].x,
+      wy: bendPoints[idx].y,
+    };
+
+    const zoom = getZoom();
+
+    const onMove = (ev: PointerEvent) => {
+      if (draggingIdx.current === null || !dragStart.current) return;
+      const dx = (ev.clientX - dragStart.current.mx) / zoom;
+      const dy = (ev.clientY - dragStart.current.my) / zoom;
+      const newBendPoints = bendPoints.map((wp, i) =>
+        i === draggingIdx.current
+          ? { x: dragStart.current!.wx + dx, y: dragStart.current!.wy + dy }
+          : wp
+      );
+      updateEdgeData(id, { waypoints: newBendPoints });
+    };
+
+    const onUp = () => {
+      draggingIdx.current = null;
+      dragStart.current = null;
+      setIsDraggingWaypoint(false);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }, [id, bendPoints, getZoom, updateEdgeData, setIsDraggingWaypoint]);
+
   // ── Add waypoint on midpoint click ───────────────────────────────────────
   const addWaypoint = useCallback((e: React.MouseEvent, insertAfterIdx: number, pt: Point) => {
     e.stopPropagation();
@@ -200,44 +240,53 @@ export const WireEdge: React.FC<EdgeProps> = ({
       />
 
       {/* 6. BEND-POINT HANDLES — drag to reposition, double-click to remove */}
-      {(selected || isHovered) && bendPoints.map((wp, i) => (
-        <g key={`wp-${i}`} style={{ cursor: 'grab' }}>
-          <circle
-            cx={wp.x}
-            cy={wp.y}
-            r={2.5}
-            fill="#fff"
-            stroke={wireColor}
-            strokeWidth={1}
-            onMouseDown={(e) => onWaypointMouseDown(e, i)}
-            onDoubleClick={(e) => removeWaypoint(e, i)}
-            style={{ cursor: 'grab' }}
-          />
-        </g>
-      ))}
+      {(selected || isHovered) && bendPoints.map((wp, i) => {
+        const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+        const wpRadius = isTouchDevice ? 6 : 2.5;
+        return (
+          <g key={`wp-${i}`} style={{ cursor: 'grab' }}>
+            <circle
+              cx={wp.x}
+              cy={wp.y}
+              r={wpRadius}
+              fill="#fff"
+              stroke={wireColor}
+              strokeWidth={1}
+              onMouseDown={(e) => onWaypointMouseDown(e, i)}
+              onPointerDown={(e) => onWaypointPointerDown(e, i)}
+              onDoubleClick={(e) => removeWaypoint(e, i)}
+              style={{ cursor: 'grab', touchAction: 'none' }}
+            />
+          </g>
+        );
+      })}
 
       {/* 7. MID-SEGMENT ADD HANDLES — click to add a bend point */}
-      {(selected || isHovered) && midHandles.map(({ m, insertAfterIdx }, i) => (
-        <g key={`mid-${i}`} style={{ cursor: 'crosshair' }}>
-          <circle
-            cx={m.x}
-            cy={m.y}
-            r={2}
-            fill={wireColor}
-            opacity={0.4}
-            onClick={(e) => addWaypoint(e, insertAfterIdx, m)}
-            style={{ cursor: 'crosshair', transition: 'all 0.15s' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '1';
-              e.currentTarget.setAttribute('r', '3');
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '0.4';
-              e.currentTarget.setAttribute('r', '2');
-            }}
-          />
-        </g>
-      ))}
+      {(selected || isHovered) && midHandles.map(({ m, insertAfterIdx }, i) => {
+        const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+        const midRadius = isTouchDevice ? 5 : 2;
+        return (
+          <g key={`mid-${i}`} style={{ cursor: 'crosshair' }}>
+            <circle
+              cx={m.x}
+              cy={m.y}
+              r={midRadius}
+              fill={wireColor}
+              opacity={0.4}
+              onClick={(e) => addWaypoint(e, insertAfterIdx, m)}
+              style={{ cursor: 'crosshair', transition: 'all 0.15s', touchAction: 'none' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '1';
+                e.currentTarget.setAttribute('r', String(isTouchDevice ? 7 : 3));
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '0.4';
+                e.currentTarget.setAttribute('r', String(midRadius));
+              }}
+            />
+          </g>
+        );
+      })}
     </g>
   );
 };

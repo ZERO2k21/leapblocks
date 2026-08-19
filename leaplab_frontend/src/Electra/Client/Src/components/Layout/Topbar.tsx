@@ -22,7 +22,8 @@ import {
   Check,
   Menu,
   X,
-  Loader2
+  Loader2,
+  Code
 } from 'lucide-react';
 import LeapLabAuthButton from '../../../../../auth/LeapLabAuthButton';
 import TopbarShareButton from '../../../../../components/common/TopbarShareButton';
@@ -56,6 +57,8 @@ interface IgniteTopbarProps {
   onSwitchBoard?: (board: string) => void;
   currentBoard?: string;
   isSaving?: boolean;
+  onToggleEditor?: () => void;
+  showEditor?: boolean;
 }
 
 export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
@@ -80,7 +83,9 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
   canRedo = false,
   onSwitchBoard,
   currentBoard,
-  isSaving = false
+  isSaving = false,
+  onToggleEditor,
+  showEditor = true
 }) => {
   const [fileMenuOpen, setFileMenuOpen] = useState(false);
   const [editMenuOpen, setEditMenuOpen] = useState(false);
@@ -502,6 +507,17 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
           {/* Additional controls */}
           <div className={`flex flex-col gap-0.5 border-t pt-4 ${isElectra ? 'border-zinc-800' : 'border-white/10'
             }`}>
+            {onToggleEditor && (
+              <button
+                type="button"
+                onClick={() => { onToggleEditor(); setMobileMenuOpen(false); }}
+                className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-base font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${isElectra ? 'hover:bg-cyan-400/10 text-zinc-100 hover:text-cyan-400' : 'hover:bg-white/10 text-white/90 hover:text-white'
+                  }`}
+              >
+                <Code size={18} strokeWidth={2} className="opacity-80 shrink-0" />
+                <span>{showEditor ? 'Hide Code' : 'Show Code'}</span>
+              </button>
+            )}
             <button
               type="button"
               className={`flex items-center gap-3.5 w-full py-2.5 px-3 text-base font-medium rounded-lg text-left transition-colors bg-transparent border-0 cursor-pointer ${isElectra ? 'hover:bg-cyan-400/10 text-zinc-100 hover:text-cyan-400' : 'hover:bg-white/10 text-white/90 hover:text-white'

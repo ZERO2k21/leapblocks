@@ -343,7 +343,7 @@ export const SelectionToolbar: React.FC = () => {
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
-      className="absolute bottom-5 left-1/2 -translate-x-1/2 z-[1000] flex items-center bg-white p-1.5 px-2.5 rounded-xl border border-slate-200 transition-all duration-200 ease-out shadow-[0_6px_20px_rgba(0,0,0,0.1),0_2px_6px_rgba(0,0,0,0.06)] animate-[slideUp_0.25s_ease-out]"
+      className="absolute bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-[1000] flex items-center bg-white p-1 sm:p-1.5 px-2 sm:px-2.5 rounded-xl border border-slate-200 transition-all duration-200 ease-out shadow-[0_6px_20px_rgba(0,0,0,0.1),0_2px_6px_rgba(0,0,0,0.06)] animate-[slideUp_0.25s_ease-out] max-w-[calc(100vw-1rem)]"
     >
       <style>{`
         @keyframes slideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
@@ -389,9 +389,9 @@ export const SelectionToolbar: React.FC = () => {
         <>
           <div className="flex items-center select-none">
             <div className="group relative rounded-xl bg-white border border-slate-200 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm cursor-default">
-              <div className="flex items-center gap-2.5 p-1.5 px-3">
+              <div className="flex items-center gap-2 sm:gap-2.5 p-1 sm:p-1.5 px-2 sm:px-3">
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-transform duration-200 group-hover:scale-105"
+                  className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 border transition-transform duration-200 group-hover:scale-105"
                   style={{
                     background: `linear-gradient(135deg, ${badgeInfo.primary}18 0%, ${badgeInfo.primary}10 100%)`,
                     borderColor: `${badgeInfo.primary}35`
@@ -399,7 +399,7 @@ export const SelectionToolbar: React.FC = () => {
                 >
                   {getCategoryIcon(badgeInfo.category, badgeInfo.primary)}
                 </div>
-                <div className="flex flex-col gap-0.5">
+                <div className="flex flex-col gap-0.5 hidden sm:flex">
                   <span className="text-xs font-extrabold text-slate-800 tracking-wide leading-tight uppercase font-sans">
                     {badgeInfo.displayName}
                   </span>
@@ -415,8 +415,8 @@ export const SelectionToolbar: React.FC = () => {
           </div>
           {hasControls && (
             <>
-              <div className="w-0.5 h-6 bg-slate-200 rounded-full self-center mx-2.5" />
-              <div className="flex gap-2 items-center">{renderSlider()}{renderLEDColorPalette()}{renderIRReceiverInput()}{renderStepperControls()}</div>
+              <div className="w-0.5 h-5 sm:h-6 bg-slate-200 rounded-full self-center mx-1.5 sm:mx-2.5" />
+              <div className="flex gap-1.5 sm:gap-2 items-center">{renderSlider()}{renderLEDColorPalette()}{renderIRReceiverInput()}{renderStepperControls()}</div>
             </>
           )}
         </>
@@ -424,9 +424,9 @@ export const SelectionToolbar: React.FC = () => {
         <>
           <div className="flex items-center select-none">
             <div className="group relative rounded-xl bg-white border border-slate-200 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-default">
-              <div className="flex items-center gap-2.5 p-1.5 px-3">
+              <div className="flex items-center gap-2 sm:gap-2.5 p-1 sm:p-1.5 px-2 sm:px-3">
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-transform duration-200 group-hover:scale-105"
+                  className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 border transition-transform duration-200 group-hover:scale-105"
                   style={{
                     background: `linear-gradient(135deg, ${badgeInfo.primary}18 0%, ${badgeInfo.primary}10 100%)`,
                     borderColor: `${badgeInfo.primary}35`
@@ -434,7 +434,7 @@ export const SelectionToolbar: React.FC = () => {
                 >
                   {getCategoryIcon(badgeInfo.category, badgeInfo.primary)}
                 </div>
-                <div className="flex flex-col gap-0.5">
+                <div className="flex flex-col gap-0.5 hidden sm:flex">
                   <span className="text-xs font-extrabold text-slate-800 tracking-wide leading-tight uppercase font-sans">
                     {badgeInfo.displayName}
                   </span>
@@ -450,8 +450,8 @@ export const SelectionToolbar: React.FC = () => {
           </div>
           {hasControls && (
             <>
-              <div className="w-0.5 h-6 bg-slate-200 rounded-full self-center mx-2.5" />
-              <div className="flex gap-2 items-center">{renderColorPalette()}</div>
+              <div className="w-0.5 h-5 sm:h-6 bg-slate-200 rounded-full self-center mx-1.5 sm:mx-2" />
+              <div className="flex gap-1.5 sm:gap-2 items-center">{renderColorPalette()}</div>
             </>
           )}
         </>
@@ -459,7 +459,7 @@ export const SelectionToolbar: React.FC = () => {
 
       {selectedNode && !['esp32-c3', 'esp32', 'arduino-uno'].includes(nodeType) && (
         <>
-          <div className="w-0.5 h-6 bg-slate-200 rounded-full self-center mx-2" />
+          <div className="w-0.5 h-5 sm:h-6 bg-slate-200 rounded-full self-center mx-1.5 sm:mx-2" />
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => {
@@ -471,19 +471,19 @@ export const SelectionToolbar: React.FC = () => {
                 );
               }}
               title="Duplicate Component"
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg cursor-pointer border border-purple-200 bg-purple-50 text-purple-600 text-xs font-semibold hover:bg-purple-100 hover:border-purple-300 transition-all duration-150"
+              className="flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg cursor-pointer border border-purple-200 bg-purple-50 text-purple-600 text-xs font-semibold hover:bg-purple-100 hover:border-purple-300 transition-all duration-150"
             >
               <CopyPlus size={13} />
-              <span>Duplicate</span>
+              <span className="hidden sm:inline">Duplicate</span>
             </button>
 
             <button
               onClick={handleDelete}
               title="Delete"
-              className="group relative flex items-center gap-1 px-2.5 py-1.5 rounded-lg cursor-pointer border border-red-200 bg-red-50 text-red-600 text-xs font-semibold transition-all duration-200 hover:bg-red-100 hover:border-red-300 hover:scale-105 active:scale-95"
+              className="group relative flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg cursor-pointer border border-red-200 bg-red-50 text-red-600 text-xs font-semibold transition-all duration-200 hover:bg-red-100 hover:border-red-300 hover:scale-105 active:scale-95"
             >
               <Trash2 size={13} className="text-red-500 transition-transform duration-200 group-hover:scale-110" />
-              <span>Delete</span>
+              <span className="hidden sm:inline">Delete</span>
             </button>
           </div>
         </>

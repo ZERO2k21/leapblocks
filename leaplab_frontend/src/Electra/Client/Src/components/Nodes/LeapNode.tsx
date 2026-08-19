@@ -969,7 +969,9 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
           // Larger hit area + larger visible pin when in a draft, Tinkercad-style
           const isDraftRelevant =
             isDraftSourcePin || isDraftTarget || isDraftActive || isPendingSourcePin;
-          const pinSize = isDraftRelevant ? 8 : (isConnected ? 6 : 4);
+          const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+          const basePinSize = isTouchDevice ? 14 : (isDraftRelevant ? 8 : (isConnected ? 6 : 4));
+          const pinSize = isDraftRelevant ? (isTouchDevice ? 18 : 8) : basePinSize;
           const halfSize = pinSize / 2;
           const handleStyle: React.CSSProperties = {
             left: `${pin.x}%`,
@@ -980,6 +982,7 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
             marginTop: `-${halfSize}px`,
             zIndex: 10,
             pointerEvents: 'all',
+            touchAction: 'none',
             transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
           };
 
@@ -1068,16 +1071,38 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                     }
                   }
                 }}
+                onPointerDown={(e) => {
+                  if (e.pointerType === 'mouse') return;
+                  e.stopPropagation();
+                  e.preventDefault();
+                  const state = useForgeStore.getState();
+                  if (!state.wireDraft && !state.pendingSource) {
+                    const pinDotEl = e.currentTarget as HTMLElement;
+                    if (pinDotEl) {
+                      const rect = pinDotEl.getBoundingClientRect();
+                      const vp = getViewport();
+                      const canvasContainer = document.querySelector('.forge-canvas-container');
+                      const canvasRect = canvasContainer ? canvasContainer.getBoundingClientRect() : { left: 0, top: 0 };
+                      const sourcePos = {
+                        x: (rect.left + rect.width / 2 - canvasRect.left - vp.x) / vp.zoom,
+                        y: (rect.top + rect.height / 2 - canvasRect.top - vp.y) / vp.zoom,
+                      };
+                      setPendingSource({
+                        nodeId: id,
+                        pinName: pin.name,
+                        sourcePosition: sourcePos,
+                      });
+                    }
+                  }
+                }}
                 onMouseUp={(e) => {
                   e.stopPropagation();
                   const state = useForgeStore.getState();
                   // Case 1: a wire is actively being drawn.
                   if (state.wireDraft) {
                     if (state.wireDraft.source === id && state.wireDraft.sourceHandle === pin.name) {
-                      // Releasing on the same source pin cancels the draft.
                       cancelWireDraft();
                     } else {
-                      // Releasing on a different pin completes the wire.
                       completeWireDraft(id, pin.name);
                     }
                     return;
@@ -1085,20 +1110,31 @@ export const LeapNode = memo(({ id, data, selected }: NodeProps) => {
                   // Case 2: a pin is armed (pendingSource) but no wire is being drawn yet.
                   if (state.pendingSource) {
                     if (state.pendingSource.nodeId === id && state.pendingSource.pinName === pin.name) {
-                      // Released on the SAME pin → actually start the wire draft now.
-                      startWireDraft(
-                        id,
-                        pin.name,
-                        state.pendingSource.sourcePosition,
-                      );
+                      startWireDraft(id, pin.name, state.pendingSource.sourcePosition);
                     } else {
-                      // Released on a DIFFERENT pin (drag-release case) → create the
-                      // connection A → B in a single motion, without showing a draft.
-                      startWireDraft(
-                        state.pendingSource.nodeId,
-                        state.pendingSource.pinName,
-                        state.pendingSource.sourcePosition,
-                      );
+                      startWireDraft(state.pendingSource.nodeId, state.pendingSource.pinName, state.pendingSource.sourcePosition);
+                      completeWireDraft(id, pin.name);
+                    }
+                  }
+                }}
+                onPointerUp={(e) => {
+                  if (e.pointerType === 'mouse') return;
+                  e.stopPropagation();
+                  e.preventDefault();
+                  const state = useForgeStore.getState();
+                  if (state.wireDraft) {
+                    if (state.wireDraft.source === id && state.wireDraft.sourceHandle === pin.name) {
+                      cancelWireDraft();
+                    } else {
+                      completeWireDraft(id, pin.name);
+                    }
+                    return;
+                  }
+                  if (state.pendingSource) {
+                    if (state.pendingSource.nodeId === id && state.pendingSource.pinName === pin.name) {
+                      startWireDraft(id, pin.name, state.pendingSource.sourcePosition);
+                    } else {
+                      startWireDraft(state.pendingSource.nodeId, state.pendingSource.pinName, state.pendingSource.sourcePosition);
                       completeWireDraft(id, pin.name);
                     }
                   }

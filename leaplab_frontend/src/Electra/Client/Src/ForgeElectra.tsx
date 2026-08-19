@@ -374,7 +374,7 @@ export default function ForgeElectra({
   }, [initialBoard]); // Run when initialBoard changes
 
   const [activeTab, setActiveTab] = useState<'code' | 'serial' | 'wifi' | 'libraries'>('code');
-  const [showEditor, setShowEditor] = useState(true);
+  const [showEditor, setShowEditor] = useState(() => typeof window !== 'undefined' ? window.innerWidth > 768 : true);
   const { showPartPicker, setShowPartPicker, rotateNode } = useForgeStore();
   const [wifiStatus, setWifiStatus] = useState('');
   const [showWebOpenModal, setShowWebOpenModal] = useState(false);
@@ -872,7 +872,6 @@ export default function ForgeElectra({
         .circuit-analysis-panel::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         .circuit-analysis-panel::-webkit-scrollbar-thumb:hover { background: #475569; }
         @media (max-width: 1024px) { .forge-main-split { position: relative; } }
-        @media (max-width: 768px) { .canvas-action-panel { top: auto !important; bottom: 16px !important; right: 50% !important; transform: translateX(50%) !important; border-radius: 20px !important; box-shadow: var(--lp-shadow-lg) !important; } }
         @media (max-width: 1024px) { .forge-main-split { padding: 8px; gap: 8px; } }
       `}</style>
       <input
@@ -901,6 +900,8 @@ export default function ForgeElectra({
         onSwitchBoard={handleSwitchBoard}
         currentBoard={board}
         isSaving={isSaving}
+        onToggleEditor={() => setShowEditor(!showEditor)}
+        showEditor={showEditor}
       />
 
       <main className={`forge-main-split flex-1 flex gap-2 p-2 bg-transparent min-h-0 min-w-0 ${uiTheme === 'light' ? 'max-lg:relative text-slate-900' : ''}`} style={uiTheme === 'light' ? (getLightThemeVars(board) as React.CSSProperties) : undefined}>
