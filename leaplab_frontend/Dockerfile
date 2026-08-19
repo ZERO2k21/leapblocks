@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y \
 
 # PlatformIO Core (Apache-2.0 — replaces the GPL-3.0 arduino-cli).
 # Toolchains it downloads are GPLv3-with-runtime-exception (safe to ship).
-ARG PIO_VERSION=6.1.18
-RUN pip3 install --no-cache-dir platformio==${PIO_VERSION}
+ARG PIO_VERSION=6.1.19
+RUN pip3 install --break-system-packages --no-cache-dir platformio==${PIO_VERSION}
 
 ENV PIO_CLI_PATH=/usr/local/bin/pio
 ENV PIO_LIB_DIRS=/app/forge-lib/libraries
