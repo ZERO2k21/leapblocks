@@ -6,7 +6,7 @@
 import React from 'react';
 
 // LeapLab left-logo (background-removed circuit letters)
-export default function Logo({ height = 100, className = "" }) {
+export default function Logo({ height, className = "" }) {
     return (
         <img
             src="assets/leaplab_logo_transparent.png"
@@ -15,7 +15,7 @@ export default function Logo({ height = 100, className = "" }) {
                 e.target.src = 'assets/leaplab_logo.png';
             }}
             className={`object-contain ${className}`}
-            style={{ height }}
+            style={height !== undefined ? { height } : undefined}
         />
     );
 }

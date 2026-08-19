@@ -32,12 +32,10 @@ export default function JuniorMenuBar({
 }) {
     const [openMenu, setOpenMenu] = useState(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1710);
     const [showDesktopMenus, setShowDesktopMenus] = useState(window.innerWidth >= 1100);
 
     useEffect(() => {
         const handleResize = () => {
-            setShowCreoleap(window.innerWidth >= 1710);
             setShowDesktopMenus(window.innerWidth >= 1100);
         };
         window.addEventListener('resize', handleResize);
@@ -79,9 +77,9 @@ export default function JuniorMenuBar({
 
                 return (
                     <>
-                    <div className="w-full bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 h-[68px] px-3 flex items-center justify-between text-white select-none z-[100] relative font-sans shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)]">
+                    <div className="w-full bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 h-[68px] px-2 sm:px-3 md:px-6 flex items-center justify-between text-white select-none z-[100] relative font-sans shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] overflow-hidden gap-2">
                         {/* ══ LEFT: Home button · Brand logo · Dropdown menus ══════════════ */}
-                        <div className="flex items-center gap-2.5 shrink-0">
+                        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 min-w-0">
                             {/* Home icon button */}
                             <button
                                 onClick={() => {
@@ -90,24 +88,24 @@ export default function JuniorMenuBar({
                                     onBack?.();
                                 }}
                                 title="Back to Home"
-                                className="w-8.5 h-8.5 flex items-center justify-center bg-white/10 border border-white/12 rounded-xl text-white cursor-pointer transition-all duration-200 shrink-0 hover:bg-white/20 hover:scale-105"
+                                className="w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center bg-white/10 border border-white/12 rounded-xl text-white cursor-pointer transition-all duration-200 shrink-0 hover:bg-white/20 hover:scale-105"
                             >
                                 <Home size={17} strokeWidth={2.2} />
                             </button>
 
                             {/* Divider */}
-                            <div className="w-px h-7 bg-white/10 shrink-0" />
+                            <div className="w-px h-7 bg-white/10 shrink-0 hidden sm:block" />
 
                             {/* Logo + brand label */}
-                            <div className="flex items-center gap-2 shrink-0 drop-shadow-[0_0_12px_rgba(80,180,255,0.25)]">
-                                <Logo height={48} />
-                                <div className="text-white text-[22px] font-black tracking-[0.08em] font-sans">
+                            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0 drop-shadow-[0_0_12px_rgba(80,180,255,0.25)]">
+                                <Logo height={48} className="w-auto" />
+                                <div className="hidden sm:block text-white text-[18px] sm:text-[20px] lg:text-[22px] font-black tracking-[0.08em] font-sans whitespace-nowrap">
                                     IGNITE
                                 </div>
                             </div>
 
                             {/* Divider */}
-                            <div className="w-px h-7 bg-white/10 shrink-0" />
+                            <div className="w-px h-7 bg-white/10 shrink-0 hidden md:block" />
 
                             {/* Menus */}
                             {showDesktopMenus && (
@@ -162,15 +160,13 @@ export default function JuniorMenuBar({
 
                                     <LeapLabAuthButton variant="dark" size="sm" />
 
-                                    {showCreoleap && (
-                                        <div className="flex items-center shrink-0 pl-1 h-[60px] overflow-hidden">
-                                            <img
-                                                src="assets/logo-creoleap.png"
-                                                alt="CREOLEAP"
-                                                className="w-[145px] h-auto object-contain block shrink-0 drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)] brightness-120 contrast-105"
-                                            />
-                                        </div>
-                                    )}
+                                    <div className="hidden min-[1500px]:flex ml-2 items-center shrink-0 h-12 overflow-hidden filter drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)]">
+                                        <img
+                                            src="assets/logo-creoleap.png"
+                                            alt="CREOLEAP"
+                                            className="w-[145px] h-auto object-contain block shrink-0 brightness-[1.14] contrast-[1.05]"
+                                        />
+                                    </div>
                                 </>
                             ) : (
                                 <button

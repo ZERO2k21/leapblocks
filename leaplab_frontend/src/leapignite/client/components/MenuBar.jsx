@@ -59,13 +59,12 @@ export default function MenuBar({
     }, []);
 
     // Progressive collapse breakpoints from 1800px down to prevent any element overlap:
-    const showCreoleap = windowWidth >= 1800;
     const showBoardSelect = windowWidth >= 1720;
     const showPorts = windowWidth >= 1680;
     const showAuthAndShare = windowWidth >= 1600;
     const showModeAndUpload = windowWidth >= 1350;
     const showFileEditMenus = windowWidth >= 900;
-    const showHamburgerBtn = windowWidth < 1800;
+    const showHamburgerBtn = windowWidth < 1500;
 
     const toggleMenu = (menuName) => {
         setOpenMenu((prev) => (prev === menuName ? null : menuName));
@@ -124,9 +123,9 @@ export default function MenuBar({
                             <div className="w-px h-7 bg-white/10 shrink-0" />
 
                             {/* Logo + brand label */}
-                            <div className="flex items-center gap-2 shrink-0 drop-shadow-[0_0_12px_rgba(80,180,255,0.25)]">
-                                <Logo height={40} />
-                                <div className="hidden sm:block text-white text-[20px] lg:text-[22px] font-black tracking-[0.08em] font-sans">
+                            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0 drop-shadow-[0_0_12px_rgba(80,180,255,0.25)]">
+                                <Logo height={48} className="w-auto" />
+                                <div className="hidden sm:block text-white text-[18px] sm:text-[20px] lg:text-[22px] font-black tracking-[0.08em] font-sans whitespace-nowrap">
                                     EMBED
                                 </div>
                             </div>
@@ -235,15 +234,13 @@ export default function MenuBar({
                             )}
 
                             {/* Creoleap Logo image */}
-                            {showCreoleap && (
-                                <div className="flex items-center shrink-0 pl-1 h-[60px] overflow-hidden">
-                                    <img
-                                        src="assets/logo-creoleap.png"
-                                        alt="CREOLEAP"
-                                        className="w-[135px] h-auto object-contain block shrink-0 drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)] brightness-120 contrast-105"
-                                    />
-                                </div>
-                            )}
+                            <div className="hidden min-[1500px]:flex ml-2 items-center shrink-0 h-12 overflow-hidden filter drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)]">
+                                <img
+                                    src="assets/logo-creoleap.png"
+                                    alt="CREOLEAP"
+                                    className="w-[145px] h-auto object-contain block shrink-0 brightness-[1.14] contrast-[1.05]"
+                                />
+                            </div>
 
                             {/* Hamburger Menu Icon Button when windowWidth < 1800px */}
                             {showHamburgerBtn && (

@@ -82,7 +82,6 @@ function DropdownMenu({ label, icon: Icon, items, isOpen, onToggle, onClose }) {
 export default function TopBar() {
     const ctx = useLogix();
     const [openMenuId, setOpenMenuId] = useState(null);
-    const [showCreoleap, setShowCreoleap] = useState(window.innerWidth >= 1710);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const mobileMenuRef = useRef(null);
 
@@ -92,7 +91,6 @@ export default function TopBar() {
 
     useEffect(() => {
         const handleResize = () => {
-            setShowCreoleap(window.innerWidth >= 1710);
             setShowMenuItems(window.innerWidth >= 1100);
         };
         window.addEventListener('resize', handleResize);
@@ -123,13 +121,13 @@ export default function TopBar() {
                         }} className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-white/10 border border-white/10 rounded-xl text-white cursor-pointer transition-all shrink-0 hover:bg-white/20" title="Back to Home">
                             <Home size={18} strokeWidth={2.2} />
                         </button>
-                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 cursor-pointer" onClick={() => {
+                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0 cursor-pointer" onClick={() => {
                             sessionStorage.setItem('landingActiveTab', 'modules');
                             sessionStorage.removeItem('myProjectsSelectedMode');
                             ctx.onBack();
                         }}>
-                            <Logo height={40} />
-                            <span className="hidden sm:inline text-white text-[18px] lg:text-[22px] font-black tracking-[0.08em] font-sans border-l border-white/15 pl-2">LOGIX</span>
+                            <Logo height={48} className="w-auto" />
+                            <span className="hidden sm:inline text-white text-[16px] sm:text-[18px] lg:text-[22px] font-black tracking-[0.08em] font-sans border-l border-white/15 pl-1.5 sm:pl-2 whitespace-nowrap">LOGIX</span>
                         </div>
 
                         {windowWidth >= 768 && (
@@ -252,17 +250,15 @@ export default function TopBar() {
                             </div>
                         )}
 
-                        {windowWidth >= 1800 && (
-                            <div className="flex items-center shrink-0 h-full ml-1">
-                                <img
-                                    src="assets/logo-creoleap.png"
-                                    alt="CREOLEAP"
-                                    className="w-[130px] h-auto object-contain block shrink-0 brightness-[1.14] contrast-[1.05] drop-shadow-[0_0_20px_rgba(167,139,250,0.7)]"
-                                />
-                            </div>
-                        )}
+                        <div className="hidden min-[1500px]:flex ml-2 items-center shrink-0 h-12 overflow-hidden filter drop-shadow-[0_0_20px_rgba(167,139,250,0.7)] drop-shadow-[0_0_8px_rgba(255,255,255,0.25)] drop-shadow-[0_3px_10px_rgba(0,0,0,0.5)]">
+                            <img
+                                src="assets/logo-creoleap.png"
+                                alt="CREOLEAP"
+                                className="w-[145px] h-auto object-contain block shrink-0 brightness-[1.14] contrast-[1.05]"
+                            />
+                        </div>
 
-                        {windowWidth < 1800 && (
+                        {windowWidth < 1500 && (
                             <button
                                 onClick={() => setMobileMenuOpen(true)}
                                 className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 border border-white/15 text-white cursor-pointer ml-0.5 shrink-0 hover:bg-white/20"
