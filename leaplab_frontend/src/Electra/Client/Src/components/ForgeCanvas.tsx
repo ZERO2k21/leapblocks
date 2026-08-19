@@ -847,6 +847,67 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
           .glass-minimap {
             display: none !important;
           }
+          .canvas-action-panel {
+            top: 8px;
+            right: 8px;
+            left: 8px;
+            padding: 4px 8px;
+            gap: 4px;
+            border-radius: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+          }
+          .canvas-btn {
+            height: 32px;
+            border-radius: 16px;
+            font-size: 10px;
+          }
+          .canvas-btn.secondary {
+            width: 32px;
+          }
+          .sim-btn {
+            padding: 0 12px;
+          }
+          .canvas-btn.primary-add {
+            width: 32px;
+          }
+          .canvas-zoom-label {
+            font-size: 10px;
+            min-width: 32px;
+          }
+          .canvas-divider {
+            display: none;
+          }
+          .toolbar-hide-mobile {
+            display: none !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .canvas-action-panel {
+            top: auto;
+            bottom: 12px;
+            right: 8px;
+            left: 8px;
+            padding: 6px 10px;
+            gap: 6px;
+          }
+          .canvas-btn {
+            height: 36px;
+            border-radius: 18px;
+          }
+          .canvas-btn.secondary {
+            width: 36px;
+          }
+          .canvas-btn.primary-add {
+            width: 36px;
+          }
+          .sim-btn {
+            padding: 0 14px;
+            font-size: 11px;
+          }
+          .toolbar-hide-small {
+            display: none !important;
+          }
         }
       `}</style>
 
@@ -888,21 +949,21 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         {/* Zoom In Button */}
         <button
           onClick={() => zoomIn({ duration: 200 })}
-          className="canvas-btn secondary"
+          className="canvas-btn secondary toolbar-hide-mobile"
           title="Zoom In (Ctrl+=)"
         >
           <ZoomIn size={16} />
         </button>
 
         {/* Zoom Percentage Display */}
-        <div className="canvas-zoom-label" title="Current zoom level">
+        <div className="canvas-zoom-label toolbar-hide-mobile" title="Current zoom level">
           {Math.round(currentViewport.zoom * 100)}%
         </div>
 
         {/* Zoom Out Button */}
         <button
           onClick={() => zoomOut({ duration: 200 })}
-          className="canvas-btn secondary"
+          className="canvas-btn secondary toolbar-hide-mobile"
           title="Zoom Out (Ctrl+-)"
         >
           <ZoomOut size={16} />
@@ -911,7 +972,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         {/* Fit View Button */}
         <button
           onClick={() => fitView({ duration: 400, padding: 0.2 })}
-          className="canvas-btn secondary"
+          className="canvas-btn secondary toolbar-hide-small"
           title="Fit View (Ctrl+0)"
         >
           <Maximize size={16} />
@@ -923,7 +984,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         {onToggleEditor && (
           <button
             onClick={onToggleEditor}
-            className={`canvas-btn secondary ${showEditor ? 'active' : ''}`}
+            className={`canvas-btn secondary toolbar-hide-mobile ${showEditor ? 'active' : ''}`}
             title="Toggle Code Panel"
           >
             <Code size={16} />
@@ -933,7 +994,7 @@ const ForgeCanvasInner: React.FC<ForgeCanvasProps> = ({
         {/* Theme Toggle Button */}
         <button
           onClick={toggleUiTheme}
-          className="canvas-btn secondary"
+          className="canvas-btn secondary toolbar-hide-small"
           title={uiTheme === 'light' ? "Switch to Dark Mode" : "Switch to Light Mode"}
         >
           {uiTheme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
