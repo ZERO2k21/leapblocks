@@ -5,13 +5,21 @@
  */
 import express from 'express';
 import cors from 'cors';
-import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import { transpileArduinoToJS } from './transpiler.js';
-import { getArduinoCliPathIfAvailable, ensureArduinoCli } from '../../utils/ensureArduinoCli.js';
+import {
+  runPio,
+  resolvePioBinary,
+  platformEnsure,
+  pkgInstallLibrary,
+  pkgUninstallLibrary,
+} from '../../drivers/platformio/pio.js';
+import { fqbnToPioTarget } from '../../drivers/platformio/boardMap.js';
+import { createPioProject, getPioBuildDir, listPioBuildFiles } from '../../drivers/platformio/project.js';
+import { searchRegistry } from '../../drivers/platformio/registry.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,146 +35,44 @@ app.get('/health', (_req, res) => {
 });
 
 /**
- * Resolve the path to the arduino-cli binary.
- * Electra ONLY uses the bundled binary or cached download.
- * NEVER uses system PATH or standard Arduino install paths.
+ * PlatformIO binary (Apache-2.0 — replaces the GPL-3.0 arduino-cli).
+ * Electron passes the bundled pio.exe via PIO_CLI_PATH; Docker installs
+ * `platformio` via pip. NEVER uses a system Arduino install.
  */
-const getCLIBinary = () => {
-  const available = getArduinoCliPathIfAvailable();
-  if (available) {
-    console.log(`[SERVER] Using arduino-cli: ${available}`);
-    return `"${available}"`;
-  }
-
-  // Check if ARDUINO_CLI_PATH env var was set by main.js (bundled path)
-  if (process.env.ARDUINO_CLI_PATH && fs.existsSync(process.env.ARDUINO_CLI_PATH)) {
-    console.log(`[SERVER] Using arduino-cli from env: ${process.env.ARDUINO_CLI_PATH}`);
-    return `"${process.env.ARDUINO_CLI_PATH}"`;
-  }
-
-  console.log(`[SERVER] arduino-cli not found. Will download on first compile.`);
-  return 'arduino-cli'; // fallback; ensureArduinoCli will handle download when compile is called
-};
+const PIO_BIN = resolvePioBinary();
 
 /**
- * Resolve the path to the forge-lib and its config.
+ * forge-lib library cache (shared with the desktop app + cloud server).
+ * Candidates in priority order; pio installs libraries here via
+ * `pio pkg install --library <name> --storage-dir <dir>`.
  */
-const getForgePaths = () => {
-  const localForgeLib = path.resolve(__dirname, '..', 'forge-lib');
-  const localConfig = path.join(localForgeLib, 'arduino-cli.yaml');
+const FORGE_LIB_LIBRARIES = (() => {
+  const local = path.resolve(__dirname, '..', 'forge-lib', 'libraries');
+  if (fs.existsSync(local)) return local;
+  const dockerLibs = '/app/forge-lib/libraries';
+  if (fs.existsSync(dockerLibs)) return dockerLibs;
+  if (process.env.PIO_LIB_DIRS && fs.existsSync(process.env.PIO_LIB_DIRS)) return process.env.PIO_LIB_DIRS;
+  return null;
+})();
 
-  if (fs.existsSync(localConfig)) {
-    return {
-      userDir: localForgeLib,
-      configFile: localConfig
-    };
-  }
-
-  return {
-    userDir: '/app/forge-lib',
-    configFile: '/app/forge-lib/arduino-cli.yaml'
-  };
-};
-
-let CLI_BIN = getCLIBinary();
-const FORGE = getForgePaths();
 let isInitialized = false;
 
-// Helper
-const runCommand = (cmd: string): Promise<{ stdout: string; stderr: string }> => {
-  console.log(`[EXEC] ${cmd}`);
-  return new Promise((resolve, reject) => {
-    exec(cmd, { timeout: 60000 }, (err, stdout, stderr) => {
-      if (err) {
-        console.error(`[EXEC ERROR] Code: ${err.code}`);
-        let errorMessage = stderr || stdout || err.message;
-        try {
-          const parsed = JSON.parse(stdout || stderr);
-          if (parsed.errors) errorMessage = parsed.errors.map((e: any) => e.message).join('\n');
-        } catch (e) { }
-        reject(new Error(errorMessage));
-      } else {
-        resolve({ stdout, stderr });
-      }
-    });
-  });
-};
+const runCLI = (args: string[], timeoutMs = 120_000) => runPio(args, { timeoutMs });
 
 /**
- * Ensure necessary cores are installed.
+ * Ensure necessary platforms are installed. `pio platform install` is
+ * idempotent; `pio run` also auto-installs platforms from platformio.ini.
  */
 const initCores = async () => {
   try {
-    // Ensure arduino-cli is downloaded — resolves the binary path
-    const resolvedPath = await ensureArduinoCli((msg) => {
-      console.log(`[SERVER] ${msg}`);
-    });
-    CLI_BIN = resolvedPath === 'arduino-cli' ? resolvedPath : `"${resolvedPath}"`;
-    console.log(`[SERVER] Using arduino-cli: ${CLI_BIN}`);
-
-    console.log('[SERVER] Checking for arduino:avr core...');
-    const result = await runCommand(`${CLI_BIN} core list --format json --config-file "${FORGE.configFile}"`);
-
-    let data;
-    try {
-      data = JSON.parse(result.stdout);
-    } catch (e) {
-      data = [];
-    }
-
-    // arduino-cli v1.x returns {"platforms": [...]}; older versions return a bare array
-    const cores = Array.isArray(data) ? data : (Array.isArray(data?.platforms) ? data.platforms : []);
-
-    const hasAvr = cores.some((c: any) =>
-      (c.platform?.architecture === 'avr') || (c.id === 'arduino:avr')
-    );
-
-    if (!hasAvr) {
-      console.log('[SERVER] Core arduino:avr not found. Installing...');
-      await runCommand(`${CLI_BIN} core update-index --config-file "${FORGE.configFile}"`);
-      await runCommand(`${CLI_BIN} core install arduino:avr --config-file "${FORGE.configFile}"`);
-      console.log('[SERVER] Core arduino:avr installed successfully.');
-    } else {
-      console.log('[SERVER] Core arduino:avr is already installed.');
-    }
-
-    // Install ESP32 core if not present
-    const hasEsp32 = cores.some((c: any) =>
-      (c.platform?.id === 'esp32:esp32') || (c.id === 'esp32:esp32')
-    );
-    if (!hasEsp32) {
-      console.log('[SERVER] Core esp32:esp32 not found. Installing (this may take a few minutes)...');
-      const esp32Urls = [
-        'https://dl.espressif.com/dl/package_esp32_index.json',
-        'https://espressif.github.io/arduino-esp32/package_esp32_index.json',
-      ];
-      let esp32Installed = false;
-      for (const url of esp32Urls) {
-        try {
-          await runCommand(
-            `${CLI_BIN} core update-index --config-file "${FORGE.configFile}" --additional-urls ${url}`
-          );
-          await runCommand(
-            `${CLI_BIN} core install esp32:esp32 --config-file "${FORGE.configFile}" --additional-urls ${url}`
-          );
-          esp32Installed = true;
-          break;
-        } catch (err: any) {
-          console.warn(`[SERVER] ESP32 core install via ${url} failed:`, err.message);
-        }
-      }
-      if (esp32Installed) {
-        console.log('[SERVER] Core esp32:esp32 installed successfully.');
-      } else {
-        console.warn('[SERVER] All ESP32 core install attempts failed.');
-      }
-    } else {
-      console.log('[SERVER] Core esp32:esp32 is already installed.');
-    }
-
+    console.log(`[SERVER] Using pio: ${PIO_BIN}`);
+    console.log('[SERVER] Ensuring atmelavr platform...');
+    await platformEnsure('atmelavr');
+    console.log('[SERVER] Ensuring espressif32 platform...');
+    await platformEnsure('espressif32');
     isInitialized = true;
   } catch (err: any) {
-    console.warn('[SERVER WARNING] Core initialization skip/fail:', err.message);
+    console.warn('[SERVER WARNING] Platform init skip/fail:', err.message);
     isInitialized = true; // Proceed anyway
   }
 };
@@ -183,41 +89,52 @@ app.post('/compile', async (req, res) => {
     return res.status(400).json({ success: false, errors: ['No code provided'] });
   }
 
+  let target: { board: string; platform: string };
+  try {
+    target = fqbnToPioTarget(board);
+  } catch (e: any) {
+    return res.status(400).json({ success: false, errors: [e.message] });
+  }
+
   const sketchId = `sketch_${Date.now()}`;
-  const sketchDir = path.join(os.tmpdir(), 'electra', sketchId);
-  const sketchFile = path.join(sketchDir, `${sketchId}.ino`);
+  const projectDir = path.join(os.tmpdir(), 'electra', sketchId);
 
   try {
-    if (!fs.existsSync(sketchDir)) {
-      fs.mkdirSync(sketchDir, { recursive: true });
-    }
-    fs.writeFileSync(sketchFile, code, 'utf8');
-
     for (const lib of libraries) {
       try {
-        await runCommand(`${CLI_BIN} lib install "${lib}" --config-file "${FORGE.configFile}"`);
+        await pkgInstallLibrary(lib, FORGE_LIB_LIBRARIES ?? undefined);
       } catch (e) { }
     }
 
-    const result = await runCommand(`${CLI_BIN} compile --fqbn ${board} --format json --config-file "${FORGE.configFile}" --output-dir "${sketchDir}" ${sketchDir}`);
+    createPioProject(projectDir, code, {
+      board: target.board,
+      platform: target.platform,
+      libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+    });
 
-    // Look for any .hex file in the directory (sometimes names vary slightly)
-    const files = fs.readdirSync(sketchDir);
+    const result = await runCLI(['run', '-d', projectDir]);
+    if (result.code !== 0) {
+      const message = (result.stderr || result.stdout || `Exit code ${result.code}`).slice(-4000);
+      return res.json({ success: false, errors: [message] });
+    }
+
+    // Look for any .hex file in the build dir (names vary by platform)
+    const files = listPioBuildFiles(projectDir, target.board);
     const hexFile = files.find(f => f.endsWith('.hex'));
 
     if (!hexFile) {
-      console.error(`[BUILD ERROR] No HEX file found in ${sketchDir}. Directory contents:`, files);
+      console.error(`[BUILD ERROR] No HEX file found in ${projectDir}. Directory contents:`, files);
       return res.json({ success: false, errors: ['HEX file not generated. Check your code syntax.'] });
     }
 
-    const hex = fs.readFileSync(path.join(sketchDir, hexFile), 'utf8');
+    const hex = fs.readFileSync(path.join(getPioBuildDir(projectDir, target.board), hexFile), 'utf8');
     return res.json({ success: true, hex });
 
   } catch (err: any) {
     return res.json({ success: false, errors: [err.message] });
   } finally {
     try {
-      if (fs.existsSync(sketchDir)) fs.rmSync(sketchDir, { recursive: true, force: true });
+      if (fs.existsSync(projectDir)) fs.rmSync(projectDir, { recursive: true, force: true });
     } catch (e) { }
   }
 });
@@ -230,24 +147,32 @@ app.post('/transpile', async (req, res) => {
     return res.status(400).json({ success: false, errors: ['No code provided'] });
   }
 
-  // Step 1: Validate the sketch by compiling with arduino-cli (catches syntax errors)
+  // Step 1: Validate the sketch by compiling with pio (catches syntax errors)
   if (isInitialized) {
     const sketchId = `transpile_${Date.now()}`;
-    const sketchDir = path.join(os.tmpdir(), 'electra', sketchId);
-    const sketchFile = path.join(sketchDir, `${sketchId}.ino`);
+    const projectDir = path.join(os.tmpdir(), 'electra', sketchId);
     try {
-      fs.mkdirSync(sketchDir, { recursive: true });
-      fs.writeFileSync(sketchFile, code, 'utf8');
-      await runCommand(
-        `${CLI_BIN} compile --fqbn ${board} --format json ` +
-        `--config-file "${FORGE.configFile}" --output-dir "${sketchDir}" ${sketchDir}`
-      );
+      let target: { board: string; platform: string };
+      try {
+        target = fqbnToPioTarget(board);
+      } catch (e: any) {
+        return res.json({ success: false, errors: [e.message] });
+      }
+      createPioProject(projectDir, code, {
+        board: target.board,
+        platform: target.platform,
+        libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+      });
+      const result = await runCLI(['run', '-d', projectDir]);
+      if (result.code !== 0) {
+        throw new Error((result.stderr || result.stdout || `Exit code ${result.code}`).slice(-4000));
+      }
     } catch (err: any) {
       // If compilation fails, return the error — don't transpile invalid code
-      try { fs.rmSync(sketchDir, { recursive: true, force: true }); } catch (_) { }
+      try { fs.rmSync(projectDir, { recursive: true, force: true }); } catch (_) { }
       return res.json({ success: false, errors: [err.message] });
     } finally {
-      try { if (fs.existsSync(sketchDir)) fs.rmSync(sketchDir, { recursive: true, force: true }); } catch (_) { }
+      try { if (fs.existsSync(projectDir)) fs.rmSync(projectDir, { recursive: true, force: true }); } catch (_) { }
     }
   }
 
@@ -267,13 +192,11 @@ app.get('/libraries/search', async (req, res) => {
   const query = req.query.q as string;
   if (!query) return res.json([]);
   try {
-    const result = await runCommand(`${CLI_BIN} lib search "${query}" --format json --config-file "${FORGE.configFile}"`);
-    const data = JSON.parse(result.stdout);
-    const libs = (data.libraries || []).slice(0, 20).map((l: any) => ({
+    const libs = (await searchRegistry(query, 20)).map(l => ({
       name: l.name,
-      author: l.latest?.author?.name || '',
-      description: l.latest?.sentence || '',
-      version: l.latest?.version || '',
+      author: l.author === 'Unknown Author' ? '' : l.author,
+      description: l.sentence === 'No description available.' ? '' : l.sentence,
+      version: l.version === 'Unknown' ? '' : l.version,
     }));
     res.json(libs);
   } catch (err) {
@@ -288,17 +211,11 @@ app.post('/libraries/install', async (req, res) => {
 
   console.log(`[LIB] Installing: ${name}`);
   try {
-    // Throttled index update — only once per 24h
-    const manifestPath = path.join(FORGE.userDir, 'manifest.json');
-    let manifest: any = {};
-    try { manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')); } catch (_) { }
-    if (!manifest.lastIndexUpdate || Date.now() - manifest.lastIndexUpdate > 24 * 60 * 60 * 1000) {
-      await runCommand(`${CLI_BIN} lib update-index --config-file "${FORGE.configFile}"`);
-      manifest.lastIndexUpdate = Date.now();
-      fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+    const ok = await pkgInstallLibrary(name, FORGE_LIB_LIBRARIES ?? undefined);
+    if (!ok) {
+      console.error(`[LIB] Install failed: ${name}`);
+      return res.json({ success: false, error: 'Installation failed' });
     }
-
-    await runCommand(`${CLI_BIN} lib install "${name}" --config-file "${FORGE.configFile}"`);
     console.log(`[LIB] Installed: ${name}`);
     res.json({ success: true });
   } catch (err: any) {
@@ -309,7 +226,7 @@ app.post('/libraries/install', async (req, res) => {
 
 // GET /libraries/installed
 app.get('/libraries/installed', (_req, res) => {
-  const libsDir = path.join(FORGE.userDir, 'libraries');
+  const libsDir = FORGE_LIB_LIBRARIES ?? path.join('/app/forge-lib', 'libraries');
   if (!fs.existsSync(libsDir)) return res.json([]);
 
   try {
@@ -345,8 +262,39 @@ app.delete('/libraries/remove', async (req, res) => {
 
   console.log(`[LIB] Removing: ${name}`);
   try {
-    await runCommand(`${CLI_BIN} lib uninstall "${name}" --config-file "${FORGE.configFile}"`);
-    res.json({ success: true });
+    // pio pkg uninstall has no --library/--storage-dir flags — remove the
+    // forge-lib folder manually (best effort) and try a global uninstall.
+    let manualRemoved = false;
+    const libsDir = FORGE_LIB_LIBRARIES ?? path.join('/app/forge-lib', 'libraries');
+    if (fs.existsSync(libsDir)) {
+      const entries = fs.readdirSync(libsDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const libDir = path.join(libsDir, entry.name);
+        let match = entry.name === name;
+        if (!match) {
+          const propFile = path.join(libDir, 'library.properties');
+          if (fs.existsSync(propFile)) {
+            const props: Record<string, string> = {};
+            fs.readFileSync(propFile, 'utf8').split('\n').forEach(line => {
+              const [k, ...v] = line.split('=');
+              if (k && v.length) props[k.trim()] = v.join('=').trim();
+            });
+            if (props.name === name) match = true;
+          }
+        }
+        if (match) {
+          fs.rmSync(libDir, { recursive: true, force: true });
+          manualRemoved = true;
+        }
+      }
+    }
+    await pkgUninstallLibrary(name);
+    if (manualRemoved) {
+      res.json({ success: true, manualRemoved });
+    } else {
+      res.json({ success: true });
+    }
   } catch (err: any) {
     res.json({ success: false, error: err.message });
   }

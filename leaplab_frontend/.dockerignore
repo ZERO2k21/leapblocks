@@ -13,7 +13,7 @@ out/
 .kiro/
 .playwright-mcp/
 .storybook/
-src/drivers/arduino-cli/
+src/drivers/platformio/
 src/drivers/cp210x_drivers/
 src/neura-ml/
 public/

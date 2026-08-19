@@ -8,37 +8,32 @@ RUN apt-get update && apt-get install -y \
     default-jre-headless \
     && rm -rf /var/lib/apt/lists/*
 
-ARG ARDUINO_CLI_VERSION=1.1.1
-RUN curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh \
-    | BINDIR=/usr/local/bin sh -s ${ARDUINO_CLI_VERSION}
+# PlatformIO Core (Apache-2.0 — replaces the GPL-3.0 arduino-cli).
+# Toolchains it downloads are GPLv3-with-runtime-exception (safe to ship).
+ARG PIO_VERSION=6.1.18
+RUN pip3 install --no-cache-dir platformio==${PIO_VERSION}
 
-ENV ARDUINO_DIRECTORIES_DATA=/app/arduino-data
-ENV ARDUINO_DIRECTORIES_DOWNLOADS=/app/arduino-data/staging
-ENV ARDUINO_DIRECTORIES_USER=/app/arduino-data/user
+ENV PIO_CLI_PATH=/usr/local/bin/pio
+ENV PIO_LIB_DIRS=/app/forge-lib/libraries
 
-RUN arduino-cli config init && \
-    arduino-cli config set board_manager.additional_urls \
-      "https://dl.espressif.com/dl/package_esp32_index.json" && \
-    arduino-cli core update-index
+# Preinstall platforms (idempotent; pio run also auto-installs from platformio.ini)
+RUN pio platform install atmelavr && \
+    pio platform install espressif32
 
-RUN arduino-cli core install arduino:avr
-
-RUN arduino-cli core install esp32:esp32 && \
-    echo "ESP32 core installed successfully"
-
-RUN arduino-cli lib install \
-    "Adafruit SSD1306" \
-    "Adafruit GFX Library" \
-    "Adafruit BusIO" \
-    "LiquidCrystal I2C" \
-    "DHT sensor library" \
-    "Servo" \
-    "ESP32Servo" \
-    "Adafruit NeoPixel" \
-    "MPU6050" \
-    "IRremote" \
-    "Keypad" \
-    "HX711" \
+# Preinstall the 12 bundled forge libraries into the shared cache dir
+RUN mkdir -p /app/forge-lib/libraries && \
+    pio pkg install --library "Adafruit SSD1306" --storage-dir /app/forge-lib/libraries && \
+    pio pkg install --library "Adafruit GFX Library" --storage-dir /app/forge-lib/libraries && \
+    pio pkg install --library "Adafruit BusIO" --storage-dir /app/forge-lib/libraries && \
+    pio pkg install --library "LiquidCrystal I2C" --storage-dir /app/forge-lib/libraries && \
+    pio pkg install --library "DHT sensor library" --storage-dir /app/forge-lib/libraries && \
+    pio pkg install --library "Servo" --storage-dir /app/forge-lib/libraries && \
+    pio pkg install --library "ESP32Servo" --storage-dir /app/forge-lib/libraries && \
+    pio pkg install --library "Adafruit NeoPixel" --storage-dir /app/forge-lib/libraries && \
+    pio pkg install --library "MPU6050" --storage-dir /app/forge-lib/libraries && \
+    pio pkg install --library "IRremote" --storage-dir /app/forge-lib/libraries && \
+    pio pkg install --library "Keypad" --storage-dir /app/forge-lib/libraries && \
+    pio pkg install --library "HX711" --storage-dir /app/forge-lib/libraries \
     || true
 
 WORKDIR /app

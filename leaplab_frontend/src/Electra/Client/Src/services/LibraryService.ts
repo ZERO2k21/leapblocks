@@ -8,7 +8,7 @@
  *   Install → electronAPI.installLibrary(name)
  *               → IPC: install-library
  *               → ArduinoUploader.installLibrary()
- *               → arduino-cli lib install → forge-lib/libraries/
+ *               → pio pkg install --library <name> --storage-dir forge-lib/libraries/
  *   List    → electronAPI.getInstalledLibraries()
  *               → IPC: get-installed-libraries
  *               → ArduinoUploader.getInstalledLibraries()
@@ -164,7 +164,7 @@ export const installLibrary = async (lib: Library): Promise<{ success: boolean; 
     const result = await browserLibraryStorage.installLibrary(lib);
 
     if (result.success) {
-      // Also trigger install on the compiler server so arduino-cli has it
+      // Also trigger install on the compiler server so pio has it
       console.log('[LibraryService] Syncing installation with compiler server...');
       try {
         await fetch(`${CLOUD_COMPILER_URL}/libraries/install`, {
