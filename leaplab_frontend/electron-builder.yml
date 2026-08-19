@@ -45,10 +45,11 @@ extraResources:
     to: tools
     filter:
       - "**/*"
-  # arduino-cli bundled directly — Electra ONLY uses this binary,
-  # never system-installed arduino-cli. See src/utils/ensureArduinoCli.ts
-  - from: src/drivers/arduino-cli
-    to: arduino-cli
+  # PlatformIO pio.exe + bundled Python (embeddable, hosts scons/esptool) +
+  # the offline library seed — LeapBlocks ONLY uses these bundled binaries,
+  # never a system Python/PIO install. See scripts/build-pio.ps1.
+  - from: src/drivers/platformio
+    to: platformio
     filter:
       - "**/*"
   # Local compile server — Electron starts it on localhost:3001 so web-serial

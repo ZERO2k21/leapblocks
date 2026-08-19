@@ -7,7 +7,7 @@
  *   electronAPI.compileCode(code, fqbn)
  *     → IPC: compile-code
  *     → ArduinoUploader.compileForSimulation()
- *     → arduino-cli compile --libraries forge-lib/libraries/ ...
+ *     → pio run (PlatformIO, lib_extra_dirs = forge-lib/libraries/)
  *     → returns { success, hexContent }
  */
 import { IS_ELECTRON, isElectron, CLOUD_COMPILER_URL } from '../../../../config/platform';
