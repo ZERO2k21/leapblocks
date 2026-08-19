@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { X, ArrowRight, Cpu, Wifi } from 'lucide-react';
-import { useForgeStore } from '../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../utils/store/useForgeStore';
 
 interface BoardSelectionModalProps {
     onSelect: (board: 'arduino-uno' | 'esp32-c3') => void;

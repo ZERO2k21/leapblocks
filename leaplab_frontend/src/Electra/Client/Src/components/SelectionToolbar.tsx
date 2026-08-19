@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React from 'react';
-import { useForgeStore } from '../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../utils/store/useForgeStore';
 import { Trash2, Sliders, Radio, Zap, ChevronDown, Cpu, Sparkles, Power, Copy, Clipboard, MoreVertical, CopyPlus } from 'lucide-react';
 
 interface CustomSelectProps {

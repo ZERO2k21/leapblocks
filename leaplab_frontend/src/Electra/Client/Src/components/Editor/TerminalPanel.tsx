@@ -1,7 +1,7 @@
 import React from 'react';
 import { Terminal, Wifi } from 'lucide-react';
 import { SerialMonitor } from './SerialMonitor';
-import { getSimulationRunner } from '../../../utlis/store/useForgeStore';
+import { getSimulationRunner } from '../../../utils/store/useForgeStore';
 
 interface TerminalPanelProps {
   board: string;

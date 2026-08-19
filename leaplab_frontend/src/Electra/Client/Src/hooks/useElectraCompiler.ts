@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForgeStore, getSimulationRunner } from '../../utlis/store/useForgeStore';
+import { useForgeStore, getSimulationRunner } from '../../utils/store/useForgeStore';
 import { compileCode } from '../services/CompilerService';
 
 interface UseElectraCompilerParams {

@@ -4,7 +4,7 @@
  * Shows real-time calculations based on the current circuit
  */
 import React, { useMemo } from 'react';
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../../utils/store/useForgeStore';
 
 interface CircuitMetrics {
     totalVoltage: number;

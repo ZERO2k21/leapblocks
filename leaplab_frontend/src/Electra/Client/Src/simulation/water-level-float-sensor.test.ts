@@ -15,7 +15,7 @@ describe('Water Level Float Sensor Component Specs', () => {
   });
 
   it('verifies element exports and IntrinsicElements typing', async () => {
-    const exports = await import('../../utlis/elements/leap-elements');
+    const exports = await import('../../utils/elements/leap-elements');
     expect(exports.WaterLevelFloatSensorElement).toBeDefined();
   });
 });

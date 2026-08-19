@@ -101,7 +101,7 @@ class SimulationRunner {
       if (this.pendingSerial) {
         const data = this.pendingSerial;
         this.pendingSerial = '';
-        import('../../../utlis/store/useForgeStore').then(({ useForgeStore }) => {
+        import('../../../utils/store/useForgeStore').then(({ useForgeStore }) => {
           useForgeStore.getState().appendSerial(data);
         });
       }
@@ -117,7 +117,7 @@ class SimulationRunner {
     if (this.pendingSerial) {
       const data = this.pendingSerial;
       this.pendingSerial = '';
-      import('../../../utlis/store/useForgeStore').then(({ useForgeStore }) => {
+      import('../../../utils/store/useForgeStore').then(({ useForgeStore }) => {
         useForgeStore.getState().appendSerial(data);
       });
     }
@@ -296,7 +296,7 @@ class SimulationRunner {
       if (!this._esp32ListenersWired) {
         // Wire serial output from ESP32 runner to the Zustand store
         this.esp32c3Runner.addSerialListener((text: string) => {
-          import('../../../utlis/store/useForgeStore').then(({ useForgeStore }) => {
+          import('../../../utils/store/useForgeStore').then(({ useForgeStore }) => {
             // Parse __LF_WIFI: prefixed messages and route to WiFi log
             const wifiMatch = text.match(/__LF_WIFI:(.+)/);
             if (wifiMatch) {
@@ -587,7 +587,7 @@ class SimulationRunner {
     try {
       const isHigh = state === 'HIGH' || (typeof state === 'number' && state > 0);
       const isPin13 = pinId === 'PB5' || pinId === '13' || pinId === 'P13' || pinId === 'ESP13' || pinId === 'ESP8' || pinId === 'PB7';
-      import('../../../utlis/store/useForgeStore').then(({ useForgeStore }) => {
+      import('../../../utils/store/useForgeStore').then(({ useForgeStore }) => {
         const { nodes, updateNodeData } = useForgeStore.getState();
         const boardNode = nodes.find(n => ['arduino-uno', 'arduino-nano', 'arduino-mega', 'esp32-c3', 'esp32'].includes(n.data?.type));
         if (boardNode) {

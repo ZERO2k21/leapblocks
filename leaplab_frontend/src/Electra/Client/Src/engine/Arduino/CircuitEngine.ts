@@ -2,7 +2,7 @@
 * All rights reserved. Proprietary and confidential.
 * Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../../utils/store/useForgeStore';
 import { simulationRunner, PinState } from './SimulationRunner';
 import { HD44780 } from './HD44780';
 import { I2CBusManager } from './I2CBusManager';

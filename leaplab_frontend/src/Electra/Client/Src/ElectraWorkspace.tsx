@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BoardSelectionModal } from './components/BoardSelectionModal';
 import ForgeElectra from './ForgeElectra';
-import { useForgeStore } from '../utlis/store/useForgeStore';
+import { useForgeStore } from '../utils/store/useForgeStore';
 import { useCloudProjectStore } from '../../../store/cloudProjectStore';
 
 interface ElectraWorkspaceProps {

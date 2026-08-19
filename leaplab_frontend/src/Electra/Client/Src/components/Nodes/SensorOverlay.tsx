@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React from 'react';
-import { useForgeStore, getCircuitEngineSync } from '../../../utlis/store/useForgeStore';
+import { useForgeStore, getCircuitEngineSync } from '../../../utils/store/useForgeStore';
 import { LEAP_PINS } from '../../engine/Arduino/PinHarness';
 
 const withEngine = (cb: (engine: any) => void) => {

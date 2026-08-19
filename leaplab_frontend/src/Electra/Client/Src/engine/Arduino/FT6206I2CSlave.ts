@@ -9,7 +9,7 @@
  * Default I2C address: 0x38.
  */
 import { I2CSlave } from './I2CBusManager';
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../../utils/store/useForgeStore';
 
 const NATIVE_W = 240;
 const NATIVE_H = 320;

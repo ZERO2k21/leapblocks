@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import { CPU } from 'avr8js';
-import { useForgeStore } from '../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../utils/store/useForgeStore';
 
 export class PinBridge {
   private cpu: CPU;

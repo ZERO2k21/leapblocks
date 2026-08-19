@@ -21,7 +21,7 @@
  *   6. 25th pulse sets gain channel (128 for channel A)
  */
 
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../../utils/store/useForgeStore';
 import { simulationRunner } from './SimulationRunner';
 
 export class HX711Emulator {

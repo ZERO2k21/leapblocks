@@ -12,7 +12,7 @@
  *             runtime.stop()  → halts the loop
  */
 
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../../utils/store/useForgeStore';
 import { injectAllLibraries } from './ArduinoLibraries';
 import { FreeRTOS } from './FreeRTOS';
 import { CLOUD_COMPILER_URL } from '../../../../../config/platform';

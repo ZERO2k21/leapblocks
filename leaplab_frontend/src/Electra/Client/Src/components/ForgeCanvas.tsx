@@ -19,7 +19,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useShallow } from 'zustand/react/shallow';
-import { useForgeStore } from '../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../utils/store/useForgeStore';
 import { LeapNode } from './Nodes/LeapNode';
 import { PartPicker } from './Library/PartPicker';
 import { SelectionToolbar } from './SelectionToolbar';

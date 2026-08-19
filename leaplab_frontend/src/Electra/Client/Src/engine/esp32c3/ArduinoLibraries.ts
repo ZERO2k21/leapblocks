@@ -8,7 +8,7 @@
  * Each library is implemented as a JavaScript class that mimics the real Arduino API.
  */
 
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../../utils/store/useForgeStore';
 
 /** Helper to match a React Flow edge pin handle to a numeric pin */
 function matchPin(handle: string | null | undefined, pin: number): boolean {

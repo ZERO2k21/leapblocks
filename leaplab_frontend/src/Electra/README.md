@@ -46,7 +46,7 @@ src/Electra/
 ├── README.md                  # Developer guide & architecture manual
 ├── Client/                    # Frontend client code
 │   ├── Assets/                # Vector icons and electrical assets
-│   ├── utlis/                 # Store hooks (useForgeStore.js) and helpers
+│   ├── utils/                 # Store hooks (useForgeStore.js) and helpers
 │   └── Src/                   # UI components and view controllers
 │       ├── ElectraWorkspace.tsx # Workspace container & board detection modal
 │       ├── ForgeElectra.tsx   # Editor core orchestrator (canvas, code panel)

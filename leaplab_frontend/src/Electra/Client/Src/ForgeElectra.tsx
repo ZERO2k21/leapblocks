@@ -7,9 +7,9 @@ import React, { useState, lazy, Suspense, useEffect, useRef, useCallback, useMem
 import { Node, Edge } from 'reactflow';
 import { Code, Library as LibraryIcon } from 'lucide-react';
 // Register official leap elements
-import '../utlis/elements/leap-elements';
-import { useForgeStore, getSimulationRunner } from '../utlis/store/useForgeStore';
-import { getElectraVars, getLightThemeVars } from './utlis/electraTheme';
+import '../utils/elements/leap-elements';
+import { useForgeStore, getSimulationRunner } from '../utils/store/useForgeStore';
+import { getElectraVars, getLightThemeVars } from './utils/electraTheme';
 
 // Lazy load complex inner components
 const ForgeCanvas = lazy(() => import('./components/ForgeCanvas'));
@@ -23,7 +23,7 @@ import { IS_ELECTRON } from '../../../config/platform';
 import * as ProjectService from './services/ProjectService';
 import { v4 as uuidv4 } from 'uuid';
 import * as LibraryService from './services/LibraryService';
-import { pack, unpack, isPacked } from '../utlis/compress';
+import { pack, unpack, isPacked } from '../utils/compress';
 import { fileService } from './services/FileService';
 import { useCloudProjectStore } from '../../../store/cloudProjectStore';
 import { showToast } from '../../../leapignite/client/components/Toast';

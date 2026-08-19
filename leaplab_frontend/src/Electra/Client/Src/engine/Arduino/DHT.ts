@@ -16,7 +16,7 @@
  */
 
 import { PinState, simulationRunner } from './SimulationRunner';
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../../utils/store/useForgeStore';
 
 const CPU_MHZ = 16;
 /** Convert microseconds → AVR clock cycles (integer) */

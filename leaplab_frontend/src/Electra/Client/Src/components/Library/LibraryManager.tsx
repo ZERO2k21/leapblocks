@@ -12,7 +12,7 @@ import {
   removeLibrary,
   Library,
 } from '../../services/LibraryService';
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../../utils/store/useForgeStore';
 
 export const LibraryManager: React.FC = () => {
   const uiTheme = useForgeStore((state) => state.uiTheme);

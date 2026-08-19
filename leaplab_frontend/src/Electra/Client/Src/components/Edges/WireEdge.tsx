@@ -1,6 +1,6 @@
 import React, { useCallback, useRef } from 'react';
 import { EdgeProps, useReactFlow } from 'reactflow';
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../../utils/store/useForgeStore';
 import { type Point } from '../../lib/orthogonalRouting';
 
 // ── Wokwi-style wire color palette ─────────────────────────────────────────

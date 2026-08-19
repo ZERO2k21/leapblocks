@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useRef } from 'react';
 import { Trash2, Download, Terminal, ChevronRight, Send } from 'lucide-react';
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../../utils/store/useForgeStore';
 
 interface SerialMonitorProps {
   output: string;

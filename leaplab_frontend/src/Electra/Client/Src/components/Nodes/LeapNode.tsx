@@ -7,7 +7,7 @@ import React, { memo, useRef, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Handle, Position, NodeProps, useReactFlow } from 'reactflow';
 import { getComponentPins } from '../../lib/PinMap';
-import { useForgeStore, getCircuitEngineSync } from '../../../utlis/store/useForgeStore';
+import { useForgeStore, getCircuitEngineSync } from '../../../utils/store/useForgeStore';
 import { SensorOverlay } from './SensorOverlay';
 import { StepperMotorNode } from './StepperMotorNode';
 

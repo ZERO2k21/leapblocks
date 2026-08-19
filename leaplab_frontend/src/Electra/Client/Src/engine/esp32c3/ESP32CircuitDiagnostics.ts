@@ -7,7 +7,7 @@
 
 import { circuitEngine } from '../Arduino/CircuitEngine';
 import { simulationRunner } from '../Arduino/SimulationRunner';
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../../utils/store/useForgeStore';
 
 export class ESP32CircuitDiagnostics {
     /**

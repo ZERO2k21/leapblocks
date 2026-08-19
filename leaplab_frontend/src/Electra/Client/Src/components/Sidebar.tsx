@@ -13,7 +13,7 @@ import {
   MousePointer2,
   ChevronDown
 } from 'lucide-react';
-import { useForgeStore } from '../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../utils/store/useForgeStore';
 
 const CATEGORIES = [
   { id: 'all', name: 'All', icon: Search },

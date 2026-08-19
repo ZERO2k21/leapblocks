@@ -42,6 +42,6 @@
     "**/*.test.ts",
     "**/*.stories.ts",
     "src/Electra/server",
-    "src/Electra/Client/utlis/elements/leap-elements/utils/test-utils.ts"
+    "src/Electra/Client/utils/elements/leap-elements/utils/test-utils.ts"
   ]
 }

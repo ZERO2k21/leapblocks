@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import Editor from '@monaco-editor/react';
-import { useForgeStore } from '../../../utlis/store/useForgeStore';
+import { useForgeStore } from '../../../utils/store/useForgeStore';
 
 interface ForgeEditorProps {
   code: string;

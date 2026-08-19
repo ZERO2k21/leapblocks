@@ -7,7 +7,7 @@ import { hardwareBlocks } from '../../blocks/hardware-blocks';
 import { registerCustomFields } from '../../blockly/registerCustomFields';
 import { initPythonGenerator } from '../../generators/python-generator';
 import { registerLeapRenderer } from '../../leapignite/server/blocks/LeapRenderer';
-import { registerLeapBloxCategory } from '../../custom-toolbox';
+import { registerLeapBloxCategory } from '../../blockly/custom-toolbox';
 import { spriteManager } from '../../engine/SpriteManager';
 import { log } from './log';
 

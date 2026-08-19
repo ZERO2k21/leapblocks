@@ -33,8 +33,8 @@ import {
 import ShareProjectModal from './ShareProjectModal';
 import { useLeapLabAuthStore } from '../../auth/leaplabAuthStore';
 import { useCloudProjectStore } from '../../store/cloudProjectStore';
-import { isPacked, unpack } from '../../Electra/Client/utlis/compress';
-import '../../Electra/Client/utlis/elements/leap-elements';
+import { isPacked, unpack } from '../../Electra/Client/utils/compress';
+import '../../Electra/Client/utils/elements/leap-elements';
 
 interface MyProjectsDashboardProps {
     onOpenProject: (mode: string) => void;
