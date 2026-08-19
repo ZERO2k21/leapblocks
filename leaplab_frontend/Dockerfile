@@ -42,7 +42,7 @@ RUN mkdir -p /app/forge-lib/libraries && \
 
 WORKDIR /app
 
-COPY server/package.json bun.lock /tmp/server/
+COPY server/package.json /tmp/server/
 RUN cd /tmp/server && bun install --production && \
     mkdir -p /app && cp -r /tmp/server/node_modules /app/node_modules
 
