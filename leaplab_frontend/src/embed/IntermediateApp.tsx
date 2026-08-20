@@ -37,6 +37,7 @@ import MenuBar from '../leapignite/client/components/MenuBar';
 import Logo from '../components/Logo';
 
 import BoardSelectionModal from '../leapignite/client/components/BoardSelectionModal';
+import DialogRenderer from './components/DialogRenderer';
 
 import { PythonEditorTab } from '../components/PythonEditorTab';
 
@@ -106,6 +107,7 @@ import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, L
 
 
 import { styles } from '../styles/intermediateStyles';
+import { showAlert } from '../utils/dialogStore';
 import type { AppMode, EditorMode, VariableMonitorState, ListMonitorState, TableMonitorState } from '../types/intermediateTypes';
 import { normalizeVariableMonitor } from '../types/intermediateTypes';
 
@@ -4605,7 +4607,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             setShowSpriteLibrary(false);
 
-                            alert('Paint editor - select a sprite first, then edit its costume');
+                            showAlert('Paint editor - select a sprite first, then edit its costume', 'Costumes');
 
                         }}
 
@@ -4636,6 +4638,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     />
                 </React.Suspense>
             )}
+
+            {/* Global styled dialog renderer */}
+            <DialogRenderer />
         </div>
     );
 

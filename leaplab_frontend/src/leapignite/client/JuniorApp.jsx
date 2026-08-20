@@ -15,6 +15,7 @@ import DirectionPicker from "./components/DirectionPicker";
 import InstrumentPicker from "./components/InstrumentPicker";
 import PianoPicker from "./components/PianoPicker";
 import PaintEditor from "../../components/PaintEditor";
+import DialogRenderer from "../../embed/components/DialogRenderer";
 import { SpriteLibrary } from "../../components/SpriteLibrary";
 import WorkspaceControls from "../../components/WorkspaceControls";
 import WorkspaceTrash from "../../components/WorkspaceTrash";
@@ -1032,6 +1033,9 @@ function JuniorAppInner({ onBack, projectUrl }) {
                 goalText={goalDescription}
                 onClose={() => setIsGoalOpen(false)}
             />
+
+            {/* Global styled dialog renderer */}
+            <DialogRenderer />
         </div>
     );
 }

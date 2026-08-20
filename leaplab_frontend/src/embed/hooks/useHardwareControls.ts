@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import type React from 'react';
 import { log } from '../utils/log';
+import { showAlert } from '../../utils/dialogStore';
 import { isWebSerialSupported, listPorts as webListPorts, requestPort as webRequestPort, uploadToBoard, startWebSerialMonitor, stopWebSerialMonitor, sendWebSerial } from '../../webflash';
 
 export function useHardwareControls(
@@ -175,7 +176,7 @@ export function useHardwareControls(
         // Serial picker is opened automatically by uploadToBoard.
         if (!selectedPort && electronAPI?.uploadCode) {
             addLog('No port selected!');
-            alert('⚠️ No port selected!\n\nPlease connect your board and select a COM port.');
+            showAlert('No port selected!\n\nPlease connect your board and select a COM port.', 'Upload');
             return;
         }
 

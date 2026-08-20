@@ -10,6 +10,7 @@ import { registerLeapRenderer } from '../../leapignite/server/blocks/LeapRendere
 import { registerLeapBloxCategory } from '../../blockly/custom-toolbox';
 import { spriteManager } from '../../engine/SpriteManager';
 import { log } from './log';
+import { showAlert, showConfirm, showPrompt } from '../../utils/dialogStore';
 
 const registerBlocks = () => {
     try {
@@ -52,18 +53,15 @@ export function initBlocklyOnce() {
     registerCustomFields();
 
     Blockly.dialog.setPrompt((message, defaultValue, callback) => {
-        const result = window.prompt(message, defaultValue);
-        callback(result);
+        showPrompt(message, defaultValue).then(result => callback(result));
     });
 
     Blockly.dialog.setAlert((message, callback) => {
-        window.alert(message);
-        if (callback) callback();
+        showAlert(message).then(() => { if (callback) callback(); });
     });
 
     Blockly.dialog.setConfirm((message, callback) => {
-        const result = window.confirm(message);
-        callback(result);
+        showConfirm(message).then(result => callback(result));
     });
 
     if (!Blockly.Extensions.isRegistered('broadcast_dropdown_ext')) {
