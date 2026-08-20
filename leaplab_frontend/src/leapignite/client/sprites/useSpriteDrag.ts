@@ -39,6 +39,7 @@ interface UseSpriteDragProps {
     updateStore: (partial: Partial<{ x: number; y: number }>) => void;
     penColor?: string;
     isPenDown?: boolean;
+    fullscreenScale?: number;
 }
 
 interface DragRef {
@@ -53,6 +54,7 @@ interface DragRef {
     tipOffsetX: number;
     tipOffsetY: number;
     stageEl: HTMLElement | null;
+    scale: number;
 }
 
 declare global {
@@ -65,14 +67,14 @@ declare global {
 
 export default function useSpriteDrag({
     x, y, angle, size, scaleX, mirrored, onClick, onDragStateChange,
-    isPenSprite, updateStore, penColor, isPenDown,
+    isPenSprite, updateStore, penColor, isPenDown, fullscreenScale = 1,
 }: UseSpriteDragProps): {
     isDragging: boolean;
     handleMouseDown: (e: React.MouseEvent) => void;
     handleTouchStart: (e: React.TouchEvent) => void;
 } {
     const [isDragging, setIsDragging] = useState(false);
-    const dragRef = useRef<DragRef>({ startX: 0, startY: 0, origX: 0, origY: 0, didDrag: false, parentLeft: 0, parentTop: 0, prevDrawPoint: null, tipOffsetX: 0, tipOffsetY: 0, stageEl: null });
+    const dragRef = useRef<DragRef>({ startX: 0, startY: 0, origX: 0, origY: 0, didDrag: false, parentLeft: 0, parentTop: 0, prevDrawPoint: null, tipOffsetX: 0, tipOffsetY: 0, stageEl: null, scale: 1 });
 
     const startDrag = useCallback((clientX: number, clientY: number) => {
         const stageEl = dragRef.current.stageEl;
@@ -95,21 +97,23 @@ export default function useSpriteDrag({
             tipOffsetX: tipOffset.x,
             tipOffsetY: tipOffset.y,
             stageEl,
+            scale: fullscreenScale,
         };
 
         setIsDragging(true);
         if (onDragStateChange) onDragStateChange(true);
-    }, [x, y, angle, size, scaleX, mirrored, isPenSprite, onDragStateChange]);
+    }, [x, y, angle, size, scaleX, mirrored, isPenSprite, onDragStateChange, fullscreenScale]);
 
     const moveDrag = useCallback((clientX: number, clientY: number) => {
-        const dx = clientX - dragRef.current.startX;
-        const dy = clientY - dragRef.current.startY;
+        const scale = dragRef.current.scale || 1;
+        const dx = (clientX - dragRef.current.startX) / scale;
+        const dy = (clientY - dragRef.current.startY) / scale;
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
             dragRef.current.didDrag = true;
         }
         const pointerPoint = {
-            x: clientX - dragRef.current.parentLeft,
-            y: clientY - dragRef.current.parentTop
+            x: (clientX - dragRef.current.parentLeft) / scale,
+            y: (clientY - dragRef.current.parentTop) / scale
         };
         const newX = isPenSprite
             ? (pointerPoint.x - dragRef.current.tipOffsetX)

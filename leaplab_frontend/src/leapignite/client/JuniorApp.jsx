@@ -876,14 +876,16 @@ function JuniorAppInner({ onBack, projectUrl }) {
                     spriteGridX={(() => {
                         const activeSprite = sprites.find(s => s.id === activeSpriteId);
                         if (!activeSprite || !stageContainerRef.current) return null;
-                        const w = stageContainerRef.current.offsetWidth || 1;
+                        const inner = stageContainerRef.current.firstElementChild;
+                        const w = (inner ? inner.offsetWidth : stageContainerRef.current.offsetWidth) || 1;
                         const spriteCenter = activeSprite.x + 40;
                         return Math.max(-1, Math.min(22, (spriteCenter / w) * 20));
                     })()}
                     spriteGridY={(() => {
                         const activeSprite = sprites.find(s => s.id === activeSpriteId);
                         if (!activeSprite || !stageContainerRef.current) return null;
-                        const h = stageContainerRef.current.offsetHeight || 1;
+                        const inner = stageContainerRef.current.firstElementChild;
+                        const h = (inner ? inner.offsetHeight : stageContainerRef.current.offsetHeight) || 1;
                         const spriteCenter = activeSprite.y + 40;
                         return Math.max(-1, Math.min(22, 23 - (spriteCenter / h) * 23));
                     })()}
@@ -923,6 +925,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
                                 textColor={sprite.textColor}
                                 onClick={() => exec.handleSpriteClick(sprite.id)}
                                 onDragStateChange={(dragging) => setIsDraggingSpriteOnStage(dragging)}
+                                fullscreenScale={fullscreenScale}
                             />
                         ))}
                         <canvas
