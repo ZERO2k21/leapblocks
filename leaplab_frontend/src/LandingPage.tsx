@@ -211,7 +211,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
         </div>
 
         {/* TOPBAR */}
-        <nav className="shrink-0 h-[110px] pt-4 pb-4 flex items-center justify-between px-6 bg-[#F8FAFC]/85 backdrop-blur-[16px] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] border-b border-[rgba(0,0,0,0.06)] sm:px-4 sm:h-[68px] relative z-[200]">
+        <nav className="shrink-0 h-[72px] py-2 flex items-center justify-between px-6 bg-[#F8FAFC]/85 backdrop-blur-[16px] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] border-b border-[rgba(0,0,0,0.06)] sm:px-4 sm:h-[68px] relative z-[200]">
           <div className="flex items-center gap-[32px] sm:gap-[16px]">
             <a href="#" className="flex items-center gap-[10px] no-underline filter drop-shadow-[0_2px_8px_rgba(99,102,241,0.15)]" onClick={() => {
               setActiveTab('modules');
@@ -219,7 +219,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
               sessionStorage.removeItem('myProjectsSelectedMode');
               setMenuOpen(false);
             }}>
-              <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="h-[76px] w-auto object-contain sm:h-[60px]" />
+              <img src="assets/Final_logo_b.png" alt="LeapLab Logo" className="h-[50px] w-auto object-contain" />
             </a>
             <div className="hidden md:flex gap-6 ml-3 items-center">
               <button className="bg-transparent border-none text-[#0f172a] no-underline font-semibold text-[0.95rem] cursor-pointer py-1.5 px-3 rounded-full transition-all duration-200 ease-out hover:text-[#4f46e5] hover:bg-[#4f46e5]/[0.06]" onClick={() => (window as any).showComingSoon('Tutorials')}>
@@ -247,7 +247,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
           <div className="flex items-center gap-3 sm:gap-4 md:gap-6 filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
             <LeapLabAuthButton variant="light" size="md" />
             <div className="hidden md:block w-[1.5px] h-6 bg-[rgba(15,23,42,0.15)]"></div>
-            <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="hidden md:block h-[clamp(40px,5vw,50px)]" />
+            <img src="assets/topbar_logo.svg" alt="Leapblocks Top Logo" className="h-[35px]" />
 
             {/* Hamburger button for Mobile */}
             <button
@@ -268,7 +268,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelect }) => {
 
         {/* Mobile Dropdown Menu */}
         {menuOpen && (
-          <div className="absolute top-[64px] sm:top-[56px] left-0 w-full bg-[#F8FAFC]/95 backdrop-blur-[16px] border-b border-[rgba(0,0,0,0.06)] z-[190] flex flex-col p-4 gap-2.5 shadow-lg md:hidden animate-slide-down">
+          <div className="absolute top-[72px] sm:top-[68px] left-0 w-full bg-[#F8FAFC]/95 backdrop-blur-[16px] border-b border-[rgba(0,0,0,0.06)] z-[190] flex flex-col p-4 gap-2.5 shadow-lg md:hidden animate-slide-down">
             <button
               className="w-full text-left py-3 px-4 font-semibold text-slate-800 rounded-xl hover:bg-[#4f46e5]/[0.06] hover:text-[#4f46e5] transition-colors"
               onClick={() => {
