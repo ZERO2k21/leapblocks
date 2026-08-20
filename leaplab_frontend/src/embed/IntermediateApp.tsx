@@ -2750,14 +2750,14 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         return contents;
                     });
 
-                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_MOREBLOCKS', () => {
+                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_EXTENSIONBLOCKS', () => {
                         const contents: any[] = [];
                         contents.push(createFlyoutCategoryLabel(MORE_BLOCKS_CATEGORY_NAME));
-                        contents.push(createFlyoutSectionLabel('Reserved for future use', 'category-subheader-moreblocks'));
+                        contents.push(createFlyoutSectionLabel('Add custom blocks & categories', 'category-subheader-extensionblocks'));
                         contents.push({
-                            kind: 'label',
-                            text: 'Future blocks will appear here',
-                            'web-class': 'category-subheader category-subheader-moreblocks-note'
+                            kind: 'button',
+                            text: 'Choose Extensions',
+                            callbackKey: 'OPEN_EXTENSION_LIBRARY'
                         });
                         return contents;
                     });
@@ -2768,6 +2768,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     workspaceRef.current.registerButtonCallback('CREATE_VARIABLE', ((btn: any) => {
                         setIsMakeVariableOpen(true);
                     }));
+
+                    // Register button callback for "Choose Extensions"
+                    workspaceRef.current.registerButtonCallback('OPEN_EXTENSION_LIBRARY', () => {
+                        setShowExtensionLibrary(true);
+                    });
 
 
 
@@ -2885,7 +2890,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     });
 
-
+                    
 
                     // Restore the selected sprite's blocks after workspace re-initialization
 
@@ -3428,17 +3433,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             )}
                         </div>
 
-                        {/* Modern Professional Extensions Button placed in empty space of tab bar */}
-                        <button
-                            onClick={() => setShowExtensionLibrary(true)}
-                            className="ml-4 px-3.5 py-1.5 bg-gradient-to-r from-[#855CD6] via-[#9165E7] to-[#9D70F0] hover:from-[#7548C7] hover:via-[#8455DC] hover:to-[#9162E5] text-white rounded-lg font-bold text-[12px] flex items-center gap-1.5 shadow-[0_2px_8px_rgba(133,92,214,0.35)] hover:shadow-[0_4px_14px_rgba(133,92,214,0.5)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 border border-white/20 outline-none cursor-pointer select-none"
-                            title="Add Extensions (Add custom blocks & categories)"
-                        >
-                            <Puzzle size={15} className="text-white shrink-0 stroke-[2.5]" />
-                            <span>Extensions</span>
-                            <span className="ml-0.5 bg-white/25 px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none">+</span>
-                        </button>
-                    </div>
+                        </div>
 
 
 
