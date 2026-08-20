@@ -3382,6 +3382,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 onRedo={() => workspaceRef.current?.undo(true)}
 
+                workspaceRef={workspaceRef}
+
             />
 
 

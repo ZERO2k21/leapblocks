@@ -145,7 +145,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
             setPendingAction('home')
             setShowDiscardModal(true)
         } else {
-            onBack()
+            onBack(false)
         }
     }, [hasUnsavedWork, onBack])
 

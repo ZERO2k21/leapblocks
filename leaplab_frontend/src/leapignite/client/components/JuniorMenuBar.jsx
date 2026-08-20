@@ -29,6 +29,7 @@ export default function JuniorMenuBar({
     onBack,
     onDownload,
     onSave,
+    workspaceRef,
 }) {
     const [openMenu, setOpenMenu] = useState(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -70,7 +71,8 @@ export default function JuniorMenuBar({
                         onClick: () => {
                             sessionStorage.setItem('landingActiveTab', 'my-projects');
                             sessionStorage.setItem('myProjectsSelectedMode', 'junior');
-                            onBack?.();
+                            const hasChanges = workspaceRef?.current?.getAllBlocks?.(false)?.length > 0;
+                            onBack?.(hasChanges);
                         }
                     },
                 ];
@@ -85,7 +87,8 @@ export default function JuniorMenuBar({
                                 onClick={() => {
                                     sessionStorage.setItem('landingActiveTab', 'modules');
                                     sessionStorage.removeItem('myProjectsSelectedMode');
-                                    onBack?.();
+                                    const hasChanges = workspaceRef?.current?.getAllBlocks?.(false)?.length > 0;
+                                    onBack?.(hasChanges);
                                 }}
                                 title="Back to Home"
                                 className="w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center bg-white/10 border border-white/12 rounded-xl text-white cursor-pointer transition-all duration-200 shrink-0 hover:bg-white/20 hover:scale-105"
@@ -197,7 +200,8 @@ export default function JuniorMenuBar({
                                 onClick: () => {
                                     sessionStorage.setItem('landingActiveTab', 'my-projects');
                                     sessionStorage.setItem('myProjectsSelectedMode', 'junior');
-                                    onBack?.();
+                                    const hasChanges = workspaceRef?.current?.getAllBlocks?.(false)?.length > 0;
+                                    onBack?.(hasChanges);
                                 }
                             },
                         ].map((item, i) => (

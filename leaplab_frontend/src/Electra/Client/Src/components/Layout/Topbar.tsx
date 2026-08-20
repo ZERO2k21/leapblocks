@@ -132,7 +132,7 @@ export const IgniteTopbar: React.FC<IgniteTopbarProps> = ({
             onClick={() => {
               sessionStorage.setItem('landingActiveTab', 'modules');
               sessionStorage.removeItem('myProjectsSelectedMode');
-              onBack();
+              onBack(false);
             }}
             className={`flex items-center justify-center w-10 h-10 ml-4 rounded-xl cursor-pointer transition-colors duration-200 shrink-0 border ${isElectra
                 ? 'bg-zinc-800/50 border-zinc-800 text-zinc-100 hover:bg-cyan-400/10 hover:border-cyan-400 hover:text-cyan-400'

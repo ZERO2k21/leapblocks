@@ -755,6 +755,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
                 onBack={onBack}
                 onDownload={project.handleDownloadProject}
                 onSave={project.handleSaveProject}
+                workspaceRef={workspaceRef}
             />
 
             {currentTutorial && (

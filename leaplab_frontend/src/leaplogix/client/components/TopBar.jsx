@@ -117,14 +117,14 @@ export default function TopBar() {
                         <button onClick={() => {
                             sessionStorage.setItem('landingActiveTab', 'modules');
                             sessionStorage.removeItem('myProjectsSelectedMode');
-                            ctx.onBack();
+                            ctx.onBack(false);
                         }} className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-white/10 border border-white/10 rounded-xl text-white cursor-pointer transition-all shrink-0 hover:bg-white/20" title="Back to Home">
                             <Home size={18} strokeWidth={2.2} />
                         </button>
                         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0 cursor-pointer" onClick={() => {
                             sessionStorage.setItem('landingActiveTab', 'modules');
                             sessionStorage.removeItem('myProjectsSelectedMode');
-                            ctx.onBack();
+                            ctx.onBack(false);
                         }}>
                             <Logo height={48} className="w-auto" />
                             <span className="hidden sm:inline text-white text-[16px] sm:text-[18px] lg:text-[22px] font-black tracking-[0.08em] font-sans border-l border-white/15 pl-1.5 sm:pl-2 whitespace-nowrap">LOGIX</span>
@@ -151,7 +151,7 @@ export default function TopBar() {
                                             onClick: () => {
                                                 sessionStorage.setItem('landingActiveTab', 'my-projects');
                                                 sessionStorage.setItem('myProjectsSelectedMode', 'python');
-                                                ctx.onBack();
+                                                ctx.onBack(false);
                                             }
                                         }
                                     ]} />
@@ -288,7 +288,7 @@ export default function TopBar() {
                                     onClick: () => {
                                         sessionStorage.setItem('landingActiveTab', 'my-projects');
                                         sessionStorage.setItem('myProjectsSelectedMode', 'python');
-                                        ctx.onBack();
+                                        ctx.onBack(false);
                                     }
                                 },
                             ].map((item, i) => (

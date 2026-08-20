@@ -55,7 +55,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
             <div className="flex items-center gap-3">
                 {/* Home Button */}
                 <button
-                    onClick={onBack}
+                    onClick={() => onBack(false)}
                     className="flex items-center justify-center w-10 h-10 bg-white/10 border border-white/10 rounded-xl text-white cursor-pointer transition-all duration-200 shrink-0 mr-1 hover:bg-white/20 hover:scale-105"
                     title="Back to Home"
                 >

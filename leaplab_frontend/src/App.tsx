@@ -459,8 +459,12 @@ export default function App() {
 
     const [exitPrompt, setExitPrompt] = useState<boolean>(false);
 
-    const requestExit = () => {
-        setExitPrompt(true);
+    const requestExit = (hasChanges?: boolean) => {
+        if (hasChanges === false) {
+            confirmExit();
+        } else {
+            setExitPrompt(true);
+        }
     };
 
     const confirmExit = () => {
