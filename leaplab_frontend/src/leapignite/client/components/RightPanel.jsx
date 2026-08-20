@@ -31,7 +31,7 @@ export default function RightPanel({
     onCamera,
     onToggleGrid,
     onFullscreen,
-    showGrid = true,
+    showGrid = false,
     isRunning = false,
     isCameraOn = false,
     isFullscreen = false,

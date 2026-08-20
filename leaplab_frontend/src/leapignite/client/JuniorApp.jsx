@@ -122,7 +122,7 @@ function JuniorAppInner({ onBack, projectUrl }) {
     const [isCameraOn, setIsCameraOn] = useState(false);
     const [isSoundRecorderOpen, setIsSoundRecorderOpen] = useState(false);
     const [recordingCount, setRecordingCount] = useState(1);
-    const [showGrid, setShowGrid] = useState(true);
+    const [showGrid, setShowGrid] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [fullscreenScale, setFullscreenScale] = useState(1);
     const [originalStageSize, setOriginalStageSize] = useState(null);
@@ -681,20 +681,20 @@ function JuniorAppInner({ onBack, projectUrl }) {
             <style>{`
                 @keyframes pulse { from { opacity:0.5; transform:scale(1); } to { opacity:0.8; transform:scale(1.05); } }
 
-                .junior-mode .blocklySvg .blocklyBlockBackground { rx:12px !important; ry:12px !important; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
-                .junior-mode .blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.junior-block-icon):not(.junior-icon):not(.junior-icon-large) { font-family:'Plus Jakarta Sans','Segoe UI',sans-serif; font-size:13px; font-weight:700; fill:#fff !important; overflow-wrap:break-word !important; word-break:break-word !important; text-transform:capitalize !important; -webkit-font-smoothing:antialiased !important; text-rendering:geometricPrecision !important; }
-                .junior-mode .blocklyDropdownText { font-family:'Plus Jakarta Sans','Segoe UI',sans-serif !important; font-size:13px !important; font-weight:700 !important; text-transform:capitalize !important; -webkit-font-smoothing:antialiased !important; text-rendering:geometricPrecision !important; }
-                .junior-mode .blocklyBlock { min-width:100px; margin-bottom:8px; }
+                .junior-mode .blocklySvg .blocklyBlockBackground { rx:8px !important; ry:8px !important; }
+                .junior-mode .blocklyText:not(.blocklyEditableText .blocklyText):not(.blocklyFieldRect + .blocklyText):not(.blocklyDropdownText):not(.junior-block-icon):not(.junior-icon):not(.junior-icon-large) { font-family:'Plus Jakarta Sans','Segoe UI',sans-serif; font-size:14px; font-weight:700; fill:#fff !important; overflow-wrap:break-word !important; word-break:break-word !important; text-transform:capitalize !important; -webkit-font-smoothing:antialiased !important; text-rendering:geometricPrecision !important; }
+                .junior-mode .blocklyDropdownText { font-family:'Plus Jakarta Sans','Segoe UI',sans-serif !important; font-size:14px !important; font-weight:700 !important; text-transform:capitalize !important; -webkit-font-smoothing:antialiased !important; text-rendering:geometricPrecision !important; }
+                .junior-mode .blocklyBlock { min-width:auto; }
                 .junior-mode .blocklySvg text.blocklyText { pointer-events:none; }
-                .junior-mode .blocklyFlyout .blocklyBlock { min-width:100px; }
+                .junior-mode .blocklyFlyout .blocklyBlock { min-width:auto; }
                 .junior-mode .blocklyFlyout text.blocklyText { pointer-events:none; }
                 .junior-mode .blocklySvg image, .junior-mode .blocklySvg .junior-icon, .junior-mode .blocklySvg .junior-icon-large, .junior-mode .blocklySvg .junior-block-icon { margin-right:6px; }
                 .junior-mode .blocklyEditableText>rect { fill:#fff !important; stroke:none !important; rx:14px !important; ry:14px !important; fill-opacity:1 !important; stroke-width:0 !important; }
                 .junior-mode .blocklyEditableText:hover>rect { stroke:#ddd !important; stroke-width:2px !important; }
-                .junior-mode .blocklyEditableText>text, .junior-mode .blocklyEditableText>text.blocklyText, .junior-mode .blocklyNonEditableText>text, .junior-mode .blocklyNonEditableText>text.blocklyText, .junior-mode g[class*="blocklyEditableText"]>text, .junior-mode g[class*="blocklyNonEditableText"]>text { fill:#000 !important; font-size:13px !important; font-weight:700 !important; font-family:'Plus Jakarta Sans','Segoe UI',sans-serif !important; transform:translateY(2px); text-transform:capitalize !important; -webkit-font-smoothing:antialiased !important; text-rendering:geometricPrecision !important; }
+                .junior-mode .blocklyEditableText>text, .junior-mode .blocklyEditableText>text.blocklyText, .junior-mode .blocklyNonEditableText>text, .junior-mode .blocklyNonEditableText>text.blocklyText, .junior-mode g[class*="blocklyEditableText"]>text, .junior-mode g[class*="blocklyNonEditableText"]>text { fill:#000 !important; font-size:14px !important; font-weight:700 !important; font-family:'Plus Jakarta Sans','Segoe UI',sans-serif !important; transform:translateY(2px); text-transform:capitalize !important; -webkit-font-smoothing:antialiased !important; text-rendering:geometricPrecision !important; }
                 .junior-mode .blocklyEditableText>rect, .junior-mode .blocklyNonEditableText>rect { fill:#fff !important; stroke:none !important; rx:14px !important; ry:14px !important; fill-opacity:1 !important; stroke-width:0 !important; }
-                .junior-mode .blocklyPath { stroke-width:0 !important; }
-                .junior-mode .blocklyBlockCanvas .blocklyBlock { margin-top:2px; }
+                .junior-mode .blocklyPath { filter:none !important; }
+                .junior-mode .blocklyBlockCanvas .blocklyBlock { margin-top:0; }
                 .junior-mode .blocklyToolboxDiv { transform:scale(1) !important; background:#f5f5f5 !important; border-top:1px solid #e0e0e0 !important; padding:0 !important; }
                 .junior-mode .blocklyFlyout { transform-origin:left top !important; z-index:50 !important; }
                 .junior-mode .blocklyFlyout .blocklyFlyoutBlock { transform:scale(1) !important; }
