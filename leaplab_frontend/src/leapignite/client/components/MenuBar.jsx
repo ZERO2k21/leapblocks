@@ -58,11 +58,11 @@ export default function MenuBar({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Progressive collapse breakpoints from 1800px down to prevent any element overlap:
-    const showBoardSelect = windowWidth >= 1720;
-    const showPorts = windowWidth >= 1680;
+    // Progressive collapse breakpoints — upload mode essentials always visible
+    const showBoardSelect = windowWidth >= 768;
+    const showPorts = windowWidth >= 768;
     const showAuthAndShare = windowWidth >= 1600;
-    const showModeAndUpload = windowWidth >= 1350;
+    const showModeAndUpload = windowWidth >= 768;
     const showFileEditMenus = windowWidth >= 900;
     const showHamburgerBtn = windowWidth < 1500;
 
@@ -133,7 +133,7 @@ export default function MenuBar({
                             {/* Divider */}
                             <div className="w-px h-7 bg-white/10 shrink-0" />
 
-                            {/* Menus — progressively collapses into hamburger menu below 1800px */}
+                            {/* Menus — File/Edit collapse into hamburger below 900px; board select stays visible */}
                             {(showFileEditMenus || showBoardSelect) && (
                                 <div className="flex items-center gap-0.5">
                                     {showFileEditMenus && (
