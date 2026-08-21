@@ -3441,7 +3441,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
 
 
-                    {/* Middle: Undo/Redo Controls */}
+                    {/* Middle: Undo/Redo Controls + Upload Button */}
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '16px', borderRight: '1px solid #ddd', height: '100%', paddingLeft: '16px' }}>
 
@@ -3456,6 +3456,19 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             <Redo2 size={18} color="#575E75" />
 
                         </button>
+
+                        {editorMode === 'upload' && (
+                            <button
+                                className={styles.uploadButton}
+                                onClick={handleUpload}
+                                disabled={isUploading}
+                                title="Upload to board"
+                                style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '4px', backgroundColor: '#22c55e' }}
+                            >
+                                <Upload size={13} strokeWidth={2.5} />
+                                {isUploading ? 'Uploading…' : 'UPLOAD'}
+                            </button>
+                        )}
 
                     </div>
 

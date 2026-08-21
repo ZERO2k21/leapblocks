@@ -195,23 +195,9 @@ export default function MenuBar({
                                 />
                             )}
 
-                            {/* Stage / Upload mode toggle & Upload Button */}
+                            {/* Stage / Upload mode toggle */}
                             {showModeAndUpload && (
-                                <>
-                                    <ModeToggle mode={mode} onModeChange={onModeChange} />
-
-                                    {mode === 'upload' && (
-                                        <ActionButton
-                                            variant="warning"
-                                            icon={<Upload size={13} strokeWidth={2.5} />}
-                                            label={isUploading ? 'Uploading…' : 'UPLOAD'}
-                                            onClick={onUpload}
-                                            disabled={isUploading}
-                                            loading={isUploading}
-                                            title="Upload to board"
-                                        />
-                                    )}
-                                </>
+                                <ModeToggle mode={mode} onModeChange={onModeChange} />
                             )}
 
                             {/* Share & Auth buttons */}

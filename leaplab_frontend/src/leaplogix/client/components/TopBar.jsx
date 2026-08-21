@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useRef, useEffect } from "react";
-import { Home, Play, Square, Undo, Redo, Save, Download, Settings, Upload, Plus, File, FileCode2, FileText, Share, ChevronDown, FolderOpen, Menu as MenuIcon } from "lucide-react";
+import { Home, Play, Square, Undo, Redo, Save, Download, Settings, Upload, Plus, File, FileCode2, FileText, Share, ChevronDown, FolderOpen, Menu as MenuIcon, Code, Monitor, Rocket } from "lucide-react";
 import Logo, { CreoleapLogo } from "../../../components/Logo";
 import { useLogix } from "../context/LogixContext";
 import LeapLabAuthButton from "../../../auth/LeapLabAuthButton";
@@ -207,9 +207,9 @@ export default function TopBar() {
                         {windowWidth >= 1000 && (
                             <ModeSwitcher
                                 modes={[
-                                    { id: 'ide', label: 'IDE' },
-                                    { id: 'stage', label: 'Stage' },
-                                    { id: 'upload', label: 'Upload' },
+                                    { id: 'ide', label: 'IDE', icon: <Code size={13} strokeWidth={2} />, activeIcon: <Code size={13} strokeWidth={2.5} fill="currentColor" /> },
+                                    { id: 'stage', label: 'Stage', icon: <Monitor size={13} strokeWidth={2} />, activeIcon: <Monitor size={13} strokeWidth={2.5} fill="currentColor" /> },
+                                    { id: 'upload', label: 'Upload', icon: <Rocket size={13} strokeWidth={2} />, activeIcon: <Rocket size={13} strokeWidth={2.5} fill="currentColor" /> },
                                 ]}
                                 activeMode={ctx.workflowMode}
                                 onChange={ctx.setWorkflowMode}
@@ -341,11 +341,11 @@ export default function TopBar() {
                             <div className="text-[11px] font-bold uppercase tracking-wider opacity-50 mb-1">Workspace Mode</div>
                             <ModeSwitcher
                                 modes={[
-                                    { id: 'ide', label: 'IDE' },
-                                    { id: 'stage', label: 'Stage' },
-                                    { id: 'upload', label: 'Upload' },
+                                    { id: 'ide', label: 'IDE', icon: <Code size={13} strokeWidth={2} />, activeIcon: <Code size={13} strokeWidth={2.5} fill="currentColor" /> },
+                                    { id: 'stage', label: 'Stage', icon: <Monitor size={13} strokeWidth={2} />, activeIcon: <Monitor size={13} strokeWidth={2.5} fill="currentColor" /> },
+                                    { id: 'upload', label: 'Upload', icon: <Rocket size={13} strokeWidth={2} />, activeIcon: <Rocket size={13} strokeWidth={2.5} fill="currentColor" /> },
                                 ]}
-                                activeMode={ctx.workflowMode}
+             ok perfect also add on colours into them make the                    activeMode={ctx.workflowMode}
                                 onChange={(mode) => {
                                     ctx.setWorkflowMode(mode);
                                     setMobileMenuOpen(false);

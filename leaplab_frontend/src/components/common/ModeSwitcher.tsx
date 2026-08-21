@@ -4,6 +4,7 @@ export interface ModeOption {
   id: string;
   label: string;
   icon?: React.ReactNode;
+  activeIcon?: React.ReactNode;
 }
 
 interface ModeSwitcherProps {
@@ -39,7 +40,7 @@ export default function ModeSwitcher({
                 : 'bg-transparent text-white/65 hover:text-white hover:bg-white/5'
             }`}
           >
-            {mode.icon}
+            {isActive && mode.activeIcon ? mode.activeIcon : mode.icon}
             <span>{mode.label}</span>
           </button>
         );
