@@ -195,6 +195,7 @@ export class ArduinoUploader {
             board: target.board,
             platform: target.platform,
             libDirs: fs.existsSync(libsFolder) ? [libsFolder] : [],
+            libDeps: !isEsp32Fqbn(fqbn) ? ['SoftwareSerial', 'Servo'] : [],
             mergeBinaries: opts.mergeBinaries,
             uploadPort: opts.uploadPort,
         });
@@ -489,6 +490,7 @@ await pkgInstallLibrary(libName, libsFolder, this.pioOptions({ binPath: pioPath 
             board: target.board,
             platform: target.platform,
             libDirs: fs.existsSync(libsFolder) ? [libsFolder] : [],
+            libDeps: !isEsp32Fqbn(fqbn) ? ['SoftwareSerial', 'Servo'] : [],
             uploadPort: port,
         });
         console.log(`[FORGE UPLOADER] Running: pio run (${fqbn} → ${target.board}, port ${port})`);

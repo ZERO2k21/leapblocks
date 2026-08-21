@@ -17,7 +17,7 @@ import {
   pkgInstallLibrary,
   pkgUninstallLibrary,
 } from '../../drivers/platformio/pio.js';
-import { fqbnToPioTarget } from '../../drivers/platformio/boardMap.js';
+import { fqbnToPioTarget, isEsp32Fqbn } from '../../drivers/platformio/boardMap.js';
 import { createPioProject, getPioBuildDir, listPioBuildFiles } from '../../drivers/platformio/project.js';
 import { searchRegistry } from '../../drivers/platformio/registry.js';
 
@@ -110,6 +110,7 @@ app.post('/compile', async (req, res) => {
       board: target.board,
       platform: target.platform,
       libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+      libDeps: !isEsp32Fqbn(board) ? ['SoftwareSerial', 'Servo'] : [],
     });
 
     const result = await runCLI(['run', '-d', projectDir]);
@@ -162,6 +163,7 @@ app.post('/transpile', async (req, res) => {
         board: target.board,
         platform: target.platform,
         libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+        libDeps: !isEsp32Fqbn(board) ? ['SoftwareSerial', 'Servo'] : [],
       });
       const result = await runCLI(['run', '-d', projectDir]);
       if (result.code !== 0) {

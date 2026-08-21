@@ -182,7 +182,7 @@ function createPioProject(
   projectDir: string,
   code: string,
   target: { board: string; platform: string },
-  opts: { libDirs?: string[]; mergeBinaries?: boolean; uploadPort?: string } = {},
+  opts: { libDirs?: string[]; libDeps?: string[]; mergeBinaries?: boolean; uploadPort?: string } = {},
 ): string {
   const srcDir = path.join(projectDir, 'src');
   // Wipe any stale sources (e.g. leftover main.cpp from an earlier mixed-language
@@ -200,6 +200,11 @@ function createPioProject(
   if (opts.libDirs?.length) {
     lines.push('lib_extra_dirs =');
     for (const dir of opts.libDirs) lines.push(`    ${dir.replace(/\\/g, '/')}`);
+  }
+  if (opts.libDeps?.length) {
+    lines.push('lib_ldf_mode = deep+');
+    lines.push('lib_deps =');
+    for (const dep of opts.libDeps) lines.push(`    ${dep}`);
   }
   if (opts.mergeBinaries) lines.push('board_build.merge_binaries = yes');
   if (opts.uploadPort) lines.push(`upload_port = ${opts.uploadPort}`);
@@ -737,6 +742,7 @@ app.post('/compile', async (req: Request, res: Response) => {
 
       createPioProject(projectDir, processedCode, target, {
         libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+        libDeps: !isESP32 ? ['SoftwareSerial', 'Servo'] : [],
       });
 
       console.log(`[COMPILE:${reqId}] 🔨 Running PlatformIO build in ${projectDir}...`);
@@ -970,6 +976,7 @@ app.post('/transpile', async (req: Request, res: Response) => {
       }
       createPioProject(sketchDir, code, target, {
         libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+        libDeps: !isEsp32Board(board) ? ['SoftwareSerial', 'Servo'] : [],
       });
       const { code: exitCode, stderr } = await runCLI(['run', '-d', sketchDir]);
       if (exitCode !== 0) {

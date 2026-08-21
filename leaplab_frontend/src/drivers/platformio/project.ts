@@ -50,6 +50,14 @@ export function createPioProject(projectDir: string, code: string, opts: PioProj
         }
     }
 
+    if (opts.libDeps?.length) {
+        lines.push('lib_ldf_mode = deep+');
+        lines.push('lib_deps =');
+        for (const dep of opts.libDeps) {
+            lines.push(`    ${dep}`);
+        }
+    }
+
     if (opts.mergeBinaries) {
         lines.push('board_build.merge_binaries = yes');
     }

@@ -33,7 +33,9 @@
     "watch:pinharness": "bun run src/Electra/scripts/watch-pinharness.ts",
     "ws:install": "bun install",
     "ws:build:server": "bun --cwd server run build 2>/dev/null || true",
-    "ws:build:electra": "bun --cwd src/Electra/server run build 2>/dev/null || true"
+    "ws:build:electra": "bun --cwd src/Electra/server run build 2>/dev/null || true",
+    "deploy": "render deploys create srv-da2ovbmgekts73bd3pcg --confirm",
+    "deploy:status": "render deploys list srv-da2ovbmgekts73bd3pcg"
   },
   "keywords": [],
   "license": "UNLICENSED",
