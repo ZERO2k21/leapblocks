@@ -46,15 +46,20 @@ export const compileCode = async (req: CompileRequest): Promise<CompileResult> =
     }
   }
 
-  // Web: POST to local build server
+  // Web: POST to cloud compiler (Render, can cold-start ~20s)
   try {
     const isESP32 = req.board.startsWith('esp32:');
     const endpoint = isESP32 ? '/compile/esp32' : '/compile';
+    const controller = new AbortController();
+    const timeoutMs = 45000; // Render cold start + pio run
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(`${CLOUD_COMPILER_URL}${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     if (!res.ok) return { success: false, error: `Server error: ${res.status}` };
     const data = await res.json();
     return {
@@ -64,7 +69,8 @@ export const compileCode = async (req: CompileRequest): Promise<CompileResult> =
       error: Array.isArray(data.errors) ? data.errors.join('\n') : data.errors,
     };
   } catch (err: any) {
-    return { success: false, error: `Cloud compiler unreachable: ${err.message}` };
+    const isAbort = err?.name === 'AbortError';
+    return { success: false, error: isAbort ? `Cloud compiler timeout (45s) — Render cold start, please retry` : `Cloud compiler unreachable: ${err.message}` };
   }
 };
 
