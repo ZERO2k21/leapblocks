@@ -20,6 +20,20 @@ import type { UpdateInfo, DownloadProgress } from './update/updateChecker';
 // Suppress development security warnings in the console
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 
+// Only one LeapBlocks instance may run at a time. Without this, multiple
+// instances (e.g. a leftover `npm run dev` window) fight over the same COM
+// port and the loser fails to connect with "Access denied".
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL STATE & SERVICES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -236,7 +250,7 @@ const createWindow = (): void => {
   serialManager = new SerialManager(mainWindow);
   logTiming('SerialManager initialized');
 
-  logTiming('Initializing ArduinoUploader');
+  logTiming('Initializing ArduinoUploader (PlatformIO + clean-room STK500 uploader)');
   arduinoUploader = new ArduinoUploader(mainWindow);
   logTiming('ArduinoUploader initialized');
 
@@ -312,7 +326,14 @@ ipcMain.handle('connect-port', async (event, portPath: string, baudRate: number,
     const result = await serialManager.connect(portPath, baudRate, board || 'arduino_uno');
     return result;
   } catch (error) {
-    return { success: false, error: (error as Error).message };
+    const msg = (error as Error).message || String(error);
+    const locked = /denied|busy|in use|locked/i.test(msg);
+    return {
+      success: false,
+      error: locked
+        ? `Port ${portPath} is busy (${msg}). Another app is holding it open — close other LeapBlocks windows, the Arduino IDE serial monitor, or any other serial tool, then try again.`
+        : msg,
+    };
   }
 });
 
@@ -325,14 +346,10 @@ ipcMain.handle('send-serial', async (event, data: string) => {
 });
 
 ipcMain.handle('upload-code', async (event, code: string, selectedPort: string, fqbn: string) => {
-  const wasConnected = serialManager.isConnected();
-
-  // 1. Auto-disconnect if connected
-  if (wasConnected) {
-    await serialManager.disconnect();
-    // Delay to let Windows fully release the COM port handle
-    await new Promise(resolve => setTimeout(resolve, 1500));
-  }
+  // 1. Ensure serial port is disconnected before upload
+  await serialManager.disconnect();
+  // Delay to let Windows fully release the COM port handle
+  await new Promise(resolve => setTimeout(resolve, 600));
 
   // 2. Perform upload (renderer handles reconnection via IPC)
   const result = await arduinoUploader.upload(code, selectedPort, fqbn);

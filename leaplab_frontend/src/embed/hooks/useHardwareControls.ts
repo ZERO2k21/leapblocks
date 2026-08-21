@@ -169,12 +169,17 @@ export function useHardwareControls(
     const handleUpload = useCallback(async () => {
         if (!generatedCode || isUploading) return;
 
+        setIsUploading(true);
+        setUploadProgress('Preparing upload...');
+
         const electronAPI = (window as any).electronAPI;
 
         // In Electron a COM port must be chosen first; in the browser the Web
         // Serial picker is opened automatically by uploadToBoard.
         if (!selectedPort && electronAPI?.uploadCode) {
             addLog('No port selected!');
+            setIsUploading(false);
+            setUploadProgress('');
             alert('⚠️ No port selected!\n\nPlease connect your board and select a COM port.');
             return;
         }
@@ -183,6 +188,7 @@ export function useHardwareControls(
             'arduino_uno': 'arduino:avr:uno',
             'arduino_mega': 'arduino:avr:mega',
             'arduino_nano': 'arduino:avr:nano',
+            'arduino_nano_old': 'arduino:avr:nano_old',
             'esp32': 'esp32:esp32:esp32',
         };
         const fqbn = fqbnMap[selectedBoard] || 'arduino:avr:uno';
@@ -191,10 +197,11 @@ export function useHardwareControls(
         if (!electronAPI?.uploadCode) {
             if (!isWebSerialSupported()) {
                 addLog('Upload requires LeapBlocks Desktop, or Chrome/Edge with Web Serial');
+                setIsUploading(false);
+                setUploadProgress('');
                 return;
             }
 
-            setIsUploading(true);
             setUploadProgress('Uploading...');
             addLog('Starting upload via Web Serial...');
             await stopWebSerialMonitor();
@@ -231,11 +238,9 @@ export function useHardwareControls(
             addLog('Disconnecting serial for upload...');
             await window.electronAPI.disconnectPort();
             setIsConnected(false);
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await new Promise(resolve => setTimeout(resolve, 800));
         }
 
-        setIsUploading(true);
-        setUploadProgress('Uploading...');
         addLog('Starting upload...');
 
         try {

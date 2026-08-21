@@ -185,6 +185,9 @@ function createPioProject(
   opts: { libDirs?: string[]; mergeBinaries?: boolean; uploadPort?: string } = {},
 ): string {
   const srcDir = path.join(projectDir, 'src');
+  // Wipe any stale sources (e.g. leftover main.cpp from an earlier mixed-language
+  // build) so PlatformIO never compiles both main.ino and a duplicate main.cpp.
+  fs.rmSync(srcDir, { recursive: true, force: true });
   fs.mkdirSync(srcDir, { recursive: true });
   fs.writeFileSync(path.join(srcDir, 'main.ino'), code, 'utf-8');
 

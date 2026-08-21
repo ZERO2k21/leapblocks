@@ -11,12 +11,17 @@ import { BrowserWindow, app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { spawn } from 'child_process';
 import { getPioPathIfAvailable, ensurePlatformIO, getBundledPioEnv, getBundledLibrariesSeedPath } from './ensurePlatformIO';
 import { runPio, platformEnsure, pkgInstallLibrary, pkgUninstallLibrary, PioResult, PioRunOptions } from './pio';
 import { fqbnToPioTarget, isEsp32Fqbn, PioBoardTarget } from './boardMap';
 import { createPioProject, getPioBuildDir, listPioBuildFiles } from './project';
 import { searchRegistry, RegistryLibrary } from './registry';
+import { flashHexViaStk500 } from './stk500';
+import { parseIntelHex } from '../../webflash/intelHex';
+
+// Serial access for the pre-upload bootloader reset pulse (same native
+// module the serial monitor uses).
+const { SerialPort } = require('serialport');
 
 // ── forge-lib manifest types ──────────────────────────────────────────────
 interface ForgeLibManifestEntry {
@@ -195,7 +200,6 @@ export class ArduinoUploader {
         });
 
         const args = ['run', '-d', projectDir, '-j', '2'];
-        if (opts.uploadPort) args.splice(args.indexOf('-d') + 2, 0, '-t', 'upload');
 
         console.log(`[FORGE UPLOADER] Running: pio ${args.join(' ')} (${fqbn} → ${target.board})`);
         const result = await runPio(args, this.pioOptions({ binPath: pioPath, timeoutMs: opts.timeoutMs ?? 180_000 }));
@@ -393,7 +397,21 @@ await pkgInstallLibrary(libName, libsFolder, this.pioOptions({ binPath: pioPath 
                 };
             }
 
-            this.sendProgress(65, 'Preparing upload...');
+            // 1200-baud touch reset is ONLY for native USB CDC boards (Leonardo, Micro, SAMD)
+            // where the MCU firmware triggers bootloader mode on a 1200bps touch.
+            // Standard AVR boards (Uno, Nano, Mega) have hardware DTR auto-reset pulses
+            // driven directly by avrdude during port opening.
+            const isNativeUsbCdc = fqbn.includes('leonardo') || fqbn.includes('micro') || fqbn.includes('zero') || fqbn.includes('samd');
+            if (isNativeUsbCdc) {
+                this.sendProgress(65, 'Preparing upload (1200-baud touch reset)...');
+                try {
+                    await this.pulseDtrReset(port);
+                    await new Promise(r => setTimeout(r, 800));
+                } catch (resetError: any) {
+                    console.warn('[FORGE UPLOADER] 1200-baud touch reset failed (continuing):', resetError.message);
+                }
+            }
+
             this.sendProgress(70, 'Uploading to board...');
             try {
                 this.sendProgress(75, 'Flashing firmware...');
@@ -402,7 +420,7 @@ await pkgInstallLibrary(libName, libsFolder, this.pioOptions({ binPath: pioPath 
             } catch (uploadError: any) {
                 return {
                     success: false,
-                    error: `Upload failed: ${uploadError.message}`,
+                    error: uploadError.message,
                 };
             }
 
@@ -415,24 +433,174 @@ await pkgInstallLibrary(libName, libsFolder, this.pioOptions({ binPath: pioPath 
         }
     }
 
+    /**
+     * Pulse DTR on the board's serial port to reset it into the bootloader
+     * for native USB CDC devices (e.g. Leonardo / Micro).
+     */
+    private pulseDtrReset(port: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            let serial: any;
+            try {
+                serial = new SerialPort({ path: port, baudRate: 1200, autoOpen: false });
+            } catch (openError: any) {
+                reject(openError);
+                return;
+            }
+
+            const fail = (err: Error) => {
+                try { serial.close(); } catch { /* already closed */ }
+                reject(err);
+            };
+
+            serial.open((openErr: Error | null) => {
+                if (openErr) {
+                    fail(openErr);
+                    return;
+                }
+                try {
+                    serial.set({ dtr: false }, (err1: Error | null) => {
+                        if (err1) { fail(err1); return; }
+                        setTimeout(() => {
+                            serial.set({ dtr: true }, (err2: Error | null) => {
+                                if (err2) { fail(err2); return; }
+                                setTimeout(() => {
+                                    serial.close((closeErr: Error | null) => {
+                                        if (closeErr) { reject(closeErr); return; }
+                                        resolve();
+                                    });
+                                }, 100);
+                            });
+                        }, 100);
+                    });
+                } catch (setError: any) {
+                    fail(setError);
+                }
+            });
+        });
+    }
+
     private async runPioUpload(code: string, fqbn: string, projectDir: string, port: string) {
         const pioPath = await this.getPioPath();
         const target = fqbnToPioTarget(fqbn);
         const libsFolder = this.getLibrariesPath();
 
+        // 1) Compile the sketch with PlatformIO.
         createPioProject(projectDir, code, {
             board: target.board,
             platform: target.platform,
             libDirs: fs.existsSync(libsFolder) ? [libsFolder] : [],
             uploadPort: port,
         });
-
-        const args = ['run', '-t', 'upload', '-d', projectDir];
-        console.log(`[FORGE UPLOADER] Running: pio ${args.join(' ')} (${fqbn} → ${target.board}, port ${port})`);
-        const result = await runPio(args, this.pioOptions({ binPath: pioPath, timeoutMs: 300_000 }));
-        if (result.code !== 0) {
-            throw new Error(this.formatPioError(result));
+        console.log(`[FORGE UPLOADER] Running: pio run (${fqbn} → ${target.board}, port ${port})`);
+        const buildResult = await runPio(['run', '-d', projectDir, '-j', '2'], this.pioOptions({ binPath: pioPath, timeoutMs: 180_000 }));
+        if (buildResult.code !== 0) {
+            throw new Error(this.formatPioError(buildResult));
         }
+
+        // 2) Upload.
+        if (target.platform === 'atmelavr') {
+            // Clean-room STK500v1 flasher (no avrdude — GPL). The board is
+            // woken into its bootloader with the 1200-baud touch reset, then
+            // pages are written straight over the serial link. This mirrors
+            // what the Arduino IDE does, without any GPL tooling.
+            const hexPath = this.findBuildHex(projectDir, target.board);
+            await this.uploadAvrViaStk500(hexPath, port, fqbn);
+        } else {
+            const uploadResult = await runPio(['run', '-t', 'upload', '-d', projectDir], this.pioOptions({ binPath: pioPath, timeoutMs: 45_000 }));
+            if (uploadResult.code !== 0) {
+                throw new Error(this.formatPioError(uploadResult));
+            }
+        }
+    }
+
+    /** Locate the built firmware .hex for an AVR board. */
+    private findBuildHex(projectDir: string, board: string): string {
+        const files = listPioBuildFiles(projectDir, board);
+        const hex = files.find((f) => f.endsWith('.hex'));
+        if (!hex) {
+            throw new Error(`Compiled successfully, but no .hex file was found in ${getPioBuildDir(projectDir, board)}.`);
+        }
+        return path.join(getPioBuildDir(projectDir, board), hex);
+    }
+
+    /**
+     * Flash an AVR board through its STK500v1 bootloader (clean-room, no
+     * avrdude). Each attempt does the 1200-baud touch reset, waits for the
+     * bootloader to initialise, then writes the firmware page-by-page.
+     * Falls back to the other bootloader baud rate when the sync fails.
+     */
+    private async uploadAvrViaStk500(hexPath: string, port: string, fqbn: string) {
+        const hexText = fs.readFileSync(hexPath, 'utf-8');
+        const image = parseIntelHex(hexText);
+        if (image.data.length === 0) {
+            throw new Error(`No firmware data found in ${hexPath}.`);
+        }
+
+        const isNanoOld = fqbn === 'arduino:avr:nano_old';
+        // Optiboot boards (Uno, Nano, etc.) only speak 115200; only the old
+        // AtmegaBOOT (nano_old) runs at 57600. Don't waste attempts on a
+        // baud rate the bootloader can't hear.
+        const baudOrder = isNanoOld ? ['57600', '115200'] : ['115200'];
+        const pageSize = 128;
+        const event = (msg: string) => {
+            this.sendProgress(83, msg);
+            console.log(`[FORGE UPLOADER] ${msg}`);
+        };
+
+        let lastError: Error | null = null;
+        for (const baud of baudOrder) {
+            // Like avrdude: retry with a fresh touch reset on every failed sync.
+            for (let attempt = 1; attempt <= 5; attempt++) {
+                this.sendProgress(82, `Uploading at ${baud} baud (attempt ${attempt}/5)...`);
+                event(`1200-baud touch reset on ${port}...`);
+                try {
+                    await this.pulseDtrReset(port);
+                } catch (resetError: any) {
+                    event(`touch reset failed (continuing): ${resetError.message}`);
+                }
+                await new Promise((r) => setTimeout(r, 400));
+
+                try {
+                    await flashHexViaStk500({
+                        port,
+                        baud: Number(baud),
+                        image,
+                        pageSize,
+                        onPage: (page, total) => {
+                            this.sendProgress(85 + Math.round((page / total) * 10), `Programming page ${page}/${total}`);
+                        },
+                        onEvent: event,
+                    });
+                    event(`STK500 upload OK at ${baud} baud (verified)`);
+                    // Reboot the board so the freshly written firmware starts —
+                    // the reset pulse re-enters the bootloader, which runs the
+                    // app after its sync timeout (same as opening the IDE monitor).
+                    this.sendProgress(96, 'Rebooting the board...');
+                    try {
+                        await this.pulseDtrReset(port);
+                    } catch (rebootError: any) {
+                        event(`reboot pulse failed (continuing): ${rebootError?.message}`);
+                    }
+                    await new Promise((r) => setTimeout(r, 300));
+                    return;
+                } catch (err: any) {
+                    const syncFailed = err?.message?.includes('bootloader did not answer the STK500 sync');
+                    lastError = err;
+                    event(`attempt ${attempt}/5 failed at ${baud} baud: ${err?.message}`);
+                    // Non-sync errors (bad response, verify failure) won't
+                    // improve by retrying — surface them right away.
+                    if (!syncFailed) break;
+await new Promise((r) => setTimeout(r, 200));
+                }
+            }
+        }
+
+        throw new Error(
+            `The bootloader did not respond on ${port} (tried ${baudOrder.join(', ')} baud). ` +
+            (lastError ? `Last error: ${lastError.message}. ` : '') +
+            `If the board's TX/RX LEDs don't flash during upload, its auto-reset circuit may be disabled — ` +
+            `press and hold the board's reset button, start the upload, and release it when the upload begins.`
+        );
     }
 
     // ═══════════════════════════════════════════════════════════════════════

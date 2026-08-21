@@ -4006,11 +4006,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 {/* Code Preview */}
 
                                 <div className={styles.codeHeader}>
-
                                     <span>💻 Arduino Code</span>
-
-                                    {uploadProgress && <span className={styles.uploadStatus}>{uploadProgress}</span>}
-
                                 </div>
 
                                 <div className={`${styles.codeArea} code-preview-area`}>

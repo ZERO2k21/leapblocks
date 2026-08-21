@@ -16,6 +16,8 @@ export interface PioProjectOptions {
     platform: string;
     /** Extra library directories (forge-lib/libraries). */
     libDirs?: string[];
+    /** Extra lib_deps entries (e.g. `SoftwareSerial`). */
+    libDeps?: string[];
     /** Merge bootloader+partitions+app into firmware.merged.bin (ESP32 simulation). */
     mergeBinaries?: boolean;
     /** Serial port for `-t upload`. */
@@ -30,6 +32,7 @@ export interface PioProjectOptions {
  */
 export function createPioProject(projectDir: string, code: string, opts: PioProjectOptions): string {
     const srcDir = path.join(projectDir, 'src');
+    fs.rmSync(srcDir, { recursive: true, force: true });
     fs.mkdirSync(srcDir, { recursive: true });
     fs.writeFileSync(path.join(srcDir, 'main.ino'), code, 'utf-8');
 
