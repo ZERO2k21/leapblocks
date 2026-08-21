@@ -162,12 +162,12 @@ export default function TopBar() {
                                         { label: 'Redo', icon: Redo, shortcut: 'Ctrl+Y', onClick: () => ctx.editorRef.current?.trigger('keyboard', 'redo', null) },
                                     ]} />
 
-                                {windowWidth >= 1400 && ["Board", "Connect"].map((menuLabel) => (
+                                {windowWidth >= 1400 && ctx.workflowMode === "upload" && ["Board", "Connect"].map((menuLabel) => (
                                     <button key={menuLabel}
                                         className="bg-transparent border-none text-white font-sans text-[15px] font-medium cursor-pointer opacity-90 px-2 py-1.5 rounded-md transition-all hover:bg-white/10"
                                         onClick={() => {
                                             if (menuLabel === "Board") ctx.setIsBoardModalOpen(true);
-                                            if (menuLabel === "Connect" && ctx.workflowMode === "upload") ctx.handleConnectToBoard();
+                                            if (menuLabel === "Connect") ctx.handleConnectToBoard();
                                         }}>
                                         {menuLabel}
                                     </button>
@@ -185,23 +185,25 @@ export default function TopBar() {
                             />
                         </div>
 
-                        {/* RUN / STOP BUTTON IS ALWAYS VISIBLE IN TOPBAR AT ALL SCREEN SIZES */}
-                        {ctx.isRunning ? (
-                            <ActionButton
-                                variant="danger"
-                                icon={<Square size={12} fill="#fff" stroke="none" />}
-                                label={windowWidth < 520 ? "" : "Stop"}
-                                onClick={ctx.handleStop}
-                                title="Stop (Escape)"
-                            />
-                        ) : (
-                            <ActionButton
-                                variant="success"
-                                icon={<Play size={12} fill="#fff" stroke="none" />}
-                                label={windowWidth < 520 ? "" : "Run"}
-                                onClick={ctx.handleRun}
-                                title="Run Code (Ctrl+Enter or F5)"
-                            />
+                        {/* RUN / STOP BUTTON — only in IDE and Stage modes */}
+                        {ctx.workflowMode !== 'upload' && (
+                            ctx.isRunning ? (
+                                <ActionButton
+                                    variant="danger"
+                                    icon={<Square size={12} fill="#fff" stroke="none" />}
+                                    label={windowWidth < 520 ? "" : "Stop"}
+                                    onClick={ctx.handleStop}
+                                    title="Stop (Escape)"
+                                />
+                            ) : (
+                                <ActionButton
+                                    variant="success"
+                                    icon={<Play size={12} fill="#fff" stroke="none" />}
+                                    label={windowWidth < 520 ? "" : "Run"}
+                                    onClick={ctx.handleRun}
+                                    title="Run Code (Ctrl+Enter or F5)"
+                                />
+                            )
                         )}
 
                         {windowWidth >= 1000 && (
@@ -216,15 +218,12 @@ export default function TopBar() {
                             />
                         )}
 
-                        {windowWidth >= 1400 && (
+                        {windowWidth >= 1400 && ctx.workflowMode === "upload" && (
                             <ActionButton
                                 variant="subtle"
                                 icon={<Upload size={13} strokeWidth={2.5} />}
-                                label={ctx.workflowMode === "upload" ? "Upload Code" : "Open Upload"}
-                                onClick={() => {
-                                    if (ctx.workflowMode !== "upload") ctx.setWorkflowMode("upload");
-                                    else ctx.handleUploadFirmware();
-                                }}
+                                label="Upload Code"
+                                onClick={() => ctx.handleUploadFirmware()}
                             />
                         )}
 
@@ -318,13 +317,13 @@ export default function TopBar() {
                         </>
                     )}
 
-                    {windowWidth < 1400 && (
+                    {windowWidth < 1400 && ctx.workflowMode === "upload" && (
                         <>
                             <div className="text-[11px] font-bold uppercase tracking-wider opacity-50 mb-1">Board Controls</div>
                             {["Board", "Connect"].map((label) => (
                                 <button key={label} onClick={() => {
                                     if (label === "Board") ctx.setIsBoardModalOpen(true);
-                                    if (label === "Connect" && ctx.workflowMode === "upload") ctx.handleConnectToBoard();
+                                    if (label === "Connect") ctx.handleConnectToBoard();
                                     setMobileMenuOpen(false);
                                 }}
                                     className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-transparent text-gray-200 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/25 hover:text-white"
@@ -355,16 +354,15 @@ export default function TopBar() {
                         </>
                     )}
 
-                    {windowWidth < 1400 && (
+                    {windowWidth < 1400 && ctx.workflowMode === "upload" && (
                         <button onClick={() => {
-                            if (ctx.workflowMode !== "upload") ctx.setWorkflowMode("upload");
-                            else ctx.handleUploadFirmware();
+                            ctx.handleUploadFirmware();
                             setMobileMenuOpen(false);
                         }}
                             className="flex items-center gap-2.5 w-full px-2.5 py-2 border-none rounded-lg bg-purple-600/20 text-purple-300 text-[13px] font-medium cursor-pointer text-left transition-all hover:bg-purple-600/30 mb-2"
                         >
                             <Upload size={13} strokeWidth={2.5} color="#a78bfa" />
-                            {ctx.workflowMode === "upload" ? "Upload Code" : "Open Upload"}
+                            Upload Code
                         </button>
                     )}
 
