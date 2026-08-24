@@ -181,6 +181,14 @@ export class ArduinoUploader {
         return { ...extra, env: { ...env, ...extra.env } };
     }
 
+    /** Zero-GPL check — Python esptool (GPLv2) is NOT bundled in the commercial installer. */
+    private isPythonEsptoolAvailable(): boolean {
+        const pioPath = getPioPathIfAvailable();
+        if (!pioPath) return false;
+        const site = path.join(path.dirname(pioPath), 'python', 'Lib', 'site-packages', 'esptool');
+        return fs.existsSync(site);
+    }
+
     private async runPioBuild(
         code: string,
         fqbn: string,
@@ -207,6 +215,20 @@ export class ArduinoUploader {
         let result = await runPio(args, this.pioOptions({ binPath: pioPath, timeoutMs: opts.timeoutMs ?? 180_000 }));
         if (result.code === 0) {
             return { target, projectDir, buildDir: getPioBuildDir(projectDir, target.board) };
+        }
+
+        // ── Zero-GPL: ESP32 toolchain needs Python esptool (GPLv2) — not bundled in this installer ─
+        const combinedForGplCheck = (result.stderr || '') + '\n' + (result.stdout || '');
+        if (combinedForGplCheck.includes("No module named 'esptool'") || combinedForGplCheck.includes('ModuleNotFoundError')) {
+            throw new Error(
+                `ESP32 build requires Python esptool (GPLv2) which is not bundled in this zero-GPL commercial build.\n` +
+                `AVR boards (Uno/Nano/Mega) work fully offline and are 100% GPL-free.\n` +
+                `For ESP32: install GPL esptool separately to enable it:\n` +
+                `  "${path.join(path.dirname(pioPath), 'python', 'python.exe')}" -m pip install esptool\n` +
+                `or use the standard (GPL-compliant) installer that ships esptool with its GPL notice ` +
+                `(public/licenses/README.txt). WebSerial flashing already uses esptool-js (MIT) and needs no GPL.\n` +
+                `Original error: ${this.formatPioError(result).slice(0, 800)}`
+            );
         }
 
         // ── Auto-recovery for missing header (e.g. user typed #include <RTClib.h> but lib not bundled) ─
@@ -687,6 +709,19 @@ await new Promise((r) => setTimeout(r, 200));
                 );
                 await this.ensureEsp32Library('ESP32Servo');
                 processedCode = migrateESP32LedcAPI(processedCode);
+                if (!this.isPythonEsptoolAvailable()) {
+                    return {
+                        success: false,
+                        error:
+                            'Zero-GPL build: ESP32 compilation needs Python esptool (GPLv2) which is not bundled.\n' +
+                            'AVR boards (Uno/Nano/Mega) are 100% GPL-free and work offline.\n' +
+                            'For ESP32, either:\n' +
+                            '  • Use the standard installer (ships esptool with GPL notice in public/licenses/)\n' +
+                            '  • Or install GPL esptool manually: run the bundled Python:\n' +
+                            '    "' + path.join(path.dirname(getPioPathIfAvailable() || 'src/drivers/platformio'), 'python', 'python.exe') + '" -m pip install esptool\n' +
+                            '  • Or flash via WebSerial + esptool-js (MIT, already bundled) — no GPL needed for upload.',
+                    };
+                }
             }
 
             try {
@@ -740,6 +775,16 @@ await new Promise((r) => setTimeout(r, 200));
             return {
                 success: false,
                 error: 'ESP32 platform installation failed. Please check your connection and try again.',
+            };
+        }
+        if (!this.isPythonEsptoolAvailable()) {
+            return {
+                success: false,
+                error:
+                    'Zero-GPL build: ESP32-C3 simulation needs Python esptool (GPLv2) for ELF→BIN.\n' +
+                    'Not bundled in this commercial installer. Use AVR for offline GPL-free, or install esptool:\n' +
+                    '  "' + path.join(path.dirname(getPioPathIfAvailable() || 'src/drivers/platformio'), 'python', 'python.exe') + '" -m pip install esptool\n' +
+                    'See public/licenses/README.txt §1.',
             };
         }
 

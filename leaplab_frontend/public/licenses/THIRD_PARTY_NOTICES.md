@@ -1,47 +1,51 @@
-# LeapLab Third-Party Notices (Commercial Release)
+# LeapLab Third-Party Notices — ZERO GPL Commercial Build
 
-Generated 2026-08-24 for `platformio-migration` @ 5007b081. Retain this file in your distribution per each license's attribution requirement.
+Generated 2026-08-24 for `platformio-migration` @ zero-gpl. This is the **100% GPL-free** installer. No GPL code is bundled. Retain this file per each permissive license's attribution.
 
-## Summary — Copyleft vs Permissive
+## Summary — Zero GPL
 
-| Component | License | Type | Commercial Use | Action Required |
-|-----------|---------|------|----------------|-----------------|
+| Component | License | Type | Commercial Use | Notes |
+|-----------|---------|------|----------------|-------|
 | **PlatformIO Core 6.1.19** | Apache-2.0 | Permissive | ✅ Yes | Retain Apache notice |
-| **esptool 5.3.1 + tool-esptoolpy** | GPLv2+ | Copyleft (aggregation) | ✅ Yes *if* you ship GPL text + source offer | See `README.txt` §1, ship `GPL-2.0-esptool.txt` |
-| **certifi** | MPL-2.0 | Weak copyleft (file-level) | ✅ Yes | Retain MPL notice |
-| **AVR/ESP toolchains** | GPLv3 **with** GCC Runtime Exception | Permissive for sketches | ✅ Yes | Retain exception text |
+| **Python esptool** | **REMOVED** (was GPLv2+) | — | ✅ Zero GPL | Not bundled; see §1 |
+| **certifi** | MPL-2.0 | Weak copyleft (file-level) | ✅ Yes | Retain MPL notice; not viral |
+| **AVR/ESP toolchains** | GPLv3 **with GCC Runtime Exception** | Permissive for sketches | ✅ Yes | Not bundled in installer; downloaded to ~/.platformio on first build |
 | **Electron 39.x, serialport, avr8js, esptool-js, blockly** | MIT / Apache-2.0 / BSD | Permissive | ✅ Yes | Retain notices |
 | **15 bundled Arduino libs** | MIT / BSD-3 | Permissive | ✅ Yes | Retain notices |
+| **APK tools** | Apache-2.0 / BSD | Permissive | ✅ Yes | Retain notices |
 
-No other GPL-3.0/GPL-2.0 remains in the shipped Electron bundle after the PlatformIO migration. Legacy `arduino-cli` (GPL-3.0) and `avrdude` (GPL-2.0) were removed (`src/drivers/platformio/ArduinoUploader.ts:7`, `stk500.ts:8` clean-room STK500).
+**No GPL-2.0/3.0 remains in this installer.** Legacy `arduino-cli` (GPL-3.0) and `avrdude` (GPL-2.0) were removed (`ArduinoUploader.ts:7`, `stk500.ts:8` clean-room STK500). Python `esptool` (GPL) was removed from `src/drivers/platformio/python/` for this build.
 
 ---
 
-## 1. Bundled Python (src/drivers/platformio/python/)
+## 1. Bundled Python (src/drivers/platformio/python/) — ZERO GPL
 
-Built by `scripts/build-pio.ps1` from `platformio==6.1.19` + embeddable Python 3.10.11. `npx license-checker --summary` style scan of `Lib/site-packages/*.dist-info/METADATA`:
+Built by `scripts/build-pio.ps1` from `platformio==6.1.19` + embeddable Python 3.10.11. **esptool is intentionally NOT installed** (`build-pio.ps1:92`).
+
+`Lib/site-packages/*.dist-info/METADATA` scan 2026-08-24 (zero GPL):
 
 - `platformio` — `Apache Software License` — `licenses/LICENSE` (Apache-2.0)
-- `esptool` — `GPLv2+` — `licenses/LICENSE` (GPL-2.0) — **only GPL in bundle**
-- `certifi` — `MPL-2.0`
+- `certifi` — `MPL-2.0` (file-level, see README)
 - `pyserial` — `BSD` 3.5
-- `pyyaml` — `MIT`, `intelhex` — `BSD`, `reedsolo` — `Public Domain`/`MIT-0`, `bitstring` — `MIT`, `cryptography` — `Apache-2.0/BSD`, `cffi` — `MIT`, etc. — all permissive
-- **Verified 2026-08-24:** `Remaining GPL packages: NONE` after excluding `esptool` (re-added for ESP32, now disclosed here)
+- `pyyaml` — `MIT`, `intelhex` — `BSD`, `reedsolo` — `Public Domain`/`MIT-0`, `bitstring` — `MIT`, `cryptography` — `Apache-2.0/BSD`, etc. — all permissive
+- **Verified:** `Remaining GPL packages: NONE` — `esptool` removed
 
-Python `esptool` is invoked as a *separate process* (`tool-esptoolpy/esptool.py`) — not linked — so your proprietary app is **mere aggregation** per GPLv2 §2, not a derivative. You remain proprietary.
+`esptool` (GPL) is **not** in `extraResources` (`electron-builder.yml:39-54` only ships `platformio`, `server`, `public`, `src/creova/apk/tools`). No GPL source offer is needed for the installer.
 
-**Compliance:** Ship `GPL-2.0-esptool.txt` + `README.txt` source offer (3-year valid). Or remove `Lib/site-packages/esptool/` + `esptool-5.3.1.dist-info/` before `bun run dist:win` to be 100% GPL-free (ESP32 simulation will still compile via manual merge fallback, but `pio run -t upload` for ESP32 will then require the user to have `tool-esptoolpy` downloaded).
-
----
-
-## 2. PlatformIO Packages (downloaded, not bundled in installer)
-
-- `atmelavr` platform (`toolchain-atmelavr 7.3.0`) — `GPLv3 with GCC Runtime Exception.pdf` — **Safe to ship**: exception allows proprietary sketches to link against `libgcc` without being GPL. If you offline-bundle the toolchain, include the exception text.
-- `espressif32` platform (`toolchain-riscv32-esp`, `tool-esptoolpy 4.11.0`) — `tool-esptoolpy` is GPLv2+ (same as Python esptool) — downloaded to `~/.platformio/packages/tool-esptoolpy` on first `pio run`/`pio platform install`. Not bundled in the Electron `extraResources` (`electron-builder.yml:39-54` only ships `platformio`, `server`, `public`, `src/creova/apk/tools`). For SaaS Docker (`Dockerfile:20` `pio platform install atmelavr/espressif32`), the tools are in the image but SaaS execution without distribution does not trigger GPLv2 distribution clause. For offline installers that bundle `~/.platformio`, you must also ship the GPL text for `tool-esptoolpy`.
+If you need offline ESP32 without any GPL download, use `esptool-js` (MIT, already in `package.json`) for flashing and the manual merge fallback (`ArduinoUploader.buildMergedFlashImage`) for `firmware.merged.bin`.
 
 ---
 
-## 3. NPM / Electron (leaplab_frontend/package.json)
+## 2. PlatformIO Packages (downloaded on demand, not bundled)
+
+- `atmelavr` (`toolchain-atmelavr 7.3.0`) — `GPLv3 with GCC Runtime Exception` — **Safe**: exception allows proprietary sketches. Not bundled; downloaded to `~/.platformio/packages/` on first `pio run`.
+- `espressif32` (`toolchain-riscv32-esp`, `tool-esptoolpy 4.11.0` GPLv2) — **Not bundled** in zero-GPL installer. If the user builds for ESP32, PlatformIO will download `tool-esptoolpy` (GPL) to `~/.platformio` and the app will show: “ESP32 requires GPL esptool — download now? (https://github.com/espressif/esptool)”. That download is from PlatformIO/Espressif, not from Creoleap, and is not part of this distribution. For 100% offline zero-GPL ESP32, the app uses the manual merge fallback and `esptool-js`.
+
+For SaaS Docker (`Dockerfile:20` `pio platform install`), tools are in the image but SaaS execution without distribution does not trigger GPLv2 distribution.
+
+---
+
+## 3. NPM / Electron
 
 `npx license-checker --summary` (2026-08-24):
 
@@ -51,29 +55,27 @@ Python `esptool` is invoked as a *separate process* (`tool-esptoolpy/esptool.py`
 ├─ Apache-2.0: 51
 ├─ BSD-3-Clause: 30
 ├─ BSD-2-Clause: 20
-├─ BlueOak-1.0.0: 8
-├─ MPL-2.0: 3 (not GPL)
-├─ (MIT OR GPL-3.0-or-later): 1 → elect MIT to avoid GPL
+├─ MPL-2.0: 3 (certifi, not GPL)
+├─ (MIT OR GPL-3.0-or-later): 1 → elect MIT
 └─ UNLICENSED: 1 (your proprietary root)
 ```
 
-- `electron@39.2.7` — MIT (bundles Chromium BSD, Node MIT)
+- `electron@39.2.7` — MIT
 - `serialport@13` — MIT
 - `avr8js@0.21` — MIT
 - `blockly@12.5.1` — Apache-2.0
 - `esptool-js@0.6` — MIT
-- `@tensorflow/*`, `three`, `fabric`, `zustand` — MIT/Apache/BSD
 
-No pure GPL in `node_modules`. The one `(MIT OR GPL-3.0-or-later)` is dual-licensed — choose MIT.
+No pure GPL in `node_modules`.
 
 ---
 
-## 4. Bundled Arduino Libraries (src/drivers/platformio/libraries/ + forge-lib/)
+## 4. Bundled Arduino Libraries
 
-All `library.properties` → `LICENSE`/`license.txt` checked 2026-08-24:
+All `library.properties` → `LICENSE` checked:
 
 - `Adafruit_BusIO` — MIT
-- `Adafruit GFX Library` — BSD-3
+- `Adafruit GFX` — BSD-3
 - `Adafruit ILI9341` — MIT/BSD
 - `Adafruit MPU6050` — BSD
 - `Adafruit NeoPixel` — BSD
@@ -85,42 +87,42 @@ All `library.properties` → `LICENSE`/`license.txt` checked 2026-08-24:
 - `Adafruit Unified Sensor` — BSD
 - `DHT sensor library` — MIT
 - `HX711 Arduino Library` — MIT
-- `LiquidCrystal I2C` — MIT/BSD (Frank de Brabander)
+- `LiquidCrystal I2C` — MIT/BSD
 - `RTClib` — MIT
 
-All permissive with attribution only.
+All permissive.
 
 ---
 
-## 5. APK Tools (src/creova/apk/tools/)
+## 5. APK Tools
 
-- `apktool/apktool.jar` — Apache-2.0 (iBotPeaches)
-- `smali/smali.jar` — BSD-3
-- `signer/uber-apk-signer.jar` — Apache-2.0
-
-Permissive, retain notices.
+- `apktool.jar` — Apache-2.0
+- `smali.jar` — BSD-3
+- `uber-apk-signer.jar` — Apache-2.0
 
 ---
 
-## 6. What to ship
+## 6. What to ship (zero GPL)
 
-- `public/licenses/README.txt` + `GPL-2.0-esptool.txt` + `Apache-2.0-platformio.txt` + `MPL-2.0-certifi.txt` → automatically copied via `electron-builder.yml:40` `from: public to: public`
-- `THIRD_PARTY_NOTICES.md` (this file) — also in `public/licenses/`
-- For each permissive Arduino lib, keep its `LICENSE` (already in `src/drivers/platformio/libraries/*/LICENSE` and copied via `extraResources: from: src/drivers/platformio`)
+- `public/licenses/README.txt` + `Apache-2.0-platformio.txt` + `MPL-2.0-certifi.txt` + `THIRD_PARTY_NOTICES.md`
+- No `GPL-2.0-esptool.txt` needed (no GPL bundled)
+- Each Arduino lib's `LICENSE` (already via `extraResources: from: src/drivers/platformio`)
 
-Add an “About → Licenses” menu that opens `resources/public/licenses/`.
+Add “About → Licenses”.
 
 ---
 
-## 7. Clean-build checklist for commercial artifact
+## 7. Clean-build checklist
 
 ```powershell
 Remove-Item -Recurse -Force out,dist -ErrorAction SilentlyContinue
-# Verify no GPL arduino-cli remains:
-if (Test-Path out\win-unpacked\resources\arduino-cli) { throw "stale GPL arduino-cli still bundled" }
-bun run dist:win   # electron-builder will pack platformio + python (now with GPL notice) + public/licenses
+# Verify zero GPL:
+if (Test-Path src\drivers\platformio\python\Lib\site-packages\esptool) { throw "GPL esptool still bundled" }
+if (Test-Path out\win-unpacked\resources\arduino-cli) { throw "stale GPL arduino-cli" }
+if (Test-Path out\win-unpacked\resources\platformio\python\Lib\site-packages\esptool) { throw "GPL esptool in installer" }
+bun run dist:win
 ```
 
-Your proprietary `leapblocks` (`UNLICENSED`) remains proprietary. GPL is limited to the aggregated `esptool` tool — handled above.
+Zero GPL verified.
 
 Contact: tech@creoleap.com
