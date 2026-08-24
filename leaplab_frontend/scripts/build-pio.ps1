@@ -89,7 +89,11 @@ if (-not (Test-Path $marker)) {
     & $embedPython -m pip install --quiet --no-warn-script-location "platformio==$version"
     if ($LASTEXITCODE -ne 0) { throw 'pip install platformio into embeddable python failed' }
 }
-# esptool is imported by the espressif32 platform's build/upload scripts
+# esptool (GPLv2+) is required by espressif32 platform for ELF->BIN and bootloader merge.
+# It is bundled here for offline ESP32 builds. For commercial distribution, GPL compliance
+# is handled via THIRD_PARTY_LICENSES (see public/licenses/GPL-2.0-esptool.txt and source offer
+# in public/licenses/README.txt). The tool is invoked as a separate process (aggregation),
+# so your proprietary LeapLab code is not GPL-viral (see LICENSES/README).
 & $embedPython -m pip install --quiet --no-warn-script-location esptool
 if ($LASTEXITCODE -ne 0) { throw 'pip install esptool into embeddable python failed' }
 
