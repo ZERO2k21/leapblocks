@@ -17,6 +17,7 @@ import { ActionMenu } from '../stage/ActionMenu';
 import { CostumeLibrary } from './CostumeLibrary';
 import HSBColorPicker from './HSBColorPicker';
 import { resolveAssetPath } from '../embed/utils/assetPaths';
+import { showConfirm } from '../utils/dialogStore';
 
 // Built-in costumes for "Surprise" feature
 const BUILTIN_COSTUMES = [
@@ -1755,9 +1756,9 @@ function PaintEditor({
                             {/* BOTTOM LEFT — Exit Button */}
                             <div className="absolute bottom-6 left-6">
                                 <button
-                                    onClick={() => {
+                                    onClick={async () => {
                                         if (isDirtyRef.current) {
-                                            if (!window.confirm('You have unsaved changes. Are you sure you want to leave?')) return;
+                                            if (!await showConfirm('You have unsaved changes. Are you sure you want to leave?', 'Unsaved Changes')) return;
                                         }
                                         onClose();
                                     }}

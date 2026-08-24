@@ -70,17 +70,20 @@ export function useSpriteSystem(initialScenes: SceneState[]): UseSpriteSystemRet
 
     const getStageBounds = (): StageBounds => {
         const stageEl = document.querySelector('.stage');
-        return stageEl ? { w: stageEl.offsetWidth, h: stageEl.offsetHeight } : { w: STAGE_WIDTH, h: STAGE_HEIGHT };
+        if (!stageEl) return { w: STAGE_WIDTH, h: STAGE_HEIGHT };
+        const inner = stageEl.firstElementChild as HTMLElement | null;
+        const el = inner || stageEl;
+        return { w: el.offsetWidth, h: el.offsetHeight };
     };
 
     const clampX = (x: number): number => {
         const bounds = getStageBounds();
-        return Math.max(0, Math.min(x, bounds.w - 100));
+        return Math.max(-20, Math.min(x, bounds.w));
     };
 
     const clampY = (y: number): number => {
         const bounds = getStageBounds();
-        return Math.max(0, Math.min(y, bounds.h - 100));
+        return Math.max(-20, Math.min(y, bounds.h));
     };
 
     const clampSize = (size: number): number => Math.max(10, Math.min(300, size));

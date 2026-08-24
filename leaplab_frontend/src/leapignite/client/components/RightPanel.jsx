@@ -31,7 +31,7 @@ export default function RightPanel({
     onCamera,
     onToggleGrid,
     onFullscreen,
-    showGrid = true,
+    showGrid = false,
     isRunning = false,
     isCameraOn = false,
     isFullscreen = false,
@@ -91,18 +91,16 @@ export default function RightPanel({
 
     const renderFullscreenOverlay = () => isFullscreen && (
         <div className="absolute top-0 left-0 w-full h-[64px] bg-gradient-to-r from-[#0a015a] to-[#080a25] border-b border-white/10 flex items-center justify-between px-4 z-[100]">
-            <div className="flex items-center gap-5">
+            <div className="flex items-center gap-4">
                 <button onClick={onFullscreen} className="bg-transparent border-none cursor-pointer p-0">
-                    <div className="w-10.5 h-10.5 bg-white rounded-lg flex items-center justify-center shadow-xs">
-                        <Minimize size={22} color="#313848ff" strokeWidth={2.5} />
+                    <div className="w-10 h-10 bg-white/10 border border-white/15 rounded-xl flex items-center justify-center hover:bg-white/20 transition-colors">
+                        <Minimize size={20} color="#fff" strokeWidth={2.5} />
                     </div>
                 </button>
-                <div className="flex items-center gap-2.5">
-                    <Logo height={32} />
-                    <div className="flex flex-col border-l border-slate-300 pl-3">
-                        <span className="text-[#e8cd00ff] text-xs font-extrabold tracking-wider">LEAPBLOCKS</span>
-                        <span className="text-[#c9c9c9ff] text-[13px] font-bold leading-none">Junior</span>
-                    </div>
+                <div className="w-px h-7 bg-white/15" />
+                <div className="flex items-center gap-2">
+                    <Logo height={40} className="w-auto" />
+                    <span className="hidden sm:inline text-white text-[18px] font-black tracking-[0.08em] font-sans whitespace-nowrap">IGNITE</span>
                 </div>
             </div>
 
@@ -112,20 +110,13 @@ export default function RightPanel({
                 ) : (
                     <ActionIcon icon={<Flag size={20} fill="#fff" stroke="#fff" />} label="Run" bgColor="#22c55e" hoverBg="#16a34a" onClick={onGreenFlag} size={42} />
                 )}
-                <ActionIcon icon={<Square size={20} fill="#f90000ff" stroke="#e7e7e7ff" />} label="Stop Layout" onClick={onStop} outlineColor="transparent" size={42} bgColor="#fecaca" hoverBg="#fca5a5" />
                 <ActionIcon icon={<RotateCw size={20} color="#e7e7e7ff" strokeWidth={2.5} />} label="Reset" onClick={onReset} outlineColor="transparent" size={42} />
                 <ActionIcon icon={<CameraOff size={20} color={isCameraOn ? "#fff" : "#e0e0e0ff"} strokeWidth={2} />} label="Camera" onClick={onCamera} outlineColor="transparent" active={isCameraOn} activeBg="#8b5cf6" size={42} />
                 <ActionIcon icon={<Grid3X3 size={20} color={showGrid ? "#fff" : "#e0e0e0ff"} strokeWidth={2} />} label="Grid" onClick={onToggleGrid} outlineColor="transparent" active={showGrid} activeBg="#8b5cf6" size={42} />
             </div>
 
-            <div className="flex items-center gap-2.5">
-                <ActionIcon icon={<Circle size={22} fill="#c9c9c9ff" color="#c9c9c9ff" />} label="Record" onClick={() => showToast('Record feature coming soon', 'info')} outlineColor="transparent" size={42} />
-                <ActionIcon icon={<ScanFace size={22} color="#c9c9c9ff" />} label="Face Tracking" onClick={() => showToast('Face tracking coming soon', 'info')} outlineColor="#c9c9c9ff" size={42} />
-                <ActionIcon icon={<ImageIcon size={22} color="#c9c9c9ff" />} label="Add Image/Backdrop" onClick={() => showToast('Images coming soon', 'info')} outlineColor="#c9c9c9ff" size={42} />
-                <ActionIcon icon={<MicOff size={20} color="#c9c9c9ff" strokeWidth={2.5} />} label="Mic Off" onClick={() => showToast('Mic toggle coming soon', 'info')} outlineColor="transparent" size={42} />
-                <div className="bg-[#c9c9c9ff] text-white font-semibold text-[15px] px-4.5 py-1.5 rounded-full tracking-wider ml-1">
-                    0 : 00
-                </div>
+            <div className="flex items-center shrink-0">
+                <img src="assets/logo-creoleap.png" alt="CREOLEAP" className="w-[145px] h-auto object-contain brightness-[1.14] contrast-[1.05]" />
             </div>
         </div>
     );
@@ -254,11 +245,11 @@ export default function RightPanel({
 
     return (
         <div className="w-2/5 h-full flex flex-col border-l border-[#e4e7ed] overflow-hidden relative bg-[#f8f9fc]">
-            <div className="flex-1 relative flex overflow-hidden bg-[#f0f2f8]">
+                <div className="flex-1 relative flex overflow-visible bg-[#f0f2f8]">
                 {showGrid && renderYAxisLabels()}
 
                 <div className="flex-1 flex flex-col">
-                    <div className={`flex-1 relative bg-white rounded-xs overflow-hidden ${
+                    <div className={`flex-1 relative bg-white rounded-xs overflow-visible ${
                         showGrid ? 'border border-[#e4e7ed] m-1.5 mb-0 ml-0' : 'border-none m-0'
                     }`}>
                         {renderGridLines()}

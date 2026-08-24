@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useRef, useEffect } from "react";
-import { Home, Play, Square, Undo, Redo, Save, Download, Settings, Upload, Plus, File, FileCode2, FileText, Share, ChevronDown, FolderOpen, Menu as MenuIcon } from "lucide-react";
+import { Home, Play, Square, Undo, Redo, Save, Download, Settings, Upload, Plus, File, FileCode2, FileText, Share, ChevronDown, FolderOpen, Menu as MenuIcon, Code, Monitor, Rocket } from "lucide-react";
 import Logo, { CreoleapLogo } from "../../../components/Logo";
 import { useLogix } from "../context/LogixContext";
 import LeapLabAuthButton from "../../../auth/LeapLabAuthButton";
@@ -117,14 +117,14 @@ export default function TopBar() {
                         <button onClick={() => {
                             sessionStorage.setItem('landingActiveTab', 'modules');
                             sessionStorage.removeItem('myProjectsSelectedMode');
-                            ctx.onBack();
+                            ctx.onBack(false);
                         }} className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-white/10 border border-white/10 rounded-xl text-white cursor-pointer transition-all shrink-0 hover:bg-white/20" title="Back to Home">
                             <Home size={18} strokeWidth={2.2} />
                         </button>
                         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0 cursor-pointer" onClick={() => {
                             sessionStorage.setItem('landingActiveTab', 'modules');
                             sessionStorage.removeItem('myProjectsSelectedMode');
-                            ctx.onBack();
+                            ctx.onBack(false);
                         }}>
                             <Logo height={48} className="w-auto" />
                             <span className="hidden sm:inline text-white text-[16px] sm:text-[18px] lg:text-[22px] font-black tracking-[0.08em] font-sans border-l border-white/15 pl-1.5 sm:pl-2 whitespace-nowrap">LOGIX</span>
@@ -151,7 +151,7 @@ export default function TopBar() {
                                             onClick: () => {
                                                 sessionStorage.setItem('landingActiveTab', 'my-projects');
                                                 sessionStorage.setItem('myProjectsSelectedMode', 'python');
-                                                ctx.onBack();
+                                                ctx.onBack(false);
                                             }
                                         }
                                     ]} />
@@ -207,9 +207,9 @@ export default function TopBar() {
                         {windowWidth >= 1000 && (
                             <ModeSwitcher
                                 modes={[
-                                    { id: 'ide', label: 'IDE' },
-                                    { id: 'stage', label: 'Stage' },
-                                    { id: 'upload', label: 'Upload' },
+                                    { id: 'ide', label: 'IDE', icon: <Code size={13} strokeWidth={2} />, activeIcon: <Code size={13} strokeWidth={2.5} fill="currentColor" /> },
+                                    { id: 'stage', label: 'Stage', icon: <Monitor size={13} strokeWidth={2} />, activeIcon: <Monitor size={13} strokeWidth={2.5} fill="currentColor" /> },
+                                    { id: 'upload', label: 'Upload', icon: <Rocket size={13} strokeWidth={2} />, activeIcon: <Rocket size={13} strokeWidth={2.5} fill="currentColor" /> },
                                 ]}
                                 activeMode={ctx.workflowMode}
                                 onChange={ctx.setWorkflowMode}
@@ -288,7 +288,7 @@ export default function TopBar() {
                                     onClick: () => {
                                         sessionStorage.setItem('landingActiveTab', 'my-projects');
                                         sessionStorage.setItem('myProjectsSelectedMode', 'python');
-                                        ctx.onBack();
+                                        ctx.onBack(false);
                                     }
                                 },
                             ].map((item, i) => (
@@ -341,11 +341,11 @@ export default function TopBar() {
                             <div className="text-[11px] font-bold uppercase tracking-wider opacity-50 mb-1">Workspace Mode</div>
                             <ModeSwitcher
                                 modes={[
-                                    { id: 'ide', label: 'IDE' },
-                                    { id: 'stage', label: 'Stage' },
-                                    { id: 'upload', label: 'Upload' },
+                                    { id: 'ide', label: 'IDE', icon: <Code size={13} strokeWidth={2} />, activeIcon: <Code size={13} strokeWidth={2.5} fill="currentColor" /> },
+                                    { id: 'stage', label: 'Stage', icon: <Monitor size={13} strokeWidth={2} />, activeIcon: <Monitor size={13} strokeWidth={2.5} fill="currentColor" /> },
+                                    { id: 'upload', label: 'Upload', icon: <Rocket size={13} strokeWidth={2} />, activeIcon: <Rocket size={13} strokeWidth={2.5} fill="currentColor" /> },
                                 ]}
-                                activeMode={ctx.workflowMode}
+             ok perfect also add on colours into them make the                    activeMode={ctx.workflowMode}
                                 onChange={(mode) => {
                                     ctx.setWorkflowMode(mode);
                                     setMobileMenuOpen(false);

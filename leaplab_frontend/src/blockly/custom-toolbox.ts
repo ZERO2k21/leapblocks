@@ -80,7 +80,7 @@ style Category with circular icons and vertical layout
                 'sound': '🔊',
                 'sensing': '🔍',
                 'my blocks': '🧩',
-                'more blocks': '➕',
+                'extension blocks': '➕',
                 // Hardware category (Upload mode)
                 'hardware': '🔧',
                 // Extension categories

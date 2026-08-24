@@ -80,11 +80,11 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
         setView({ screen: 'home' })
     }, [])
 
-    const handleBack = useCallback(() => {
+    const handleBack = useCallback((hasChanges?: boolean) => {
         if (view.screen === 'workspace') {
             handleBackToHome()
         } else if (onBack) {
-            onBack()
+            onBack(hasChanges)
         }
     }, [view.screen, onBack, handleBackToHome])
 

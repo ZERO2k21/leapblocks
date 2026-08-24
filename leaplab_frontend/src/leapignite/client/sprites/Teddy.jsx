@@ -21,7 +21,7 @@ const isJuniorPenSprite = (...values) => values.some((value) => {
         normalized.includes('drawing_pen');
 });
 
-export default function Sprite({ id, type, active, x, y, angle, size, visible, speech, currentCostume, costumes, mirrored, textColor, onClick, onDragStateChange }) {
+export default function Sprite({ id, type, active, x, y, angle, size, visible, speech, currentCostume, costumes, mirrored, textColor, onClick, onDragStateChange, fullscreenScale = 1 }) {
     // Local ephemeral state (speech bubbles, feedback)
     // Speech is now propped from App.jsx store
     const [scaleX, setScaleX] = useState(1);
@@ -68,7 +68,7 @@ export default function Sprite({ id, type, active, x, y, angle, size, visible, s
 
     const { isDragging, handleMouseDown, handleTouchStart } = useSpriteDrag({
         x, y, angle, size, scaleX, mirrored, onClick, onDragStateChange,
-        isPenSprite, updateStore, penColor, isPenDown,
+        isPenSprite, updateStore, penColor, isPenDown, fullscreenScale,
     });
 
     // Get Pencil Tip precisely based on sprite direction and size

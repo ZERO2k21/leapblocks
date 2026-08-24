@@ -131,7 +131,7 @@ export const Topbar = ({
                 onClick={() => {
                   sessionStorage.setItem('landingActiveTab', 'modules');
                   sessionStorage.removeItem('myProjectsSelectedMode');
-                  onBack();
+                  onBack(false);
                 }}
                 className="ml-4 flex items-center justify-center w-10 h-10 rounded-xl cursor-pointer transition-colors duration-200 shrink-0 border bg-[#94c5ff]/18 border-[#94c5ff]/24 text-white hover:bg-[#bfdbfe]/24"
               >

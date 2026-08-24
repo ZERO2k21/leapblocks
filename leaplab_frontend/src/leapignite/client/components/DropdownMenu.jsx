@@ -34,8 +34,8 @@ export default function DropdownMenu({ label, icon: Icon, items, isOpen, onToggl
         <div ref={menuRef} className="relative">
             <button
                 onClick={onToggle}
-                className={`flex items-center gap-1.5 px-4 py-2 text-white text-sm font-semibold rounded-full transition-all tracking-wide cursor-pointer ${
-                    isOpen ? 'bg-white/20 backdrop-blur-sm' : 'bg-transparent hover:bg-white/10'
+                className={`flex items-center gap-1.5 px-4 py-2 text-white text-sm font-semibold rounded-lg transition-all tracking-wide cursor-pointer border ${
+                    isOpen ? 'bg-white/20 backdrop-blur-sm border-white/20' : 'bg-white/10 hover:bg-white/15 border-white/10 hover:border-white/20'
                 }`}
             >
                 {Icon && <Icon size={16} strokeWidth={2.2} className="opacity-90" />}
@@ -43,7 +43,7 @@ export default function DropdownMenu({ label, icon: Icon, items, isOpen, onToggl
                 <ChevronDown
                     size={14}
                     strokeWidth={2.5}
-                    className={`opacity-50 transition-transform duration-200 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
+                    className={`opacity-80 transition-transform duration-200 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
                 />
             </button>
 

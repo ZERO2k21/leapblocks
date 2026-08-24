@@ -14,6 +14,7 @@ import type { VariableMonitorState, ListMonitorState, TableMonitorState, EditorM
 import { normalizeVariableMonitor } from '../../types/intermediateTypes';
 import type { CompiledScript } from '../../vm/AnimationVM';
 import { fileService } from '../../Electra/Client/Src/services/FileService';
+import { showAlert } from '../../utils/dialogStore';
 
 export function useProjectOperations(
     sprites: Sprite[],
@@ -167,7 +168,7 @@ export function useProjectOperations(
             }
         } catch (err: any) {
             console.error('[IntermediateApp] Failed to save project:', err);
-            alert(err?.message || 'Failed to save project. Please make sure you are signed in.');
+            showAlert(err?.message || 'Failed to save project. Please make sure you are signed in.', 'Save Error');
         }
     }, [projectName, buildProjectPayload, addLog]);
 
@@ -327,7 +328,7 @@ export function useProjectOperations(
                 const validation = fileService.validateProject(data, 'intermediate');
 
                 if (!validation.isValid) {
-                    alert(validation.error);
+                    showAlert(validation.error, 'Invalid Project');
                     return;
                 }
 
@@ -452,7 +453,7 @@ export function useProjectOperations(
                 }
             } catch (err: any) {
                 console.error('Failed to load project:', err);
-                alert(`Failed to load project file: ${err.message}`);
+                showAlert(`Failed to load project file: ${err.message}`, 'Load Error');
             }
         };
         input.click();

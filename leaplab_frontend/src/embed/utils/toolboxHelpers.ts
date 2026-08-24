@@ -1,4 +1,4 @@
-export const MORE_BLOCKS_CATEGORY_NAME = 'More Blocks';
+export const MORE_BLOCKS_CATEGORY_NAME = 'Extension Blocks';
 export const MORE_BLOCKS_CATEGORY_COLOUR = '#94A3B8';
 
 export const isToolboxCategory = (category: any) =>
@@ -45,7 +45,7 @@ export const createMoreBlocksCategory = () => ({
     kind: 'leapbloxCategory',
     name: MORE_BLOCKS_CATEGORY_NAME,
     colour: MORE_BLOCKS_CATEGORY_COLOUR,
-    custom: 'LEAP_MOREBLOCKS'
+    custom: 'LEAP_EXTENSIONBLOCKS'
 });
 
 export const withCategoryHeaders = (contents: any[]) => {

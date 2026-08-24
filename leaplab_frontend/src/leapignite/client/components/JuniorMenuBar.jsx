@@ -29,6 +29,7 @@ export default function JuniorMenuBar({
     onBack,
     onDownload,
     onSave,
+    workspaceRef,
 }) {
     const [openMenu, setOpenMenu] = useState(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -70,14 +71,15 @@ export default function JuniorMenuBar({
                         onClick: () => {
                             sessionStorage.setItem('landingActiveTab', 'my-projects');
                             sessionStorage.setItem('myProjectsSelectedMode', 'junior');
-                            onBack?.();
+                            const hasChanges = workspaceRef?.current?.getAllBlocks?.(false)?.length > 0;
+                            onBack?.(hasChanges);
                         }
                     },
                 ];
 
                 return (
                     <>
-                    <div className="w-full bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 h-[68px] px-2 sm:px-3 md:px-6 flex items-center justify-between text-white select-none z-[100] relative font-sans shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] overflow-hidden gap-2">
+                    <div className="w-full bg-gradient-to-r from-[#0a0a1f] via-[#0a015a] to-[#080a25] border-b border-sky-400/10 h-[68px] px-2 sm:px-3 md:px-6 flex items-center justify-between text-white select-none z-[100] relative font-sans shadow-[0_4px_20px_rgba(8,10,37,0.5),inset_0_-1px_0_rgba(255,255,255,0.06)] gap-2">
                         {/* ══ LEFT: Home button · Brand logo · Dropdown menus ══════════════ */}
                         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 min-w-0">
                             {/* Home icon button */}
@@ -85,7 +87,8 @@ export default function JuniorMenuBar({
                                 onClick={() => {
                                     sessionStorage.setItem('landingActiveTab', 'modules');
                                     sessionStorage.removeItem('myProjectsSelectedMode');
-                                    onBack?.();
+                                    const hasChanges = workspaceRef?.current?.getAllBlocks?.(false)?.length > 0;
+                                    onBack?.(hasChanges);
                                 }}
                                 title="Back to Home"
                                 className="w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center bg-white/10 border border-white/12 rounded-xl text-white cursor-pointer transition-all duration-200 shrink-0 hover:bg-white/20 hover:scale-105"
@@ -197,7 +200,8 @@ export default function JuniorMenuBar({
                                 onClick: () => {
                                     sessionStorage.setItem('landingActiveTab', 'my-projects');
                                     sessionStorage.setItem('myProjectsSelectedMode', 'junior');
-                                    onBack?.();
+                                    const hasChanges = workspaceRef?.current?.getAllBlocks?.(false)?.length > 0;
+                                    onBack?.(hasChanges);
                                 }
                             },
                         ].map((item, i) => (

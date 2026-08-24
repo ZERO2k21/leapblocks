@@ -4,7 +4,7 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 import React, { useState, useEffect, useRef } from "react";
-import { Home, Save, Settings, User, HelpCircle, Upload, Scissors, Copy, Clipboard, Undo, Redo, Hash, Wand2, Search, Menu as MenuIcon, Share, FolderOpen } from "lucide-react";
+import { Home, Save, Settings, User, HelpCircle, Upload, Scissors, Copy, Clipboard, Undo, Redo, Hash, Wand2, Search, Menu as MenuIcon, Share, FolderOpen, Puzzle, FileCode2 } from "lucide-react";
 import Logo, { CreoleapLogo } from "../../components/Logo";
 import LeapLabAuthButton from "../../../auth/LeapLabAuthButton";
 import TopbarShareButton from "../../../components/common/TopbarShareButton";
@@ -55,7 +55,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
             <div className="flex items-center gap-3">
                 {/* Home Button */}
                 <button
-                    onClick={onBack}
+                    onClick={() => onBack(false)}
                     className="flex items-center justify-center w-10 h-10 bg-white/10 border border-white/10 rounded-xl text-white cursor-pointer transition-all duration-200 shrink-0 mr-1 hover:bg-white/20 hover:scale-105"
                     title="Back to Home"
                 >
@@ -77,8 +77,8 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                         <div className="h-8 w-px bg-white/15 mr-1" />
                         <ModeSwitcher
                             modes={[
-                                { id: 'blocks', label: 'Blocks', icon: <span className="text-sm">🧩</span> },
-                                { id: 'python', label: 'Python', icon: <span className="text-sm">🐍</span> },
+                                { id: 'blocks', label: 'Blocks', icon: <Puzzle size={13} strokeWidth={2} />, activeIcon: <Puzzle size={13} strokeWidth={2.5} fill="currentColor" /> },
+                                { id: 'python', label: 'Python', icon: <FileCode2 size={13} strokeWidth={2} />, activeIcon: <FileCode2 size={13} strokeWidth={2.5} fill="currentColor" /> },
                             ]}
                             activeMode={mode}
                             onChange={(id) => setMode && setMode(id)}
@@ -174,9 +174,9 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
         >
             <div className="text-[11px] font-bold uppercase tracking-wider opacity-50">Mode</div>
             {[
-                { id: 'blocks', label: 'Blocks', icon: '🧩' },
-                { id: 'python', label: 'Python', icon: '🐍' },
-            ].map(({ id, label, icon }) => (
+                { id: 'blocks', label: 'Blocks', Icon: Puzzle },
+                { id: 'python', label: 'Python', Icon: FileCode2 },
+            ].map(({ id, label, Icon }) => (
                 <button
                     key={id}
                     onClick={() => { setMode?.(id); setMobileMenuOpen(false); }}
@@ -184,7 +184,7 @@ export default function TopBar({ onBack, onSwitchToNotebook, showGuide, setShowG
                         mode === id ? 'bg-purple-400/20' : 'bg-transparent'
                     }`}
                 >
-                    <span>{icon}</span>
+                    <Icon size={15} strokeWidth={2} className={mode === id ? 'text-purple-400' : 'text-white/60'} />
                     <span>{label}</span>
                     {mode === id && <span className="ml-auto text-[11px] opacity-60">Active</span>}
                 </button>

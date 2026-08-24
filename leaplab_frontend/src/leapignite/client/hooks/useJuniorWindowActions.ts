@@ -134,7 +134,9 @@ export function useJuniorWindowActions({
             window.showFeedback?.(`📨 ${message}`);
         };
 
-        window.stopAll = () => {};
+        window.stopAll = () => {
+            if (window.stopAllSounds) window.stopAllSounds();
+        };
 
         window.stopExecution = () => {
             throw new ExecutionStop("Execution stopped by Stop block");

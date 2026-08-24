@@ -1,5 +1,6 @@
 import React from 'react'
 import type { ClassifierMode } from '../../hooks/useNeuraProject'
+import { CollectIcon, TrainIcon, TestIcon, CameraIcon, MicIcon, HandPoseIcon } from '../../assets/icons/NeuraIcons'
 
 interface WorkflowIndicatorProps {
     mode: ClassifierMode
@@ -12,10 +13,12 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain, type }
     const isAudio = type === 'audio' || type === 'audio-classifier'
     const isPose = type === 'pose' || type === 'pose-classifier' || type === 'hand-pose' || type === 'hand-pose-classifier'
 
+    const CollectIconComponent = isAudio ? MicIcon : isPose ? HandPoseIcon : CameraIcon
+
     const steps = [
-        { id: 'collect' as ClassifierMode, number: 1, label: 'Collect', emoji: isAudio ? '🎤' : isPose ? '🧘' : '📸', tip: isAudio ? 'Record sounds!' : isPose ? 'Strike a pose!' : 'Take pictures!' },
-        { id: 'train' as ClassifierMode, number: 2, label: 'Train', emoji: '🏋️', tip: 'Teach your AI!' },
-        { id: 'test' as ClassifierMode, number: 3, label: 'Test', emoji: '🧪', tip: 'Test your AI!' }
+        { id: 'collect' as ClassifierMode, number: 1, label: 'Collect', IconComponent: CollectIconComponent, tip: isAudio ? 'Record sounds!' : isPose ? 'Strike a pose!' : 'Take pictures!' },
+        { id: 'train' as ClassifierMode, number: 2, label: 'Train', IconComponent: TrainIcon, tip: 'Teach your AI!' },
+        { id: 'test' as ClassifierMode, number: 3, label: 'Test', IconComponent: TestIcon, tip: 'Test your AI!' }
     ]
     const modeOrder: ClassifierMode[] = ['collect', 'train', 'test']
     const currentIndex = modeOrder.indexOf(mode)
@@ -49,7 +52,7 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain, type }
                                                 : 'bg-gray-100 text-gray-500'
                                     }`}
                                 >
-                                    {isCompleted ? '✓' : step.emoji}
+                                    {isCompleted ? '✓' : <step.IconComponent size={16} color="currentColor" />}
                                 </div>
                                 <div className="text-left">
                                     <div

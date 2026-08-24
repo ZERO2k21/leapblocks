@@ -87,7 +87,7 @@ export default function defineSoundBlocks(Blockly: any, javascriptGenerator: any
     };
     javascriptGenerator.forBlock["sound_play"] = function (block: any) {
         const sound = block.getFieldValue("SOUND");
-        return `playSound("${sound}");\n`;
+        return `playSound("${sound}");\nawait window.wait(0.5);\n`;
     };
 
     Blockly.Blocks["sound_play_music"] = {
@@ -104,7 +104,7 @@ export default function defineSoundBlocks(Blockly: any, javascriptGenerator: any
     };
     javascriptGenerator.forBlock["sound_play_music"] = function (block: any) {
         const music = block.getFieldValue("MUSIC");
-        return `playMusic("${music}");\n`;
+        return `playMusic("${music}");\nawait window.wait(1);\n`;
     };
 
     Blockly.Blocks["sound_note"] = {
@@ -136,7 +136,7 @@ export default function defineSoundBlocks(Blockly: any, javascriptGenerator: any
     javascriptGenerator.forBlock["sound_note"] = function (block: any) {
         const note = block.getFieldValue("NOTE");
         const octave = block.getFieldValue("OCTAVE");
-        return `playNote("${note}", ${octave}, 0.5);\n`;
+        return `playNote("${note}", ${octave}, 0.5);\nawait window.wait(0.5);\n`;
     };
 
     Blockly.Blocks["sound_instrument"] = {

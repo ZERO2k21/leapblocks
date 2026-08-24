@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { CameraIcon, MicIcon, PenIcon, PlusIcon, CheckIcon, HandPoseIcon } from '../../assets/icons/NeuraIcons'
 
 interface CaptureButtonProps {
     onClick: () => void
@@ -14,19 +15,25 @@ interface CaptureButtonProps {
     onTouchEnd?: () => void
 }
 
-const EMOJI_ICONS: Record<string, string> = {
-    camera: '📸',
-    mic: '🎤',
-    pen: '✏️',
-    plus: '➕',
-    check: '✅',
-    pose: '🤸'
+const ICON_COMPONENTS: Record<string, React.FC<{ size?: number; className?: string; color?: string }>> = {
+    camera: CameraIcon,
+    mic: MicIcon,
+    pen: PenIcon,
+    plus: PlusIcon,
+    check: CheckIcon,
+    pose: HandPoseIcon
 }
 
 const SIZE_MAP: Record<string, string> = {
-    sm: 'w-14 h-14 text-2xl',
-    md: 'w-16 h-16 text-3xl',
-    lg: 'w-20 h-20 text-4xl'
+    sm: 'w-14 h-14',
+    md: 'w-16 h-16',
+    lg: 'w-20 h-20'
+}
+
+const ICON_SIZE_MAP: Record<string, number> = {
+    sm: 20,
+    md: 24,
+    lg: 32
 }
 
 export default function CaptureButton({
@@ -82,7 +89,7 @@ export default function CaptureButton({
                     className={`${SIZE_MAP[size]} rounded-full flex items-center justify-center text-white transition-all duration-300 shadow-xl group-hover:shadow-2xl group-hover:scale-105 relative overflow-hidden`}
                     style={{ backgroundColor: color }}
                 >
-                    <span className="relative z-10">{EMOJI_ICONS[icon]}</span>
+                    <span className="relative z-10">{React.createElement(ICON_COMPONENTS[icon] || CameraIcon, { size: ICON_SIZE_MAP[size], color: 'white' })}</span>
                     <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-all duration-300 rounded-full" />
                 </div>
             </div>

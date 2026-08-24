@@ -34,8 +34,10 @@ import AskBar from '../components/AskBar';
 import SpritePanel from '../stage/SpritePanel';
 
 import MenuBar from '../leapignite/client/components/MenuBar';
+import Logo from '../components/Logo';
 
 import BoardSelectionModal from '../leapignite/client/components/BoardSelectionModal';
+import DialogRenderer from './components/DialogRenderer';
 
 import { PythonEditorTab } from '../components/PythonEditorTab';
 
@@ -101,10 +103,11 @@ import { useCloudProjectStore } from '../store/cloudProjectStore';
 import { showToast } from '../leapignite/client/components/Toast';
 
 
-import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal, Puzzle, Plus } from 'lucide-react';
+import { Flag, Square, Upload, Camera, CameraOff, Grid3X3, Maximize, Minimize, LayoutTemplate, LayoutPanelLeft, Library, Pen, Volume2, Undo2, Redo2, Terminal, Puzzle, Plus, RotateCw } from 'lucide-react';
 
 
 import { styles } from '../styles/intermediateStyles';
+import { showAlert } from '../utils/dialogStore';
 import type { AppMode, EditorMode, VariableMonitorState, ListMonitorState, TableMonitorState } from '../types/intermediateTypes';
 import { normalizeVariableMonitor } from '../types/intermediateTypes';
 
@@ -2749,14 +2752,14 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                         return contents;
                     });
 
-                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_MOREBLOCKS', () => {
+                    workspaceRef.current.registerToolboxCategoryCallback('LEAP_EXTENSIONBLOCKS', () => {
                         const contents: any[] = [];
                         contents.push(createFlyoutCategoryLabel(MORE_BLOCKS_CATEGORY_NAME));
-                        contents.push(createFlyoutSectionLabel('Reserved for future use', 'category-subheader-moreblocks'));
+                        contents.push(createFlyoutSectionLabel('Add custom blocks & categories', 'category-subheader-extensionblocks'));
                         contents.push({
-                            kind: 'label',
-                            text: 'Future blocks will appear here',
-                            'web-class': 'category-subheader category-subheader-moreblocks-note'
+                            kind: 'button',
+                            text: 'Choose Extensions',
+                            callbackKey: 'OPEN_EXTENSION_LIBRARY'
                         });
                         return contents;
                     });
@@ -2767,6 +2770,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     workspaceRef.current.registerButtonCallback('CREATE_VARIABLE', ((btn: any) => {
                         setIsMakeVariableOpen(true);
                     }));
+
+                    // Register button callback for "Choose Extensions"
+                    workspaceRef.current.registerButtonCallback('OPEN_EXTENSION_LIBRARY', () => {
+                        setShowExtensionLibrary(true);
+                    });
 
 
 
@@ -2884,7 +2892,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                     });
 
-
+                    
 
                     // Restore the selected sprite's blocks after workspace re-initialization
 
@@ -3374,6 +3382,8 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                 onRedo={() => workspaceRef.current?.undo(true)}
 
+                workspaceRef={workspaceRef}
+
             />
 
 
@@ -3427,21 +3437,11 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             )}
                         </div>
 
-                        {/* Modern Professional Extensions Button placed in empty space of tab bar */}
-                        <button
-                            onClick={() => setShowExtensionLibrary(true)}
-                            className="ml-4 px-3.5 py-1.5 bg-gradient-to-r from-[#855CD6] via-[#9165E7] to-[#9D70F0] hover:from-[#7548C7] hover:via-[#8455DC] hover:to-[#9162E5] text-white rounded-lg font-bold text-[12px] flex items-center gap-1.5 shadow-[0_2px_8px_rgba(133,92,214,0.35)] hover:shadow-[0_4px_14px_rgba(133,92,214,0.5)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 border border-white/20 outline-none cursor-pointer select-none"
-                            title="Add Extensions (Add custom blocks & categories)"
-                        >
-                            <Puzzle size={15} className="text-white shrink-0 stroke-[2.5]" />
-                            <span>Extensions</span>
-                            <span className="ml-0.5 bg-white/25 px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none">+</span>
-                        </button>
-                    </div>
+                        </div>
 
 
 
-                    {/* Middle: Undo/Redo Controls */}
+                    {/* Middle: Undo/Redo Controls + Upload Button */}
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '16px', borderRight: '1px solid #ddd', height: '100%', paddingLeft: '16px' }}>
 
@@ -3456,6 +3456,19 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                             <Redo2 size={18} color="#575E75" />
 
                         </button>
+
+                        {editorMode === 'upload' && (
+                            <button
+                                className={styles.uploadButton}
+                                onClick={handleUpload}
+                                disabled={isUploading}
+                                title="Upload to board"
+                                style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '4px', backgroundColor: '#22c55e' }}
+                            >
+                                <Upload size={13} strokeWidth={2.5} />
+                                {isUploading ? 'Uploading…' : 'UPLOAD'}
+                            </button>
+                        )}
 
                     </div>
 
@@ -3749,98 +3762,53 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                 zIndex: isFullscreen ? 9999 : 1,
                                 display: 'flex',
                                 flexDirection: 'column',
-                                alignItems: 'center',
+                                alignItems: 'stretch',
                                 justifyContent: 'flex-start',
                                 background: isFullscreen ? '#f0f0f0' : 'transparent',
-                                overflowX: 'hidden',
-                                overflowY: 'auto',
+                                overflow: 'hidden',
                                 gap: 0,
                             }}>
 
-                                {/* Fullscreen Toolbar — light gray, matches reference images */}
+                                {/* Fullscreen Toolbar — sticky at top, never scrolls */}
                                 {isFullscreen && (
-                                    <div style={{
-                                        width: '100%',
-                                        height: '48px',
-                                        background: '#f0f0f0',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '0 16px',
-                                        boxSizing: 'border-box',
-                                        borderBottom: '1px solid #ddd',
-                                        flexShrink: 0,
-                                        zIndex: 10,
-                                    }}>
-                                        {/* Left: Run + Stop */}
-                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                            <button
-                                                onClick={handleRunClick}
-                                                title="Run"
-                                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
-                                            >
-                                                <svg viewBox="0 0 24 24" width="28" height="28">
-                                                    <circle cx="12" cy="12" r="11" fill="#4CAF50" />
-                                                    <polygon fill="white" points="10,8 17,12 10,16" />
-                                                </svg>
+                                    <div className="w-full h-[64px] bg-gradient-to-r from-[#0a015a] to-[#080a25] border-b border-white/10 flex items-center justify-between px-4 z-[100] shrink-0">
+                                        {/* Left: Exit fullscreen + Logo + EMBED */}
+                                        <div className="flex items-center gap-4">
+                                            <button onClick={handleFullscreen} className="bg-transparent border-none cursor-pointer p-0">
+                                                <div className="w-10 h-10 bg-white/10 border border-white/15 rounded-xl flex items-center justify-center hover:bg-white/20 transition-colors">
+                                                    <Minimize size={20} color="#fff" strokeWidth={2.5} />
+                                                </div>
                                             </button>
-                                            <button
-                                                onClick={handleStopClick}
-                                                title="Stop"
-                                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
-                                            >
-                                                <svg viewBox="0 0 24 24" width="28" height="28">
-                                                    <circle cx="12" cy="12" r="11" fill="#F44336" />
-                                                    <rect x="8" y="8" width="8" height="8" fill="white" rx="1" />
-                                                </svg>
-                                            </button>
-                                        </div>
-
-                                        {/* Center: Camera, Image, Sound, Timer */}
-                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                            <button
-                                                onClick={() => setIsCameraOn(!isCameraOn)}
-                                                title="Toggle Camera"
-                                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}
-                                            >
-                                                {isCameraOn ? <Camera size={20} /> : <CameraOff size={20} />}
-                                            </button>
-                                            <button title="Screenshot" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}>
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                                    <rect x="3" y="3" width="18" height="14" rx="2" />
-                                                    <polyline points="3 13 8 8 13 12" />
-                                                    <polyline points="13 12 16 9 21 13" />
-                                                </svg>
-                                            </button>
-                                            <button title="Sound" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}>
-                                                <Volume2 size={20} />
-                                            </button>
-                                            {/* Timer pill */}
-                                            <div style={{
-                                                background: '#6c3fc5',
-                                                color: 'white',
-                                                padding: '3px 12px',
-                                                borderRadius: '20px',
-                                                fontSize: '13px',
-                                                fontWeight: 600,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px',
-                                            }}>
-                                                <span>0 : 00</span>
+                                            <div className="w-px h-7 bg-white/15" />
+                                            <div className="flex items-center gap-2">
+                                                <Logo height={40} className="w-auto" />
+                                                <span className="hidden sm:inline text-white text-[18px] font-black tracking-[0.08em] font-sans whitespace-nowrap">EMBED</span>
                                             </div>
                                         </div>
 
-                                        {/* Right: Exit fullscreen */}
-                                        <button
-                                            onClick={handleFullscreen}
-                                            title="Exit Fullscreen"
-                                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#555' }}
-                                        >
-                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                                            </svg>
-                                        </button>
+                                        {/* Center: Run/Stop + Camera + Grid */}
+                                        <div className="flex items-center gap-2.5">
+                                            {isRunning ? (
+                                                <button onClick={handleStopClick} title="Stop" className="w-[42px] h-[42px] rounded-xl flex items-center justify-center cursor-pointer border-none transition-colors" style={{ background: '#ef4444' }}>
+                                                    <Square size={20} fill="#fff" stroke="#fff" />
+                                                </button>
+                                            ) : (
+                                                <button onClick={handleRunClick} title="Run" className="w-[42px] h-[42px] rounded-xl flex items-center justify-center cursor-pointer border-none transition-colors" style={{ background: '#22c55e' }}>
+                                                    <Flag size={20} fill="#fff" stroke="#fff" />
+                                                </button>
+                                            )}
+                                            <button onClick={() => setIsCameraOn(!isCameraOn)} title="Toggle Camera" className="w-[42px] h-[42px] rounded-xl flex items-center justify-center cursor-pointer border border-white/20 bg-transparent transition-colors hover:bg-white/10">
+                                                <CameraOff size={20} color={isCameraOn ? "#fff" : "#e0e0e0ff"} strokeWidth={2} />
+                                            </button>
+                                            <button onClick={() => setShowGrid(!showGrid)} title="Toggle Grid" className="w-[42px] h-[42px] rounded-xl flex items-center justify-center cursor-pointer border border-white/20 bg-transparent transition-colors hover:bg-white/10">
+                                                <Grid3X3 size={20} color={showGrid ? "#fff" : "#e0e0e0ff"} strokeWidth={2} />
+                                            </button>
+                                        </div>
+
+                                        {/* Right: Creoleap logo */}
+                                        <div className="flex items-center shrink-0">
+                                            <img src="assets/logo-creoleap.png" alt="CREOLEAP" className="w-[145px] h-auto object-contain brightness-[1.14] contrast-[1.05]" />
+                                        </div>
                                     </div>
                                 )}
 
@@ -3851,7 +3819,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                     const CANVAS_WIDTH = 480;
                                     const CANVAS_HEIGHT = 310;
 
-                                    const TOOLBAR_H = 48;
+                                    const TOOLBAR_H = 64;
                                     const stageScale = isFullscreen
                                         ? Math.min(
                                             window.innerWidth / CANVAS_WIDTH,
@@ -3871,7 +3839,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                             alignItems: isFullscreen ? 'center' : 'stretch',
                                             justifyContent: isFullscreen ? 'center' : 'flex-start',
                                             position: 'relative',
-                                            overflow: 'visible',
+                                            overflow: 'hidden',
                                             height: isFullscreen ? `calc(100vh - ${TOOLBAR_H}px)` : 'auto',
                                         }}>
                                             {/* Stage canvas - display container */}
@@ -3896,6 +3864,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                                                     transformOrigin: 'center center',
                                                     flex: '0 0 auto',
                                                     overflow: 'visible',
+                                                    imageRendering: 'auto',
                                                 }}>
                                                     <Stage
 
@@ -4649,7 +4618,7 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             setShowSpriteLibrary(false);
 
-                            alert('Paint editor - select a sprite first, then edit its costume');
+                            showAlert('Paint editor - select a sprite first, then edit its costume', 'Costumes');
 
                         }}
 
@@ -4680,6 +4649,9 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
                     />
                 </React.Suspense>
             )}
+
+            {/* Global styled dialog renderer */}
+            <DialogRenderer />
         </div>
     );
 
