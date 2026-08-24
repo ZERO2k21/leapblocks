@@ -14,7 +14,7 @@ import * as os from 'os';
 import { getPioPathIfAvailable, ensurePlatformIO, getBundledPioEnv, getBundledLibrariesSeedPath } from './ensurePlatformIO';
 import { runPio, platformEnsure, pkgInstallLibrary, pkgUninstallLibrary, PioResult, PioRunOptions } from './pio';
 import { fqbnToPioTarget, isEsp32Fqbn, PioBoardTarget } from './boardMap';
-import { createPioProject, getPioBuildDir, listPioBuildFiles } from './project';
+import { createPioProject, getPioBuildDir, listPioBuildFiles, parseMissingHeaderFromError, HEADER_TO_LIBRARY } from './project';
 import { searchRegistry, RegistryLibrary } from './registry';
 import { flashHexViaStk500 } from './stk500';
 import { parseIntelHex } from '../../webflash/intelHex';
@@ -191,6 +191,7 @@ export class ArduinoUploader {
         const target = fqbnToPioTarget(fqbn);
         const libsFolder = this.getLibrariesPath();
 
+        // First attempt: createPioProject now auto-resolves #includes → lib_deps
         createPioProject(projectDir, code, {
             board: target.board,
             platform: target.platform,
@@ -203,11 +204,51 @@ export class ArduinoUploader {
         const args = ['run', '-d', projectDir, '-j', '2'];
 
         console.log(`[FORGE UPLOADER] Running: pio ${args.join(' ')} (${fqbn} → ${target.board})`);
-        const result = await runPio(args, this.pioOptions({ binPath: pioPath, timeoutMs: opts.timeoutMs ?? 180_000 }));
-        if (result.code !== 0) {
-            throw new Error(this.formatPioError(result));
+        let result = await runPio(args, this.pioOptions({ binPath: pioPath, timeoutMs: opts.timeoutMs ?? 180_000 }));
+        if (result.code === 0) {
+            return { target, projectDir, buildDir: getPioBuildDir(projectDir, target.board) };
         }
-        return { target, projectDir, buildDir: getPioBuildDir(projectDir, target.board) };
+
+        // ── Auto-recovery for missing header (e.g. user typed #include <RTClib.h> but lib not bundled) ─
+        const missingHeader = parseMissingHeaderFromError((result.stderr || '') + '\n' + (result.stdout || ''));
+        if (missingHeader) {
+            const mappedLib = HEADER_TO_LIBRARY[missingHeader] || missingHeader.replace(/\.h$/i, '');
+            console.warn(`[FORGE UPLOADER] Build failed due to missing header ${missingHeader} → trying library "${mappedLib}"`);
+            // Try to install the library into forge-lib (best-effort, then retry via lib_deps)
+            try {
+                const alreadyExists = fs.existsSync(path.join(libsFolder, mappedLib));
+                if (!alreadyExists) {
+                    console.log(`[FORGE UPLOADER] Installing missing library "${mappedLib}" into forge-lib...`);
+                    await pkgInstallLibrary(mappedLib, libsFolder, this.pioOptions({ binPath: pioPath, timeoutMs: 120_000 }));
+                }
+            } catch (e: any) {
+                console.warn(`[FORGE UPLOADER] auto-install of "${mappedLib}" failed: ${e.message} (will still retry via lib_deps)`);
+            }
+
+            // Retry: add the mapped lib to lib_deps and rebuild (PlatformIO will fetch if still missing)
+            const retryLibDeps = [...(!isEsp32Fqbn(fqbn) ? ['SoftwareSerial', 'Servo'] : []), mappedLib];
+            // Ensure we don't duplicate if already present
+            const uniqueDeps = [...new Set(retryLibDeps)];
+            createPioProject(projectDir, code, {
+                board: target.board,
+                platform: target.platform,
+                libDirs: fs.existsSync(libsFolder) ? [libsFolder] : [],
+                libDeps: uniqueDeps,
+                mergeBinaries: opts.mergeBinaries,
+                uploadPort: opts.uploadPort,
+            });
+            console.log(`[FORGE UPLOADER] Retrying build with lib_deps += "${mappedLib}"`);
+            result = await runPio(args, this.pioOptions({ binPath: pioPath, timeoutMs: opts.timeoutMs ?? 180_000 }));
+            if (result.code === 0) {
+                console.log(`[FORGE UPLOADER] Retry succeeded with "${mappedLib}"`);
+                return { target, projectDir, buildDir: getPioBuildDir(projectDir, target.board) };
+            }
+            // Enrich error with helpful hint
+            const hint = `📦 Missing library for "${missingHeader}": tried "${mappedLib}". If this is a custom library, install it via the Library Manager or check the header name.`;
+            throw new Error(this.formatPioError(result) + '\n\n' + hint);
+        }
+
+        throw new Error(this.formatPioError(result));
     }
 
     private formatPioError(result: PioResult): string {
@@ -297,14 +338,30 @@ await pkgInstallLibrary(libName, libsFolder, this.pioOptions({ binPath: pioPath 
         const p = path.join(this.getForgeLibCachePath(), 'libraries');
         if (!fs.existsSync(p)) {
             fs.mkdirSync(p, { recursive: true });
-            const seed = getBundledLibrariesSeedPath();
-            if (seed) {
-                for (const entry of fs.readdirSync(seed, { withFileTypes: true })) {
-                    const src = path.join(seed, entry.name);
-                    const dst = path.join(p, entry.name);
-                    fs.cpSync(src, dst, { recursive: true, force: true });
+        }
+        // Always sync missing seed libraries (fixes stale forge-lib after app update)
+        const seed = getBundledLibrariesSeedPath();
+        if (seed) {
+            try {
+                const seeded = fs.readdirSync(seed, { withFileTypes: true }).filter(d => d.isDirectory() || d.isFile()).map(d => d.name);
+                let added = 0;
+                for (const entryName of seeded) {
+                    const src = path.join(seed, entryName);
+                    const dst = path.join(p, entryName);
+                    if (!fs.existsSync(dst)) {
+                        try {
+                            fs.cpSync(src, dst, { recursive: true, force: true });
+                            added++;
+                        } catch (e: any) {
+                            console.warn(`[FORGE-LIB] Failed to seed ${entryName}: ${e.message}`);
+                        }
+                    }
                 }
-                console.log(`[FORGE-LIB] Seeded forge-lib/libraries from bundled libraries (${fs.readdirSync(p).length} libs)`);
+                if (added > 0) {
+                    console.log(`[FORGE-LIB] Synced ${added} missing bundled libraries → forge-lib/libraries now ${fs.readdirSync(p).length} libs`);
+                }
+            } catch (e: any) {
+                console.warn(`[FORGE-LIB] seed sync failed: ${e.message}`);
             }
         }
         return p;

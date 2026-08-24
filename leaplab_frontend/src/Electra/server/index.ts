@@ -18,7 +18,7 @@ import {
   pkgUninstallLibrary,
 } from '../../drivers/platformio/pio.js';
 import { fqbnToPioTarget, isEsp32Fqbn } from '../../drivers/platformio/boardMap.js';
-import { createPioProject, getPioBuildDir, listPioBuildFiles } from '../../drivers/platformio/project.js';
+import { createPioProject, getPioBuildDir, listPioBuildFiles, parseMissingHeaderFromError, HEADER_TO_LIBRARY } from '../../drivers/platformio/project.js';
 import { searchRegistry } from '../../drivers/platformio/registry.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -113,10 +113,30 @@ app.post('/compile', async (req, res) => {
       libDeps: !isEsp32Fqbn(board) ? ['SoftwareSerial', 'Servo'] : [],
     });
 
-    const result = await runCLI(['run', '-d', projectDir]);
+    let result = await runCLI(['run', '-d', projectDir]);
     if (result.code !== 0) {
-      const message = (result.stderr || result.stdout || `Exit code ${result.code}`).slice(-4000);
-      return res.json({ success: false, errors: [message] });
+      const combined = (result.stderr || '') + '\n' + (result.stdout || '');
+      const missing = parseMissingHeaderFromError(combined);
+      if (missing) {
+        const libName = HEADER_TO_LIBRARY[missing] || missing.replace(/\.h$/i, '');
+        console.warn(`[SERVER] Missing header ${missing} → trying library "${libName}"`);
+        try {
+          await pkgInstallLibrary(libName, FORGE_LIB_LIBRARIES ?? undefined);
+        } catch (e) { console.warn(`[SERVER] auto-install "${libName}" failed (will retry via lib_deps anyway)`); }
+        const baseDeps: string[] = !isEsp32Fqbn(board) ? ['SoftwareSerial', 'Servo'] : [];
+        const retryDeps = [...new Set([...baseDeps, libName])];
+        createPioProject(projectDir, code, {
+          board: target.board,
+          platform: target.platform,
+          libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+          libDeps: retryDeps,
+        });
+        result = await runCLI(['run', '-d', projectDir]);
+      }
+      if (result.code !== 0) {
+        const message = (result.stderr || result.stdout || `Exit code ${result.code}`).slice(-4000);
+        return res.json({ success: false, errors: [message] });
+      }
     }
 
     // Look for any .hex file in the build dir (names vary by platform)

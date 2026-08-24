@@ -175,6 +175,76 @@ function pioTarget(fqbn: string): { board: string; platform: string } {
   throw new Error(`Unsupported board FQBN for PlatformIO: ${fqbn}`);
 }
 
+const HEADER_TO_LIB: Record<string, string> = {
+  'RTClib.h': 'RTClib',
+  'Adafruit_BusIO_Register.h': 'Adafruit BusIO',
+  'Adafruit_I2CDevice.h': 'Adafruit BusIO',
+  'Adafruit_SPIDevice.h': 'Adafruit BusIO',
+  'Adafruit_GFX.h': 'Adafruit GFX Library',
+  'Adafruit_GrayOLED.h': 'Adafruit GFX Library',
+  'Adafruit_ILI9341.h': 'Adafruit ILI9341',
+  'Adafruit_MPU6050.h': 'Adafruit MPU6050',
+  'Adafruit_NeoPixel.h': 'Adafruit NeoPixel',
+  'Adafruit_SH110X.h': 'Adafruit SH110X',
+  'Adafruit_SSD1306.h': 'Adafruit SSD1306',
+  'Adafruit_STMPE610.h': 'Adafruit STMPE610',
+  'TouchScreen.h': 'Adafruit TouchScreen',
+  'Adafruit_TSC2007.h': 'Adafruit TSC2007',
+  'Adafruit_Sensor.h': 'Adafruit Unified Sensor',
+  'DHT.h': 'DHT sensor library',
+  'DHT_U.h': 'DHT sensor library',
+  'HX711.h': 'HX711 Arduino Library',
+  'LiquidCrystal_I2C.h': 'LiquidCrystal I2C',
+  'PubSubClient.h': 'PubSubClient',
+  'ArduinoJson.h': 'ArduinoJson',
+  'ESP32Servo.h': 'ESP32Servo',
+};
+
+function extractIncludesLocal(code: string): string[] {
+  const headers: string[] = [];
+  const re = /#include\s*[<"]([^>"]+)[>"]/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(code)) !== null) {
+    const h = m[1].trim().split('/').pop()!;
+    if (h.endsWith('.h') || h.endsWith('.hpp')) headers.push(h);
+  }
+  return [...new Set(headers)];
+}
+function headerExistsLocal(header: string, libDirs: string[]): boolean {
+  for (const dir of libDirs) {
+    if (!fs.existsSync(dir)) continue;
+    try {
+      const libs = fs.readdirSync(dir, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
+      for (const lib of libs) {
+        if (fs.existsSync(path.join(dir, lib, header)) || fs.existsSync(path.join(dir, lib, 'src', header))) return true;
+        const src = path.join(dir, lib, 'src');
+        if (fs.existsSync(src)) {
+          try { if (fs.readdirSync(src).some((f: string) => f.toLowerCase() === header.toLowerCase())) return true; } catch {}
+        }
+      }
+    } catch {}
+  }
+  return false;
+}
+function resolveLibDepsLocal(code: string, opts: { libDirs?: string[]; libDeps?: string[] }): string[] {
+  const base = opts.libDeps ? [...opts.libDeps] : [];
+  const lower = new Set(base.map(b => b.toLowerCase()));
+  const headers = extractIncludesLocal(code);
+  const libDirs = opts.libDirs || [];
+  for (const h of headers) {
+    if (headerExistsLocal(h, libDirs)) continue;
+    if (['Arduino.h', 'SPI.h', 'Wire.h', 'EEPROM.h'].includes(h)) continue;
+    const mapped = HEADER_TO_LIB[h] || h.replace(/\.h$/i, '');
+    if (['Arduino', 'SPI', 'Wire', 'EEPROM'].includes(mapped)) continue;
+    if (!lower.has(mapped.toLowerCase())) { base.push(mapped); lower.add(mapped.toLowerCase()); }
+  }
+  return base;
+}
+function parseMissingHeaderLocal(err: string): string | null {
+  const m = err.match(/fatal error:\s*([^:\s]+\.h)\s*:\s*No such file/i) || err.match(/No such file or directory[^]*?([A-Za-z0-9_]+\.h)/i);
+  return m ? m[1].split('/').pop()! : null;
+}
+
 /**
  * Write a PlatformIO project (platformio.ini + src/main.ino) into projectDir.
  */
@@ -191,6 +261,8 @@ function createPioProject(
   fs.mkdirSync(srcDir, { recursive: true });
   fs.writeFileSync(path.join(srcDir, 'main.ino'), code, 'utf-8');
 
+  const resolvedDeps = resolveLibDepsLocal(code, opts);
+  const effectiveDeps = resolvedDeps.length ? resolvedDeps : opts.libDeps;
   const lines = [
     `[env:${target.board}]`,
     `platform = ${target.platform}`,
@@ -201,10 +273,13 @@ function createPioProject(
     lines.push('lib_extra_dirs =');
     for (const dir of opts.libDirs) lines.push(`    ${dir.replace(/\\/g, '/')}`);
   }
-  if (opts.libDeps?.length) {
+  if (effectiveDeps?.length || opts.libDirs?.length) {
     lines.push('lib_ldf_mode = deep+');
+    lines.push('lib_compat_mode = off');
+  }
+  if (effectiveDeps?.length) {
     lines.push('lib_deps =');
-    for (const dep of opts.libDeps) lines.push(`    ${dep}`);
+    for (const dep of effectiveDeps) lines.push(`    ${dep}`);
   }
   if (opts.mergeBinaries) lines.push('board_build.merge_binaries = yes');
   if (opts.uploadPort) lines.push(`upload_port = ${opts.uploadPort}`);
@@ -747,13 +822,37 @@ app.post('/compile', async (req: Request, res: Response) => {
 
       console.log(`[COMPILE:${reqId}] 🔨 Running PlatformIO build in ${projectDir}...`);
       const pioStartTime = Date.now();
-      const { stdout, stderr, code: exitCode } = await runCLI(['run', '-d', projectDir, '-j', '2'], 900_000);
-      const pioDuration = ((Date.now() - pioStartTime) / 1000).toFixed(2);
+      let { stdout, stderr, code: exitCode } = await runCLI(['run', '-d', projectDir, '-j', '2'], 900_000);
+      let pioDuration = ((Date.now() - pioStartTime) / 1000).toFixed(2);
 
       if (exitCode !== 0) {
-        console.error(`[COMPILE:${reqId}] ❌ Build FAILED (exit ${exitCode}) in ${pioDuration}s`);
-        console.error(`[COMPILE:${reqId}] stderr:`, (stderr || '').slice(-1500));
-        return res.json({ success: false, errors: formatPioError({ stdout, stderr, code: exitCode }) });
+        const combined = (stderr || '') + '\n' + (stdout || '');
+        const missing = parseMissingHeaderLocal(combined);
+        if (missing) {
+          const libName = HEADER_TO_LIB[missing] || missing.replace(/\.h$/i, '');
+          console.warn(`[COMPILE:${reqId}] Missing header ${missing} → trying library "${libName}"`);
+          try {
+            if (FORGE_LIB_LIBRARIES) {
+              await runCLI(['pkg', 'install', '--library', libName, '--storage-dir', FORGE_LIB_LIBRARIES], 120_000);
+            } else {
+              await runCLI(['pkg', 'install', '--library', libName], 120_000);
+            }
+          } catch {}
+          const retryDeps = [...new Set([...(!isESP32 ? ['SoftwareSerial', 'Servo'] : []), libName])];
+          createPioProject(projectDir, processedCode, target, {
+            libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+            libDeps: retryDeps,
+          });
+          console.log(`[COMPILE:${reqId}] Retrying build with "${libName}"...`);
+          const retry = await runCLI(['run', '-d', projectDir, '-j', '2'], 900_000);
+          stdout = retry.stdout; stderr = retry.stderr; exitCode = retry.code;
+          pioDuration = ((Date.now() - pioStartTime) / 1000).toFixed(2);
+        }
+        if (exitCode !== 0) {
+          console.error(`[COMPILE:${reqId}] ❌ Build FAILED (exit ${exitCode}) in ${pioDuration}s`);
+          console.error(`[COMPILE:${reqId}] stderr:`, (stderr || '').slice(-1500));
+          return res.json({ success: false, errors: formatPioError({ stdout, stderr, code: exitCode }) });
+        }
       }
 
       console.log(`[COMPILE:${reqId}] ✓ PlatformIO build succeeded in ${pioDuration}s`);
