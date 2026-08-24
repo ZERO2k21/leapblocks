@@ -11,12 +11,17 @@ import { BrowserWindow, app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { spawn } from 'child_process';
 import { getPioPathIfAvailable, ensurePlatformIO, getBundledPioEnv, getBundledLibrariesSeedPath } from './ensurePlatformIO';
 import { runPio, platformEnsure, pkgInstallLibrary, pkgUninstallLibrary, PioResult, PioRunOptions } from './pio';
 import { fqbnToPioTarget, isEsp32Fqbn, PioBoardTarget } from './boardMap';
-import { createPioProject, getPioBuildDir, listPioBuildFiles } from './project';
+import { createPioProject, getPioBuildDir, listPioBuildFiles, parseMissingHeaderFromError, HEADER_TO_LIBRARY } from './project';
 import { searchRegistry, RegistryLibrary } from './registry';
+import { flashHexViaStk500 } from './stk500';
+import { parseIntelHex } from '../../webflash/intelHex';
+
+// Serial access for the pre-upload bootloader reset pulse (same native
+// module the serial monitor uses).
+const { SerialPort } = require('serialport');
 
 // ── forge-lib manifest types ──────────────────────────────────────────────
 interface ForgeLibManifestEntry {
@@ -176,6 +181,14 @@ export class ArduinoUploader {
         return { ...extra, env: { ...env, ...extra.env } };
     }
 
+    /** Zero-GPL check — Python esptool (GPLv2) is NOT bundled in the commercial installer. */
+    private isPythonEsptoolAvailable(): boolean {
+        const pioPath = getPioPathIfAvailable();
+        if (!pioPath) return false;
+        const site = path.join(path.dirname(pioPath), 'python', 'Lib', 'site-packages', 'esptool');
+        return fs.existsSync(site);
+    }
+
     private async runPioBuild(
         code: string,
         fqbn: string,
@@ -186,23 +199,78 @@ export class ArduinoUploader {
         const target = fqbnToPioTarget(fqbn);
         const libsFolder = this.getLibrariesPath();
 
+        // First attempt: createPioProject now auto-resolves #includes → lib_deps
         createPioProject(projectDir, code, {
             board: target.board,
             platform: target.platform,
             libDirs: fs.existsSync(libsFolder) ? [libsFolder] : [],
+            libDeps: !isEsp32Fqbn(fqbn) ? ['SoftwareSerial', 'Servo'] : [],
             mergeBinaries: opts.mergeBinaries,
             uploadPort: opts.uploadPort,
         });
 
         const args = ['run', '-d', projectDir, '-j', '2'];
-        if (opts.uploadPort) args.splice(args.indexOf('-d') + 2, 0, '-t', 'upload');
 
         console.log(`[FORGE UPLOADER] Running: pio ${args.join(' ')} (${fqbn} → ${target.board})`);
-        const result = await runPio(args, this.pioOptions({ binPath: pioPath, timeoutMs: opts.timeoutMs ?? 180_000 }));
-        if (result.code !== 0) {
-            throw new Error(this.formatPioError(result));
+        let result = await runPio(args, this.pioOptions({ binPath: pioPath, timeoutMs: opts.timeoutMs ?? 180_000 }));
+        if (result.code === 0) {
+            return { target, projectDir, buildDir: getPioBuildDir(projectDir, target.board) };
         }
-        return { target, projectDir, buildDir: getPioBuildDir(projectDir, target.board) };
+
+        // ── Zero-GPL: ESP32 toolchain needs Python esptool (GPLv2) — not bundled in this installer ─
+        const combinedForGplCheck = (result.stderr || '') + '\n' + (result.stdout || '');
+        if (combinedForGplCheck.includes("No module named 'esptool'") || combinedForGplCheck.includes('ModuleNotFoundError')) {
+            throw new Error(
+                `ESP32 build requires Python esptool (GPLv2) which is not bundled in this zero-GPL commercial build.\n` +
+                `AVR boards (Uno/Nano/Mega) work fully offline and are 100% GPL-free.\n` +
+                `For ESP32: install GPL esptool separately to enable it:\n` +
+                `  "${path.join(path.dirname(pioPath), 'python', 'python.exe')}" -m pip install esptool\n` +
+                `or use the standard (GPL-compliant) installer that ships esptool with its GPL notice ` +
+                `(public/licenses/README.txt). WebSerial flashing already uses esptool-js (MIT) and needs no GPL.\n` +
+                `Original error: ${this.formatPioError(result).slice(0, 800)}`
+            );
+        }
+
+        // ── Auto-recovery for missing header (e.g. user typed #include <RTClib.h> but lib not bundled) ─
+        const missingHeader = parseMissingHeaderFromError((result.stderr || '') + '\n' + (result.stdout || ''));
+        if (missingHeader) {
+            const mappedLib = HEADER_TO_LIBRARY[missingHeader] || missingHeader.replace(/\.h$/i, '');
+            console.warn(`[FORGE UPLOADER] Build failed due to missing header ${missingHeader} → trying library "${mappedLib}"`);
+            // Try to install the library into forge-lib (best-effort, then retry via lib_deps)
+            try {
+                const alreadyExists = fs.existsSync(path.join(libsFolder, mappedLib));
+                if (!alreadyExists) {
+                    console.log(`[FORGE UPLOADER] Installing missing library "${mappedLib}" into forge-lib...`);
+                    await pkgInstallLibrary(mappedLib, libsFolder, this.pioOptions({ binPath: pioPath, timeoutMs: 120_000 }));
+                }
+            } catch (e: any) {
+                console.warn(`[FORGE UPLOADER] auto-install of "${mappedLib}" failed: ${e.message} (will still retry via lib_deps)`);
+            }
+
+            // Retry: add the mapped lib to lib_deps and rebuild (PlatformIO will fetch if still missing)
+            const retryLibDeps = [...(!isEsp32Fqbn(fqbn) ? ['SoftwareSerial', 'Servo'] : []), mappedLib];
+            // Ensure we don't duplicate if already present
+            const uniqueDeps = [...new Set(retryLibDeps)];
+            createPioProject(projectDir, code, {
+                board: target.board,
+                platform: target.platform,
+                libDirs: fs.existsSync(libsFolder) ? [libsFolder] : [],
+                libDeps: uniqueDeps,
+                mergeBinaries: opts.mergeBinaries,
+                uploadPort: opts.uploadPort,
+            });
+            console.log(`[FORGE UPLOADER] Retrying build with lib_deps += "${mappedLib}"`);
+            result = await runPio(args, this.pioOptions({ binPath: pioPath, timeoutMs: opts.timeoutMs ?? 180_000 }));
+            if (result.code === 0) {
+                console.log(`[FORGE UPLOADER] Retry succeeded with "${mappedLib}"`);
+                return { target, projectDir, buildDir: getPioBuildDir(projectDir, target.board) };
+            }
+            // Enrich error with helpful hint
+            const hint = `📦 Missing library for "${missingHeader}": tried "${mappedLib}". If this is a custom library, install it via the Library Manager or check the header name.`;
+            throw new Error(this.formatPioError(result) + '\n\n' + hint);
+        }
+
+        throw new Error(this.formatPioError(result));
     }
 
     private formatPioError(result: PioResult): string {
@@ -292,14 +360,30 @@ await pkgInstallLibrary(libName, libsFolder, this.pioOptions({ binPath: pioPath 
         const p = path.join(this.getForgeLibCachePath(), 'libraries');
         if (!fs.existsSync(p)) {
             fs.mkdirSync(p, { recursive: true });
-            const seed = getBundledLibrariesSeedPath();
-            if (seed) {
-                for (const entry of fs.readdirSync(seed, { withFileTypes: true })) {
-                    const src = path.join(seed, entry.name);
-                    const dst = path.join(p, entry.name);
-                    fs.cpSync(src, dst, { recursive: true, force: true });
+        }
+        // Always sync missing seed libraries (fixes stale forge-lib after app update)
+        const seed = getBundledLibrariesSeedPath();
+        if (seed) {
+            try {
+                const seeded = fs.readdirSync(seed, { withFileTypes: true }).filter(d => d.isDirectory() || d.isFile()).map(d => d.name);
+                let added = 0;
+                for (const entryName of seeded) {
+                    const src = path.join(seed, entryName);
+                    const dst = path.join(p, entryName);
+                    if (!fs.existsSync(dst)) {
+                        try {
+                            fs.cpSync(src, dst, { recursive: true, force: true });
+                            added++;
+                        } catch (e: any) {
+                            console.warn(`[FORGE-LIB] Failed to seed ${entryName}: ${e.message}`);
+                        }
+                    }
                 }
-                console.log(`[FORGE-LIB] Seeded forge-lib/libraries from bundled libraries (${fs.readdirSync(p).length} libs)`);
+                if (added > 0) {
+                    console.log(`[FORGE-LIB] Synced ${added} missing bundled libraries → forge-lib/libraries now ${fs.readdirSync(p).length} libs`);
+                }
+            } catch (e: any) {
+                console.warn(`[FORGE-LIB] seed sync failed: ${e.message}`);
             }
         }
         return p;
@@ -393,7 +477,21 @@ await pkgInstallLibrary(libName, libsFolder, this.pioOptions({ binPath: pioPath 
                 };
             }
 
-            this.sendProgress(65, 'Preparing upload...');
+            // 1200-baud touch reset is ONLY for native USB CDC boards (Leonardo, Micro, SAMD)
+            // where the MCU firmware triggers bootloader mode on a 1200bps touch.
+            // Standard AVR boards (Uno, Nano, Mega) have hardware DTR auto-reset pulses
+            // driven directly by avrdude during port opening.
+            const isNativeUsbCdc = fqbn.includes('leonardo') || fqbn.includes('micro') || fqbn.includes('zero') || fqbn.includes('samd');
+            if (isNativeUsbCdc) {
+                this.sendProgress(65, 'Preparing upload (1200-baud touch reset)...');
+                try {
+                    await this.pulseDtrReset(port);
+                    await new Promise(r => setTimeout(r, 800));
+                } catch (resetError: any) {
+                    console.warn('[FORGE UPLOADER] 1200-baud touch reset failed (continuing):', resetError.message);
+                }
+            }
+
             this.sendProgress(70, 'Uploading to board...');
             try {
                 this.sendProgress(75, 'Flashing firmware...');
@@ -402,7 +500,7 @@ await pkgInstallLibrary(libName, libsFolder, this.pioOptions({ binPath: pioPath 
             } catch (uploadError: any) {
                 return {
                     success: false,
-                    error: `Upload failed: ${uploadError.message}`,
+                    error: uploadError.message,
                 };
             }
 
@@ -415,24 +513,175 @@ await pkgInstallLibrary(libName, libsFolder, this.pioOptions({ binPath: pioPath 
         }
     }
 
+    /**
+     * Pulse DTR on the board's serial port to reset it into the bootloader
+     * for native USB CDC devices (e.g. Leonardo / Micro).
+     */
+    private pulseDtrReset(port: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            let serial: any;
+            try {
+                serial = new SerialPort({ path: port, baudRate: 1200, autoOpen: false });
+            } catch (openError: any) {
+                reject(openError);
+                return;
+            }
+
+            const fail = (err: Error) => {
+                try { serial.close(); } catch { /* already closed */ }
+                reject(err);
+            };
+
+            serial.open((openErr: Error | null) => {
+                if (openErr) {
+                    fail(openErr);
+                    return;
+                }
+                try {
+                    serial.set({ dtr: false }, (err1: Error | null) => {
+                        if (err1) { fail(err1); return; }
+                        setTimeout(() => {
+                            serial.set({ dtr: true }, (err2: Error | null) => {
+                                if (err2) { fail(err2); return; }
+                                setTimeout(() => {
+                                    serial.close((closeErr: Error | null) => {
+                                        if (closeErr) { reject(closeErr); return; }
+                                        resolve();
+                                    });
+                                }, 100);
+                            });
+                        }, 100);
+                    });
+                } catch (setError: any) {
+                    fail(setError);
+                }
+            });
+        });
+    }
+
     private async runPioUpload(code: string, fqbn: string, projectDir: string, port: string) {
         const pioPath = await this.getPioPath();
         const target = fqbnToPioTarget(fqbn);
         const libsFolder = this.getLibrariesPath();
 
+        // 1) Compile the sketch with PlatformIO.
         createPioProject(projectDir, code, {
             board: target.board,
             platform: target.platform,
             libDirs: fs.existsSync(libsFolder) ? [libsFolder] : [],
+            libDeps: !isEsp32Fqbn(fqbn) ? ['SoftwareSerial', 'Servo'] : [],
             uploadPort: port,
         });
-
-        const args = ['run', '-t', 'upload', '-d', projectDir];
-        console.log(`[FORGE UPLOADER] Running: pio ${args.join(' ')} (${fqbn} → ${target.board}, port ${port})`);
-        const result = await runPio(args, this.pioOptions({ binPath: pioPath, timeoutMs: 300_000 }));
-        if (result.code !== 0) {
-            throw new Error(this.formatPioError(result));
+        console.log(`[FORGE UPLOADER] Running: pio run (${fqbn} → ${target.board}, port ${port})`);
+        const buildResult = await runPio(['run', '-d', projectDir, '-j', '2'], this.pioOptions({ binPath: pioPath, timeoutMs: 180_000 }));
+        if (buildResult.code !== 0) {
+            throw new Error(this.formatPioError(buildResult));
         }
+
+        // 2) Upload.
+        if (target.platform === 'atmelavr') {
+            // Clean-room STK500v1 flasher (no avrdude — GPL). The board is
+            // woken into its bootloader with the 1200-baud touch reset, then
+            // pages are written straight over the serial link. This mirrors
+            // what the Arduino IDE does, without any GPL tooling.
+            const hexPath = this.findBuildHex(projectDir, target.board);
+            await this.uploadAvrViaStk500(hexPath, port, fqbn);
+        } else {
+            const uploadResult = await runPio(['run', '-t', 'upload', '-d', projectDir], this.pioOptions({ binPath: pioPath, timeoutMs: 45_000 }));
+            if (uploadResult.code !== 0) {
+                throw new Error(this.formatPioError(uploadResult));
+            }
+        }
+    }
+
+    /** Locate the built firmware .hex for an AVR board. */
+    private findBuildHex(projectDir: string, board: string): string {
+        const files = listPioBuildFiles(projectDir, board);
+        const hex = files.find((f) => f.endsWith('.hex'));
+        if (!hex) {
+            throw new Error(`Compiled successfully, but no .hex file was found in ${getPioBuildDir(projectDir, board)}.`);
+        }
+        return path.join(getPioBuildDir(projectDir, board), hex);
+    }
+
+    /**
+     * Flash an AVR board through its STK500v1 bootloader (clean-room, no
+     * avrdude). Each attempt does the 1200-baud touch reset, waits for the
+     * bootloader to initialise, then writes the firmware page-by-page.
+     * Falls back to the other bootloader baud rate when the sync fails.
+     */
+    private async uploadAvrViaStk500(hexPath: string, port: string, fqbn: string) {
+        const hexText = fs.readFileSync(hexPath, 'utf-8');
+        const image = parseIntelHex(hexText);
+        if (image.data.length === 0) {
+            throw new Error(`No firmware data found in ${hexPath}.`);
+        }
+
+        const isNanoOld = fqbn === 'arduino:avr:nano_old';
+        // Optiboot boards (Uno, Nano, etc.) only speak 115200; only the old
+        // AtmegaBOOT (nano_old) runs at 57600. Don't waste attempts on a
+        // baud rate the bootloader can't hear.
+        const baudOrder = isNanoOld ? ['57600', '115200'] : ['115200'];
+        const pageSize = 128;
+        const event = (msg: string) => {
+            this.sendProgress(83, msg);
+            console.log(`[FORGE UPLOADER] ${msg}`);
+        };
+
+        let lastError: Error | null = null;
+        for (const baud of baudOrder) {
+            // Like avrdude: retry with a fresh touch reset on every failed sync.
+            for (let attempt = 1; attempt <= 5; attempt++) {
+                this.sendProgress(82, `Uploading at ${baud} baud (attempt ${attempt}/5)...`);
+                event(`1200-baud touch reset on ${port}...`);
+                try {
+                    await this.pulseDtrReset(port);
+                } catch (resetError: any) {
+                    event(`touch reset failed (continuing): ${resetError.message}`);
+                }
+                await new Promise((r) => setTimeout(r, 400));
+
+                try {
+                    await flashHexViaStk500({
+                        port,
+                        baud: Number(baud),
+                        image,
+                        pageSize,
+                        onPage: (page, total) => {
+                            this.sendProgress(85 + Math.round((page / total) * 10), `Programming page ${page}/${total}`);
+                        },
+                        onEvent: event,
+                    });
+                    event(`STK500 upload OK at ${baud} baud (verified)`);
+                    // Reboot the board so the freshly written firmware starts —
+                    // the reset pulse re-enters the bootloader, which runs the
+                    // app after its sync timeout (same as opening the IDE monitor).
+                    this.sendProgress(96, 'Rebooting the board...');
+                    try {
+                        await this.pulseDtrReset(port);
+                    } catch (rebootError: any) {
+                        event(`reboot pulse failed (continuing): ${rebootError?.message}`);
+                    }
+                    await new Promise((r) => setTimeout(r, 300));
+                    return;
+                } catch (err: any) {
+                    const syncFailed = err?.message?.includes('bootloader did not answer the STK500 sync');
+                    lastError = err;
+                    event(`attempt ${attempt}/5 failed at ${baud} baud: ${err?.message}`);
+                    // Non-sync errors (bad response, verify failure) won't
+                    // improve by retrying — surface them right away.
+                    if (!syncFailed) break;
+await new Promise((r) => setTimeout(r, 200));
+                }
+            }
+        }
+
+        throw new Error(
+            `The bootloader did not respond on ${port} (tried ${baudOrder.join(', ')} baud). ` +
+            (lastError ? `Last error: ${lastError.message}. ` : '') +
+            `If the board's TX/RX LEDs don't flash during upload, its auto-reset circuit may be disabled — ` +
+            `press and hold the board's reset button, start the upload, and release it when the upload begins.`
+        );
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -460,6 +709,19 @@ await pkgInstallLibrary(libName, libsFolder, this.pioOptions({ binPath: pioPath 
                 );
                 await this.ensureEsp32Library('ESP32Servo');
                 processedCode = migrateESP32LedcAPI(processedCode);
+                if (!this.isPythonEsptoolAvailable()) {
+                    return {
+                        success: false,
+                        error:
+                            'Zero-GPL build: ESP32 compilation needs Python esptool (GPLv2) which is not bundled.\n' +
+                            'AVR boards (Uno/Nano/Mega) are 100% GPL-free and work offline.\n' +
+                            'For ESP32, either:\n' +
+                            '  • Use the standard installer (ships esptool with GPL notice in public/licenses/)\n' +
+                            '  • Or install GPL esptool manually: run the bundled Python:\n' +
+                            '    "' + path.join(path.dirname(getPioPathIfAvailable() || 'src/drivers/platformio'), 'python', 'python.exe') + '" -m pip install esptool\n' +
+                            '  • Or flash via WebSerial + esptool-js (MIT, already bundled) — no GPL needed for upload.',
+                    };
+                }
             }
 
             try {
@@ -513,6 +775,16 @@ await pkgInstallLibrary(libName, libsFolder, this.pioOptions({ binPath: pioPath 
             return {
                 success: false,
                 error: 'ESP32 platform installation failed. Please check your connection and try again.',
+            };
+        }
+        if (!this.isPythonEsptoolAvailable()) {
+            return {
+                success: false,
+                error:
+                    'Zero-GPL build: ESP32-C3 simulation needs Python esptool (GPLv2) for ELF→BIN.\n' +
+                    'Not bundled in this commercial installer. Use AVR for offline GPL-free, or install esptool:\n' +
+                    '  "' + path.join(path.dirname(getPioPathIfAvailable() || 'src/drivers/platformio'), 'python', 'python.exe') + '" -m pip install esptool\n' +
+                    'See public/licenses/README.txt §1.',
             };
         }
 

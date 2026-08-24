@@ -16,6 +16,8 @@ export interface PioProjectOptions {
     platform: string;
     /** Extra library directories (forge-lib/libraries). */
     libDirs?: string[];
+    /** Extra lib_deps entries (e.g. `SoftwareSerial`). */
+    libDeps?: string[];
     /** Merge bootloader+partitions+app into firmware.merged.bin (ESP32 simulation). */
     mergeBinaries?: boolean;
     /** Serial port for `-t upload`. */
@@ -24,14 +26,132 @@ export interface PioProjectOptions {
     extraEnv?: string[];
 }
 
+// ── Header → PlatformIO library name map (covers all bundled libs + common community libs) ─
+export const HEADER_TO_LIBRARY: Record<string, string> = {
+    'RTClib.h': 'RTClib',
+    'Adafruit_BusIO_Register.h': 'Adafruit BusIO',
+    'Adafruit_I2CDevice.h': 'Adafruit BusIO',
+    'Adafruit_SPIDevice.h': 'Adafruit BusIO',
+    'Adafruit_GFX.h': 'Adafruit GFX Library',
+    'Adafruit_GrayOLED.h': 'Adafruit GFX Library',
+    'Adafruit_SPITFT.h': 'Adafruit GFX Library',
+    'Adafruit_ILI9341.h': 'Adafruit ILI9341',
+    'Adafruit_MPU6050.h': 'Adafruit MPU6050',
+    'Adafruit_NeoPixel.h': 'Adafruit NeoPixel',
+    'Adafruit_SH110X.h': 'Adafruit SH110X',
+    'Adafruit_SSD1306.h': 'Adafruit SSD1306',
+    'Adafruit_STMPE610.h': 'Adafruit STMPE610',
+    'TouchScreen.h': 'Adafruit TouchScreen',
+    'Adafruit_TSC2007.h': 'Adafruit TSC2007',
+    'Adafruit_Sensor.h': 'Adafruit Unified Sensor',
+    'DHT.h': 'DHT sensor library',
+    'DHT_U.h': 'DHT sensor library',
+    'HX711.h': 'HX711 Arduino Library',
+    'LiquidCrystal_I2C.h': 'LiquidCrystal I2C',
+    // Common community libs (not bundled but auto-resolved via lib_deps)
+    'PubSubClient.h': 'PubSubClient',
+    'ArduinoJson.h': 'ArduinoJson',
+    'ESP32Servo.h': 'ESP32Servo',
+    'Servo.h': 'Servo',
+    'SoftwareSerial.h': 'SoftwareSerial',
+    'WiFi.h': 'WiFi',
+    'HTTPClient.h': 'HTTPClient',
+    'WebSocketsClient.h': 'WebSockets',
+    'MFRC522.h': 'MFRC522',
+    'IRremote.h': 'IRremote',
+    'Keypad.h': 'Keypad',
+    'OneWire.h': 'OneWire',
+    'DallasTemperature.h': 'DallasTemperature',
+    'SPI.h': 'SPI',
+    'Wire.h': 'Wire',
+    'SD.h': 'SD',
+    'EEPROM.h': 'EEPROM',
+};
+
+export function extractIncludes(code: string): string[] {
+    const headers: string[] = [];
+    const re = /#include\s*[<"]([^>"]+)[>"]/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(code)) !== null) {
+        const h = m[1].trim();
+        if (h.endsWith('.h') || h.endsWith('.hpp')) {
+            const base = h.split('/').pop()!;
+            headers.push(base);
+        }
+    }
+    return [...new Set(headers)];
+}
+
+function headerExistsInLibDirs(header: string, libDirs: string[]): boolean {
+    for (const dir of libDirs) {
+        if (!fs.existsSync(dir)) continue;
+        try {
+            const libs = fs.readdirSync(dir, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
+            for (const lib of libs) {
+                const candidates = [
+                    path.join(dir, lib, header),
+                    path.join(dir, lib, 'src', header),
+                    path.join(dir, lib, 'src', header.toLowerCase()),
+                ];
+                for (const c of candidates) if (fs.existsSync(c)) return true;
+                // Also check any .h under src recursively for case-insensitive match (cheap: top-level only)
+                const libSrc = path.join(dir, lib, 'src');
+                if (fs.existsSync(libSrc)) {
+                    try {
+                        const srcFiles = fs.readdirSync(libSrc);
+                        if (srcFiles.some(f => f.toLowerCase() === header.toLowerCase())) return true;
+                    } catch { /* ignore */ }
+                }
+            }
+        } catch { /* ignore */ }
+    }
+    return false;
+}
+
+export function resolveLibDepsFromCode(code: string, opts: PioProjectOptions): string[] {
+    const base = opts.libDeps ? [...opts.libDeps] : [];
+    const baseLower = new Set(base.map(b => b.toLowerCase()));
+    const headers = extractIncludes(code);
+    const libDirs = opts.libDirs || [];
+
+    for (const header of headers) {
+        if (headerExistsInLibDirs(header, libDirs)) continue;
+        // Skip built-in core headers that never need lib_deps
+        if (['Arduino.h', 'SPI.h', 'Wire.h', 'EEPROM.h', 'SoftwareSerial.h', 'Servo.h'].includes(header) && headerExistsInLibDirs(header, libDirs) === false) {
+            // These are either core or bundled; only add if mapping says otherwise
+            // For core headers, don't force lib_deps unless missing in bundled
+            if (['SPI.h', 'Wire.h', 'EEPROM.h'].includes(header)) continue;
+        }
+        const mapped = HEADER_TO_LIBRARY[header] || header.replace(/\.h$/i, '').replace(/\.hpp$/i, '');
+        if (!mapped) continue;
+        if (baseLower.has(mapped.toLowerCase())) continue;
+        // Avoid adding core libs that are always available
+        if (['Arduino', 'SPI', 'Wire', 'EEPROM'].includes(mapped)) continue;
+        base.push(mapped);
+        baseLower.add(mapped.toLowerCase());
+    }
+    return base;
+}
+
+export function parseMissingHeaderFromError(errorOutput: string): string | null {
+    const m = errorOutput.match(/fatal error:\s*([^:\s]+\.h)\s*:\s*No such file/i)
+        || errorOutput.match(/No such file or directory[^]*?([A-Za-z0-9_]+\.h)/i);
+    return m ? m[1].split('/').pop()! : null;
+}
+
 /**
  * Write a complete PlatformIO project into `projectDir` and return it.
  * The sketch always lands at <projectDir>/src/main.ino.
  */
 export function createPioProject(projectDir: string, code: string, opts: PioProjectOptions): string {
     const srcDir = path.join(projectDir, 'src');
+    fs.rmSync(srcDir, { recursive: true, force: true });
     fs.mkdirSync(srcDir, { recursive: true });
     fs.writeFileSync(path.join(srcDir, 'main.ino'), code, 'utf-8');
+
+    // Auto-resolve lib_deps from #includes (prevents "No such file or directory" for known headers)
+    const resolvedDeps = resolveLibDepsFromCode(code, opts);
+    const effectiveLibDeps = resolvedDeps.length ? resolvedDeps : opts.libDeps;
 
     const lines: string[] = [
         `[env:${opts.board}]`,
@@ -44,6 +164,20 @@ export function createPioProject(projectDir: string, code: string, opts: PioProj
         lines.push('lib_extra_dirs =');
         for (const dir of opts.libDirs) {
             lines.push(`    ${dir.replace(/\\/g, '/')}`);
+        }
+    }
+
+    // Always enable deep LDF + compat-off when libraries are involved so PlatformIO
+    // finds headers in lib_extra_dirs transitively (e.g. RTClib → Adafruit BusIO).
+    if (effectiveLibDeps?.length || opts.libDirs?.length) {
+        lines.push('lib_ldf_mode = deep+');
+        lines.push('lib_compat_mode = off');
+    }
+
+    if (effectiveLibDeps?.length) {
+        lines.push('lib_deps =');
+        for (const dep of effectiveLibDeps) {
+            lines.push(`    ${dep}`);
         }
     }
 

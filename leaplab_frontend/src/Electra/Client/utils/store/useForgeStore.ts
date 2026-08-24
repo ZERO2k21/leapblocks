@@ -318,9 +318,37 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
       const isESP32Transpiled = hexString === '__esp32_c3_transpiled__';
       const isESP32Binary = hexString === '__esp32_c3_binary__' || hexString === '__esp32_c3_riscv__';
-      const isESP32 = isESP32Transpiled || isESP32Binary;
+      const isESP32Sentinel = isESP32Transpiled || isESP32Binary;
+      const isESP32Board = state.board === 'esp32-c3' || state.board === 'esp32';
+      // Guard: transpiled sentinel is only valid for ESP32 boards. If caller sent
+      // '__esp32_c3_transpiled__' while board is still 'arduino-uno' (historical
+      // fallback bug), treat as error rather than init empty AVR CPU with no output.
+      if (isESP32Sentinel && !isESP32Board) {
+        console.error(`[FORGE STORE] ❌ Mismatched sentinel ${hexString} for board ${state.board} — aborting (use compile hex for AVR)`);
+        set((s) => ({
+          serialOutput: s.serialOutput +
+            `\n❌ SIMULATION CONFIG ERROR:\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `Transpiled ESP32 payload received while board is ${state.board}.\n` +
+            `This indicates a compiler fallback bug. Please retry — the cloud compiler may be cold.\n` +
+            `If this persists, switch board to ESP32-C3 or ensure PlatformIO compile succeeds.\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`,
+          isSimulating: false,
+        }));
+        return;
+      }
+      const isESP32 = isESP32Sentinel && isESP32Board;
 
       if (!isESP32) {
+        // AVR path — hex must be non-empty compiled HEX, not a sentinel
+        if (!hexString || hexString.startsWith('__')) {
+          console.error('[FORGE STORE] ❌ Invalid hex for AVR:', hexString.slice(0, 40));
+          set((s) => ({
+            serialOutput: s.serialOutput + `\n❌ COMPILATION FAILED: No HEX produced for ${state.board}. Check compiler logs.\n`,
+            isSimulating: false,
+          }));
+          return;
+        }
         runner.setBoard(state.board);
         console.log('[FORGE STORE] Initializing AVR CPU with hex...');
         runner.initCPU(hexString);

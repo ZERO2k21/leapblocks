@@ -13,7 +13,8 @@ export interface PioBoardTarget {
 
 const FQBN_TO_PIO: Record<string, PioBoardTarget> = {
     'arduino:avr:uno': { board: 'uno', platform: 'atmelavr' },
-    'arduino:avr:nano': { board: 'nanoatmega328', platform: 'atmelavr' },
+    'arduino:avr:nano': { board: 'nanoatmega328new', platform: 'atmelavr' },
+    'arduino:avr:nano_old': { board: 'nanoatmega328', platform: 'atmelavr' },
     'arduino:avr:mega': { board: 'megaatmega2560', platform: 'atmelavr' },
     'arduino:avr:leonardo': { board: 'leonardo', platform: 'atmelavr' },
     'esp32:esp32:esp32': { board: 'esp32dev', platform: 'espressif32' },

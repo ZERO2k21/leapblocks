@@ -16,21 +16,28 @@ export const getBoards = () => {
                 name: 'Arduino Uno',
                 category: 'Arduino',
                 color: '#00979D', // Arduino teal
-                description: 'Perfect for beginners'
+                description: 'ATmega328P (115200 baud)'
             },
             {
-                id: 'arduino_mega',
-                name: 'Arduino Mega',
+                id: 'arduino_nano_old',
+                name: 'Arduino Nano (Old)',
                 category: 'Arduino',
                 color: '#00979D',
-                description: 'More pins & memory'
+                description: 'FTDI / CH340 (57600 baud)'
             },
             {
                 id: 'arduino_nano',
                 name: 'Arduino Nano',
                 category: 'Arduino',
                 color: '#00979D',
-                description: 'Compact size'
+                description: 'New Bootloader (115200 baud)'
+            },
+            {
+                id: 'arduino_mega',
+                name: 'Arduino Mega',
+                category: 'Arduino',
+                color: '#00979D',
+                description: 'ATmega2560 (115200 baud)'
             },
             {
                 id: 'esp32',

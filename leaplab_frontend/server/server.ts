@@ -175,6 +175,76 @@ function pioTarget(fqbn: string): { board: string; platform: string } {
   throw new Error(`Unsupported board FQBN for PlatformIO: ${fqbn}`);
 }
 
+const HEADER_TO_LIB: Record<string, string> = {
+  'RTClib.h': 'RTClib',
+  'Adafruit_BusIO_Register.h': 'Adafruit BusIO',
+  'Adafruit_I2CDevice.h': 'Adafruit BusIO',
+  'Adafruit_SPIDevice.h': 'Adafruit BusIO',
+  'Adafruit_GFX.h': 'Adafruit GFX Library',
+  'Adafruit_GrayOLED.h': 'Adafruit GFX Library',
+  'Adafruit_ILI9341.h': 'Adafruit ILI9341',
+  'Adafruit_MPU6050.h': 'Adafruit MPU6050',
+  'Adafruit_NeoPixel.h': 'Adafruit NeoPixel',
+  'Adafruit_SH110X.h': 'Adafruit SH110X',
+  'Adafruit_SSD1306.h': 'Adafruit SSD1306',
+  'Adafruit_STMPE610.h': 'Adafruit STMPE610',
+  'TouchScreen.h': 'Adafruit TouchScreen',
+  'Adafruit_TSC2007.h': 'Adafruit TSC2007',
+  'Adafruit_Sensor.h': 'Adafruit Unified Sensor',
+  'DHT.h': 'DHT sensor library',
+  'DHT_U.h': 'DHT sensor library',
+  'HX711.h': 'HX711 Arduino Library',
+  'LiquidCrystal_I2C.h': 'LiquidCrystal I2C',
+  'PubSubClient.h': 'PubSubClient',
+  'ArduinoJson.h': 'ArduinoJson',
+  'ESP32Servo.h': 'ESP32Servo',
+};
+
+function extractIncludesLocal(code: string): string[] {
+  const headers: string[] = [];
+  const re = /#include\s*[<"]([^>"]+)[>"]/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(code)) !== null) {
+    const h = m[1].trim().split('/').pop()!;
+    if (h.endsWith('.h') || h.endsWith('.hpp')) headers.push(h);
+  }
+  return [...new Set(headers)];
+}
+function headerExistsLocal(header: string, libDirs: string[]): boolean {
+  for (const dir of libDirs) {
+    if (!fs.existsSync(dir)) continue;
+    try {
+      const libs = fs.readdirSync(dir, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
+      for (const lib of libs) {
+        if (fs.existsSync(path.join(dir, lib, header)) || fs.existsSync(path.join(dir, lib, 'src', header))) return true;
+        const src = path.join(dir, lib, 'src');
+        if (fs.existsSync(src)) {
+          try { if (fs.readdirSync(src).some((f: string) => f.toLowerCase() === header.toLowerCase())) return true; } catch {}
+        }
+      }
+    } catch {}
+  }
+  return false;
+}
+function resolveLibDepsLocal(code: string, opts: { libDirs?: string[]; libDeps?: string[] }): string[] {
+  const base = opts.libDeps ? [...opts.libDeps] : [];
+  const lower = new Set(base.map(b => b.toLowerCase()));
+  const headers = extractIncludesLocal(code);
+  const libDirs = opts.libDirs || [];
+  for (const h of headers) {
+    if (headerExistsLocal(h, libDirs)) continue;
+    if (['Arduino.h', 'SPI.h', 'Wire.h', 'EEPROM.h'].includes(h)) continue;
+    const mapped = HEADER_TO_LIB[h] || h.replace(/\.h$/i, '');
+    if (['Arduino', 'SPI', 'Wire', 'EEPROM'].includes(mapped)) continue;
+    if (!lower.has(mapped.toLowerCase())) { base.push(mapped); lower.add(mapped.toLowerCase()); }
+  }
+  return base;
+}
+function parseMissingHeaderLocal(err: string): string | null {
+  const m = err.match(/fatal error:\s*([^:\s]+\.h)\s*:\s*No such file/i) || err.match(/No such file or directory[^]*?([A-Za-z0-9_]+\.h)/i);
+  return m ? m[1].split('/').pop()! : null;
+}
+
 /**
  * Write a PlatformIO project (platformio.ini + src/main.ino) into projectDir.
  */
@@ -182,12 +252,17 @@ function createPioProject(
   projectDir: string,
   code: string,
   target: { board: string; platform: string },
-  opts: { libDirs?: string[]; mergeBinaries?: boolean; uploadPort?: string } = {},
+  opts: { libDirs?: string[]; libDeps?: string[]; mergeBinaries?: boolean; uploadPort?: string } = {},
 ): string {
   const srcDir = path.join(projectDir, 'src');
+  // Wipe any stale sources (e.g. leftover main.cpp from an earlier mixed-language
+  // build) so PlatformIO never compiles both main.ino and a duplicate main.cpp.
+  fs.rmSync(srcDir, { recursive: true, force: true });
   fs.mkdirSync(srcDir, { recursive: true });
   fs.writeFileSync(path.join(srcDir, 'main.ino'), code, 'utf-8');
 
+  const resolvedDeps = resolveLibDepsLocal(code, opts);
+  const effectiveDeps = resolvedDeps.length ? resolvedDeps : opts.libDeps;
   const lines = [
     `[env:${target.board}]`,
     `platform = ${target.platform}`,
@@ -197,6 +272,14 @@ function createPioProject(
   if (opts.libDirs?.length) {
     lines.push('lib_extra_dirs =');
     for (const dir of opts.libDirs) lines.push(`    ${dir.replace(/\\/g, '/')}`);
+  }
+  if (effectiveDeps?.length || opts.libDirs?.length) {
+    lines.push('lib_ldf_mode = deep+');
+    lines.push('lib_compat_mode = off');
+  }
+  if (effectiveDeps?.length) {
+    lines.push('lib_deps =');
+    for (const dep of effectiveDeps) lines.push(`    ${dep}`);
   }
   if (opts.mergeBinaries) lines.push('board_build.merge_binaries = yes');
   if (opts.uploadPort) lines.push(`upload_port = ${opts.uploadPort}`);
@@ -661,93 +744,168 @@ function withCompileLock<T>(fn: () => Promise<T>): Promise<T> {
 
 // ─── POST /compile ────────────────────────────────────────────
 app.post('/compile', async (req: Request, res: Response) => {
+  const reqId = uuidv4().slice(0, 8);
+  const startTime = Date.now();
   const { code, board = 'arduino:avr:uno', libraries = '' } = req.body;
-  if (!code) return res.status(400).json({ success: false, errors: 'No code provided' });
+
+  console.log(`[COMPILE:${reqId}] ════════════════════ /compile REQUEST ════════════════════`);
+  console.log(`[COMPILE:${reqId}] Timestamp: ${new Date().toISOString()} | Board: ${board}`);
+  console.log(`[COMPILE:${reqId}] Code size: ${code?.length || 0} chars, ${(code || '').split('\n').length} lines`);
+  console.log(`[COMPILE:${reqId}] Libraries requested: ${JSON.stringify(libraries || 'none')}`);
+  if (code) {
+    const preview = code.split('\n').slice(0, 3).join(' \\ ');
+    console.log(`[COMPILE:${reqId}] Code preview: ${preview}...`);
+  }
+
+  if (!code) {
+    console.error(`[COMPILE:${reqId}] ❌ Rejected: No code provided`);
+    return res.status(400).json({ success: false, errors: 'No code provided' });
+  }
 
   if (!isInitialized) {
+    console.warn(`[COMPILE:${reqId}] ⏳ Rejected: Server still initializing`);
     return res.status(503).json({ success: false, errors: ['Server is still initializing. Please wait.'] });
   }
 
   return withCompileLock(async () => {
+    const lockAcquiredTime = Date.now();
+    console.log(`[COMPILE:${reqId}] Lock acquired (+${lockAcquiredTime - startTime}ms from req). Resolving target...`);
 
-  let target: { board: string; platform: string };
-  try {
-    target = pioTarget(board);
-  } catch (e: any) {
-    return res.status(400).json({ success: false, errors: e.message });
-  }
-  const isESP32 = isEsp32Board(board);
-  const tempId = uuidv4();
-  const tempDir = path.join(os.tmpdir(), `electra_${tempId}`);
-  const projectDir = path.join(tempDir, 'project');
-
-  try {
-    let processedCode = code;
-    if (isESP32) {
-      processedCode = processedCode.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
-      processedCode = migrateESP32LedcAPI(processedCode);
-      const coreOk = await ensureESP32Core();
-      if (!coreOk) {
-        return res.json({ success: false, errors: 'ESP32 platform not available on this server' });
-      }
+    let target: { board: string; platform: string };
+    try {
+      target = pioTarget(board);
+      console.log(`[COMPILE:${reqId}] Target resolved: board=${target.board}, platform=${target.platform}`);
+    } catch (e: any) {
+      console.error(`[COMPILE:${reqId}] ❌ Unknown board FQBN: ${board} (${e.message})`);
+      return res.status(400).json({ success: false, errors: e.message });
     }
 
-    if (libraries) {
-      const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map((l: string) => l.trim());
-      for (const lib of libList) {
-        if (!lib) continue;
-        if (FORGE_LIB_LIBRARIES) {
-          const installedPath = path.join(FORGE_LIB_LIBRARIES, lib);
-          if (!fs.existsSync(installedPath)) {
-            try { await runCLI(['pkg', 'install', '--library', lib, '--storage-dir', FORGE_LIB_LIBRARIES]); } catch {}
-          }
-        } else {
-          try { await runCLI(['pkg', 'install', '--library', lib]); } catch {}
+    const isESP32 = isEsp32Board(board);
+    const tempId = uuidv4();
+    const tempDir = path.join(os.tmpdir(), `electra_${tempId}`);
+    const projectDir = path.join(tempDir, 'project');
+
+    try {
+      let processedCode = code;
+      if (isESP32) {
+        processedCode = processedCode.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
+        processedCode = migrateESP32LedcAPI(processedCode);
+        const coreOk = await ensureESP32Core();
+        if (!coreOk) {
+          console.error(`[COMPILE:${reqId}] ❌ ESP32 platform not available on this server`);
+          return res.json({ success: false, errors: 'ESP32 platform not available on this server' });
         }
       }
-    }
 
-    createPioProject(projectDir, processedCode, target, {
-      libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
-    });
-
-    const { stdout, stderr, code: exitCode } = await runCLI(['run', '-d', projectDir, '-j', '2'], 900_000);
-
-    if (exitCode !== 0) {
-      return res.json({ success: false, errors: formatPioError({ stdout, stderr, code: exitCode }) });
-    }
-
-    const files = listPioBuildFiles(projectDir, target.board);
-
-    if (isESP32) {
-      const binFile = files.find(f => f === 'firmware.bin')
-        ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
-      if (!binFile) {
-        return res.json({ success: false, errors: `No .bin found. Files: ${files.join(', ')}` });
+      if (libraries) {
+        const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map((l: string) => l.trim());
+        for (const lib of libList) {
+          if (!lib) continue;
+          if (FORGE_LIB_LIBRARIES) {
+            const installedPath = path.join(FORGE_LIB_LIBRARIES, lib);
+            if (!fs.existsSync(installedPath)) {
+              console.log(`[COMPILE:${reqId}] Installing missing library: ${lib}...`);
+              try { await runCLI(['pkg', 'install', '--library', lib, '--storage-dir', FORGE_LIB_LIBRARIES]); } catch (libErr: any) {
+                console.warn(`[COMPILE:${reqId}] Warning installing library ${lib}:`, libErr.message);
+              }
+            }
+          } else {
+            try { await runCLI(['pkg', 'install', '--library', lib]); } catch {}
+          }
+        }
       }
-      const rawBin = fs.readFileSync(path.join(getPioBuildDir(projectDir, target.board), binFile));
-      const hexContent = binToIntelHex(rawBin);
-      return res.json({ success: true, hex: hexContent, binBase64: rawBin.toString('base64') });
-    } else {
-      const hexFile = files.find(f => f.endsWith('.hex'));
-      if (!hexFile) {
-        return res.json({ success: false, errors: `No .hex found. Files: ${files.join(', ')}` });
+
+      createPioProject(projectDir, processedCode, target, {
+        libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+        libDeps: !isESP32 ? ['SoftwareSerial', 'Servo'] : [],
+      });
+
+      console.log(`[COMPILE:${reqId}] 🔨 Running PlatformIO build in ${projectDir}...`);
+      const pioStartTime = Date.now();
+      let { stdout, stderr, code: exitCode } = await runCLI(['run', '-d', projectDir, '-j', '2'], 900_000);
+      let pioDuration = ((Date.now() - pioStartTime) / 1000).toFixed(2);
+
+      if (exitCode !== 0) {
+        const combined = (stderr || '') + '\n' + (stdout || '');
+        const missing = parseMissingHeaderLocal(combined);
+        if (missing) {
+          const libName = HEADER_TO_LIB[missing] || missing.replace(/\.h$/i, '');
+          console.warn(`[COMPILE:${reqId}] Missing header ${missing} → trying library "${libName}"`);
+          try {
+            if (FORGE_LIB_LIBRARIES) {
+              await runCLI(['pkg', 'install', '--library', libName, '--storage-dir', FORGE_LIB_LIBRARIES], 120_000);
+            } else {
+              await runCLI(['pkg', 'install', '--library', libName], 120_000);
+            }
+          } catch {}
+          const retryDeps = [...new Set([...(!isESP32 ? ['SoftwareSerial', 'Servo'] : []), libName])];
+          createPioProject(projectDir, processedCode, target, {
+            libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+            libDeps: retryDeps,
+          });
+          console.log(`[COMPILE:${reqId}] Retrying build with "${libName}"...`);
+          const retry = await runCLI(['run', '-d', projectDir, '-j', '2'], 900_000);
+          stdout = retry.stdout; stderr = retry.stderr; exitCode = retry.code;
+          pioDuration = ((Date.now() - pioStartTime) / 1000).toFixed(2);
+        }
+        if (exitCode !== 0) {
+          console.error(`[COMPILE:${reqId}] ❌ Build FAILED (exit ${exitCode}) in ${pioDuration}s`);
+          console.error(`[COMPILE:${reqId}] stderr:`, (stderr || '').slice(-1500));
+          return res.json({ success: false, errors: formatPioError({ stdout, stderr, code: exitCode }) });
+        }
       }
-      const hexContent = fs.readFileSync(path.join(getPioBuildDir(projectDir, target.board), hexFile), 'utf-8');
-      return res.json({ success: true, hex: hexContent });
+
+      console.log(`[COMPILE:${reqId}] ✓ PlatformIO build succeeded in ${pioDuration}s`);
+      const files = listPioBuildFiles(projectDir, target.board);
+      console.log(`[COMPILE:${reqId}] Build output files: ${files.join(', ')}`);
+
+      if (isESP32) {
+        const binFile = files.find(f => f === 'firmware.bin')
+          ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
+        if (!binFile) {
+          console.error(`[COMPILE:${reqId}] ❌ No .bin found. Files: ${files.join(', ')}`);
+          return res.json({ success: false, errors: `No .bin found. Files: ${files.join(', ')}` });
+        }
+        const rawBin = fs.readFileSync(path.join(getPioBuildDir(projectDir, target.board), binFile));
+        const hexContent = binToIntelHex(rawBin);
+        const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2);
+        console.log(`[COMPILE:${reqId}] 🚀 Success! ESP32 firmware binary: ${rawBin.length} bytes (total ${totalDuration}s)`);
+        return res.json({ success: true, hex: hexContent, binBase64: rawBin.toString('base64') });
+      } else {
+        const hexFile = files.find(f => f.endsWith('.hex'));
+        if (!hexFile) {
+          console.error(`[COMPILE:${reqId}] ❌ No .hex found. Files: ${files.join(', ')}`);
+          return res.json({ success: false, errors: `No .hex found. Files: ${files.join(', ')}` });
+        }
+        const hexContent = fs.readFileSync(path.join(getPioBuildDir(projectDir, target.board), hexFile), 'utf-8');
+        const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2);
+        console.log(`[COMPILE:${reqId}] 🚀 Success! AVR Intel HEX: ${hexContent.length} chars, ${hexContent.split('\n').length} lines (total ${totalDuration}s)`);
+        return res.json({ success: true, hex: hexContent });
+      }
+    } catch (err: any) {
+      console.error(`[COMPILE:${reqId}] ❌ Unexpected error: ${err.message}`, err.stack);
+      return res.json({ success: false, errors: err.message });
+    } finally {
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
     }
-  } catch (err: any) {
-    return res.json({ success: false, errors: err.message });
-  } finally {
-    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
-  }
   });
 });
 
 // ─── POST /compile/esp32 (with SHA-256 caching) ───────────────
 app.post('/compile/esp32', async (req: Request, res: Response) => {
+  const reqId = uuidv4().slice(0, 8);
+  const startTime = Date.now();
   const { code, board = 'esp32:esp32:esp32c3', libraries = '' } = req.body;
-  if (!code) return res.status(400).json({ success: false, errors: 'No code provided' });
+
+  console.log(`[COMPILE-ESP32:${reqId}] ════════════════════ /compile/esp32 REQUEST ════════════════════`);
+  console.log(`[COMPILE-ESP32:${reqId}] Timestamp: ${new Date().toISOString()} | Board: ${board}`);
+  console.log(`[COMPILE-ESP32:${reqId}] Code size: ${code?.length || 0} chars, ${(code || '').split('\n').length} lines`);
+  console.log(`[COMPILE-ESP32:${reqId}] Libraries requested: ${JSON.stringify(libraries || 'none')}`);
+
+  if (!code) {
+    console.error(`[COMPILE-ESP32:${reqId}] ❌ Rejected: No code provided`);
+    return res.status(400).json({ success: false, errors: 'No code provided' });
+  }
 
   const hash = crypto.createHash('sha256')
     .update(code + board + libraries)
@@ -766,7 +924,8 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
       const partitionsBuffer = fs.existsSync(path.join(CACHE_DIR, `${hash}.partitions.bin`))
         ? fs.readFileSync(path.join(CACHE_DIR, `${hash}.partitions.bin`))
         : null;
-      console.log(`[SERVER] Cache HIT for firmware ID: ${hash}`);
+      const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2);
+      console.log(`[COMPILE-ESP32:${reqId}] ⚡ Cache HIT for firmware ID: ${hash} (${buffer.length} bytes, returned in ${totalDuration}s)`);
       return res.json({
         success: true, id: hash, binBase64: buffer.toString('base64'),
         bootloaderBase64: bootloaderBuffer?.toString('base64') || null,
@@ -774,107 +933,113 @@ app.post('/compile/esp32', async (req: Request, res: Response) => {
         size: buffer.length, hash, cached: true, metadata: meta
       });
     } catch {
-      console.log('[SERVER] Cache read error, rebuilding');
+      console.log(`[COMPILE-ESP32:${reqId}] Cache read error, rebuilding`);
     }
   }
 
-  console.log(`[SERVER] Cache MISS, compiling for firmware ID: ${hash}`);
+  console.log(`[COMPILE-ESP32:${reqId}] 🔨 Cache MISS, compiling for firmware ID: ${hash}`);
   return withCompileLock(async () => {
+    const lockAcquiredTime = Date.now();
+    console.log(`[COMPILE-ESP32:${reqId}] Lock acquired (+${lockAcquiredTime - startTime}ms from req). Resolving target...`);
+
     let target: { board: string; platform: string };
     try {
       target = pioTarget(board);
+      console.log(`[COMPILE-ESP32:${reqId}] Target resolved: board=${target.board}, platform=${target.platform}`);
     } catch (e: any) {
+      console.error(`[COMPILE-ESP32:${reqId}] ❌ Unknown board FQBN: ${board} (${e.message})`);
       return res.status(400).json({ success: false, errors: e.message });
     }
     const tempId = uuidv4();
     const tempDir = path.join(os.tmpdir(), `electra_${tempId}`);
     const projectDir = path.join(tempDir, 'project');
 
-  try {
-    let processedCode = code;
-    processedCode = processedCode.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
-    processedCode = migrateESP32LedcAPI(processedCode);
+    try {
+      let processedCode = code;
+      processedCode = processedCode.replace(/#include\s*[<"]Servo\.h[>"]/g, '#include <ESP32Servo.h>');
+      processedCode = migrateESP32LedcAPI(processedCode);
 
-    console.log(`[SERVER] /compile/esp32: calling ensureESP32Core (current esp32PlatformReady=${esp32PlatformReady})...`);
-    const coreOk = await ensureESP32Core();
-    console.log(`[SERVER] /compile/esp32: ensureESP32Core returned ${coreOk}`);
-    if (!coreOk) {
-      console.error('[SERVER] /compile/esp32: ESP32 platform NOT available — rejecting request');
-      return res.json({ success: false, errors: 'ESP32 platform not available on this server' });
-    }
+      console.log(`[COMPILE-ESP32:${reqId}] Checking ESP32 platform availability (esp32PlatformReady=${esp32PlatformReady})...`);
+      const coreOk = await ensureESP32Core();
+      if (!coreOk) {
+        console.error(`[COMPILE-ESP32:${reqId}] ❌ ESP32 platform NOT available — rejecting request`);
+        return res.json({ success: false, errors: 'ESP32 platform not available on this server' });
+      }
 
-    if (libraries) {
-      const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map((l: string) => l.trim());
-      for (const lib of libList) {
-        if (!lib) continue;
-        if (FORGE_LIB_LIBRARIES) {
-          const installedPath = path.join(FORGE_LIB_LIBRARIES, lib);
-          if (!fs.existsSync(installedPath)) {
-            try { await runCLI(['pkg', 'install', '--library', lib, '--storage-dir', FORGE_LIB_LIBRARIES]); } catch {}
+      if (libraries) {
+        const libList = Array.isArray(libraries) ? libraries : libraries.split(',').map((l: string) => l.trim());
+        for (const lib of libList) {
+          if (!lib) continue;
+          if (FORGE_LIB_LIBRARIES) {
+            const installedPath = path.join(FORGE_LIB_LIBRARIES, lib);
+            if (!fs.existsSync(installedPath)) {
+              console.log(`[COMPILE-ESP32:${reqId}] Installing missing library: ${lib}...`);
+              try { await runCLI(['pkg', 'install', '--library', lib, '--storage-dir', FORGE_LIB_LIBRARIES]); } catch (libErr: any) {
+                console.warn(`[COMPILE-ESP32:${reqId}] Warning installing library ${lib}:`, libErr.message);
+              }
+            }
+          } else {
+            try { await runCLI(['pkg', 'install', '--library', lib]); } catch {}
           }
-        } else {
-          try { await runCLI(['pkg', 'install', '--library', lib]); } catch {}
         }
       }
+
+      createPioProject(projectDir, processedCode, target, {
+        libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+      });
+
+      console.log(`[COMPILE-ESP32:${reqId}] 🔨 Running PlatformIO ESP32 build in ${projectDir}...`);
+      const pioStartTime = Date.now();
+      const { stdout, stderr, code: exitCode } = await runCLI(['run', '-d', projectDir, '-j', '2'], 1_800_000);
+      const pioDuration = ((Date.now() - pioStartTime) / 1000).toFixed(2);
+
+      if (exitCode !== 0) {
+        console.error(`[COMPILE-ESP32:${reqId}] ❌ ESP32 compile FAILED (exit ${exitCode}) in ${pioDuration}s`);
+        console.error(`[COMPILE-ESP32:${reqId}] stderr:`, (stderr || '').slice(-3000));
+        return res.json({ success: false, errors: formatPioError({ stdout, stderr, code: exitCode }) });
+      }
+
+      console.log(`[COMPILE-ESP32:${reqId}] ✓ PlatformIO ESP32 build succeeded in ${pioDuration}s`);
+      const buildDir = getPioBuildDir(projectDir, target.board);
+      const files = listPioBuildFiles(projectDir, target.board);
+      console.log(`[COMPILE-ESP32:${reqId}] Build output files: ${files.join(', ')}`);
+
+      const binFile = files.find(f => f === 'firmware.bin')
+        ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
+
+      if (!binFile) {
+        console.error(`[COMPILE-ESP32:${reqId}] ❌ No .bin produced. Files: ${files.join(', ')}`);
+        return res.json({ success: false, errors: `No .bin found. Files: ${files.join(', ')}` });
+      }
+
+      const binBuffer = fs.readFileSync(path.join(buildDir, binFile));
+      const bootloaderFile = files.find(f => f === 'bootloader.bin');
+      const partitionsFile = files.find(f => f === 'partitions.bin');
+      const bootloaderBuffer = bootloaderFile ? fs.readFileSync(path.join(buildDir, bootloaderFile)) : null;
+      const partitionsBuffer = partitionsFile ? fs.readFileSync(path.join(buildDir, partitionsFile)) : null;
+
+      fs.writeFileSync(binPath, binBuffer);
+      if (bootloaderBuffer) fs.writeFileSync(path.join(CACHE_DIR, `${hash}.bootloader.bin`), bootloaderBuffer);
+      if (partitionsBuffer) fs.writeFileSync(path.join(CACHE_DIR, `${hash}.partitions.bin`), partitionsBuffer);
+      const metadata = { id: hash, board, compiledAt: new Date().toISOString(), size: binBuffer.length, hash };
+      fs.writeFileSync(metaPath, JSON.stringify(metadata, null, 2));
+      evictCache();
+
+      const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2);
+      console.log(`[COMPILE-ESP32:${reqId}] 🚀 Success! Firmware ID: ${hash}, size: ${binBuffer.length} bytes (total ${totalDuration}s)`);
+
+      return res.json({
+        success: true, id: hash, binBase64: binBuffer.toString('base64'),
+        bootloaderBase64: bootloaderBuffer?.toString('base64') || null,
+        partitionsBase64: partitionsBuffer?.toString('base64') || null,
+        size: binBuffer.length, hash, cached: false, metadata
+      });
+    } catch (err: any) {
+      console.error(`[COMPILE-ESP32:${reqId}] ❌ Unexpected error: ${err.message}`, err.stack);
+      return res.json({ success: false, errors: err.message });
+    } finally {
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
     }
-
-    // NOTE: no board_build.merge_binaries here — the browser flashes
-    // firmware.bin + bootloader.bin + partitions.bin separately.
-    createPioProject(projectDir, processedCode, target, {
-      libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
-    });
-
-    // ESP32 builds are heavy: ~30s on a fast desktop, ~15-25 min on Render's
-    // free tier (0.1 CPU / 512 MB). Cap parallelism so the 512 MB instance
-    // doesn't thrash spawning one gcc per host core, and never kill the build
-    // before 30 minutes. Note: pio run has a build cache in .pio/build, and
-    // the firmware cache (by sketch hash) serves repeats instantly.
-    const { stdout, stderr, code: exitCode } = await runCLI(['run', '-d', projectDir, '-j', '2'], 1_800_000);
-
-    if (exitCode !== 0) {
-      console.error('[SERVER] /compile/esp32: COMPILE FAILED (exit', exitCode + ')');
-      console.error('[SERVER] /compile/esp32: stderr:', (stderr || '').slice(-3000));
-      console.error('[SERVER] /compile/esp32: stdout tail:', (stdout || '').slice(-1500));
-      return res.json({ success: false, errors: formatPioError({ stdout, stderr, code: exitCode }) });
-    }
-
-    const buildDir = getPioBuildDir(projectDir, target.board);
-    const files = listPioBuildFiles(projectDir, target.board);
-    const binFile = files.find(f => f === 'firmware.bin')
-      ?? files.find(f => f.endsWith('.bin') && !f.includes('bootloader') && !f.includes('partition'));
-
-    if (!binFile) {
-      console.error('[SERVER] /compile/esp32: no .bin produced. Files:', files.join(', '));
-      return res.json({ success: false, errors: `No .bin found. Files: ${files.join(', ')}` });
-    }
-
-    const binBuffer = fs.readFileSync(path.join(buildDir, binFile));
-
-    // PlatformIO also produces the bootloader and partition table — flash all
-    // three so the board boots regardless of what was on the flash before.
-    const bootloaderFile = files.find(f => f === 'bootloader.bin');
-    const partitionsFile = files.find(f => f === 'partitions.bin');
-    const bootloaderBuffer = bootloaderFile ? fs.readFileSync(path.join(buildDir, bootloaderFile)) : null;
-    const partitionsBuffer = partitionsFile ? fs.readFileSync(path.join(buildDir, partitionsFile)) : null;
-
-    fs.writeFileSync(binPath, binBuffer);
-    if (bootloaderBuffer) fs.writeFileSync(path.join(CACHE_DIR, `${hash}.bootloader.bin`), bootloaderBuffer);
-    if (partitionsBuffer) fs.writeFileSync(path.join(CACHE_DIR, `${hash}.partitions.bin`), partitionsBuffer);
-    const metadata = { id: hash, board, compiledAt: new Date().toISOString(), size: binBuffer.length, hash };
-    fs.writeFileSync(metaPath, JSON.stringify(metadata, null, 2));
-    evictCache();
-
-    return res.json({
-      success: true, id: hash, binBase64: binBuffer.toString('base64'),
-      bootloaderBase64: bootloaderBuffer?.toString('base64') || null,
-      partitionsBase64: partitionsBuffer?.toString('base64') || null,
-      size: binBuffer.length, hash, cached: false, metadata
-    });
-  } catch (err: any) {
-    return res.json({ success: false, errors: err.message });
-  } finally {
-    try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
-  }
   });
 });
 
@@ -910,6 +1075,7 @@ app.post('/transpile', async (req: Request, res: Response) => {
       }
       createPioProject(sketchDir, code, target, {
         libDirs: FORGE_LIB_LIBRARIES ? [FORGE_LIB_LIBRARIES] : [],
+        libDeps: !isEsp32Board(board) ? ['SoftwareSerial', 'Servo'] : [],
       });
       const { code: exitCode, stderr } = await runCLI(['run', '-d', sketchDir]);
       if (exitCode !== 0) {

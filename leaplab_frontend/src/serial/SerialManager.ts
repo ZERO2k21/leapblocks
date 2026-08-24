@@ -136,15 +136,31 @@ export class SerialManager {
     }
 
     async disconnect() {
-        if (this.activePort && this.activePort.isOpen) {
+        if (this.activePort) {
+            const port = this.activePort;
+            this.activePort = null;
             return new Promise((resolve) => {
-                this.activePort.close(() => {
-                    this.activePort = null;
+                try {
+                    if (port.isOpen) {
+                        port.close((err: any) => {
+                            if (err) console.warn('[SerialManager] Disconnect error:', err?.message);
+                            if (this.mainWindow) {
+                                this.mainWindow.webContents.send('connection-change', false);
+                            }
+                            resolve({ success: true });
+                        });
+                    } else {
+                        if (this.mainWindow) {
+                            this.mainWindow.webContents.send('connection-change', false);
+                        }
+                        resolve({ success: true });
+                    }
+                } catch (e) {
                     if (this.mainWindow) {
                         this.mainWindow.webContents.send('connection-change', false);
                     }
                     resolve({ success: true });
-                });
+                }
             });
         }
         return { success: true };
