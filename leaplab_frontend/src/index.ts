@@ -365,7 +365,52 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
 
   if (isESP32) {
     log('IPC', 'ESP32-C3 detected — passing to ArduinoUploader RISC-V compile path');
-    const result = await arduinoUploader.compileESP32ForSimulation(code, fqbn);
+    let result = await arduinoUploader.compileESP32ForSimulation(code, fqbn);
+
+    // Zero-GPL: local ESP32 needs Python esptool (GPL) which is not bundled.
+    // Fallback to cloud compiler (Render) which is GPL-compliant SaaS (no distribution)
+    // and then flash via esptool-js (MIT) in the renderer. This keeps the installer 100% GPL-free.
+    const isZeroGplError = !result.success && !!result.error && (
+      result.error.includes('Zero-GPL') || result.error.includes("No module named 'esptool'") || result.error.includes('esptool')
+    );
+    if (isZeroGplError) {
+      log('IPC', `ESP32 local zero-GPL miss → falling back to cloud compiler (esptool-js MIT for flash)`);
+      try {
+        const cloudUrl = process.env.VITE_COMPILER_URL || 'https://leapblocks-server-6qwr.onrender.com';
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 45000);
+        const res = await fetch(`${cloudUrl}/compile/esp32`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, board: fqbn }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        if (res.ok) {
+          const data: any = await res.json();
+          if (data.success && data.binBase64) {
+            const tmpDir = path.join(os.tmpdir(), `forge_esp32_cloud_${Date.now()}`);
+            fs.mkdirSync(tmpDir, { recursive: true });
+            const binPath = path.join(tmpDir, 'firmware.bin');
+            fs.writeFileSync(binPath, Buffer.from(data.binBase64, 'base64'));
+            // Also write bootloader/partitions if provided (for faithful flash)
+            if (data.bootloaderBase64) fs.writeFileSync(path.join(tmpDir, 'bootloader.bin'), Buffer.from(data.bootloaderBase64, 'base64'));
+            if (data.partitionsBase64) fs.writeFileSync(path.join(tmpDir, 'partitions.bin'), Buffer.from(data.partitionsBase64, 'base64'));
+            if (lastESP32BinTempDir && lastESP32BinTempDir !== tmpDir) getCleanupESP32Build()(lastESP32BinTempDir);
+            lastESP32BinTempDir = tmpDir;
+            log('IPC', `ESP32 cloud compile success — ${data.binBase64.length}b64 via ${cloudUrl}`);
+            return { success: true, binPath };
+          }
+          log('IPC', `ESP32 cloud compile failed: ${JSON.stringify(data).slice(0, 800)}`);
+        } else {
+          log('IPC', `ESP32 cloud HTTP ${res.status}`);
+        }
+      } catch (e: any) {
+        log('IPC', `ESP32 cloud fallback error: ${e.message}`);
+      }
+      // If cloud also fails, return original zero-GPL error with guidance
+      log('IPC', `ESP32 cloud fallback unavailable — returning zero-GPL guidance`);
+    }
 
     // We will perform temp folder cleanup here, assuming ArduinoUploader used its generated tmp path to output final result. 
     // The old temp dir cleanup handled by lastESP32BinTempDir requires tracking if it was sent back
