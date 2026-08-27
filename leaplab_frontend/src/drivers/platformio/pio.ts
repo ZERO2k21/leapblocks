@@ -52,15 +52,32 @@ export function runPio(args: string[], options: PioRunOptions = {}): Promise<Pio
         }
 
         const timer = setTimeout(() => {
-            try { proc.kill('SIGTERM'); } catch { /* already dead */ }
+            if (proc.pid) {
+                if (process.platform === 'win32') {
+                    try {
+                        const { execSync } = require('child_process');
+                        execSync(`taskkill /F /T /PID ${proc.pid}`, { stdio: 'ignore' });
+                    } catch {
+                        try { proc.kill('SIGTERM'); } catch { /* already dead */ }
+                    }
+                } else {
+                    try { proc.kill('SIGTERM'); } catch { /* already dead */ }
+                }
+            }
             done({ stdout, stderr: `[TIMEOUT] Process killed after ${timeoutMs}ms\n${stderr}`, code: -1 });
         }, timeoutMs);
         timer.unref?.();
 
         proc.stdout.on('data', (d: Buffer) => { stdout += d.toString(); });
         proc.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
-        proc.on('close', (code) => { clearTimeout(timer); done({ stdout, stderr, code: code ?? -1 }); });
-        proc.on('error', (err) => { clearTimeout(timer); done({ stdout: '', stderr: err.message, code: -1 }); });
+        proc.on('close', (code) => {
+            clearTimeout(timer);
+            done({ stdout, stderr, code: code ?? -1 });
+        });
+        proc.on('error', (err) => {
+            clearTimeout(timer);
+            done({ stdout: '', stderr: err.message, code: -1 });
+        });
     });
 }
 

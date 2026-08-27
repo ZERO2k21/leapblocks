@@ -75,32 +75,29 @@ export function useElectraCompiler({
         if (result.success && result.hexContent) {
           startSimulation(result.hexContent, code);
         } else {
-          // Fallback to client-side transpiler so simulation runs in browser even without local CLI or server compiler
-          try {
-            const { transpileCode } = await import('../services/CompilerService');
-            const transpileResult = await transpileCode(code, FQBN[board] ?? 'arduino:avr:uno');
-            if (transpileResult.success && transpileResult.jsCode) {
-              const runner = await getSimulationRunner();
-              runner.setBoard(board);
-              runner.setTranspiledJS(transpileResult.jsCode);
-              startSimulation('__esp32_c3_transpiled__', code);
-            } else if (result.error) {
-              const { appendSerial } = useForgeStore.getState();
-              appendSerial('❌ COMPILATION ERROR:\n');
-              appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-              appendSerial((result.error || transpileResult.error) + '\n');
-              appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+          // Compilation failed — surface the error immediately. Do NOT fall back to
+          // ESP32 transpiled JS while board is still `arduino-uno`; that sentinel
+          // ('__esp32_c3_transpiled__') + AVR board causes SimulationRunner to
+          // init an empty AVR CPU (empty hex) and leaves isSimulating=true with
+          // no serial output — appears as infinite spinner (reported PIR+Servo bug).
+          // Transpiled JS is only valid for `esp32-c3` (ArduinoRuntime).
+          const { appendSerial } = useForgeStore.getState();
+          // Surface cloud/server error
+          if (result.error) {
+            appendSerial('❌ COMPILATION ERROR:\n');
+            appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            appendSerial(result.error + '\n');
+            appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            if (result.error.includes('unreachable') || result.error.includes('Server error') || result.error.includes('cold')) {
+              appendSerial('\nTip: Cloud compiler (Render) may be cold-starting. Wait 20-30s and try again, or check your network.\n');
+            } else {
               appendSerial('\nPlease fix the errors and try again.\n');
             }
-          } catch {
-            if (result.error) {
-              const { appendSerial } = useForgeStore.getState();
-              appendSerial('❌ COMPILATION ERROR:\n');
-              appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-              appendSerial(result.error + '\n');
-              appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-              appendSerial('\nPlease fix the errors and try again.\n');
-            }
+          } else {
+            appendSerial('❌ COMPILATION ERROR:\n');
+            appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            appendSerial('Unknown compiler error. Please check your code.\n');
+            appendSerial('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
           }
         }
       }

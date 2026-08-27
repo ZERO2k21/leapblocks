@@ -20,6 +20,20 @@ import type { UpdateInfo, DownloadProgress } from './update/updateChecker';
 // Suppress development security warnings in the console
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 
+// Only one LeapBlocks instance may run at a time. Without this, multiple
+// instances (e.g. a leftover `npm run dev` window) fight over the same COM
+// port and the loser fails to connect with "Access denied".
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL STATE & SERVICES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -236,7 +250,7 @@ const createWindow = (): void => {
   serialManager = new SerialManager(mainWindow);
   logTiming('SerialManager initialized');
 
-  logTiming('Initializing ArduinoUploader');
+  logTiming('Initializing ArduinoUploader (PlatformIO + clean-room STK500 uploader)');
   arduinoUploader = new ArduinoUploader(mainWindow);
   logTiming('ArduinoUploader initialized');
 
@@ -312,7 +326,14 @@ ipcMain.handle('connect-port', async (event, portPath: string, baudRate: number,
     const result = await serialManager.connect(portPath, baudRate, board || 'arduino_uno');
     return result;
   } catch (error) {
-    return { success: false, error: (error as Error).message };
+    const msg = (error as Error).message || String(error);
+    const locked = /denied|busy|in use|locked/i.test(msg);
+    return {
+      success: false,
+      error: locked
+        ? `Port ${portPath} is busy (${msg}). Another app is holding it open — close other LeapBlocks windows, the Arduino IDE serial monitor, or any other serial tool, then try again.`
+        : msg,
+    };
   }
 });
 
@@ -325,14 +346,10 @@ ipcMain.handle('send-serial', async (event, data: string) => {
 });
 
 ipcMain.handle('upload-code', async (event, code: string, selectedPort: string, fqbn: string) => {
-  const wasConnected = serialManager.isConnected();
-
-  // 1. Auto-disconnect if connected
-  if (wasConnected) {
-    await serialManager.disconnect();
-    // Delay to let Windows fully release the COM port handle
-    await new Promise(resolve => setTimeout(resolve, 1500));
-  }
+  // 1. Ensure serial port is disconnected before upload
+  await serialManager.disconnect();
+  // Delay to let Windows fully release the COM port handle
+  await new Promise(resolve => setTimeout(resolve, 600));
 
   // 2. Perform upload (renderer handles reconnection via IPC)
   const result = await arduinoUploader.upload(code, selectedPort, fqbn);
@@ -348,7 +365,52 @@ ipcMain.handle('compile-code', async (event, code: string, fqbn: string, library
 
   if (isESP32) {
     log('IPC', 'ESP32-C3 detected — passing to ArduinoUploader RISC-V compile path');
-    const result = await arduinoUploader.compileESP32ForSimulation(code, fqbn);
+    let result = await arduinoUploader.compileESP32ForSimulation(code, fqbn);
+
+    // Zero-GPL: local ESP32 needs Python esptool (GPL) which is not bundled.
+    // Fallback to cloud compiler (Render) which is GPL-compliant SaaS (no distribution)
+    // and then flash via esptool-js (MIT) in the renderer. This keeps the installer 100% GPL-free.
+    const isZeroGplError = !result.success && !!result.error && (
+      result.error.includes('Zero-GPL') || result.error.includes("No module named 'esptool'") || result.error.includes('esptool')
+    );
+    if (isZeroGplError) {
+      log('IPC', `ESP32 local zero-GPL miss → falling back to cloud compiler (esptool-js MIT for flash)`);
+      try {
+        const cloudUrl = process.env.VITE_COMPILER_URL || 'https://leapblocks-server-6qwr.onrender.com';
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 45000);
+        const res = await fetch(`${cloudUrl}/compile/esp32`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, board: fqbn }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        if (res.ok) {
+          const data: any = await res.json();
+          if (data.success && data.binBase64) {
+            const tmpDir = path.join(os.tmpdir(), `forge_esp32_cloud_${Date.now()}`);
+            fs.mkdirSync(tmpDir, { recursive: true });
+            const binPath = path.join(tmpDir, 'firmware.bin');
+            fs.writeFileSync(binPath, Buffer.from(data.binBase64, 'base64'));
+            // Also write bootloader/partitions if provided (for faithful flash)
+            if (data.bootloaderBase64) fs.writeFileSync(path.join(tmpDir, 'bootloader.bin'), Buffer.from(data.bootloaderBase64, 'base64'));
+            if (data.partitionsBase64) fs.writeFileSync(path.join(tmpDir, 'partitions.bin'), Buffer.from(data.partitionsBase64, 'base64'));
+            if (lastESP32BinTempDir && lastESP32BinTempDir !== tmpDir) getCleanupESP32Build()(lastESP32BinTempDir);
+            lastESP32BinTempDir = tmpDir;
+            log('IPC', `ESP32 cloud compile success — ${data.binBase64.length}b64 via ${cloudUrl}`);
+            return { success: true, binPath };
+          }
+          log('IPC', `ESP32 cloud compile failed: ${JSON.stringify(data).slice(0, 800)}`);
+        } else {
+          log('IPC', `ESP32 cloud HTTP ${res.status}`);
+        }
+      } catch (e: any) {
+        log('IPC', `ESP32 cloud fallback error: ${e.message}`);
+      }
+      // If cloud also fails, return original zero-GPL error with guidance
+      log('IPC', `ESP32 cloud fallback unavailable — returning zero-GPL guidance`);
+    }
 
     // We will perform temp folder cleanup here, assuming ArduinoUploader used its generated tmp path to output final result. 
     // The old temp dir cleanup handled by lastESP32BinTempDir requires tracking if it was sent back

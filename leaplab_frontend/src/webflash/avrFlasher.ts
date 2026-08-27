@@ -78,6 +78,14 @@ const AVR_BOARD_PROFILES: Record<string, AvrBoardProfile> = {
         bauds: [115200, 57600, 19200],
         protocol: 'stk500v1',
     },
+    'arduino:avr:nano_old': {
+        fqbn: 'arduino:avr:nano_old',
+        pageSize: 128,
+        signature: [0x1e, 0x95, 0x02], // ATmega328P
+        flashSize: 32 * 1024,
+        bauds: [57600, 115200, 19200],
+        protocol: 'stk500v1',
+    },
     'arduino:avr:mega': {
         fqbn: 'arduino:avr:mega',
         pageSize: 256,

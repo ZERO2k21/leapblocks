@@ -19,6 +19,8 @@ src/neura-ml/
 public/
 storybook-static/
 forge-lib/
+server/cache/
+server/logs/
 src/pose-extension/
 *.md
 *.log

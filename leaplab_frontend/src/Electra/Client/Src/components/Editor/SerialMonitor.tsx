@@ -3,7 +3,7 @@
  * All rights reserved. Proprietary and confidential.
  */
 import React, { useEffect, useRef } from 'react';
-import { Trash2, Download, Terminal, ChevronRight, Send } from 'lucide-react';
+import { Trash2, Download, Terminal, ChevronRight, Send, Copy, Check } from 'lucide-react';
 import { useForgeStore } from '../../../utils/store/useForgeStore';
 
 interface SerialMonitorProps {
@@ -18,6 +18,7 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
   const [inputValue, setInputValue] = React.useState('');
   const [lineEnding, setLineEnding] = React.useState<'none' | 'nl' | 'cr' | 'crnl'>('nl');
   const [isInputFocused, setIsInputFocused] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
   const uiTheme = useForgeStore(state => state.uiTheme);
   const isDark = uiTheme !== 'light';
 
@@ -35,6 +36,23 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(output);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = output;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleSend = () => {
@@ -59,7 +77,7 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
       {/* ── OUTPUT ── */}
       <div
         ref={terminalRef}
-        className={`flex-1 overflow-y-auto overflow-x-hidden relative p-4 text-xs leading-relaxed whitespace-pre-wrap break-all ${
+        className={`flex-1 overflow-y-auto overflow-x-hidden relative p-4 text-xs leading-relaxed whitespace-pre-wrap break-all select-text ${
           isDark
             ? 'bg-gradient-to-b from-slate-950/40 to-slate-950/60 text-slate-300 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.012)_1px,transparent_0)] bg-[size:18px_18px]'
             : 'bg-gradient-to-b from-slate-50 to-slate-100 text-slate-700 bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.015)_1px,transparent_0)] bg-[size:18px_18px]'
@@ -78,6 +96,22 @@ export const SerialMonitor: React.FC<SerialMonitorProps> = ({ output, onClear, o
               }`}
             >
               <Download size={10} strokeWidth={2.5} /> Export
+            </button>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className={`flex items-center cursor-pointer transition-all duration-200 gap-1 px-2 py-1 text-[9px] font-bold tracking-wider uppercase rounded ${
+                copied
+                  ? isDark
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                    : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
+                  : isDark
+                    ? 'bg-slate-900/80 text-slate-400 border border-white/10 hover:text-emerald-400 hover:border-emerald-500/40'
+                    : 'bg-white/90 text-slate-500 border border-slate-200 hover:text-emerald-600 hover:border-emerald-500/30'
+              }`}
+            >
+              {copied ? <Check size={10} strokeWidth={2.5} /> : <Copy size={10} strokeWidth={2.5} />}
+              {copied ? 'Copied' : 'Copy'}
             </button>
             <button
               type="button"

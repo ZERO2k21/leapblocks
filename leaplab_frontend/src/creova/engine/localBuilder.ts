@@ -8,7 +8,7 @@ import path from 'path';
 import fs from 'fs-extra';
 
 const LOCAL_SERVER = 'http://localhost:3001';
-const CLOUD_SERVER = 'https://leapblocks-server.onrender.com';
+const CLOUD_SERVER = 'https://leapblocks-server-6qwr.onrender.com';
 
 let activeServer: string | null = null;
 

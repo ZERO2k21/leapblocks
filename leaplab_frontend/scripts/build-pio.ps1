@@ -89,9 +89,13 @@ if (-not (Test-Path $marker)) {
     & $embedPython -m pip install --quiet --no-warn-script-location "platformio==$version"
     if ($LASTEXITCODE -ne 0) { throw 'pip install platformio into embeddable python failed' }
 }
-# esptool is imported by the espressif32 platform's build/upload scripts
-& $embedPython -m pip install --quiet --no-warn-script-location esptool
-if ($LASTEXITCODE -ne 0) { throw 'pip install esptool into embeddable python failed' }
+# ZERO-GPL: Do NOT bundle esptool (GPLv2+) in the embeddable Python.
+# ESP32 builds will use the app's manual merge fallback (ArduinoUploader.buildMergedFlashImage)
+# and esptool-js (MIT) for flashing, or will prompt the user to download
+# GPL tool-esptoolpy on demand (not bundled). This keeps the installer 100% GPL-free.
+# To re-enable offline GPL esptool (requires GPL compliance docs):
+#   & $embedPython -m pip install esptool  # GPLv2 — see public/licenses/README.txt
+Write-Host "[pio-build] Skipping esptool (GPL) for zero-GPL commercial build"
 
 # 4. Build the onefile exe
 Write-Host "[pio-build] Building pio.exe (PlatformIO Core $version)..."

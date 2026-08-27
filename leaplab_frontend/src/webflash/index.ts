@@ -258,22 +258,30 @@ interface CompileAttempt {
 }
 
 async function postCompile(url: string, body: string, onLog?: (message: string) => void): Promise<CompileAttempt> {
+    const t0 = Date.now();
     try {
+        console.log(`[webflash] 🌐 POST ${url} (${body.length} bytes)...`);
+        onLog?.(`[webflash] 🌐 Contacting compiler server (${url})...`);
         const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body,
         });
-        onLog?.(`[webflash] ${url} → HTTP ${res.status}`);
+        const elapsed = Date.now() - t0;
+        console.log(`[webflash] 📥 Response: HTTP ${res.status} (${elapsed}ms)`);
+        onLog?.(`[webflash] 📥 Compiler replied: HTTP ${res.status} in ${elapsed}ms`);
         if (!res.ok) {
             const text = await res.text().catch(() => '(unreadable)');
-            onLog?.(`[webflash] Error body: ${text.slice(0, 500)}`);
+            console.error(`[webflash] ❌ Compiler HTTP error ${res.status}:`, text);
+            onLog?.(`[webflash] ❌ Compiler server error (HTTP ${res.status}): ${text.slice(0, 300)}`);
             return { ok: false, httpStatus: res.status };
         }
         const data = await res.json();
         return { ok: true, data };
     } catch (e: any) {
-        onLog?.(`[webflash] Network error reaching ${url}: ${e?.message}`);
+        const elapsed = Date.now() - t0;
+        console.error(`[webflash] ❌ Network error reaching ${url} after ${elapsed}ms:`, e);
+        onLog?.(`[webflash] ❌ Network error reaching compiler (${elapsed}ms): ${e?.message}`);
         return { ok: false, networkError: e?.message };
     }
 }
@@ -292,8 +300,11 @@ async function compileOnServer(options: WebUploadOptions): Promise<ServerCompile
 
     const url = `${CLOUD_COMPILER_URL}${endpoint}`;
 
-    options.onLog?.(`[webflash] Compiling for ${options.fqbn} on the LeapBlocks server...`);
-    options.onLog?.(`[webflash] POST ${url} (${body.length} bytes, board=${options.fqbn}, isESP32=${isESP32})`);
+    const lineCount = (options.code || '').split('\n').length;
+    console.log(`[webflash] ═══════════ COMPILE ON SERVER ═══════════`);
+    console.log(`[webflash] Board: ${options.fqbn} | Code: ${options.code?.length} chars, ${lineCount} lines`);
+    console.log(`[webflash] Endpoint: ${url}`);
+    options.onLog?.(`[webflash] 🔨 Compiling for ${options.fqbn} on the LeapBlocks server (${lineCount} lines)...`);
 
     const attempt = await postCompile(url, body, options.onLog);
 
@@ -305,14 +316,16 @@ async function compileOnServer(options: WebUploadOptions): Promise<ServerCompile
     }
 
     const data = attempt.data;
-    options.onLog?.(`[webflash] Server response keys: ${Object.keys(data).join(', ')}`);
-    options.onLog?.(`[webflash] Server success=${data.success}, hasHex=${!!data.hex}, hasBinBase64=${!!data.binBase64}, hasBootloader=${!!data.bootloaderBase64}, hasPartitions=${!!data.partitionsBase64}, errors=${JSON.stringify(data.errors || null)}`);
+    console.log(`[webflash] Server result: success=${data.success}, hasHex=${!!data.hex}, hasBinBase64=${!!data.binBase64}`);
 
     if (!data.success) {
         const errors = data.errors;
+        const errMsg = Array.isArray(errors) ? errors.join('\n') : String(errors || 'Compilation failed.');
+        console.error('[webflash] ❌ Compilation failed:', errMsg);
+        options.onLog?.(`[webflash] ❌ Compilation failed:\n${errMsg}`);
         return {
             success: false,
-            errors: Array.isArray(errors) ? errors.join('\n') : String(errors || 'Compilation failed.'),
+            errors: errMsg,
         };
     }
     if (isESP32 && !data.binBase64) {
@@ -321,6 +334,13 @@ async function compileOnServer(options: WebUploadOptions): Promise<ServerCompile
     if (!isESP32 && !data.hex) {
         return { success: false, errors: 'Server did not return a HEX file for the AVR board.' };
     }
+
+    if (data.hex) {
+        options.onLog?.(`[webflash] ✓ Compiled successfully! Intel HEX received (${data.hex.length} chars).`);
+    } else if (data.binBase64) {
+        options.onLog?.(`[webflash] ✓ Compiled successfully! Firmware binary received (${Math.round((data.binBase64.length * 3) / 4)} bytes).`);
+    }
+
     return { success: true, hex: data.hex, binBase64: data.binBase64, bootloaderBase64: data.bootloaderBase64, partitionsBase64: data.partitionsBase64 };
 }
 
@@ -333,11 +353,14 @@ async function compileOnServer(options: WebUploadOptions): Promise<ServerCompile
  * automatically — call this from a user gesture).
  */
 export async function uploadToBoard(options: WebUploadOptions): Promise<{ success: boolean; error?: string }> {
+    const uploadStartTime = Date.now();
     try {
-        console.log(`[webflash] uploadToBoard called — fqbn=${options.fqbn}, codeLength=${options.code?.length}`);
+        console.log(`[webflash] 🚀 uploadToBoard initiated: fqbn=${options.fqbn}, codeLength=${options.code?.length}`);
+        options.onLog?.(`[webflash] 🚀 Starting upload process for ${options.fqbn}...`);
 
         if (!isWebSerialSupported()) {
-            console.log('[webflash] Web Serial NOT supported');
+            console.error('[webflash] Web Serial NOT supported');
+            options.onLog?.('[webflash] ❌ Web Serial is not supported in this browser.');
             return {
                 success: false,
                 error: 'Web Serial is not supported in this browser. Use Chrome or Edge — or install LeapBlocks Desktop.',
@@ -347,29 +370,35 @@ export async function uploadToBoard(options: WebUploadOptions): Promise<{ succes
 
         let port = grantedPort;
         if (!port) {
-            console.log('[webflash] No granted port — opening picker...');
+            console.log('[webflash] No granted port — requesting user port selection...');
+            options.onLog?.('[webflash] 🔌 Please select your board in the browser port picker...');
             const picked = await requestPort();
             if (!picked?.port) {
                 console.log('[webflash] User cancelled picker');
+                options.onLog?.('[webflash] ⚠ Port selection cancelled.');
                 return { success: false, error: 'No port selected. Please connect your board and pick its port.' };
             }
             port = picked.port;
+            options.onLog?.(`[webflash] 🔌 Port granted: ${picked.manufacturer || 'Serial device'}`);
             console.log('[webflash] Picker granted port ✓');
         } else {
             console.log('[webflash] Using previously granted port ✓');
+            options.onLog?.('[webflash] 🔌 Using active serial port connection');
         }
 
         // 1. Compile on the server.
-        options.onProgress?.(5, 'Compiling on the LeapBlocks server... (first build of this sketch can take several minutes; later uploads of the same code are instant)');
-        console.log('[webflash] Step 1: compileOnServer...');
+        options.onProgress?.(10, 'Compiling on LeapBlocks cloud server...');
+        console.log('[webflash] Step 1/2: Sending sketch to compiler...');
         const compiled = await compileOnServer(options);
-        console.log(`[webflash] compileOnServer result: success=${compiled.success}, errors=${compiled.errors?.slice(0, 200) || 'none'}`);
         if (!compiled.success) {
             return { success: false, error: `Compilation failed:\n${compiled.errors}` };
         }
 
         // 2. Flash from the browser.
-        console.log('[webflash] Step 2: flashing from browser...');
+        options.onProgress?.(35, 'Flashing firmware to board via Web Serial...');
+        console.log('[webflash] Step 2/2: Flashing firmware to board...');
+        options.onLog?.(`[webflash] ⚡ Initiating flashing sequence...`);
+
         if (isEsp32Fqbn(options.fqbn)) {
             await flashEsp32(port, {
                 binBase64: compiled.binBase64!,
@@ -392,8 +421,14 @@ export async function uploadToBoard(options: WebUploadOptions): Promise<{ succes
             };
         }
 
+        const elapsedSec = ((Date.now() - uploadStartTime) / 1000).toFixed(1);
+        console.log(`[webflash] 🎉 Upload complete in ${elapsedSec}s!`);
+        options.onLog?.(`[webflash] 🎉 Upload complete and verified in ${elapsedSec}s!`);
+
         return { success: true };
     } catch (err: any) {
+        console.error('[webflash] ❌ Upload failed with error:', err);
+        options.onLog?.(`[webflash] ❌ Upload failed: ${err?.message || err}`);
         return {
             success: false,
             error: err?.message || 'Upload failed with an unknown error.',

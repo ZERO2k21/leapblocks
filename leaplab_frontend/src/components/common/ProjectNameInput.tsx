@@ -20,17 +20,17 @@ export default function ProjectNameInput({
 }: ProjectNameInputProps) {
   return (
     <div
-      className={`bg-white/10 border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-2 h-9 box-border ${className}`}
+      className={`bg-white/10 border border-white/15 py-1 px-2.5 rounded-lg flex items-center gap-1.5 h-8.5 box-border shrink min-w-0 ${className}`}
       style={style}
     >
-      <span className="text-sm opacity-50 leading-none select-none">
+      <span className="text-xs opacity-60 leading-none select-none shrink-0">
         📁
       </span>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="My Project"
-        className="bg-transparent border-0 text-white w-28 outline-none text-xs font-semibold font-sans placeholder-white/40"
+        className="bg-transparent border-0 text-white w-20 sm:w-24 outline-none text-xs font-semibold font-sans placeholder-white/40 truncate shrink min-w-0"
       />
       <button
         type="button"
@@ -41,7 +41,7 @@ export default function ProjectNameInput({
         }`}
         disabled={isSaving}
       >
-        <Save size={14} />
+        <Save size={13} />
       </button>
     </div>
   );
