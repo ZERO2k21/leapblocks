@@ -3,6 +3,8 @@ import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { HandPoseClassifier } from '../../ml/classifiers/HandPoseClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
+import ClassScores from '../../ui/components/ClassScores'
+import SampleWarningModal from '../../ui/components/SampleWarningModal'
 import { classifyPianoKey, ZoneDebounceBuffer } from '../../ml/utils/ruleBasedClassifiers'
 
 interface VirtualPianoPanelProps {
@@ -38,6 +40,9 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
     const zoneDebounceRef = useRef(new ZoneDebounceBuffer())
 
     const [isCapturing, setIsCapturing] = useState(false)
+    const [captureFps, setCaptureFps] = useState(15)
+    const burstIntervalRef = useRef<NodeJS.Timeout | null>(null)
+    const handleCaptureRef = useRef<() => Promise<void>>(null)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [stream, setStream] = useState<MediaStream | null>(null)
@@ -192,10 +197,7 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
 
     useEffect(() => {
         if (mode.mode !== 'test') return
-        if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
-            testCameraStartedRef.current = true
-            startCamera()
-        }
+        // Camera starts OFF in test mode — user chooses to turn on camera
         const runPrediction = async () => {
             if (isPredictingRef.current) return
             if (streamStateRef.current && videoRef.current && canvasRef.current) {
@@ -299,6 +301,26 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
         }
     }, [cameraOn, isCapturing, mode, showSaved])
 
+    handleCaptureRef.current = handleCapture
+
+    const startBurstCapture = useCallback(() => {
+        if (!mode.selectedClassId || !cameraOn) return
+        burstIntervalRef.current = setInterval(() => {
+            handleCaptureRef.current?.()
+        }, 1000 / captureFps)
+    }, [captureFps, mode.selectedClassId, cameraOn])
+
+    const stopBurstCapture = useCallback(() => {
+        if (burstIntervalRef.current) {
+            clearInterval(burstIntervalRef.current)
+            burstIntervalRef.current = null
+        }
+    }, [])
+
+    useEffect(() => {
+        return () => { stopBurstCapture() }
+    }, [])
+
     const canTrain = !!(mode.project && mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2))
     const selectedClass = mode.getSelectedClass()
 
@@ -353,9 +375,28 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                                 <button type="button" onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-700 border-none cursor-pointer">
                                     {cameraOn ? '📷 Stop' : '📷 Start'}
                                 </button>
-                                <button type="button" onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass}
+                                <div className="flex items-center gap-1 py-1 px-2 bg-gray-50 rounded-lg">
+                                    <span className="text-[9px] font-bold text-gray-500">FPS</span>
+                                    <input
+                                        type="range"
+                                        min={5}
+                                        max={30}
+                                        step={1}
+                                        value={captureFps}
+                                        onChange={(e) => setCaptureFps(Number(e.target.value))}
+                                        className="w-12 h-1 accent-purple-600"
+                                    />
+                                    <span className="text-[10px] font-bold text-purple-600 w-4 text-center">{captureFps}</span>
+                                </div>
+                                <button type="button" onClick={handleCapture}
+                                    onMouseDown={startBurstCapture}
+                                    onMouseUp={stopBurstCapture}
+                                    onMouseLeave={stopBurstCapture}
+                                    onTouchStart={startBurstCapture}
+                                    onTouchEnd={stopBurstCapture}
+                                    disabled={!cameraOn || isCapturing || !selectedClass}
                                     className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white border-none cursor-pointer disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-purple-600'}`}>
-                                    {isCapturing ? '⏳...' : '📸 Capture'}
+                                    {isCapturing ? '⏳ Recording...' : '📸 Hold to Record'}
                                 </button>
                             </div>
                         </div>
@@ -510,6 +551,11 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                                 )}
                             </div>
 
+                            {/* All Class Scores */}
+                            {prediction && (
+                                <ClassScores confidences={prediction.confidences} accentColor="#8b5cf6" accentBg="#f5f3ff" />
+                            )}
+
                             {/* Speed & Hand */}
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="bg-purple-50 rounded-xl p-2.5 border border-purple-100">
@@ -556,6 +602,15 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {mode.mode === 'collect' && mode.project && (
+                <SampleWarningModal
+                    classes={mode.project.classes}
+                    accentColor="#8b5cf6"
+                    accentBg="#f5f3ff"
+                    projectType="virtual piano"
+                />
             )}
         </div>
     )

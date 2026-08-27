@@ -1,6 +1,10 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { PoseClassifier, Keypoint } from '../../ml/classifiers/PoseClassifier'
+import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
+import NotRelatedModal from '../../ui/components/NotRelatedModal'
+import SampleWarningModal from '../../ui/components/SampleWarningModal'
+import ClassScores from '../../ui/components/ClassScores'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import { HoldTimeBuffer } from '../../ml/utils/ruleBasedClassifiers'
@@ -44,6 +48,9 @@ export default function YogaCheckerPanel({ mode }: YogaCheckerPanelProps) {
     const holdTimeRef = useRef(new HoldTimeBuffer(HOLD_TIME_MS))
 
     const [isCapturing, setIsCapturing] = useState(false)
+    const [captureFps, setCaptureFps] = useState(15)
+    const burstIntervalRef = useRef<NodeJS.Timeout | null>(null)
+    const handleCaptureRef = useRef<() => Promise<void>>(null)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [stream, setStream] = useState<MediaStream | null>(null)
@@ -60,6 +67,8 @@ export default function YogaCheckerPanel({ mode }: YogaCheckerPanelProps) {
     const [poseHistory, setPoseHistory] = useState<string[]>([])
     const [detectionCount, setDetectionCount] = useState(0)
     const [currentKeypoints, setCurrentKeypoints] = useState<Keypoint[]>([])
+    const [showNotRelated, setShowNotRelated] = useState(false)
+    const notRelatedCooldownRef = useRef(0)
 
     const showSaved = useCallback((msg: string) => {
         setSavedMessage(msg)
@@ -199,10 +208,7 @@ export default function YogaCheckerPanel({ mode }: YogaCheckerPanelProps) {
 
     useEffect(() => {
         if (mode.mode !== 'test' || modelLoading) return
-        if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
-            testCameraStartedRef.current = true
-            startCamera()
-        }
+        // Camera starts OFF in test mode — user chooses to turn on camera
         const runPrediction = async () => {
             if (isPredictingRef.current) return
             if (streamStateRef.current && videoRef.current && canvasRef.current) {
@@ -274,7 +280,15 @@ export default function YogaCheckerPanel({ mode }: YogaCheckerPanelProps) {
                             setPoseDetected(false)
                         }
 
-                        if (result && result.confidences[result.label] >= confidenceThreshold) {
+                        if (result && result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                            setPrediction(null)
+                            holdTimeRef.current.clear()
+                            const now = Date.now()
+                            if (now - notRelatedCooldownRef.current > 3000) {
+                                notRelatedCooldownRef.current = now
+                                setShowNotRelated(true)
+                            }
+                        } else if (result && result.confidences[result.label] >= confidenceThreshold) {
                             // Apply hold-time buffer: only register pose if held for 2 seconds
                             const heldPose = holdTimeRef.current.update(result.label)
                             if (heldPose) {
@@ -348,6 +362,26 @@ export default function YogaCheckerPanel({ mode }: YogaCheckerPanelProps) {
         }
     }, [cameraOn, isCapturing, mode, showSaved])
 
+    handleCaptureRef.current = handleCapture
+
+    const startBurstCapture = useCallback(() => {
+        if (!mode.selectedClassId || !cameraOn) return
+        burstIntervalRef.current = setInterval(() => {
+            handleCaptureRef.current?.()
+        }, 1000 / captureFps)
+    }, [captureFps, mode.selectedClassId, cameraOn])
+
+    const stopBurstCapture = useCallback(() => {
+        if (burstIntervalRef.current) {
+            clearInterval(burstIntervalRef.current)
+            burstIntervalRef.current = null
+        }
+    }, [])
+
+    useEffect(() => {
+        return () => { stopBurstCapture() }
+    }, [])
+
     const canTrain = !!(mode.project && mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2))
     const selectedClass = mode.getSelectedClass()
 
@@ -402,12 +436,30 @@ export default function YogaCheckerPanel({ mode }: YogaCheckerPanelProps) {
                                 <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-cyan-500 text-cyan-500 bg-white hover:bg-cyan-50 transition-colors">
                                     {cameraOn ? 'Stop' : 'Start'}
                                 </button>
+                                <div className="flex items-center gap-1 py-1 px-2 bg-gray-50 rounded-lg">
+                                    <span className="text-[9px] font-bold text-gray-500">FPS</span>
+                                    <input
+                                        type="range"
+                                        min={5}
+                                        max={30}
+                                        step={1}
+                                        value={captureFps}
+                                        onChange={(e) => setCaptureFps(Number(e.target.value))}
+                                        className="w-12 h-1 accent-cyan-500"
+                                    />
+                                    <span className="text-[10px] font-bold text-cyan-500 w-4 text-center">{captureFps}</span>
+                                </div>
                                 <button
                                     onClick={handleCapture}
+                                    onMouseDown={startBurstCapture}
+                                    onMouseUp={stopBurstCapture}
+                                    onMouseLeave={stopBurstCapture}
+                                    onTouchStart={startBurstCapture}
+                                    onTouchEnd={stopBurstCapture}
                                     disabled={!cameraOn || isCapturing || !selectedClass}
                                     className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white transition-colors disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-cyan-500 hover:bg-cyan-600'}`}
                                 >
-                                    {isCapturing ? '...' : 'Capture Pose'}
+                                    {isCapturing ? '⏳ Recording...' : '📸 Hold to Record'}
                                 </button>
                             </div>
                         </div>
@@ -563,6 +615,11 @@ export default function YogaCheckerPanel({ mode }: YogaCheckerPanelProps) {
                                 )}
                             </div>
 
+                            {/* All Class Scores */}
+                            {prediction && (
+                                <ClassScores confidences={prediction.confidences} accentColor="#0891b2" accentBg="#ecfeff" />
+                            )}
+
                             {/* Speed & Pose Detection */}
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="rounded-xl p-2.5 border bg-cyan-50 border-cyan-500/20">
@@ -598,6 +655,22 @@ export default function YogaCheckerPanel({ mode }: YogaCheckerPanelProps) {
                         </div>
                     </div>
                 </div>
+            )}
+
+            <NotRelatedModal
+                isOpen={showNotRelated}
+                onClose={() => setShowNotRelated(false)}
+                title="This pose isn't from your samples"
+                description="The detected pose doesn't match any of your training samples. Please perform a pose that you trained the model with."
+            />
+
+            {mode.mode === 'collect' && mode.project && (
+                <SampleWarningModal
+                    classes={mode.project.classes}
+                    accentColor="#0891b2"
+                    accentBg="#ecfeff"
+                    projectType="yoga checker"
+                />
             )}
         </div>
     )

@@ -3,6 +3,8 @@ import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { PoseClassifier, Keypoint } from '../../ml/classifiers/PoseClassifier'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+import ClassScores from '../../ui/components/ClassScores'
+import SampleWarningModal from '../../ui/components/SampleWarningModal'
 import { classifyRepState } from '../../ml/utils/ruleBasedClassifiers'
 
 interface RepCounterPanelProps {
@@ -50,6 +52,9 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
     const timerIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
     const [isCapturing, setIsCapturing] = useState(false)
+    const [captureFps, setCaptureFps] = useState(15)
+    const burstIntervalRef = useRef<NodeJS.Timeout | null>(null)
+    const handleCaptureRef = useRef<() => Promise<void>>(null)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [stream, setStream] = useState<MediaStream | null>(null)
@@ -266,13 +271,9 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
         }
     }, [confidenceThreshold])
 
-    // Test mode: auto-start camera and run predictions
+    // Test mode: camera starts OFF — user chooses to turn on camera
     useEffect(() => {
         if (mode.mode !== 'test' || modelLoading) return
-        if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
-            testCameraStartedRef.current = true
-            startCamera()
-        }
         const runPrediction = async () => {
             if (isPredictingRef.current) return
             if (streamStateRef.current && videoRef.current && canvasRef.current) {
@@ -414,6 +415,26 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
         }
     }, [cameraOn, isCapturing, mode, showSaved])
 
+    handleCaptureRef.current = handleCapture
+
+    const startBurstCapture = useCallback(() => {
+        if (!mode.selectedClassId || !cameraOn) return
+        burstIntervalRef.current = setInterval(() => {
+            handleCaptureRef.current?.()
+        }, 1000 / captureFps)
+    }, [captureFps, mode.selectedClassId, cameraOn])
+
+    const stopBurstCapture = useCallback(() => {
+        if (burstIntervalRef.current) {
+            clearInterval(burstIntervalRef.current)
+            burstIntervalRef.current = null
+        }
+    }, [])
+
+    useEffect(() => {
+        return () => { stopBurstCapture() }
+    }, [])
+
     const canTrain = !!(mode.project && mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2))
     const selectedClass = mode.getSelectedClass()
 
@@ -474,12 +495,30 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                                 <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-amber-500 text-amber-500 bg-white hover:bg-amber-50 transition-colors">
                                     {cameraOn ? 'Stop' : 'Start'}
                                 </button>
+                                <div className="flex items-center gap-1 py-1 px-2 bg-gray-50 rounded-lg">
+                                    <span className="text-[9px] font-bold text-gray-500">FPS</span>
+                                    <input
+                                        type="range"
+                                        min={5}
+                                        max={30}
+                                        step={1}
+                                        value={captureFps}
+                                        onChange={(e) => setCaptureFps(Number(e.target.value))}
+                                        className="w-12 h-1 accent-amber-500"
+                                    />
+                                    <span className="text-[10px] font-bold text-amber-500 w-4 text-center">{captureFps}</span>
+                                </div>
                                 <button
                                     onClick={handleCapture}
+                                    onMouseDown={startBurstCapture}
+                                    onMouseUp={stopBurstCapture}
+                                    onMouseLeave={stopBurstCapture}
+                                    onTouchStart={startBurstCapture}
+                                    onTouchEnd={stopBurstCapture}
                                     disabled={!cameraOn || isCapturing || !selectedClass}
                                     className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white transition-colors disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-amber-500 hover:bg-amber-600'}`}
                                 >
-                                    {isCapturing ? '...' : 'Capture Pose'}
+                                    {isCapturing ? '⏳ Recording...' : '📸 Hold to Record'}
                                 </button>
                             </div>
                         </div>
@@ -697,21 +736,24 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                                     <span className="text-[10px] font-bold text-gray-700">Detection Stats</span>
                                     <span className="text-[9px] font-bold text-amber-500">{detectionCount} detected</span>
                                 </div>
-                                {prediction && (
-                                    <div className="flex flex-col gap-1.5">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[9px] font-bold text-gray-600 w-16 truncate">{prediction.label}</span>
-                                            <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                                <div className="h-full rounded-full transition-all bg-amber-500" style={{ width: `${prediction.confidences[prediction.label] * 100}%` }} />
-                                            </div>
-                                            <span className="text-[9px] font-bold text-amber-500">{Math.round(prediction.confidences[prediction.label] * 100)}%</span>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
+
+                            {/* All Class Scores */}
+                            {prediction && (
+                                <ClassScores confidences={prediction.confidences} accentColor="#d97706" accentBg="#fffbeb" />
+                            )}
                         </div>
                     </div>
                 </div>
+            )}
+
+            {mode.mode === 'collect' && mode.project && (
+                <SampleWarningModal
+                    classes={mode.project.classes}
+                    accentColor="#d97706"
+                    accentBg="#fffbeb"
+                    projectType="rep counter"
+                />
             )}
         </div>
     )

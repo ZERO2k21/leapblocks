@@ -10,6 +10,7 @@ import SampleGrid from '../components/SampleGrid'
 import TrainPanel from '../components/TrainPanel'
 import TestPanel from '../components/TestPanel'
 import NotRelatedModal from '../components/NotRelatedModal'
+import SampleWarningModal from '../components/SampleWarningModal'
 
 interface ImageClassifierPanelProps {
     mode: UseNeuraProjectReturn
@@ -41,15 +42,17 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const [showOnboarding, setShowOnboarding] = useState(() => {
         return !localStorage.getItem('neura-onboarding-seen')
     })
-    const [burstMode, setBurstMode] = useState(false)
+    const [captureFps, setCaptureFps] = useState(15)
     const [testImage, setTestImage] = useState<string | null>(null)
     const [modelLoading, setModelLoading] = useState(false)
     const [augmentMode, setAugmentMode] = useState(true)
     const [inferenceTime, setInferenceTime] = useState(0)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
     const [showNotRelated, setShowNotRelated] = useState(false)
+    const notRelatedCooldownRef = useRef(0)
     const [totalEpochs, setTotalEpochs] = useState(50)
     const [currentEpoch, setCurrentEpoch] = useState(0)
+    const [epochResults, setEpochResults] = useState<number[]>([])
     const streamRef = useRef<MediaStream | null>(null)
     const cameraOnRef = useRef(false)
     const streamStateRef = useRef<MediaStream | null>(null)
@@ -171,11 +174,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
     useEffect(() => {
         if (mode.mode !== 'test' || modelLoading) return
-        // Auto-start camera when entering test mode
-        if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
-            testCameraStartedRef.current = true
-            startCamera()
-        }
+        // Camera starts OFF in test mode — user chooses to turn on camera or upload
         const runPrediction = async () => {
             if (isPredictingRef.current) return
             if (cameraOnRef.current && streamStateRef.current && videoRef.current) {
@@ -195,6 +194,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         consecutiveFailuresRef.current = 0
                         if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
                             setPrediction(null)
+                            const now = Date.now()
+                            if (now - notRelatedCooldownRef.current > 3000) {
+                                notRelatedCooldownRef.current = now
+                                setShowNotRelated(true)
+                            }
                         } else {
                             setPrediction(result)
                             setInferenceTime(elapsed)
@@ -422,11 +426,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     }, [prediction, inferenceTime, mode, showSaved])
 
     const startBurstCapture = useCallback(() => {
-        if (!burstMode || !mode.selectedClassId || !cameraOn) return
+        if (!mode.selectedClassId || !cameraOn) return
         burstIntervalRef.current = setInterval(() => {
             handleCaptureRef.current?.()
-        }, 500)
-    }, [burstMode, mode.selectedClassId, cameraOn])
+        }, 1000 / captureFps)
+    }, [captureFps, mode.selectedClassId, cameraOn])
 
     const stopBurstCapture = useCallback(() => {
         if (burstIntervalRef.current) {
@@ -448,6 +452,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         setTrainingError(null)
         setTotalEpochs(epochs)
         setCurrentEpoch(0)
+        setEpochResults([])
         const project = mode.project
         if (!project || project.classes.length < 2) {
             mode.setAccuracy(0)
@@ -456,7 +461,91 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         }
         try {
             setModelLoading(true)
-            // Single rebuild pass — reuse classifierRef for both training and LOO
+            const { ImageClassifier } = await import('../../ml/classifiers/ImageClassifier')
+
+            // Step 1: Shuffle & split samples 80/20 per class
+            const trainData: { cls: string; samples: typeof project.classes[0]['samples'] }[] = []
+            const testData: { img: HTMLImageElement; label: string }[] = []
+
+            for (const cls of project.classes) {
+                const shuffled = [...cls.samples].sort(() => Math.random() - 0.5)
+                const splitIdx = Math.max(2, Math.floor(shuffled.length * 0.8))
+                trainData.push({ cls: cls.name, samples: shuffled.slice(0, splitIdx) })
+                for (const sample of shuffled.slice(splitIdx)) {
+                    try {
+                        const img = new Image()
+                        img.src = sample.data
+                        await new Promise<void>((resolve, reject) => {
+                            img.onload = () => resolve()
+                            img.onerror = () => reject(new Error('Failed to load image'))
+                            setTimeout(() => reject(new Error('Image load timeout')), 5000)
+                        })
+                        if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+                            testData.push({ img, label: cls.name })
+                        }
+                        await new Promise(r => setTimeout(r, 0))
+                    } catch { }
+                }
+            }
+
+            setModelLoading(false)
+
+            if (trainData.every(t => t.samples.length === 0) || testData.length === 0) {
+                mode.setAccuracy(0)
+                setIsTraining(false)
+                return
+            }
+
+            // Step 2: Progressive training — add samples incrementally, evaluate on test set
+            const epochResults: number[] = []
+            let bestAccuracy = 0
+
+            for (let epoch = 1; epoch <= epochs; epoch++) {
+                setCurrentEpoch(epoch)
+                const progress = epoch / epochs
+                const delay = epochs > 50 ? Math.max(5, 20 / (epoch * 0.1)) : Math.max(10, 40 / (epoch * 0.1))
+                await new Promise(r => setTimeout(r, delay))
+
+                // Create a fresh classifier for this epoch
+                const evalClassifier = new ImageClassifier()
+
+                // Add proportional subset of training data per class
+                for (const td of trainData) {
+                    const numToAdd = Math.max(1, Math.ceil(progress * td.samples.length))
+                    const batchSamples = td.samples.slice(0, numToAdd)
+                    if (batchSamples.length > 0) {
+                        try {
+                            await evalClassifier.rebuildClass(
+                                td.cls,
+                                batchSamples.map(s => s.data),
+                                false
+                            )
+                        } catch { }
+                    }
+                }
+
+                // Evaluate on test set
+                let correct = 0
+                let total = 0
+                for (const item of testData) {
+                    try {
+                        const result = await evalClassifier.predict(item.img, 3)
+                        if (result && result.label === item.label) correct++
+                        total++
+                    } catch { total++ }
+                    await new Promise(r => setTimeout(r, 0))
+                }
+
+                evalClassifier.dispose()
+
+                const rawAccuracy = total > 0 ? correct / total : 0
+                epochResults.push(rawAccuracy)
+                setEpochResults([...epochResults])
+                if (rawAccuracy > bestAccuracy) bestAccuracy = rawAccuracy
+                mode.setAccuracy(rawAccuracy)
+            }
+
+            // Step 3: Build the final classifier with ALL samples for actual use
             classifierRef.current.clear()
             for (const cls of project.classes) {
                 if (cls.samples.length > 0) {
@@ -467,71 +556,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     )
                 }
             }
-            setModelLoading(false)
-            await new Promise(r => setTimeout(r, 800))
-            const sampleCounts = classifierRef.current.getSampleCounts()
-            const trainedClasses = Object.keys(sampleCounts)
-            if (trainedClasses.length < 2) {
-                mode.setAccuracy(0)
-                setIsTraining(false)
-                return
-            }
-            // Build LOO classifier without augmentation (reuses same data, no extra GPU load)
-            const { ImageClassifier } = await import('../../ml/classifiers/ImageClassifier')
-            const loClassifier = new ImageClassifier()
-            for (const cls of project.classes) {
-                if (cls.samples.length > 0) {
-                    await loClassifier.rebuildClass(cls.name, cls.samples.map(s => s.data), false)
-                }
-            }
-            const minSamples = Math.min(...Object.values(loClassifier.getSampleCounts()))
-            const adaptiveK = Math.min(5, minSamples)
-            let bestAccuracy = 0
-            const epochResults: number[] = []
-            for (let epoch = 1; epoch <= epochs; epoch++) {
-                setCurrentEpoch(epoch)
-                const delay = epochs > 50 ? Math.max(5, 20 / (epoch * 0.1)) : Math.max(10, 40 / (epoch * 0.1))
-                await new Promise(r => setTimeout(r, delay))
-                let correct = 0
-                let total = 0
-                for (const cls of project.classes) {
-                    for (let i = 0; i < cls.samples.length; i++) {
-                        const sample = cls.samples[i]
-                        try {
-                            const img = new Image()
-                            img.src = sample.data
-                            await new Promise<void>((resolve, reject) => {
-                                img.onload = () => resolve()
-                                img.onerror = () => reject(new Error('Failed to load image'))
-                                setTimeout(() => reject(new Error('Image load timeout')), 5000)
-                            })
-                            if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) {
-                                total++; continue
-                            }
-                            const removedEmbedding = await loClassifier.removeExampleByIndex(cls.name, i)
-                            const result = await loClassifier.predict(img, adaptiveK)
-                            if (result && result.label === cls.name) correct++
-                            total++
-                            if (removedEmbedding) {
-                                await loClassifier.addExampleFromDataArray(removedEmbedding, cls.name)
-                            }
-                            // Yield to browser between LOO predictions to prevent GPU buildup
-                            await new Promise(r => setTimeout(r, 0))
-                        } catch { total++ }
-                    }
-                }
-                const rawAccuracy = total > 0 ? correct / total : 0
-                epochResults.push(rawAccuracy)
-                let weightedSum = 0; let weightTotal = 0
-                for (let i = 0; i < epochResults.length; i++) {
-                    const weight = Math.pow(1.5, epochResults.length - 1 - i)
-                    weightedSum += epochResults[i] * weight; weightTotal += weight
-                }
-                const smoothedAccuracy = weightTotal > 0 ? weightedSum / weightTotal : rawAccuracy
-                if (smoothedAccuracy > bestAccuracy) bestAccuracy = smoothedAccuracy
-                mode.setAccuracy(smoothedAccuracy)
-            }
-            loClassifier.dispose()
+
             mode.setAccuracy(bestAccuracy)
             skipNextRebuildRef.current = true
             autoSwitchRef.current = setTimeout(() => {
@@ -779,10 +804,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                     </button>
                                     <button
                                         onClick={handleCapture}
-                                        onMouseDown={burstMode ? startBurstCapture : undefined}
-                                        onMouseUp={burstMode ? stopBurstCapture : undefined}
-                                        onTouchStart={burstMode ? startBurstCapture : undefined}
-                                        onTouchEnd={burstMode ? stopBurstCapture : undefined}
+                                        onMouseDown={startBurstCapture}
+                                        onMouseUp={stopBurstCapture}
+                                        onMouseLeave={stopBurstCapture}
+                                        onTouchStart={startBurstCapture}
+                                        onTouchEnd={stopBurstCapture}
                                         disabled={!canAddSamples || isCapturing}
                                         className={`w-14 h-14 rounded-full border-2 border-white/90 flex items-center justify-center shadow-[0_2px_12px_rgba(0,0,0,0.25)] transition-all duration-200 ${canAddSamples && !isCapturing ? 'cursor-pointer opacity-100' : 'cursor-not-allowed opacity-50'}`}
                                         style={{ background: isCapturing ? '#9ca3af' : (selectedClass?.color || '#630ed4') }}
@@ -875,14 +901,19 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     <CameraToggle />
 
-                                    <button
-                                        onClick={() => { setBurstMode(!burstMode); if (burstMode) stopBurstCapture() }}
-                                        disabled={!cameraOn}
-                                        className={`flex items-center gap-1.25 py-2 px-3 rounded-xl text-[11px] font-bold border-none transition-all duration-150 ${burstMode && cameraOn ? 'bg-[#f5f3ff] text-[#630ed4] shadow-[0_1px_4px_rgba(99,14,212,0.12)]' : 'bg-gray-50 text-gray-700'} ${cameraOn ? 'cursor-pointer opacity-100' : 'cursor-not-allowed opacity-50'}`}
-                                    >
-                                        <span className="text-xs">⚡</span>
-                                        {burstMode ? 'Rapid ON' : 'Rapid OFF'}
-                                    </button>
+                                    <div className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-gray-50">
+                                        <span className="text-[10px] font-bold text-gray-500">FPS</span>
+                                        <input
+                                            type="range"
+                                            min={5}
+                                            max={30}
+                                            step={1}
+                                            value={captureFps}
+                                            onChange={(e) => setCaptureFps(Number(e.target.value))}
+                                            className="w-16 h-1 accent-[#630ed4]"
+                                        />
+                                        <span className="text-[11px] font-bold text-[#630ed4] w-5 text-center">{captureFps}</span>
+                                    </div>
 
                                     <button
                                         onClick={() => setAugmentMode(!augmentMode)}
@@ -941,7 +972,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar py-3 px-5">
                     <div className="w-full flex-1 min-h-0 flex flex-col">
-                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} currentEpoch={currentEpoch} totalEpochs={totalEpochs} mode={mode.mode} onModeChange={mode.setMode} modelLoading={modelLoading} />
+                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} currentEpoch={currentEpoch} totalEpochs={totalEpochs} mode={mode.mode} onModeChange={mode.setMode} modelLoading={modelLoading} epochResults={epochResults} />
                     </div>
                 </div>
             )}
@@ -970,6 +1001,15 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 onClose={() => setShowNotRelated(false)}
                 onUpload={() => testFileInputRef.current?.click()}
             />
+
+            {mode.mode === 'collect' && mode.project && (
+                <SampleWarningModal
+                    classes={mode.project.classes}
+                    accentColor="#630ed4"
+                    accentBg="#f5f3ff"
+                    projectType="image classifier"
+                />
+            )}
         </div>
     )
 }

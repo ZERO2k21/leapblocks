@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import WorkflowIndicator from './WorkflowIndicator'
+import AccuracyChart from './AccuracyChart'
 
 interface TrainPanelProps {
     isTraining: boolean
@@ -18,6 +19,7 @@ interface TrainPanelProps {
     onModeChange?: (mode: any) => void
     workflowType?: string
     modelLoading?: boolean
+    epochResults?: number[]
 }
 
 const ENCOURAGEMENTS = [
@@ -44,7 +46,8 @@ export default function TrainPanel({
     mode = 'train',
     onModeChange,
     workflowType,
-    modelLoading = false
+    modelLoading = false,
+    epochResults = []
 }: TrainPanelProps) {
     const [progress, setProgress] = useState(0)
     const [displayAccuracy, setDisplayAccuracy] = useState(0)
@@ -261,6 +264,15 @@ export default function TrainPanel({
                         </div>
                         <p className="text-[10px] text-slate-500">How smart your AI is! 🧠</p>
                     </div>
+
+                    {/* Accuracy Chart */}
+                    {(epochResults.length > 0 || isTraining) && (
+                        <AccuracyChart
+                            epochResults={epochResults}
+                            isTraining={isTraining}
+                            currentEpoch={currentEpoch}
+                        />
+                    )}
                 </div>
             </div>
 

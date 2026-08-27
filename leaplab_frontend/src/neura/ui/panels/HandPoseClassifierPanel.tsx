@@ -11,6 +11,7 @@ import SampleGrid from '../components/SampleGrid'
 import TrainPanel from '../components/TrainPanel'
 import TestPanel from '../components/TestPanel'
 import NotRelatedModal from '../components/NotRelatedModal'
+import SampleWarningModal from '../components/SampleWarningModal'
 
 interface HandPoseClassifierPanelProps {
     mode: UseNeuraProjectReturn
@@ -51,6 +52,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     const [showOnboarding, setShowOnboarding] = useState(() => {
         return !localStorage.getItem('neura-handpose-onboarding-seen')
     })
+    const [epochResults, setEpochResults] = useState<number[]>([])
     const [inferenceTime, setInferenceTime] = useState(0)
     const [trainingError, setTrainingError] = useState<string | null>(null)
     const [augmentMode, setAugmentMode] = useState(true)
@@ -64,6 +66,10 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
     const [testImage, setTestImage] = useState<string | null>(null)
     const [showNotRelated, setShowNotRelated] = useState(false)
+    const notRelatedCooldownRef = useRef(0)
+    const [captureFps, setCaptureFps] = useState(15)
+    const burstIntervalRef = useRef<NodeJS.Timeout | null>(null)
+    const handleCaptureRef = useRef<() => Promise<void>>(null)
 
     const showSaved = useCallback((msg: string) => {
         setSavedMessage(msg)
@@ -347,14 +353,9 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         }
     }, [mode.mode, mode.project, augmentMode])
 
-    // Test mode: auto-start camera and run throttled predictions
+    // Test mode: camera starts OFF — user chooses to turn on camera or upload
     useEffect(() => {
         if (mode.mode !== 'test') return
-        // Auto-start camera when entering test mode
-        if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
-            testCameraStartedRef.current = true
-            startCamera()
-        }
         const runPrediction = async () => {
             if (isPredictingRef.current) return
             if (streamStateRef.current && videoRef.current && canvasRef.current) {
@@ -375,6 +376,11 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         if (result && result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
                             setPrediction(null)
                             setHandDetected(false)
+                            const now = Date.now()
+                            if (now - notRelatedCooldownRef.current > 3000) {
+                                notRelatedCooldownRef.current = now
+                                setShowNotRelated(true)
+                            }
                         } else if (result && result.confidences[result.label] >= confidenceThreshold) {
                             setPrediction(result)
                             setHandDetected(true)
@@ -478,13 +484,102 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         }
     }
 
+    handleCaptureRef.current = handleCapture
+
+    const startBurstCapture = useCallback(() => {
+        if (!mode.selectedClassId || !stream) return
+        burstIntervalRef.current = setInterval(() => {
+            handleCaptureRef.current?.()
+        }, 1000 / captureFps)
+    }, [captureFps, mode.selectedClassId, stream])
+
+    const stopBurstCapture = useCallback(() => {
+        if (burstIntervalRef.current) {
+            clearInterval(burstIntervalRef.current)
+            burstIntervalRef.current = null
+        }
+    }, [])
+
+    useEffect(() => {
+        return () => { stopBurstCapture() }
+    }, [])
+
     const handleTrain = async (_epochs: number = 50) => {
         setIsTraining(true)
         setTrainingError(null)
+        setEpochResults([])
         const project = mode.project
         if (!project || project.classes.length < 2) { mode.setAccuracy(0); setIsTraining(false); return }
         try {
             setModelLoading(true)
+            const { HandPoseClassifier } = await import('../../ml/classifiers/HandPoseClassifier')
+
+            // Step 1: Parse features, shuffle & split 80/20 per class
+            const trainData: { cls: string; features: Float32Array }[] = []
+            const testData: { features: Float32Array; label: string }[] = []
+
+            for (const cls of project.classes) {
+                const shuffled = [...cls.samples].sort(() => Math.random() - 0.5)
+                const splitIdx = Math.max(2, Math.floor(shuffled.length * 0.8))
+                for (let i = 0; i < shuffled.length; i++) {
+                    try {
+                        const data = JSON.parse(shuffled[i].data) as number[]
+                        const raw = new Float32Array(data)
+                        const features = raw.length < 78 ? (() => { const p = new Float32Array(78); p.set(raw); return p })() : raw
+                        if (i < splitIdx) {
+                            trainData.push({ cls: cls.name, features })
+                        } else {
+                            testData.push({ features, label: cls.name })
+                        }
+                    } catch { }
+                }
+            }
+
+            setModelLoading(false)
+
+            if (trainData.length === 0 || testData.length === 0) {
+                mode.setAccuracy(0)
+                setIsTraining(false)
+                return
+            }
+
+            // Step 2: Progressive training
+            const epochResults: number[] = []
+            let bestAccuracy = 0
+
+            for (let epoch = 1; epoch <= _epochs; epoch++) {
+                setCurrentEpoch(epoch)
+                const progress = epoch / _epochs
+                await new Promise(r => setTimeout(r, Math.max(10, 40 / (epoch * 0.1))))
+
+                const evalClassifier = new HandPoseClassifier()
+                const numToAdd = Math.max(2, Math.ceil(progress * trainData.length))
+                for (let i = 0; i < numToAdd; i++) {
+                    const item = trainData[i]
+                    try { await evalClassifier.addSample(item.features, item.cls) } catch { }
+                }
+
+                let correct = 0
+                let total = 0
+                for (const item of testData) {
+                    try {
+                        const result = await evalClassifier.predict(item.features, 3)
+                        if (result && result.label === item.label) correct++
+                        total++
+                    } catch { total++ }
+                    await new Promise(r => setTimeout(r, 0))
+                }
+
+                evalClassifier.dispose()
+
+                const rawAccuracy = total > 0 ? correct / total : 0
+                epochResults.push(rawAccuracy)
+                setEpochResults([...epochResults])
+                if (rawAccuracy > bestAccuracy) bestAccuracy = rawAccuracy
+                mode.setAccuracy(rawAccuracy)
+            }
+
+            // Step 3: Build final classifier for actual use
             classifierRef.current.clear()
             for (const cls of project.classes) {
                 if (cls.samples.length > 0) {
@@ -495,24 +590,9 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                     )
                 }
             }
-            setModelLoading(false)
 
-            let correct = 0; let total = 0
-            for (const cls of project.classes) {
-                for (const sample of cls.samples) {
-                    try {
-                        const data = JSON.parse(sample.data)
-                        const features = new Float32Array(data)
-                        // Pad legacy63-d vectors to78-d
-                        const padded = features.length < 78 ? (() => { const p = new Float32Array(78); p.set(features); return p })() : features
-                        const result = await classifierRef.current.predict(padded, 3)
-                        if (result && result.label === cls.name) correct++
-                        total++
-                    } catch { total++ }
-                    await new Promise(r => setTimeout(r, 0))
-                }
-            }
-            mode.setAccuracy(total > 0 ? correct / total : 0)
+            mode.setAccuracy(bestAccuracy)
+            skipNextRebuildRef.current = true
             setTimeout(() => { mode.setMode('test') }, 2000)
         } catch (e) {
             mode.setAccuracy(0)
@@ -855,22 +935,42 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
 
                             {/* Capture buttons */}
                             {cameraOn && (
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={handleCapture}
-                                        disabled={getCaptureDisabled()}
-                                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)] ${getCaptureDisabled() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'}`}
-                                    >
-                                        <span className="text-sm">📸</span>
-                                        {getCaptureLabel()}
-                                    </button>
-                                    <button
-                                        onClick={handleBatchCapture}
-                                        disabled={batchCapturing || getCaptureDisabled()}
-                                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-2 ${batchCapturing ? 'border-[#0ea5e9] bg-gradient-to-br from-sky-100 to-sky-200 text-[#0ea5e9]' : 'border-[#0ea5e9]/30 bg-white text-[#0ea5e9]'} ${batchCapturing || getCaptureDisabled() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'}`}
-                                    >
-                                        {batchCapturing ? `⏳ ${batchCountdown}` : '📸 Batch (5)'}
-                                    </button>
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-1.5 py-1 px-2.5 bg-gray-50 rounded-lg self-center">
+                                        <span className="text-[9px] font-bold text-gray-500">FPS</span>
+                                        <input
+                                            type="range"
+                                            min={5}
+                                            max={30}
+                                            step={1}
+                                            value={captureFps}
+                                            onChange={(e) => setCaptureFps(Number(e.target.value))}
+                                            className="w-14 h-1 accent-[#0ea5e9]"
+                                        />
+                                        <span className="text-[10px] font-bold text-[#0ea5e9] w-4 text-center">{captureFps}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={handleCapture}
+                                            onMouseDown={startBurstCapture}
+                                            onMouseUp={stopBurstCapture}
+                                            onMouseLeave={stopBurstCapture}
+                                            onTouchStart={startBurstCapture}
+                                            onTouchEnd={stopBurstCapture}
+                                            disabled={getCaptureDisabled()}
+                                            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)] ${getCaptureDisabled() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'}`}
+                                        >
+                                            <span className="text-sm">📸</span>
+                                            {isCapturing ? 'Recording...' : 'Hold to Record'}
+                                        </button>
+                                        <button
+                                            onClick={handleBatchCapture}
+                                            disabled={batchCapturing || getCaptureDisabled()}
+                                            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-2 ${batchCapturing ? 'border-[#0ea5e9] bg-gradient-to-br from-sky-100 to-sky-200 text-[#0ea5e9]' : 'border-[#0ea5e9]/30 bg-white text-[#0ea5e9]'} ${batchCapturing || getCaptureDisabled() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'}`}
+                                        >
+                                            {batchCapturing ? `⏳ ${batchCountdown}` : '📸 Batch (5)'}
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
@@ -912,7 +1012,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar py-3 px-5">
                     <div className="w-full flex-1 min-h-0 flex flex-col">
-                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} sampleType="poses" mode={mode.mode} onModeChange={mode.setMode} workflowType="pose" modelLoading={modelLoading} />
+                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} sampleType="poses" mode={mode.mode} onModeChange={mode.setMode} workflowType="pose" modelLoading={modelLoading} epochResults={epochResults} />
                     </div>
                 </div>
             )}
@@ -957,6 +1057,15 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                 onClose={() => setShowNotRelated(false)}
                 onUpload={() => testFileInputRef.current?.click()}
             />
+
+            {mode.mode === 'collect' && mode.project && (
+                <SampleWarningModal
+                    classes={mode.project.classes}
+                    accentColor="#630ed4"
+                    accentBg="#f5f3ff"
+                    projectType="hand gesture classifier"
+                />
+            )}
         </div>
     )
 }

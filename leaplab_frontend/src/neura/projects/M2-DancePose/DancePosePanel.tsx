@@ -1,6 +1,10 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { PoseClassifier, Keypoint } from '../../ml/classifiers/PoseClassifier'
+import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
+import NotRelatedModal from '../../ui/components/NotRelatedModal'
+import SampleWarningModal from '../../ui/components/SampleWarningModal'
+import ClassScores from '../../ui/components/ClassScores'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import { MajorityVoteBuffer } from '../../ml/utils/ruleBasedClassifiers'
@@ -49,6 +53,9 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
     const majorityVoteRef = useRef(new MajorityVoteBuffer(3))
 
     const [isCapturing, setIsCapturing] = useState(false)
+    const [captureFps, setCaptureFps] = useState(15)
+    const burstIntervalRef = useRef<NodeJS.Timeout | null>(null)
+    const handleCaptureRef = useRef<() => Promise<void>>(null)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [stream, setStream] = useState<MediaStream | null>(null)
@@ -67,6 +74,8 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
     const [correctDetections, setCorrectDetections] = useState(0)
     const [totalDetections, setTotalDetections] = useState(0)
     const [currentKeypoints, setCurrentKeypoints] = useState<Keypoint[]>([])
+    const [showNotRelated, setShowNotRelated] = useState(false)
+    const notRelatedCooldownRef = useRef(0)
     const [sequencePhase, setSequencePhase] = useState<'idle' | 'tracking' | 'paused'>('idle')
 
     const showSaved = useCallback((msg: string) => {
@@ -207,10 +216,7 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
 
     useEffect(() => {
         if (mode.mode !== 'test' || modelLoading) return
-        if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
-            testCameraStartedRef.current = true
-            startCamera()
-        }
+        // Camera starts OFF in test mode — user chooses to turn on camera
         const runPrediction = async () => {
             if (isPredictingRef.current) return
             if (streamStateRef.current && videoRef.current && canvasRef.current) {
@@ -239,7 +245,15 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                             setPoseDetected(false)
                         }
 
-                        if (result && result.confidences[result.label] >= confidenceThreshold) {
+                        if (result && result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                            setPrediction(null)
+                            majorityVoteRef.current.clear()
+                            const now = Date.now()
+                            if (now - notRelatedCooldownRef.current > 3000) {
+                                notRelatedCooldownRef.current = now
+                                setShowNotRelated(true)
+                            }
+                        } else if (result && result.confidences[result.label] >= confidenceThreshold) {
                             // Apply majority vote smoothing
                             const smoothedLabel = majorityVoteRef.current.add(result.label)
                             const smoothedResult = { ...result, label: smoothedLabel }
@@ -317,6 +331,26 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
         }
     }, [cameraOn, isCapturing, mode, showSaved])
 
+    handleCaptureRef.current = handleCapture
+
+    const startBurstCapture = useCallback(() => {
+        if (!mode.selectedClassId || !cameraOn) return
+        burstIntervalRef.current = setInterval(() => {
+            handleCaptureRef.current?.()
+        }, 1000 / captureFps)
+    }, [captureFps, mode.selectedClassId, cameraOn])
+
+    const stopBurstCapture = useCallback(() => {
+        if (burstIntervalRef.current) {
+            clearInterval(burstIntervalRef.current)
+            burstIntervalRef.current = null
+        }
+    }, [])
+
+    useEffect(() => {
+        return () => { stopBurstCapture() }
+    }, [])
+
     const handleResetSequence = useCallback(() => {
         setPoseHistory([])
         setTotalDetections(0)
@@ -385,12 +419,30 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                                 <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-pink-500 text-pink-500 bg-white hover:bg-pink-50 transition-colors">
                                     {cameraOn ? 'Stop' : 'Start'}
                                 </button>
+                                <div className="flex items-center gap-1 py-1 px-2 bg-gray-50 rounded-lg">
+                                    <span className="text-[9px] font-bold text-gray-500">FPS</span>
+                                    <input
+                                        type="range"
+                                        min={5}
+                                        max={30}
+                                        step={1}
+                                        value={captureFps}
+                                        onChange={(e) => setCaptureFps(Number(e.target.value))}
+                                        className="w-12 h-1 accent-pink-500"
+                                    />
+                                    <span className="text-[10px] font-bold text-pink-500 w-4 text-center">{captureFps}</span>
+                                </div>
                                 <button
                                     onClick={handleCapture}
+                                    onMouseDown={startBurstCapture}
+                                    onMouseUp={stopBurstCapture}
+                                    onMouseLeave={stopBurstCapture}
+                                    onTouchStart={startBurstCapture}
+                                    onTouchEnd={stopBurstCapture}
                                     disabled={!cameraOn || isCapturing || !selectedClass}
                                     className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white transition-colors disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-pink-500 hover:bg-pink-600'}`}
                                 >
-                                    {isCapturing ? '...' : 'Capture Pose'}
+                                    {isCapturing ? '⏳ Recording...' : '📸 Hold to Record'}
                                 </button>
                             </div>
                         </div>
@@ -549,6 +601,11 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                                 )}
                             </div>
 
+                            {/* All Class Scores */}
+                            {prediction && (
+                                <ClassScores confidences={prediction.confidences} accentColor="#ec4899" accentBg="#fdf2f8" />
+                            )}
+
                             {/* Accuracy Score */}
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-4 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
@@ -622,6 +679,22 @@ export default function DancePosePanel({ mode }: DancePosePanelProps) {
                         </div>
                     </div>
                 </div>
+            )}
+
+            <NotRelatedModal
+                isOpen={showNotRelated}
+                onClose={() => setShowNotRelated(false)}
+                title="This pose isn't from your samples"
+                description="The detected pose doesn't match any of your training samples. Please perform a dance pose that you trained the model with."
+            />
+
+            {mode.mode === 'collect' && mode.project && (
+                <SampleWarningModal
+                    classes={mode.project.classes}
+                    accentColor="#ec4899"
+                    accentBg="#fdf2f8"
+                    projectType="dance pose"
+                />
             )}
         </div>
     )

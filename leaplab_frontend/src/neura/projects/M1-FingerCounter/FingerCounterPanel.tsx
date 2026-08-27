@@ -3,6 +3,8 @@ import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { HandPoseClassifier } from '../../ml/classifiers/HandPoseClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
+import ClassScores from '../../ui/components/ClassScores'
+import SampleWarningModal from '../../ui/components/SampleWarningModal'
 import { classifyFingerCount } from '../../ml/utils/ruleBasedClassifiers'
 
 interface FingerCounterPanelProps {
@@ -37,6 +39,9 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
     const lastSoundCountRef = useRef(0)
 
     const [isCapturing, setIsCapturing] = useState(false)
+    const [captureFps, setCaptureFps] = useState(15)
+    const burstIntervalRef = useRef<NodeJS.Timeout | null>(null)
+    const handleCaptureRef = useRef<() => Promise<void>>(null)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [stream, setStream] = useState<MediaStream | null>(null)
@@ -159,10 +164,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
     // Rule-based classifier: no KNN rebuild needed
     useEffect(() => {
         if (mode.mode !== 'test' || testImage) return
-        if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
-            testCameraStartedRef.current = true
-            startCamera()
-        }
+        // Camera starts OFF in test mode — user chooses to turn on camera or upload
         const runPrediction = async () => {
             if (isPredictingRef.current) return
             if (streamStateRef.current && videoRef.current && canvasRef.current) {
@@ -518,6 +520,26 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
         }
     }, [cameraOn, isCapturing, mode, showSaved])
 
+    handleCaptureRef.current = handleCapture
+
+    const startBurstCapture = useCallback(() => {
+        if (!mode.selectedClassId || !cameraOn) return
+        burstIntervalRef.current = setInterval(() => {
+            handleCaptureRef.current?.()
+        }, 1000 / captureFps)
+    }, [captureFps, mode.selectedClassId, cameraOn])
+
+    const stopBurstCapture = useCallback(() => {
+        if (burstIntervalRef.current) {
+            clearInterval(burstIntervalRef.current)
+            burstIntervalRef.current = null
+        }
+    }, [])
+
+    useEffect(() => {
+        return () => { stopBurstCapture() }
+    }, [])
+
     const handleCollectUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
         if (!files || files.length === 0) return
@@ -666,9 +688,28 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
                                 <button onClick={toggleCamera} disabled={false} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1]">
                                     {cameraOn ? '📷 Stop' : '📷 Start'}
                                 </button>
-                                <button onClick={handleCapture} disabled={!cameraOn || isCapturing || !selectedClass || selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS}
+                                <div className="flex items-center gap-1 py-1 px-2 bg-gray-50 rounded-lg">
+                                    <span className="text-[9px] font-bold text-gray-500">FPS</span>
+                                    <input
+                                        type="range"
+                                        min={5}
+                                        max={30}
+                                        step={1}
+                                        value={captureFps}
+                                        onChange={(e) => setCaptureFps(Number(e.target.value))}
+                                        className="w-12 h-1 accent-[#0ea5e9]"
+                                    />
+                                    <span className="text-[10px] font-bold text-[#0ea5e9] w-4 text-center">{captureFps}</span>
+                                </div>
+                                <button onClick={handleCapture}
+                                    onMouseDown={startBurstCapture}
+                                    onMouseUp={stopBurstCapture}
+                                    onMouseLeave={stopBurstCapture}
+                                    onTouchStart={startBurstCapture}
+                                    onTouchEnd={stopBurstCapture}
+                                    disabled={!cameraOn || isCapturing || !selectedClass || selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS}
                                     className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-[#0ea5e9]'}`}>
-                                    {isCapturing ? '⏳ Capturing...' : '📸 Capture'}
+                                    {isCapturing ? '⏳ Recording...' : '📸 Hold to Record'}
                                 </button>
                                 <button onClick={() => collectFileInputRef.current?.click()} disabled={!selectedClass || selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS}
                                     className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold bg-blue-500 text-white disabled:opacity-40 hover:bg-blue-600 transition-all">
@@ -896,6 +937,11 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
                                 </div>
                             </div>
 
+                            {/* All Class Scores */}
+                            {prediction && (
+                                <ClassScores confidences={prediction.confidences} accentColor="#0ea5e9" accentBg="#f0f9ff" />
+                            )}
+
                             {/* Speed & Hand Status */}
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="bg-[#f0f9ff] rounded-xl p-2.5 border border-[#e0f2fe]">
@@ -932,6 +978,15 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
                     </div>
                     <input ref={testFileInputRef} type="file" accept="image/*" onChange={handleTestUpload} className="hidden" />
                 </div>
+            )}
+
+            {mode.mode === 'collect' && mode.project && (
+                <SampleWarningModal
+                    classes={mode.project.classes}
+                    accentColor="#0ea5e9"
+                    accentBg="#f0f9ff"
+                    projectType="finger counter"
+                />
             )}
         </div>
     )

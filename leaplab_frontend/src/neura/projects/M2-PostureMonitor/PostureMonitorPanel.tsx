@@ -3,6 +3,8 @@ import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { PoseClassifier, Keypoint } from '../../ml/classifiers/PoseClassifier'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+import ClassScores from '../../ui/components/ClassScores'
+import SampleWarningModal from '../../ui/components/SampleWarningModal'
 import { classifyPosture } from '../../ml/utils/ruleBasedClassifiers'
 
 interface PostureMonitorPanelProps {
@@ -50,6 +52,9 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
     const sessionStartRef = useRef<number>(Date.now())
 
     const [isCapturing, setIsCapturing] = useState(false)
+    const [captureFps, setCaptureFps] = useState(15)
+    const burstIntervalRef = useRef<NodeJS.Timeout | null>(null)
+    const handleCaptureRef = useRef<() => Promise<void>>(null)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [stream, setStream] = useState<MediaStream | null>(null)
@@ -234,10 +239,7 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
 
     useEffect(() => {
         if (mode.mode !== 'test' || modelLoading) return
-        if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
-            testCameraStartedRef.current = true
-            startCamera()
-        }
+        // Camera starts OFF in test mode — user chooses to turn on camera
         const runPrediction = async () => {
             if (isPredictingRef.current) return
             if (streamStateRef.current && videoRef.current && canvasRef.current) {
@@ -404,6 +406,26 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
         }
     }, [cameraOn, isCapturing, mode, showSaved])
 
+    handleCaptureRef.current = handleCapture
+
+    const startBurstCapture = useCallback(() => {
+        if (!mode.selectedClassId || !cameraOn) return
+        burstIntervalRef.current = setInterval(() => {
+            handleCaptureRef.current?.()
+        }, 1000 / captureFps)
+    }, [captureFps, mode.selectedClassId, cameraOn])
+
+    const stopBurstCapture = useCallback(() => {
+        if (burstIntervalRef.current) {
+            clearInterval(burstIntervalRef.current)
+            burstIntervalRef.current = null
+        }
+    }, [])
+
+    useEffect(() => {
+        return () => { stopBurstCapture() }
+    }, [])
+
     const resetSession = useCallback(() => {
         setGoodCount(0)
         setBadCount(0)
@@ -514,12 +536,30 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                                 <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-indigo-600 text-indigo-600 bg-white hover:bg-indigo-50 transition-colors">
                                     {cameraOn ? 'Stop' : 'Start'}
                                 </button>
+                                <div className="flex items-center gap-1 py-1 px-2 bg-gray-50 rounded-lg">
+                                    <span className="text-[9px] font-bold text-gray-500">FPS</span>
+                                    <input
+                                        type="range"
+                                        min={5}
+                                        max={30}
+                                        step={1}
+                                        value={captureFps}
+                                        onChange={(e) => setCaptureFps(Number(e.target.value))}
+                                        className="w-12 h-1 accent-indigo-600"
+                                    />
+                                    <span className="text-[10px] font-bold text-indigo-600 w-4 text-center">{captureFps}</span>
+                                </div>
                                 <button
                                     onClick={handleCapture}
+                                    onMouseDown={startBurstCapture}
+                                    onMouseUp={stopBurstCapture}
+                                    onMouseLeave={stopBurstCapture}
+                                    onTouchStart={startBurstCapture}
+                                    onTouchEnd={stopBurstCapture}
                                     disabled={!cameraOn || isCapturing || !selectedClass}
                                     className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white transition-colors disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                                 >
-                                    {isCapturing ? '...' : 'Capture Pose'}
+                                    {isCapturing ? '⏳ Recording...' : '📸 Hold to Record'}
                                 </button>
                             </div>
                         </div>
@@ -664,6 +704,11 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                                 )}
                             </div>
 
+                            {/* All Class Scores */}
+                            {prediction && (
+                                <ClassScores confidences={prediction.confidences} accentColor="#4f46e5" accentBg="#eef2ff" />
+                            )}
+
                             {/* Posture Score */}
                             <div className="bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
@@ -756,6 +801,15 @@ export default function PostureMonitorPanel({ mode }: PostureMonitorPanelProps) 
                         </div>
                     </div>
                 </div>
+            )}
+
+            {mode.mode === 'collect' && mode.project && (
+                <SampleWarningModal
+                    classes={mode.project.classes}
+                    accentColor="#4f46e5"
+                    accentBg="#eef2ff"
+                    projectType="posture monitor"
+                />
             )}
         </div>
     )

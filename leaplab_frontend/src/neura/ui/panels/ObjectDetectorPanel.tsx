@@ -102,6 +102,9 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const [detections, setDetections] = useState<{ class: string; score: number; bbox: [number, number, number, number] }[]>([])
     const [uploadedImage, setUploadedImage] = useState<{ originalUrl: string; annotatedUrl: string | null; width: number; height: number } | null>(null)
     const [uploadedDetections, setUploadedDetections] = useState<{ class: string; score: number; bbox: [number, number, number, number] }[]>([])
+    const [captureFps, setCaptureFps] = useState(15)
+    const burstIntervalRef = useRef<NodeJS.Timeout | null>(null)
+    const handleCaptureRef = useRef<() => Promise<void>>(null)
     const [realtimeEnabled, setRealtimeEnabled] = useState(true)
     const [showOriginal, setShowOriginal] = useState(true)
     const [cameraError, setCameraError] = useState<string | null>(null)
@@ -332,7 +335,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         return () => cancelAnimationFrame(animFrameRef.current)
     }, [cameraOn, realtimeEnabled, isLoadingModel, detectFrame, drawDetections, confidenceThreshold])
 
-    // Test mode: auto-start camera, disable continuous detection, reset scan state
+    // Test mode: camera starts OFF — user chooses to turn on camera or upload
     useEffect(() => {
         if (mode.mode !== 'test') {
             setScannedFrameUrl(null)
@@ -343,11 +346,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         setScannedFrameUrl(null)
         setUploadedImage(null)
         setUploadedDetections([])
-        if (!cameraOnRef.current && !streamStateRef.current && !testCameraStartedRef.current) {
-            testCameraStartedRef.current = true
-            startCamera()
-        }
-    }, [mode.mode, startCamera])
+    }, [mode.mode])
 
     const captureFrameFromVideo = useCallback((video: HTMLVideoElement): string => {
         const tempCanvas = document.createElement('canvas')
@@ -494,6 +493,26 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             setIsCapturing(false)
         }
     }
+
+    handleCaptureRef.current = handleCapture
+
+    const startBurstCapture = useCallback(() => {
+        if (!mode.selectedClassId || !cameraOn) return
+        burstIntervalRef.current = setInterval(() => {
+            handleCaptureRef.current?.()
+        }, 1000 / captureFps)
+    }, [captureFps, mode.selectedClassId, cameraOn])
+
+    const stopBurstCapture = useCallback(() => {
+        if (burstIntervalRef.current) {
+            clearInterval(burstIntervalRef.current)
+            burstIntervalRef.current = null
+        }
+    }, [])
+
+    useEffect(() => {
+        return () => { stopBurstCapture() }
+    }, [])
 
     const handleUpload = async (eOrFiles: React.ChangeEvent<HTMLInputElement> | FileList | File[]) => {
         let files: FileList | File[] | null = null
@@ -785,11 +804,29 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     </div>
                                 )}
                                 {/* Capture button */}
-                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
+                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2">
+                                    <div className="flex items-center gap-1.5 py-1 px-2.5 bg-black/40 backdrop-blur-md rounded-lg">
+                                        <span className="text-[9px] font-bold text-white/70">FPS</span>
+                                        <input
+                                            type="range"
+                                            min={5}
+                                            max={30}
+                                            step={1}
+                                            value={captureFps}
+                                            onChange={(e) => setCaptureFps(Number(e.target.value))}
+                                            className="w-14 h-1 accent-white"
+                                        />
+                                        <span className="text-[10px] font-bold text-white w-4 text-center">{captureFps}</span>
+                                    </div>
                                     <CaptureButton
                                         onClick={handleCapture}
+                                        onMouseDown={startBurstCapture}
+                                        onMouseUp={stopBurstCapture}
+                                        onMouseLeave={stopBurstCapture}
+                                        onTouchStart={startBurstCapture}
+                                        onTouchEnd={stopBurstCapture}
                                         disabled={!canAddSamples || isCapturing}
-                                        label={isCapturing ? '📸 Captured!' : atSampleLimit ? 'Max Reached' : 'Capture 📸'}
+                                        label={isCapturing ? '📸 Captured!' : atSampleLimit ? 'Max Reached' : 'Hold to Record 📸'}
                                         icon="camera"
                                         color={selectedClass?.color || '#630ed4'}
                                         pulse={!isCapturing && !!canAddSamples}

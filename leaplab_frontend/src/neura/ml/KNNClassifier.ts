@@ -128,7 +128,7 @@ export class KNNClassifier {
             return null
         }
 
-        const temperature = 0.8
+        const temperature = 1.5
         const scores = Object.values(weightedScores)
         const minScore = Math.min(...scores)
         const maxScore = Math.max(...scores)
@@ -141,8 +141,27 @@ export class KNNClassifier {
         }
         const expTotal = Object.values(expScores).reduce((s, v) => s + v, 0) || 1
 
+        const rawConfidences: Record<string, number> = {}
+        labels.forEach(l => { rawConfidences[l] = expScores[l] / expTotal })
+
+        // Confidence cap: when top-2 margin is small, reduce displayed confidence
+        // to avoid misleadingly high scores on ambiguous predictions
+        const sorted = Object.entries(rawConfidences).sort(([, a], [, b]) => b - a)
+        const top1 = sorted[0]?.[1] ?? 0
+        const top2 = sorted[1]?.[1] ?? 0
+        const margin = top1 - top2
+        // If margin < 0.25 (classes are close), scale confidence down
+        // Max cap: 1.0, min cap: 0.5 * top1 (never below half the raw score)
+        const marginFactor = Math.min(1, Math.max(0.4, margin / 0.25))
+
         const confidences: Record<string, number> = {}
-        labels.forEach(l => { confidences[l] = expScores[l] / expTotal })
+        labels.forEach(l => {
+            const raw = rawConfidences[l]
+            // Only dampen the top class when margin is thin; leave others as-is
+            confidences[l] = l === sorted[0]?.[0]
+                ? Math.max(raw * marginFactor, raw * 0.5)
+                : raw
+        })
 
         if (this.plattScaleA !== 1.0 || this.plattScaleB !== 0.0) {
             for (const l of labels) {

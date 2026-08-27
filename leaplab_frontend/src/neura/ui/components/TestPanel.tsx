@@ -276,14 +276,41 @@ export default function TestPanel({
                                     </div>
                                 </div>
 
-                                {/* Top predicted result only */}
+                                {/* All class confidences */}
                                 <div className="w-full mb-3.5">
-                                    <div className="rounded-xl border border-[#630ed4]/10 bg-[#f5f3ff] p-3 text-center">
-                                        <span className="text-[9px] font-extrabold text-[#630ed4] uppercase tracking-wider block mb-1">
-                                            Top Predicted Class
-                                        </span>
-                                        <p className="text-sm font-extrabold text-[#131b2e] capitalize">{getPredictionLabel()}</p>
-                                        <p className="text-xs font-bold text-gray-500 mt-1">{displayConfidence}% accuracy</p>
+                                    <span className="text-[9px] font-extrabold text-[#630ed4] uppercase tracking-wider block mb-2">
+                                        All Class Scores
+                                    </span>
+                                    <div className="flex flex-col gap-1.5">
+                                        {sortedConfidences.map(([label, conf], idx) => {
+                                            const pct = Math.round(conf * 100)
+                                            const isTop = idx === 0
+                                            return (
+                                                <div key={label} className={`rounded-lg p-2 ${isTop ? 'bg-[#f5f3ff] border border-[#630ed4]/15' : 'bg-gray-50 border border-gray-100'}`}>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className={`text-[11px] font-bold capitalize ${isTop ? 'text-[#630ed4]' : 'text-gray-700'}`}>
+                                                            {isTop && <span className="mr-1">🏆</span>}
+                                                            {label}
+                                                        </span>
+                                                        <span className={`text-[11px] font-extrabold ${pct >= 50 ? 'text-emerald-600' : pct >= 25 ? 'text-amber-600' : 'text-gray-400'}`}>
+                                                            {pct}%
+                                                        </span>
+                                                    </div>
+                                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                        <div
+                                                            className={`h-full rounded-full transition-[width] duration-200 ease-out ${
+                                                                isTop
+                                                                    ? 'bg-gradient-to-r from-[#630ed4] to-[#7c3aed]'
+                                                                    : pct >= 25
+                                                                        ? 'bg-gradient-to-r from-amber-400 to-amber-500'
+                                                                        : 'bg-gray-300'
+                                                            }`}
+                                                            style={{ width: `${pct}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
                                     </div>
                                 </div>
 

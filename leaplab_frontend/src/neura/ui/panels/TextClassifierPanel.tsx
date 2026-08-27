@@ -220,21 +220,48 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                 </div>
                             )}
                             {!isProcessing && prediction && (
-                                <div className="bg-white/90 backdrop-blur-md rounded-2xl p-5 border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.04)] h-full flex flex-col">
-                                    <div className="text-center mb-4">
-                                        <p className="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-2">🎯 Prediction</p>
-                                        <div className="inline-flex items-center gap-2.5 py-2 px-4 bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl">
-                                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#630ed4] to-[#7c3aed] flex items-center justify-center text-white font-bold text-sm">
-                                                {prediction.label.charAt(0).toUpperCase()}
-                                            </div>
-                                            <span className="text-base font-bold text-[#131b2e]">{prediction.label}</span>
-                                        </div>
-                                        <div className="flex items-center justify-center gap-1.5 mt-2">
-                                            <span className="text-xs text-gray-500">Confidence</span>
-                                            <span className={`text-sm font-extrabold ${(Object.values(prediction.confidences)[0] || 0) >= 0.7 ? 'text-emerald-600' : (Object.values(prediction.confidences)[0] || 0) >= 0.4 ? 'text-amber-600' : 'text-red-600'}`}>
-                                                {Math.round((Object.values(prediction.confidences)[0] || 0) * 100)}%
-                                            </span>
-                                        </div>
+                                <div className="bg-white/90 backdrop-blur-md rounded-2xl p-4 border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.04)] h-full flex flex-col overflow-hidden">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-[9px] font-extrabold text-[#630ed4] uppercase tracking-widest">All Class Scores</span>
+                                        <button
+                                            onClick={() => { setPrediction(null); setTextInput('') }}
+                                            className="text-[9px] font-bold text-[#630ed4] bg-[#f5f3ff] py-0.5 px-1.5 rounded border-none cursor-pointer"
+                                        >
+                                            Clear
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-col gap-1.5 flex-1 overflow-y-auto neura-scrollbar">
+                                        {Object.entries(prediction.confidences)
+                                            .sort(([, a], [, b]) => b - a)
+                                            .map(([label, conf], idx) => {
+                                                const pct = Math.round(conf * 100)
+                                                const isTop = idx === 0
+                                                return (
+                                                    <div key={label} className={`rounded-lg p-2 ${isTop ? 'bg-[#f5f3ff] border border-[#630ed4]/15' : 'bg-gray-50 border border-gray-100'}`}>
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <span className={`text-[11px] font-bold capitalize ${isTop ? 'text-[#630ed4]' : 'text-gray-700'}`}>
+                                                                {isTop && <span className="mr-1">🏆</span>}
+                                                                {label}
+                                                            </span>
+                                                            <span className={`text-[11px] font-extrabold ${pct >= 50 ? 'text-emerald-600' : pct >= 25 ? 'text-amber-600' : 'text-gray-400'}`}>
+                                                                {pct}%
+                                                            </span>
+                                                        </div>
+                                                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                            <div
+                                                                className={`h-full rounded-full transition-[width] duration-200 ease-out ${
+                                                                    isTop
+                                                                        ? 'bg-gradient-to-r from-[#630ed4] to-[#7c3aed]'
+                                                                        : pct >= 25
+                                                                            ? 'bg-gradient-to-r from-amber-400 to-amber-500'
+                                                                            : 'bg-gray-300'
+                                                                }`}
+                                                                style={{ width: `${pct}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
                                     </div>
                                 </div>
                             )}
