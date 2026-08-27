@@ -66,13 +66,14 @@ export class KNNClassifier {
      * Automatically adjusts k based on the smallest class size for optimal accuracy.
      */
     async predictClass(embedding: any, k = 5): Promise<KNNPrediction | null> {
-        const tf = await ensureTf()
-        const labels = Object.keys(this.examples)
-        if (!labels.length) return null
+        try {
+            const tf = await ensureTf()
+            const labels = Object.keys(this.examples)
+            if (!labels.length) return null
 
-        const flat = embedding.reshape([embedding.size])
-        const emb = flat.expandDims(0)
-        flat.dispose()
+            const flat = embedding.reshape([embedding.size])
+            const emb = flat.expandDims(0)
+            flat.dispose()
 
         const minClassSize = Math.min(...labels.map(l => (this.examples[l] as any).shape[0]))
         const adaptiveK = Math.min(k, minClassSize, 7)
@@ -153,6 +154,10 @@ export class KNNClassifier {
         const winner = labels.reduce((a, b) => confidences[a] > confidences[b] ? a : b)
 
         return { label: winner, confidences, similarity: maxCosine }
+        } catch (err) {
+            // TF.js backend corruption (e.g. WebGL context loss) — return null instead of crashing
+            return null
+        }
     }
 
     /**

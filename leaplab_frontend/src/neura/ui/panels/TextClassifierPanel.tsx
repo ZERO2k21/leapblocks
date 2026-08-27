@@ -87,7 +87,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
     }, [textInput, mode.mode])
 
     const selectedClass = mode.getSelectedClass()
-    const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
+    const canTrain = mode.project && !modelLoading ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
     const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
 
     return (
@@ -173,7 +173,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar p-3 px-5">
                     <div className="w-full flex-1 min-h-0 flex flex-col">
-                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} sampleType="texts" mode={mode.mode} onModeChange={mode.setMode} />
+                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} sampleType="texts" mode={mode.mode} onModeChange={mode.setMode} modelLoading={modelLoading} />
                     </div>
                 </div>
             )}

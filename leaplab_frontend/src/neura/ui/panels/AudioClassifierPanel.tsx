@@ -248,7 +248,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
 
     const selectedClass = mode.getSelectedClass()
     const hasClasses = mode.project ? mode.project.classes.length > 0 : false
-    const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
+    const canTrain = mode.project && !modelLoading ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
     const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
     const canAddSamples = selectedClass && !atSampleLimit
 
@@ -462,6 +462,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                             mode={mode.mode}
                             onModeChange={mode.setMode}
                             workflowType="audio"
+                            modelLoading={modelLoading}
                         />
                     </div>
                 </div>

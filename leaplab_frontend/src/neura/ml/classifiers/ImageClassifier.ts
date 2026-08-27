@@ -46,18 +46,22 @@ function setupContextLossListener() {
     }
 }
 
-export class ImageClassifier {
-    private knn = new KNNClassifier()
-    private mobilenetModel: any = null
-    private mobilenetModule: any = null
+// Shared singleton MobileNet model — multiple ImageClassifier instances reuse the same
+// model to avoid loading duplicate copies that compete for the WebGL backend.
+let sharedMobileNetModel: any = null
+let sharedMobileNetLoading: Promise<any> | null = null
 
-    private async ensureModel() {
-        if (this.mobilenetModel) return this.mobilenetModel
+async function ensureSharedMobileNetModel(): Promise<any> {
+    if (sharedMobileNetModel) return sharedMobileNetModel
+    if (sharedMobileNetLoading) return sharedMobileNetLoading
+
+    sharedMobileNetLoading = (async () => {
         setupContextLossListener()
         const mobilenet = await ensureMobileNet()
         const tf = await ensureTf()
+        let model: any
         try {
-            this.mobilenetModel = await mobilenet.load({
+            model = await mobilenet.load({
                 version: 2,
                 alpha: 1.0,
                 modelUrl: 'https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json'
@@ -68,7 +72,7 @@ export class ImageClassifier {
                 'https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json'
             )
             rawModel.predict(tf.zeros([1, 224, 224, 3])).dispose()
-            this.mobilenetModel = {
+            model = {
                 infer: (img: any, embedding = false) => tf.tidy(() => {
                     if (!(img instanceof tf.Tensor)) img = tf.browser.fromPixels(img)
                     let input = tf.image.resizeBilinear(img, [224, 224]).toFloat()
@@ -87,7 +91,19 @@ export class ImageClassifier {
                 })
             }
         }
-        return this.mobilenetModel
+        sharedMobileNetModel = model
+        sharedMobileNetLoading = null
+        return model
+    })()
+
+    return sharedMobileNetLoading
+}
+
+export class ImageClassifier {
+    private knn = new KNNClassifier()
+
+    private async ensureModel() {
+        return ensureSharedMobileNetModel()
     }
 
     /**
@@ -100,13 +116,31 @@ export class ImageClassifier {
     ): Promise<any> {
         const tf = await ensureTf()
 
+        // Guard: ensure input has valid dimensions before calling fromPixels
+        const w = input instanceof HTMLVideoElement
+            ? input.videoWidth
+            : input instanceof HTMLCanvasElement
+                ? input.width
+                : (input as HTMLImageElement).naturalWidth
+        const h = input instanceof HTMLVideoElement
+            ? input.videoHeight
+            : input instanceof HTMLCanvasElement
+                ? input.height
+                : (input as HTMLImageElement).naturalHeight
+        if (!w || !h || w === 0 || h === 0) {
+            throw new Error('Input has zero dimensions — camera may not be ready yet')
+        }
+
         // Use tf.tidy to auto-dispose all intermediate tensors (slice, resize, div, sub)
         return tf.tidy(() => {
             let tensor = tf.browser.fromPixels(input).toFloat()
-            const [h, w] = tensor.shape
-            const size = Math.min(h, w)
-            const top = Math.floor((h - size) / 2)
-            const left = Math.floor((w - size) / 2)
+            const [th, tw] = tensor.shape
+            if (th === 0 || tw === 0) {
+                throw new Error('fromPixels produced 0x0 tensor')
+            }
+            const size = Math.min(th, tw)
+            const top = Math.floor((th - size) / 2)
+            const left = Math.floor((tw - size) / 2)
             tensor = tf.slice(tensor, [top, left, 0], [size, size, 3])
             tensor = tf.image.resizeBilinear(tensor, [224, 224])
             return tensor.div(127.5).sub(1)
@@ -159,6 +193,20 @@ export class ImageClassifier {
 
     async predict(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, k = 5): Promise<ImagePrediction | null> {
         try {
+            // Guard: skip prediction if element has zero dimensions (e.g. camera just turned on, no frames yet)
+            const w = imageElement instanceof HTMLVideoElement
+                ? imageElement.videoWidth
+                : imageElement instanceof HTMLCanvasElement
+                    ? imageElement.width
+                    : (imageElement as HTMLImageElement).naturalWidth
+            const h = imageElement instanceof HTMLVideoElement
+                ? imageElement.videoHeight
+                : imageElement instanceof HTMLCanvasElement
+                    ? imageElement.height
+                    : (imageElement as HTMLImageElement).naturalHeight
+            if (!w || !h || w === 0 || h === 0) {
+                return null
+            }
             const embedding = await this.extractEmbedding(imageElement)
             try {
                 const result = await this.knn.predictClass(embedding, k)
@@ -322,7 +370,5 @@ export class ImageClassifier {
 
     dispose(): void {
         this.knn.dispose()
-        this.mobilenetModel = null
-        this.mobilenetModule = null
     }
 }

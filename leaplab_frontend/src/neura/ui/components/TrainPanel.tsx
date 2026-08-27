@@ -17,6 +17,7 @@ interface TrainPanelProps {
     mode?: any
     onModeChange?: (mode: any) => void
     workflowType?: string
+    modelLoading?: boolean
 }
 
 const ENCOURAGEMENTS = [
@@ -42,7 +43,8 @@ export default function TrainPanel({
     sampleType = 'pictures',
     mode = 'train',
     onModeChange,
-    workflowType
+    workflowType,
+    modelLoading = false
 }: TrainPanelProps) {
     const [progress, setProgress] = useState(0)
     const [displayAccuracy, setDisplayAccuracy] = useState(0)
@@ -86,14 +88,16 @@ export default function TrainPanel({
             {/* Header - centered */}
             <div className="w-full flex flex-col items-center mb-4">
                 <h2 className="text-xl sm:text-2xl font-extrabold text-[#630ed4] mb-0">
-                    {isTraining ? '🧠 Teaching Time!' : accuracy !== null ? '🎉 Training Complete!' : '🤖 Ready to Train!'}
+                    {isTraining ? '🧠 Teaching Time!' : modelLoading ? '⏳ Loading Model...' : accuracy !== null ? '🎉 Training Complete!' : '🤖 Ready to Train!'}
                 </h2>
                 <p className="text-xs text-[#4a4455]">
                     {isTraining
                         ? `Teaching round ${currentEpoch} of ${epochs}`
-                        : accuracy !== null
-                            ? `Accuracy: ${displayAccuracy}%`
-                            : `Learning from ${totalSamples} ${sampleType} across ${classCount} classes`}
+                        : modelLoading
+                            ? 'Preparing your samples...'
+                            : accuracy !== null
+                                ? `Accuracy: ${displayAccuracy}%`
+                                : `Learning from ${totalSamples} ${sampleType} across ${classCount} classes`}
                 </p>
             </div>
 
@@ -149,19 +153,26 @@ export default function TrainPanel({
                         {/* Train button */}
                         <button
                             onClick={() => onTrain(epochs)}
-                            disabled={!canTrain || isTraining}
+                            disabled={!canTrain || isTraining || modelLoading}
                             className={`flex items-center gap-2 py-3 px-8 rounded-xl text-sm font-bold border-none tracking-wide transition-all duration-200 ${
-                                canTrain && !isTraining
+                                canTrain && !isTraining && !modelLoading
                                     ? 'cursor-pointer bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_6px_24px_rgba(99,14,212,0.3)] hover:opacity-95'
                                     : isTraining
                                         ? 'cursor-not-allowed bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white/90 shadow-[0_4px_16px_rgba(99,14,212,0.2)]'
-                                        : 'cursor-not-allowed bg-slate-200 text-slate-400 opacity-50'
+                                        : modelLoading
+                                            ? 'cursor-not-allowed bg-violet-100 text-[#630ed4] border border-violet-200'
+                                            : 'cursor-not-allowed bg-slate-200 text-slate-400 opacity-50'
                             }`}
                         >
                             {isTraining ? (
                                 <>
                                     <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                                     <span>Teaching... ({currentEpoch}/{epochs})</span>
+                                </>
+                            ) : modelLoading ? (
+                                <>
+                                    <div className="w-3.5 h-3.5 border-2 border-[#630ed4]/40 border-t-[#630ed4] rounded-full animate-spin" />
+                                    <span>Preparing model...</span>
                                 </>
                             ) : accuracy !== null ? (
                                 <>

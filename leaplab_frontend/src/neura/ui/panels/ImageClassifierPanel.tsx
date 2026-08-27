@@ -27,6 +27,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const skipNextRebuildRef = useRef(false)
     const isPredictingRef = useRef(false)
     const rebuildAbortRef = useRef(0)
+    const consecutiveFailuresRef = useRef(0)
 
     const [isCapturing, setIsCapturing] = useState(false)
     const [isDragging, setIsDragging] = useState(false)
@@ -164,6 +165,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const testCameraStartedRef = useRef(false)
     useEffect(() => {
         if (mode.mode !== 'test') testCameraStartedRef.current = false
+        // Reset consecutive failure counter when mode changes
+        consecutiveFailuresRef.current = 0
     }, [mode.mode])
 
     useEffect(() => {
@@ -176,6 +179,12 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         const runPrediction = async () => {
             if (isPredictingRef.current) return
             if (cameraOnRef.current && streamStateRef.current && videoRef.current) {
+                // Guard: skip if video has no valid dimensions yet (camera just started, no frames)
+                const vw = videoRef.current.videoWidth
+                const vh = videoRef.current.videoHeight
+                if (!vw || !vh || vw === 0 || vh === 0) return
+                // Stop predicting after 10 consecutive failures to prevent log spam
+                if (consecutiveFailuresRef.current >= 10) return
                 isPredictingRef.current = true
                 setIsProcessing(true)
                 try {
@@ -183,6 +192,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     const result = await classifierRef.current.predict(videoRef.current)
                     const elapsed = Math.round(performance.now() - start)
                     if (result) {
+                        consecutiveFailuresRef.current = 0
                         if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
                             setPrediction(null)
                         } else {
@@ -193,7 +203,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         setPrediction(null)
                     }
                 } catch (err) {
-                    console.error('Prediction error:', err)
+                    consecutiveFailuresRef.current++
+                    if (consecutiveFailuresRef.current >= 10) {
+                        console.error('[Neura] Stopping predictions — too many consecutive failures. Reload the page to recover.')
+                        setCameraError('GPU memory issue. Please reload the page.')
+                    }
                 }
                 setIsProcessing(false)
                 isPredictingRef.current = false
@@ -927,7 +941,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             {mode.mode === 'train' && (
                 <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar py-3 px-5">
                     <div className="w-full flex-1 min-h-0 flex flex-col">
-                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} currentEpoch={currentEpoch} totalEpochs={totalEpochs} mode={mode.mode} onModeChange={mode.setMode} />
+                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} currentEpoch={currentEpoch} totalEpochs={totalEpochs} mode={mode.mode} onModeChange={mode.setMode} modelLoading={modelLoading} />
                     </div>
                 </div>
             )}
