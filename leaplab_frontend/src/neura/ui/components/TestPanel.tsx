@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useState } from 'react'
 
 interface TestPanelProps {
     prediction: { label: string; confidences: Record<string, number> } | null
@@ -53,23 +53,7 @@ export default function TestPanel({
         : []
 
     const maxConfidence = sortedConfidences.length > 0 ? sortedConfidences[0][1] : 0
-    const [displayConfidence, setDisplayConfidence] = useState(0)
-
-    useEffect(() => {
-        if (prediction && maxConfidence > 0) {
-            const duration = 600
-            const startTime = Date.now()
-            const interval = setInterval(() => {
-                const elapsed = Date.now() - startTime
-                const pct = Math.min(1, elapsed / duration)
-                setDisplayConfidence(Math.round(maxConfidence * 100 * (1 - Math.pow(1 - pct, 3))))
-                if (pct >= 1) clearInterval(interval)
-            }, 16)
-            return () => clearInterval(interval)
-        } else {
-            setDisplayConfidence(0)
-        }
-    }, [prediction, maxConfidence])
+    const displayConfidence = Math.round(maxConfidence * 100)
 
     const getPredictionLabel = () => {
         if (!prediction) return ''
@@ -284,7 +268,7 @@ export default function TestPanel({
                                     </div>
                                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                                         <div
-                                            className={`h-full rounded-full transition-[width] duration-600 ease-out ${
+                                            className={`h-full rounded-full transition-[width] duration-200 ease-out ${
                                                 displayConfidence >= 50 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : 'bg-gradient-to-r from-amber-400 to-amber-600'
                                             }`}
                                             style={{ width: `${displayConfidence}%` }}
