@@ -1,4 +1,4 @@
-{
+{ 
   "name": "leapblocks-root",
   "version": "1.0.0",
   "private": true,
@@ -6,6 +6,7 @@
   "scripts": {
     "postinstall": "cd leaplab_frontend && npm install",
     "build": "cd leaplab_frontend && npm run build",
-    "build:web": "cd leaplab_frontend && npm run build:web"
+    "build:web": "cd leaplab_frontend && npm run build:web",
+    "deploy:pages": "npm run build:web && wrangler pages deploy build --project-name=leaplab"
   }
 }
