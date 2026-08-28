@@ -63,7 +63,34 @@ const COCO_TO_FRIENDLY: Record<string, string> = {
     'bicycle': 'bike',
     'motorcycle': 'bike',
     'laptop': 'computer',
-    'sports ball': 'ball'
+    'sports ball': 'ball',
+    'dining table': 'table',
+    'traffic light': 'light',
+    'fire hydrant': 'hydrant',
+    'stop sign': 'sign',
+    'parking meter': 'meter',
+    'teddy bear': 'teddy',
+    'hair drier': 'dryer',
+    'baseball bat': 'bat',
+    'baseball glove': 'glove',
+    'tennis racket': 'racket',
+    'wine glass': 'glass',
+    'hot dog': 'hotdog',
+    'tv': 'tv',
+    'remote': 'remote',
+    'mouse': 'mouse',
+    'keyboard': 'keyboard',
+    'bed': 'bed',
+    'couch': 'couch',
+    'toilet': 'toilet',
+    'sink': 'sink',
+    'refrigerator': 'fridge',
+    'microwave': 'microwave',
+    'oven': 'oven',
+    'toaster': 'toaster',
+    'vase': 'vase',
+    'scissors': 'scissors',
+    'toothbrush': 'toothbrush',
 }
 
 function mapToUserClass(cocoLabel: string, userClasses: ClassData[]): string {
@@ -74,7 +101,7 @@ function mapToUserClass(cocoLabel: string, userClasses: ClassData[]): string {
     return match ? match.name : cocoLabel
 }
 
-const DETECT_THROTTLE_MS = 500
+const DETECT_THROTTLE_MS = 300
 
 export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) {
     const isMobile = useIsMobile(768)
@@ -101,6 +128,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const burstIntervalRef = useRef<NodeJS.Timeout | null>(null)
     const handleCaptureRef = useRef<() => Promise<void>>(null)
     const [realtimeEnabled, setRealtimeEnabled] = useState(true)
+    const [showBoxes, setShowBoxes] = useState(true)
     const [showOriginal, setShowOriginal] = useState(true)
     const [captureFlash, setCaptureFlash] = useState(false)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
@@ -272,7 +300,11 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 detectFrame().then(dets => {
                     setDetections(dets)
                     const filteredDets = dets.filter(det => det.score >= confidenceThreshold)
-                    if (canvasRef.current && camera.videoRef.current) drawDetections(filteredDets, canvasRef.current, camera.videoRef.current)
+                    if (showBoxes && canvasRef.current && camera.videoRef.current) drawDetections(filteredDets, canvasRef.current, camera.videoRef.current)
+                    else if (canvasRef.current) {
+                        const ctx = canvasRef.current.getContext('2d')
+                        if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+                    }
                     isPredictingRef.current = false
                 })
             }
@@ -280,16 +312,16 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [camera.cameraOn, realtimeEnabled, isLoadingModel, detectFrame, drawDetections, confidenceThreshold])
+    }, [camera.cameraOn, realtimeEnabled, isLoadingModel, detectFrame, drawDetections, confidenceThreshold, showBoxes])
 
-    // Test mode: camera starts OFF — user chooses to turn on camera or upload
+    // Test mode: enable real-time detection by default
     useEffect(() => {
         if (mode.mode !== 'test') {
             setScannedFrameUrl(null)
             setRealtimeEnabled(true)
             return
         }
-        setRealtimeEnabled(false)
+        setRealtimeEnabled(true)
         setScannedFrameUrl(null)
         setUploadedImage(null)
         setUploadedDetections([])
@@ -1142,6 +1174,20 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                         )}
                     </div>
 
+                    {/* Bounding Box Toggle */}
+                    <div className="bg-white/85 rounded-xl p-3 border border-gray-200 shrink-0">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-[11px] font-bold text-[#131b2e]">🔲 Bounding Boxes</h3>
+                            <button
+                                onClick={() => setShowBoxes(!showBoxes)}
+                                className={`relative w-10 h-5 rounded-full transition-colors duration-200 border-none cursor-pointer ${showBoxes ? 'bg-[#630ed4]' : 'bg-gray-300'}`}
+                            >
+                                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${showBoxes ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                            </button>
+                        </div>
+                        <p className="text-[8px] text-gray-500 mt-1">{showBoxes ? 'Boxes visible on camera' : 'Boxes hidden — showing raw feed'}</p>
+                    </div>
+
                     {/* Detection Quality Metrics */}
                     {allDetections.length > 0 && (
                         <div className="bg-white/85 rounded-xl p-3 border border-gray-200 shrink-0">
@@ -1220,23 +1266,48 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     </div>
 
                     {/* Detected objects */}
-                    {currentDetections.length > 0 && (
+                    {currentDetections.length > 0 ? (
                         <div className="bg-white/85 rounded-xl p-3 border border-gray-200 shrink-0">
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="text-[11px] font-bold text-[#131b2e]">🎯 Detected</h3>
                                 <span className="text-[8px] font-bold bg-[#f5f3ff] py-0.5 px-1.5 rounded text-[#630ed4]">{currentDetections.length}</span>
                             </div>
-                            <div className="flex flex-col gap-1 max-h-[100px] overflow-y-auto">
+                            <div className="flex flex-col gap-1.5 max-h-[180px] overflow-y-auto">
                                 {currentDetections.map((det, i) => (
-                                    <div key={i} className="flex items-center gap-1.5 py-1 px-1.5 rounded-md bg-[#faf9ff]">
-                                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: getColorForObject(det.class) }} />
-                                        <span className="text-[9px] font-bold text-[#131b2e] flex-1 capitalize">{det.class}</span>
-                                        <span className="text-[8px] font-bold py-0.5 px-1 rounded text-white" style={{ background: getColorForObject(det.class) }}>{Math.round(det.score * 100)}%</span>
+                                    <div key={i} className="py-1.5 px-2 rounded-md bg-[#faf9ff]">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: getColorForObject(det.class) }} />
+                                            <span className="text-[9px] font-bold text-[#131b2e] flex-1 capitalize">{det.class}</span>
+                                            <span className="text-[8px] font-bold py-0.5 px-1 rounded text-white" style={{ background: getColorForObject(det.class) }}>{Math.round(det.score * 100)}%</span>
+                                        </div>
+                                        <div className="flex gap-2 mt-1 ml-3">
+                                            <span className="text-[7px] text-gray-400">x:{Math.round(det.bbox[0])}</span>
+                                            <span className="text-[7px] text-gray-400">y:{Math.round(det.bbox[1])}</span>
+                                            <span className="text-[7px] text-gray-400">w:{Math.round(det.bbox[2])}</span>
+                                            <span className="text-[7px] text-gray-400">h:{Math.round(det.bbox[3])}</span>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                    )}
+                    ) : (camera.cameraOn || uploadedImage) && !isLoadingModel ? (
+                        <div className="bg-white/85 rounded-xl p-4 border border-gray-200 shrink-0 text-center">
+                            <div className="text-2xl mb-2">🔍</div>
+                            <p className="text-[11px] font-bold text-[#131b2e] mb-1">No objects detected yet</p>
+                            <p className="text-[9px] text-gray-500">
+                                {camera.cameraOn ? 'Point your camera at objects — AI will find them!' : 'Click Scan to detect objects in this image'}
+                            </p>
+                            {!customModelTrained && (
+                                <p className="text-[8px] text-amber-600 mt-1.5 font-semibold">Using pre-trained COCO-SSD (80 classes). Train a custom model for your own objects.</p>
+                            )}
+                            {customModelTrained && useCustomModel && (
+                                <p className="text-[8px] text-blue-600 mt-1.5 font-semibold">Your custom model is active. Make sure objects match your trained classes.</p>
+                            )}
+                            {realtimeEnabled && (
+                                <p className="text-[8px] text-gray-400 mt-1">Detection runs automatically — try moving objects into frame.</p>
+                            )}
+                        </div>
+                    ) : null}
 
                     {/* Model Export */}
                     {customModelTrained && mode.project && (

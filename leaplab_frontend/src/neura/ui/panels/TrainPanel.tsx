@@ -19,7 +19,26 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
     const totalSamples = mode.getTotalSamples()
     const totalClasses = mode.project?.classes.length || 0
     const isObjectDetection = mode.project?.type === 'object-detection' && trainer
-    const canTrain = totalClasses >= 2 && totalSamples > 0
+
+    // Count annotated samples (samples with bounding boxes) for object detection
+    const annotatedCount = React.useMemo(() => {
+        if (!isObjectDetection || !mode.project) return totalSamples
+        let count = 0
+        for (const cls of mode.project.classes) {
+            for (const sample of cls.samples) {
+                try {
+                    const parsed = JSON.parse(sample.data)
+                    if (parsed.boxes && parsed.boxes.length > 0) count++
+                } catch {
+                    // Raw image data (not annotated JSON)
+                }
+            }
+        }
+        return count
+    }, [mode.project?.classes, isObjectDetection, totalSamples])
+
+    const hasAnnotations = annotatedCount > 0
+    const canTrain = totalClasses >= 2 && totalSamples > 0 && (isObjectDetection ? hasAnnotations : true)
 
     useEffect(() => {
         return () => {
@@ -214,6 +233,26 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
                                 <p className="text-[11px] font-bold text-amber-900">Add at least 2 classes</p>
                                 <p className="text-[10px] text-amber-700">Create 2 or more classes to start training</p>
                             </div>
+                        </div>
+                    )}
+
+                    {isObjectDetection && totalSamples > 0 && !hasAnnotations && (
+                        <div className="py-2.5 px-3.5 bg-red-50 rounded-xl border border-red-200 flex items-center gap-2">
+                            <span className="text-sm">🏷️</span>
+                            <div>
+                                <p className="text-[11px] font-bold text-red-900">No annotations found</p>
+                                <p className="text-[10px] text-red-700">Go to Label step and draw bounding boxes around objects in your images. Training needs annotated images to learn where objects are.</p>
+                                <button onClick={() => mode.setMode('annotate')} className="mt-2 py-1.5 px-3 bg-red-100 text-red-800 rounded-lg text-[10px] font-bold border-none cursor-pointer hover:bg-red-200 transition-colors">
+                                    🏷️ Go to Label Step
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {isObjectDetection && totalSamples > 0 && hasAnnotations && annotatedCount < totalSamples && (
+                        <div className="py-2 px-3 bg-amber-50 rounded-xl border border-amber-200 flex items-center gap-2">
+                            <span className="text-xs">💡</span>
+                            <p className="text-[10px] text-amber-700">{annotatedCount} of {totalSamples} images are annotated. Unannotated images won't contribute to training.</p>
                         </div>
                     )}
                 </div>

@@ -37,40 +37,61 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
     const [isAutoDetecting, setIsAutoDetecting] = useState(false)
     const [showBoxList, setShowBoxList] = useState(true)
     const [isDragging, setIsDragging] = useState(false)
+    const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
     const currentStepIndex = ['collect', 'annotate', 'train', 'test'].indexOf(mode.mode)
     const totalBoxes = mode.currentAnnotation?.boxes.length || 0
     const progress = Math.min((totalBoxes / 10) * 100, 100)
     const selectedClass = mode.getSelectedClass()
     const defaultLabel = selectedClass?.name || 'Object'
+    const classSamples = selectedClass?.samples || []
+    const totalImages = classSamples.length
+
+    const annotatedCount = React.useMemo(() => {
+        let count = 0
+        for (const sample of classSamples) {
+            try {
+                const parsed = JSON.parse(sample.data)
+                if (parsed.boxes && parsed.boxes.length > 0) count++
+            } catch { /* raw image, not annotated */ }
+        }
+        return count
+    }, [classSamples])
+    const allAnnotated = totalImages > 0 && annotatedCount === totalImages
 
     useEffect(() => {
-        if (mode.selectedClassId && !annotationImage) {
-            const cls = mode.getSelectedClass()
-            const lastSample = cls?.samples[cls.samples.length - 1]
-            if (lastSample) {
-                try {
-                    const parsed = JSON.parse(lastSample.data)
-                    if (parsed.imageUrl) {
-                        setAnnotationImage(parsed.imageUrl)
-                        setImageSize({ width: 800, height: 600 })
-                        mode.setCurrentAnnotation({ id: lastSample.id, imageUrl: parsed.imageUrl, boxes: parsed.boxes || [], imageName: parsed.imageName || 'annotated', timestamp: lastSample.timestamp })
+        if (mode.selectedClassId && classSamples.length > 0) {
+            const safeIndex = Math.min(currentImageIndex, classSamples.length - 1)
+            if (safeIndex !== currentImageIndex && currentImageIndex >= 0) {
+                setCurrentImageIndex(safeIndex)
+                return
+            }
+            const sample = classSamples[safeIndex]
+            if (!sample) return
+            try {
+                const parsed = JSON.parse(sample.data)
+                if (parsed.imageUrl) {
+                    setAnnotationImage(parsed.imageUrl)
+                    const img = new Image()
+                    img.src = parsed.imageUrl
+                    img.onload = () => {
+                        setImageSize({ width: img.naturalWidth, height: img.naturalHeight })
                     }
-                } catch {
-                    // Raw data URL (from Collect step) — recover the image
-                    if (lastSample.data && lastSample.data.startsWith('data:image')) {
-                        setAnnotationImage(lastSample.data)
-                        const img = new Image()
-                        img.src = lastSample.data
-                        img.onload = () => {
-                            setImageSize({ width: img.naturalWidth, height: img.naturalHeight })
-                        }
-                        mode.setCurrentAnnotation({ id: lastSample.id, imageUrl: lastSample.data, boxes: [], imageName: lastSample.data.split('/').pop() || 'image', timestamp: lastSample.timestamp })
+                    mode.setCurrentAnnotation({ id: sample.id, imageUrl: parsed.imageUrl, boxes: parsed.boxes || [], imageName: parsed.imageName || 'annotated', timestamp: sample.timestamp })
+                }
+            } catch {
+                if (sample.data && sample.data.startsWith('data:image')) {
+                    setAnnotationImage(sample.data)
+                    const img = new Image()
+                    img.src = sample.data
+                    img.onload = () => {
+                        setImageSize({ width: img.naturalWidth, height: img.naturalHeight })
                     }
+                    mode.setCurrentAnnotation({ id: sample.id, imageUrl: sample.data, boxes: [], imageName: sample.data.split('/').pop() || 'image', timestamp: sample.timestamp })
                 }
             }
         }
-    }, [mode.selectedClassId])
+    }, [mode.selectedClassId, currentImageIndex, classSamples.length])
 
     const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -281,7 +302,20 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
             const scaleX = (imgRect.width / canvasRect.width) * 100
             const scaleY = (imgRect.height / canvasRect.height) * 100
             saveUndoState()
-            const color = getNextToolColor(mode.currentAnnotation?.boxes || [])
+            const userClasses = mode.project?.classes || []
+            const COCO_LABEL_MAP: Record<string, string> = {
+                'cell phone': 'phone', 'potted plant': 'plant', 'backpack': 'bag',
+                'handbag': 'bag', 'suitcase': 'bag', 'bicycle': 'bike', 'motorcycle': 'bike',
+                'laptop': 'computer', 'sports ball': 'ball', 'dining table': 'table',
+                'traffic light': 'light', 'fire hydrant': 'hydrant', 'stop sign': 'sign',
+                'teddy bear': 'teddy', 'baseball bat': 'bat', 'baseball glove': 'glove',
+                'tennis racket': 'racket', 'wine glass': 'glass', 'hot dog': 'hotdog',
+                'tv': 'tv', 'remote': 'remote', 'mouse': 'mouse', 'keyboard': 'keyboard',
+                'bed': 'bed', 'couch': 'couch', 'toilet': 'toilet', 'sink': 'sink',
+                'refrigerator': 'fridge', 'microwave': 'microwave', 'oven': 'oven',
+                'vase': 'vase', 'scissors': 'scissors',
+            }
+            let matchedCount = 0
             results.forEach((r: any) => {
                 const [bx, by, bw, bh] = r.bbox
                 const x = offsetX + (bx / img.naturalWidth) * scaleX
@@ -289,11 +323,18 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                 const width = (bw / img.naturalWidth) * scaleX
                 const height = (bh / img.naturalHeight) * scaleY
                 if (width > 1 && height > 1) {
-                    mode.addBox({ label: defaultLabel, x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)), width: Math.min(width, 100 - Math.max(0, Math.min(100, x))), height: Math.min(height, 100 - Math.max(0, Math.min(100, y))), color })
+                    const cocoLabel = (r.class || '').toLowerCase()
+                    const friendlyLabel = COCO_LABEL_MAP[cocoLabel] || cocoLabel
+                    const matchedClass = userClasses.find(c => c.name.toLowerCase() === cocoLabel || c.name.toLowerCase() === friendlyLabel)
+                    const label = matchedClass ? matchedClass.name : defaultLabel
+                    if (matchedClass) matchedCount++
+                    const color = getNextToolColor(mode.currentAnnotation?.boxes || [])
+                    mode.addBox({ label, x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)), width: Math.min(width, 100 - Math.max(0, Math.min(100, x))), height: Math.min(height, 100 - Math.max(0, Math.min(100, y))), color })
                 }
             })
-            setSavedMessage(`🎯 Auto-detected ${results.length} objects!`)
-            setTimeout(() => setSavedMessage(null), 2000)
+            const matchedMsg = matchedCount > 0 ? ` (${matchedCount} matched to your classes)` : ''
+            setSavedMessage(`🎯 Auto-detected ${results.length} objects!${matchedMsg}`)
+            setTimeout(() => setSavedMessage(null), 3000)
         } catch (err) {
             console.error('[AnnotatePanel] Auto-detect failed:', err)
             setSavedMessage('⚠️ Auto-detect failed. Try drawing boxes manually.')
@@ -320,14 +361,13 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
     }, [mode, saveUndoState, handleUndo, handleRedo, editingBoxId, handleSaveLabel])
 
     const handleSave = useCallback(() => {
-        if (!annotationImage || !mode.selectedClassId) return
+        if (!annotationImage || !mode.selectedClassId || !mode.currentAnnotation?.id) return
         const annotationData = JSON.stringify({
             imageUrl: annotationImage,
             boxes: mode.currentAnnotation?.boxes || [],
             imageName: mode.currentAnnotation?.imageName || 'annotated'
         })
-        const saved = mode.addSample(mode.selectedClassId, { type: 'image', data: annotationData })
-        if (!saved) { setSavedMessage('⚠️ Sample limit reached!'); setTimeout(() => setSavedMessage(null), 2000); return }
+        mode.updateSample(mode.selectedClassId, mode.currentAnnotation.id, { type: 'image', data: annotationData })
         const className = mode.getSelectedClass()?.name || 'class'
         setSavedMessage(`✅ Saved ${mode.currentAnnotation?.boxes.length || 0} boxes to ${className}!`)
         setTimeout(() => setSavedMessage(null), 2000)
@@ -380,6 +420,57 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                     ))}
                 </div>
             </div>
+
+            {/* Thumbnail strip */}
+            {totalImages > 0 && (
+                <div className="px-5 shrink-0 mb-2">
+                    <div className="flex items-center gap-2 overflow-x-auto py-1.5 neura-scrollbar">
+                        {classSamples.map((sample, idx) => {
+                            let hasBoxes = false
+                            let thumbnail = ''
+                            try {
+                                const parsed = JSON.parse(sample.data)
+                                hasBoxes = parsed.boxes && parsed.boxes.length > 0
+                                thumbnail = parsed.imageUrl || ''
+                            } catch {
+                                if (sample.data && sample.data.startsWith('data:image')) {
+                                    thumbnail = sample.data
+                                }
+                            }
+                            return (
+                                <button
+                                    key={sample.id}
+                                    onClick={() => setCurrentImageIndex(idx)}
+                                    className={`relative shrink-0 w-14 h-14 rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${idx === currentImageIndex ? 'border-[#630ed4] shadow-md scale-105' : 'border-gray-200 hover:border-gray-300'}`}
+                                >
+                                    {thumbnail ? (
+                                        <img src={thumbnail} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-xs">🖼️</div>
+                                    )}
+                                    {hasBoxes && (
+                                        <div className="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-[#006c44] rounded-full flex items-center justify-center">
+                                            <span className="text-white text-[7px] font-bold">✓</span>
+                                        </div>
+                                    )}
+                                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[7px] text-center py-0.5">{idx + 1}</div>
+                                </button>
+                            )
+                        })}
+                    </div>
+                    <div className="flex items-center justify-between mt-1.5">
+                        <p className="text-[10px] text-gray-500">
+                            {annotatedCount} of {totalImages} images annotated
+                            {allAnnotated && ' — all done!'}
+                        </p>
+                        {allAnnotated && (
+                            <button onClick={() => mode.setMode('train')} className="text-[10px] font-bold text-[#006c44] bg-emerald-50 py-1 px-2.5 rounded-lg border border-emerald-200 cursor-pointer hover:bg-emerald-100">
+                                🏋️ Go to Train →
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Main content - horizontal split */}
             <div className="flex flex-col lg:flex-row gap-3 flex-1 min-h-0 px-5 pb-3 overflow-auto">
@@ -462,9 +553,16 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
 
                         {/* Bottom toolbar */}
                         <div className="absolute bottom-0 left-0 right-0 py-2.5 px-4 bg-white/95 border-t border-gray-200 flex justify-between items-center z-20">
-                            <div className="flex gap-4">
+                            <div className="flex gap-4 items-center">
                                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                                 <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 text-[#4a4455] font-bold text-xs bg-transparent border-none cursor-pointer">📂 Upload</button>
+                                {totalImages > 1 && (
+                                    <div className="flex items-center gap-1.5">
+                                        <button onClick={() => setCurrentImageIndex(Math.max(0, currentImageIndex - 1))} disabled={currentImageIndex === 0} className={`py-1 px-2 rounded text-xs font-bold bg-gray-100 border-none ${currentImageIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-200'}`}>◀</button>
+                                        <span className="text-[11px] font-bold text-gray-500 min-w-[40px] text-center">{currentImageIndex + 1}/{totalImages}</span>
+                                        <button onClick={() => setCurrentImageIndex(Math.min(totalImages - 1, currentImageIndex + 1))} disabled={currentImageIndex >= totalImages - 1} className={`py-1 px-2 rounded text-xs font-bold bg-gray-100 border-none ${currentImageIndex >= totalImages - 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-200'}`}>▶</button>
+                                    </div>
+                                )}
                                 <button onClick={handleUndo} disabled={undoStack.length === 0} className={`flex items-center gap-1.5 text-[#4a4455] font-bold text-xs bg-transparent border-none ${undoStack.length === 0 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer opacity-100'}`}>↩️ Undo</button>
                                 <button onClick={handleRedo} disabled={redoStack.length === 0} className={`flex items-center gap-1.5 text-[#4a4455] font-bold text-xs bg-transparent border-none ${redoStack.length === 0 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer opacity-100'}`}>↪️ Redo</button>
                             </div>

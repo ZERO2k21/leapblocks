@@ -31,6 +31,7 @@ export interface UseNeuraProjectReturn {
     removeClass: (classId: string) => void
     renameClass: (classId: string, name: string) => void
     addSample: (classId: string, sample: Omit<Sample, 'id' | 'timestamp'>) => boolean
+    updateSample: (classId: string, sampleId: string, newData: Partial<Sample>) => void
     removeSample: (classId: string, sampleId: string) => void
     clearSamples: (classId: string) => void
     resetProject: () => void
@@ -181,6 +182,18 @@ export function useNeuraProject(
         }))
     }, [])
 
+    const updateSample = useCallback((classId: string, sampleId: string, newData: Partial<Sample>) => {
+        setProject(prev => ({
+            ...prev,
+            classes: prev.classes.map(c =>
+                c.id === classId
+                    ? { ...c, samples: c.samples.map(s => s.id === sampleId ? { ...s, ...newData } : s) }
+                    : c
+            ),
+            updatedAt: Date.now()
+        }))
+    }, [])
+
     const clearSamples = useCallback((classId: string) => {
         setProject(prev => ({
             ...prev,
@@ -203,7 +216,7 @@ export function useNeuraProject(
         setMode('collect')
         setAnnotations([])
         setCurrentAnnotation(null)
-        try { localStorage.removeItem(`neura-annotations-${type}`) } catch {}
+        try { localStorage.removeItem(`neura-annotations-${type}`) } catch { /* ignore */ }
     }, [type])
 
     const getSelectedClass = useCallback(() => {
@@ -349,6 +362,7 @@ export function useNeuraProject(
         removeClass,
         renameClass,
         addSample,
+        updateSample,
         removeSample,
         clearSamples,
         resetProject,
