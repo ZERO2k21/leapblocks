@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
+import { useCamera } from '../../hooks/useCamera'
 import { HandPoseClassifier } from '../../ml/classifiers/HandPoseClassifier'
 import { classifyDrawErase, StateMachineBuffer } from '../../ml/utils/ruleBasedClassifiers'
 
@@ -26,25 +27,19 @@ const TOOL_CONFIG: Record<string, { emoji: string; description: string; gesture:
 }
 
 export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
-    const videoRef = useRef<HTMLVideoElement>(null)
     const hiddenCanvasRef = useRef<HTMLCanvasElement>(null)
     const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
     const previewCanvasRef = useRef<HTMLCanvasElement>(null)
     const drawingCanvasRef = useRef<HTMLCanvasElement>(null)
     const classifierRef = useRef(new HandPoseClassifier())
-    const streamRef = useRef<MediaStream | null>(null)
     const animFrameRef = useRef<number>(0)
     const isPredictingRef = useRef(false)
     const lastPredictTimeRef = useRef(0)
     const stateMachineRef = useRef(new StateMachineBuffer(3))
 
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
-    const [stream, setStream] = useState<MediaStream | null>(null)
     const [modelLoading, setModelLoading] = useState(false)
     const [handDetected, setHandDetected] = useState(false)
-    const [cameraOn, setCameraOn] = useState(false)
-    const cameraOnRef = useRef(false)
-    const streamStateRef = useRef<MediaStream | null>(null)
     const [inferenceTime, setInferenceTime] = useState(0)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
     const [modelError, setModelError] = useState<string | null>(null)
@@ -209,35 +204,10 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
         }
     }, [isDragging, drawAtPosition, saveUndoState, showSaved])
 
-    const startCamera = useCallback(async () => {
-        try {
-            console.log('[DrawingCanvas] Starting webcam (640x480)')
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480, facingMode: 'user' }
-            })
-            streamRef.current = mediaStream
-            setStream(mediaStream)
-            setCameraOn(true)
-            if (overlayCanvasRef.current) {
-                classifierRef.current.attachWebGLHandlers(overlayCanvasRef.current)
-            }
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream
-                await videoRef.current.play()
-                console.log('[DrawingCanvas] Webcam started')
-            }
-        } catch (err) {
-            console.warn('[DrawingCanvas] Camera start failed:', err)
-            setCameraOn(false)
-        }
-    }, [])
+    const camera = useCamera({ videoConstraints: { width: 640, height: 480, facingMode: 'user' } })
 
-    const stopCamera = useCallback(() => {
-        console.log('[DrawingCanvas] Stopping camera')
-        const s = streamRef.current
-        if (s) { s.getTracks().forEach(t => t.stop()); streamRef.current = null }
-        setStream(null)
-        setCameraOn(false)
+    const handleStopCamera = useCallback(() => {
+        camera.stopCamera()
         setHandDetected(false)
         handDetectedRef.current = false
         setPrediction(null)
@@ -253,35 +223,20 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
             const pctx = previewCanvasRef.current.getContext('2d')
             if (pctx) pctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
         }
-    }, [])
+    }, [camera])
 
-    const toggleCamera = useCallback(() => {
-        if (cameraOn) stopCamera(); else startCamera()
-    }, [cameraOn, startCamera, stopCamera])
-
-    useEffect(() => { cameraOnRef.current = cameraOn }, [cameraOn])
-    useEffect(() => { streamStateRef.current = stream }, [stream])
     useEffect(() => { currentColorIndexRef.current = currentColorIndex }, [currentColorIndex])
     useEffect(() => { brushSizeRef.current = brushSize }, [brushSize])
 
     useEffect(() => {
-        if (stream && videoRef.current && videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [stream])
-
-    useEffect(() => {
         return () => {
-            stopCamera()
             cancelAnimationFrame(animFrameRef.current)
             classifierRef.current.dispose()
         }
     }, [])
 
-    // Auto-start camera on mount
     useEffect(() => {
-        startCamera()
+        camera.startCamera()
     }, [])
 
     // Run detection loop whenever camera is on
@@ -289,7 +244,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
         if (modelLoading) return
         const runPrediction = async () => {
             if (isPredictingRef.current) return
-            if (streamStateRef.current && videoRef.current && hiddenCanvasRef.current) {
+            if (camera.streamStateRef.current && camera.videoRef.current && hiddenCanvasRef.current) {
                 isPredictingRef.current = true
                 let keypoints: any[] = []
                 let elapsed = 0
@@ -299,7 +254,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                     if (ctx) {
                         hiddenCanvasRef.current.width = CANVAS_WIDTH
                         hiddenCanvasRef.current.height = CANVAS_HEIGHT
-                        ctx.drawImage(videoRef.current, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+                        ctx.drawImage(camera.videoRef.current, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
                         try {
                             const rawKeypoints = await classifierRef.current.detectHand(hiddenCanvasRef.current)
                             // MediaPipe normalized landmarks scaled to pixels; default score to 1 so gating works
@@ -465,7 +420,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
         }
         // Draw drawing preview on webcam (mirrored, semi-transparent)
         const drawPreview = () => {
-            if (!previewCanvasRef.current || !drawingCanvasRef.current || !cameraOnRef.current) return
+            if (!previewCanvasRef.current || !drawingCanvasRef.current || !camera.cameraOnRef.current) return
             previewCanvasRef.current.width = CANVAS_WIDTH
             previewCanvasRef.current.height = CANVAS_HEIGHT
             const pctx = previewCanvasRef.current.getContext('2d')
@@ -491,7 +446,7 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [stream, modelLoading, startCamera, confidenceThreshold, handleToolAction])
+    }, [camera.stream, modelLoading, camera.startCamera, confidenceThreshold, handleToolAction])
 
     return (
         <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
@@ -515,11 +470,11 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                     <div className="flex-1 flex flex-col gap-2 min-w-0">
                         {/* Webcam Feed */}
                         <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] min-h-[240px] max-h-[320px]">
-                            <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
+                            <video ref={camera.videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${camera.cameraOn ? 'block' : 'hidden'}`} />
                             <canvas ref={hiddenCanvasRef} className="hidden" />
                             <canvas ref={previewCanvasRef} className="absolute inset-0 w-full h-full object-contain pointer-events-none -scale-x-100" />
                             <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
-                            {cameraOn && (
+                            {camera.cameraOn && (
                                 <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                     <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                                     <span className="text-white text-[9px] font-bold">LIVE</span>
@@ -537,12 +492,12 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
                                     <button type="button" onClick={() => { setModelError(null); modelErrorShownRef.current = false }} className="ml-2 text-white/70 hover:text-white text-xs">✕</button>
                                 </div>
                             )}
-                            {!cameraOn && (
+                            {!camera.cameraOn && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                                     <span className="text-5xl mb-3">🎨</span>
                                     <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                     <p className="text-white/50 text-[10px] mb-4">Start camera to draw with hand gestures</p>
-                                    <button type="button" onClick={startCamera} className="px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg border-none cursor-pointer">Turn On Camera</button>
+                                    <button type="button" onClick={camera.startCamera} className="px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg border-none cursor-pointer">Turn On Camera</button>
                                 </div>
                             )}
                         </div>
@@ -573,8 +528,8 @@ export default function DrawingCanvasPanel({ mode }: DrawingCanvasPanelProps) {
 
                         {/* Controls */}
                         <div className="flex items-center justify-center gap-2 flex-wrap">
-                            <button type="button" onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-600 border-none cursor-pointer">
-                                {cameraOn ? '📷 Stop' : '📷 Start'}
+                            <button type="button" onClick={camera.toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-600 border-none cursor-pointer">
+                                {camera.cameraOn ? '📷 Stop' : '📷 Start'}
                             </button>
                             <button type="button" onClick={handleUndo} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-gray-100 text-gray-600 border-none cursor-pointer">
                                 ↩️ Undo

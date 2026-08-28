@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
+import { useCamera } from '../../hooks/useCamera'
 import { HandPoseClassifier } from '../../ml/classifiers/HandPoseClassifier'
 import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
@@ -24,11 +25,9 @@ const PREDICT_THROTTLE_MS = 500 // ~2fps for test prediction
 
 export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPanelProps) {
     const isMobile = useIsMobile(768)
-    const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
     const classifierRef = useRef(new HandPoseClassifier())
-    const streamRef = useRef<MediaStream | null>(null)
     const animFrameRef = useRef<number>(0)
     const isPredictingRef = useRef(false)
     const rebuildAbortRef = useRef(0)
@@ -41,14 +40,9 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     const [isTraining, setIsTraining] = useState(false)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
-    const [stream, setStream] = useState<MediaStream | null>(null)
     const [modelLoading, setModelLoading] = useState(false)
     const [handDetected, setHandDetected] = useState(false)
     const [captureStatus, setCaptureStatus] = useState<CaptureStatus>('idle')
-    const [cameraError, setCameraError] = useState<string | null>(null)
-    const [cameraOn, setCameraOn] = useState(false)
-    const cameraOnRef = useRef(false)
-    const streamStateRef = useRef<MediaStream | null>(null)
     const [showOnboarding, setShowOnboarding] = useState(() => {
         return !localStorage.getItem('neura-handpose-onboarding-seen')
     })
@@ -176,8 +170,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
             reader.readAsDataURL(file)
         })
         setTestImage(dataUrl)
-        setCameraOn(false)
-        stopCamera()
+        camera.stopCamera()
         setIsProcessing(true)
         try {
             const img = new Image()
@@ -243,66 +236,19 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         return () => { (window as any).__activeUpload = null }
     }, [mode.mode, mode.selectedClassId, mode.project])
 
-    const startCamera = useCallback(async () => {
-        setCameraError(null)
-        try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480, facingMode: 'user' }
-            })
-            streamRef.current = mediaStream
-            setStream(mediaStream)
-            setCameraOn(true)
-            // Attach WebGL handlers to overlay canvas for context loss recovery
+    const camera = useCamera({
+        videoConstraints: { width: 640, height: 480, facingMode: 'user' },
+        onStreamAcquired: () => {
             if (overlayCanvasRef.current) {
                 classifierRef.current.attachWebGLHandlers(overlayCanvasRef.current)
             }
-            // Attach stream to video element (may not exist yet in test mode)
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream
-                await videoRef.current.play()
-            }
-        } catch (err) {
-            console.error('Camera access denied:', err)
-            setCameraError('Camera access is needed for hand tracking. Please allow camera access in your browser settings and try again.')
-            setCameraOn(false)
         }
-    }, [])
-
-    const stopCamera = useCallback(() => {
-        const s = streamRef.current
-        if (s) { s.getTracks().forEach(t => t.stop()); streamRef.current = null }
-        setStream(null)
-        setCameraOn(false)
-    }, [])
-
-    const toggleCamera = useCallback(() => {
-        if (cameraOn) { stopCamera() } else { startCamera() }
-    }, [cameraOn, startCamera, stopCamera])
-
-    // Keep refs in sync to avoid stale closures
-    useEffect(() => { cameraOnRef.current = cameraOn }, [cameraOn])
-    useEffect(() => { streamStateRef.current = stream }, [stream])
-
-    // Sync stream to video element when stream changes (handles test mode timing)
-    useEffect(() => {
-        if (stream && videoRef.current && videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [stream])
-
-    // Re-sync when cameraOn changes (video element may mount after stream is set)
-    useEffect(() => {
-        if (cameraOn && stream && videoRef.current && videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [cameraOn])
+    })
 
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            stopCamera()
+            camera.stopCamera()
             cancelAnimationFrame(animFrameRef.current)
             classifierRef.current.dispose()
             if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
@@ -312,7 +258,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     // Stop camera when leaving collect/test modes
     useEffect(() => {
         if (mode.mode !== 'collect' && mode.mode !== 'test') {
-            stopCamera()
+            camera.stopCamera()
         }
     }, [mode.mode])
 
@@ -358,7 +304,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         if (mode.mode !== 'test') return
         const runPrediction = async () => {
             if (isPredictingRef.current) return
-            if (streamStateRef.current && videoRef.current && canvasRef.current) {
+            if (camera.streamStateRef.current && camera.videoRef.current && canvasRef.current) {
                 isPredictingRef.current = true
                 setIsProcessing(true)
                 try {
@@ -367,7 +313,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                     if (ctx) {
                         canvasRef.current.width = 640
                         canvasRef.current.height = 480
-                        ctx.drawImage(videoRef.current, 0, 0, 640, 480)
+                        ctx.drawImage(camera.videoRef.current, 0, 0, 640, 480)
                         const result = await Promise.race([
                             classifierRef.current.predictFromImage(canvasRef.current, 3),
                             new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Prediction timeout')), 12000))
@@ -396,7 +342,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                 }
             }
         }
-        if (streamStateRef.current || stream) {
+        if (camera.streamStateRef.current || camera.stream) {
             setIsProcessing(false)
             lastPredictTimeRef.current = performance.now()
             const tick = () => {
@@ -410,23 +356,23 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
             animFrameRef.current = requestAnimationFrame(tick)
             return () => cancelAnimationFrame(animFrameRef.current)
         }
-    }, [mode.mode, stream, startCamera, confidenceThreshold])
+    }, [mode.mode, camera.stream, camera.startCamera, confidenceThreshold])
 
     // Collect mode: throttled hand detection loop for overlay drawing
     useEffect(() => {
-        if (mode.mode !== 'collect' || !stream) return
+        if (mode.mode !== 'collect' || !camera.stream) return
         const detectLoop = async () => {
             if (isPredictingRef.current) return
-            if (videoRef.current && overlayCanvasRef.current) {
+            if (camera.videoRef.current && overlayCanvasRef.current) {
                 isPredictingRef.current = true
                 try {
                     const canvas = overlayCanvasRef.current
                     const ctx = canvas.getContext('2d')
                     if (ctx) {
-                        canvas.width = videoRef.current.videoWidth || 640
-                        canvas.height = videoRef.current.videoHeight || 480
+                        canvas.width = camera.videoRef.current.videoWidth || 640
+                        canvas.height = camera.videoRef.current.videoHeight || 480
                         ctx.clearRect(0, 0, canvas.width, canvas.height)
-                        const keypoints = await classifierRef.current.detectHand(videoRef.current)
+                        const keypoints = await classifierRef.current.detectHand(camera.videoRef.current)
                         if (keypoints.length > 0) {
                             setHandDetected(true)
                             classifierRef.current.drawHand(canvas, keypoints)
@@ -449,10 +395,10 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [mode.mode, stream])
+    }, [mode.mode, camera.stream])
 
     const handleCapture = async () => {
-        if (!videoRef.current || !mode.selectedClassId || !stream) return
+        if (!camera.videoRef.current || !mode.selectedClassId || !camera.stream) return
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) return
         if (isCapturing) return
@@ -461,7 +407,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         setCaptureStatus('loading-model')
 
         try {
-            const video = videoRef.current
+            const video = camera.videoRef.current
             setCaptureStatus('detecting')
             const keypoints = await classifierRef.current.detectHand(video)
 
@@ -487,11 +433,11 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     handleCaptureRef.current = handleCapture
 
     const startBurstCapture = useCallback(() => {
-        if (!mode.selectedClassId || !stream) return
+        if (!mode.selectedClassId || !camera.stream) return
         burstIntervalRef.current = setInterval(() => {
             handleCaptureRef.current?.()
         }, 1000 / captureFps)
-    }, [captureFps, mode.selectedClassId, stream])
+    }, [captureFps, mode.selectedClassId, camera.stream])
 
     const stopBurstCapture = useCallback(() => {
         if (burstIntervalRef.current) {
@@ -624,17 +570,17 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
     }, [mode.project, mode.removeSample, augmentMode])
 
     const handleBatchCapture = useCallback(async () => {
-        if (!videoRef.current || !mode.selectedClassId || !stream || batchCapturing) return
+        if (!camera.videoRef.current || !mode.selectedClassId || !camera.stream || batchCapturing) return
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) return
 
         setBatchCapturing(true)
         const captureOne = async (): Promise<boolean> => {
-            if (!videoRef.current || !mode.selectedClassId || !stream) return false
+            if (!camera.videoRef.current || !mode.selectedClassId || !camera.stream) return false
             const cls = mode.getSelectedClass()
             if (cls && cls.samples.length >= MAX_SAMPLES_PER_CLASS) return false
             try {
-                const keypoints = await classifierRef.current.detectHand(videoRef.current)
+                const keypoints = await classifierRef.current.detectHand(camera.videoRef.current)
                 if (keypoints && keypoints.length > 0) {
                     const features = classifierRef.current.extractFeatures(keypoints)
                     mode.addSample(mode.selectedClassId, { type: 'keypoints', data: JSON.stringify(Array.from(features)) })
@@ -651,7 +597,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         }
         setBatchCountdown(0)
         setBatchCapturing(false)
-    }, [mode.selectedClassId, mode.getSelectedClass, mode.addSample, stream, batchCapturing])
+    }, [mode.selectedClassId, mode.getSelectedClass, mode.addSample, camera.stream, batchCapturing])
 
     const handleExportTestReport = useCallback(() => {
         const project = mode.project
@@ -700,31 +646,31 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         if (captureStatus === 'error') return 'Error!'
         if (isCapturing) return 'Capturing...'
         if (atSampleLimit) return 'Max Reached'
-        if (!stream) return 'Start Camera First'
+        if (!camera.stream) return 'Start Camera First'
         return 'Capture Hand'
     }
 
     const getCaptureDisabled = () => {
         if (isCapturing) return true
         if (atSampleLimit) return true
-        if (!stream) return true
+        if (!camera.stream) return true
         if (!selectedClass) return true
         return false
     }
 
     const CameraToggle = ({ size = 'md' }: { size?: 'sm' | 'md' }) => (
         <button
-            onClick={toggleCamera}
+            onClick={camera.toggleCamera}
             className={`flex items-center gap-1.5 rounded-xl text-xs font-bold border-none cursor-pointer transition-all duration-200 ${
                 size === 'sm' ? 'py-2 px-3' : 'py-2.5 px-4'
             } ${
-                cameraOn
+                camera.cameraOn
                     ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600 shadow-[0_2px_8px_rgba(5,150,105,0.15)]'
                     : 'bg-gradient-to-br from-red-50 to-red-100 text-red-600 shadow-[0_2px_8px_rgba(220,38,38,0.12)]'
             }`}
         >
-            <span className="text-sm">{cameraOn ? '📷' : '🚫'}</span>
-            {cameraOn ? 'Camera On' : 'Camera Off'}
+            <span className="text-sm">{camera.cameraOn ? '📷' : '🚫'}</span>
+            {camera.cameraOn ? 'Camera On' : 'Camera Off'}
         </button>
     )
 
@@ -831,12 +777,12 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                     </div>
 
                     {/* Camera error */}
-                    {cameraError && !cameraOn && (
+                    {camera.cameraError && !camera.cameraOn && (
                         <div className="w-full max-w-[520px] bg-white rounded-2xl p-6 shadow-md border border-[#dae2fd] text-center animate-scale-in mx-auto mt-2.5">
                             <span className="text-4xl mb-3 block">🚫</span>
                             <h3 className="text-sm font-bold text-[#131b2e] mb-2">Camera Access Needed</h3>
-                            <p className="text-xs text-[#4a4455] mb-4">{cameraError}</p>
-                            <button onClick={startCamera} className="px-5 py-2.5 bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] text-white rounded-xl font-bold text-xs hover:shadow-lg transition-all">Try Again</button>
+                            <p className="text-xs text-[#4a4455] mb-4">{camera.cameraError}</p>
+                            <button onClick={camera.startCamera} className="px-5 py-2.5 bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] text-white rounded-xl font-bold text-xs hover:shadow-lg transition-all">Try Again</button>
                         </div>
                     )}
 
@@ -846,15 +792,15 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         <div className="flex-1 min-w-0 flex flex-col">
                             {/* Camera feed */}
                             <div className="flex-1 relative rounded-2xl overflow-hidden bg-[#0f0e26] border border-[#3b2f63] shadow-[0_4px_20px_rgba(0,0,0,0.15)] min-h-[350px]">
-                                {cameraOn ? (
+                                {camera.cameraOn ? (
                                     <>
-                                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
+                                        <video ref={camera.videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
                                         <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
                                         <div className="absolute top-2.5 left-2.5 flex items-center gap-1.25 py-1 px-2.5 bg-black/50 backdrop-blur-md rounded-md z-10">
                                             <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]" />
                                             <span className="text-white text-[10px] font-bold">✋ LIVE</span>
                                         </div>
-                                        {stream && (
+                                        {camera.stream && (
                                             <div className={`absolute top-2.5 right-2.5 flex items-center gap-1 py-0.75 px-2 backdrop-blur-md rounded-md z-10 ${handDetected ? 'bg-emerald-800/90' : 'bg-black/50'}`}>
                                                 <div className={`w-1.25 h-1.25 rounded-full bg-white ${handDetected ? 'opacity-100 animate-pulse' : 'opacity-50'}`} />
                                                 <span className="text-white text-[9px] font-bold">{handDetected ? '✋ HAND DETECTED' : '👀 SCANNING'}</span>
@@ -885,7 +831,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                                             <span className={`text-[3.5rem] mb-3 transition-transform duration-200 ${isDragging ? 'scale-115' : 'scale-100'}`}>{isDragging ? '📥' : '✋'}</span>
                                             <p className="text-sm font-bold text-white mb-3">{isDragging ? 'Drop Gesture Images Here!' : 'Camera is off'}</p>
                                             <div className={`flex gap-2 items-center transition-opacity duration-200 ${isDragging ? 'opacity-30' : 'opacity-100'}`}>
-                                                <button onClick={startCamera} className="py-2.5 px-5 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)]">
+                                                <button onClick={camera.startCamera} className="py-2.5 px-5 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)]">
                                                     📷 Turn On Camera
                                                 </button>
                                                 <span className="text-gray-400 text-[11px] font-semibold">or</span>
@@ -920,7 +866,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
 
                             {/* Controls */}
                             <div className="flex items-center gap-2">
-                                <button onClick={toggleCamera} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none cursor-pointer text-white ${cameraOn ? 'bg-gradient-to-br from-red-500 to-red-600 shadow-[0_4px_14px_rgba(239,68,68,0.35)]' : 'bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] shadow-[0_4px_14px_rgba(14,165,233,0.35)]'}`}>{cameraOn ? '⏹️ Stop' : '📷 Start'}</button>
+                                <button onClick={camera.toggleCamera} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none cursor-pointer text-white ${camera.cameraOn ? 'bg-gradient-to-br from-red-500 to-red-600 shadow-[0_4px_14px_rgba(239,68,68,0.35)]' : 'bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] shadow-[0_4px_14px_rgba(14,165,233,0.35)]'}`}>{camera.cameraOn ? '⏹️ Stop' : '📷 Start'}</button>
                                 <button onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)]">📂 Upload</button>
                             </div>
 
@@ -934,7 +880,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                             </label>
 
                             {/* Capture buttons */}
-                            {cameraOn && (
+                            {camera.cameraOn && (
                                 <div className="flex flex-col gap-2">
                                     <div className="flex items-center gap-1.5 py-1 px-2.5 bg-gray-50 rounded-lg self-center">
                                         <span className="text-[9px] font-bold text-gray-500">FPS</span>
@@ -1046,7 +992,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         </div>
                     </div>
                     <div className="w-full mt-4 flex-1 min-h-0 flex flex-col">
-                        <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} testImage={testImage} videoRef={videoRef} canvasRef={canvasRef} onToggleCamera={toggleCamera} onUpload={() => testFileInputRef.current?.click()} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={handleExportTestReport} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
+                        <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={camera.cameraOn} testImage={testImage} videoRef={camera.videoRef} canvasRef={canvasRef} onToggleCamera={camera.toggleCamera} onUpload={() => testFileInputRef.current?.click()} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={handleExportTestReport} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
                     </div>
                     <input ref={testFileInputRef} type="file" accept="image/*" onChange={handleTestUpload} className="hidden" />
                 </div>

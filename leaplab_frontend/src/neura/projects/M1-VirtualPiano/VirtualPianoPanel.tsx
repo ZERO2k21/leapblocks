@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
+import { useCamera } from '../../hooks/useCamera'
 import { HandPoseClassifier } from '../../ml/classifiers/HandPoseClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
@@ -26,11 +27,9 @@ const NOTE_CONFIG: Record<string, { freq: number; key: string; color: string; is
 }
 
 export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
-    const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
     const classifierRef = useRef(new HandPoseClassifier())
-    const streamRef = useRef<MediaStream | null>(null)
     const animFrameRef = useRef<number>(0)
     const isPredictingRef = useRef(false)
     const testCameraStartedRef = useRef(false)
@@ -45,13 +44,8 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
     const handleCaptureRef = useRef<() => Promise<void>>(null)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
-    const [stream, setStream] = useState<MediaStream | null>(null)
     const [handDetected, setHandDetected] = useState(false)
     const [captureStatus, setCaptureStatus] = useState<CaptureStatus>('idle')
-    const [cameraError, setCameraError] = useState<string | null>(null)
-    const [cameraOn, setCameraOn] = useState(false)
-    const cameraOnRef = useRef(false)
-    const streamStateRef = useRef<MediaStream | null>(null)
     const [inferenceTime, setInferenceTime] = useState(0)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -127,56 +121,17 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
         }
     }, [getAudioContext])
 
-    const startCamera = useCallback(async () => {
-        setCameraError(null)
-        try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480, facingMode: 'user' }
-            })
-            streamRef.current = mediaStream
-            setStream(mediaStream)
-            setCameraOn(true)
-            if (overlayCanvasRef.current) {
-                classifierRef.current.attachWebGLHandlers(overlayCanvasRef.current)
-            }
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream
-                await videoRef.current.play()
-            }
-        } catch (err) {
-            console.error('Camera access denied:', err)
-            setCameraError('Camera access is needed for hand tracking.')
-            setCameraOn(false)
-        }
-    }, [])
+    const camera = useCamera({ videoConstraints: { width: 640, height: 480, facingMode: 'user' } })
 
-    const stopCamera = useCallback(() => {
-        const s = streamRef.current
-        if (s) { s.getTracks().forEach(t => t.stop()); streamRef.current = null }
-        setStream(null)
-        setCameraOn(false)
+    const handleStopCamera = useCallback(() => {
+        camera.stopCamera()
         setHandDetected(false)
         setPrediction(null)
         setActiveNote(null)
-    }, [])
-
-    const toggleCamera = useCallback(() => {
-        if (cameraOn) stopCamera(); else startCamera()
-    }, [cameraOn, startCamera, stopCamera])
-
-    useEffect(() => { cameraOnRef.current = cameraOn }, [cameraOn])
-    useEffect(() => { streamStateRef.current = stream }, [stream])
-
-    useEffect(() => {
-        if (stream && videoRef.current && videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [stream])
+    }, [camera])
 
     useEffect(() => {
         return () => {
-            stopCamera()
             cancelAnimationFrame(animFrameRef.current)
             classifierRef.current.dispose()
             activeOscillatorsRef.current.forEach((entry) => {
@@ -186,8 +141,8 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
     }, [])
 
     useEffect(() => {
-        if (mode.mode !== 'collect' && mode.mode !== 'test') stopCamera()
-    }, [mode.mode])
+        if (mode.mode !== 'collect' && mode.mode !== 'test') handleStopCamera()
+    }, [mode.mode, handleStopCamera])
 
     useEffect(() => {
         if (mode.mode !== 'test') testCameraStartedRef.current = false
@@ -200,7 +155,7 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
         // Camera starts OFF in test mode — user chooses to turn on camera
         const runPrediction = async () => {
             if (isPredictingRef.current) return
-            if (streamStateRef.current && videoRef.current && canvasRef.current) {
+            if (camera.streamStateRef.current && camera.videoRef.current && canvasRef.current) {
                 isPredictingRef.current = true
                 setIsProcessing(true)
                 try {
@@ -209,7 +164,7 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                     if (ctx) {
                         canvasRef.current.width = 640
                         canvasRef.current.height = 480
-                        ctx.drawImage(videoRef.current, 0, 0, 640, 480)
+                        ctx.drawImage(camera.videoRef.current, 0, 0, 640, 480)
                         
                         // Rule-based classification: map fingertip position to piano key
                         const keypoints = await classifierRef.current.detectHand(canvasRef.current)
@@ -258,10 +213,10 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [mode.mode, stream, startCamera, playNote])
+    }, [mode.mode, camera.stream, camera.startCamera, playNote])
 
     const handleCapture = useCallback(async () => {
-        if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return
+        if (!camera.videoRef.current || !mode.selectedClassId || !camera.cameraOn || isCapturing) return
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
             showSaved('⚠️ Sample limit reached!')
@@ -270,7 +225,7 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
         setIsCapturing(true)
         setCaptureStatus('detecting')
         try {
-            const video = videoRef.current
+            const video = camera.videoRef.current
             const tempCanvas = document.createElement('canvas')
             tempCanvas.width = video.videoWidth || 640
             tempCanvas.height = video.videoHeight || 480
@@ -299,16 +254,16 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
             setIsCapturing(false)
             setTimeout(() => setCaptureStatus('idle'), 1500)
         }
-    }, [cameraOn, isCapturing, mode, showSaved])
+    }, [camera.cameraOn, isCapturing, mode, showSaved])
 
     handleCaptureRef.current = handleCapture
 
     const startBurstCapture = useCallback(() => {
-        if (!mode.selectedClassId || !cameraOn) return
+        if (!mode.selectedClassId || !camera.cameraOn) return
         burstIntervalRef.current = setInterval(() => {
             handleCaptureRef.current?.()
         }, 1000 / captureFps)
-    }, [captureFps, mode.selectedClassId, cameraOn])
+    }, [captureFps, mode.selectedClassId, camera.cameraOn])
 
     const stopBurstCapture = useCallback(() => {
         if (burstIntervalRef.current) {
@@ -348,10 +303,10 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                     <div className="flex flex-col lg:flex-row gap-4 flex-1 mt-3 min-h-0">
                         <div className="flex-1 flex flex-col gap-2 min-w-0">
                             <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
-                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
+                                <video ref={camera.videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${camera.cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
                                 <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
-                                {cameraOn && (
+                                {camera.cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                                         <span className="text-white text-[9px] font-bold">🔍 LIVE</span>
@@ -362,18 +317,18 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                                         <span className="text-6xl">✅</span>
                                     </div>
                                 )}
-                                {!cameraOn && (
+                                {!camera.cameraOn && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                                         <span className="text-5xl mb-3">🎹</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to collect gesture samples</p>
-                                        <button type="button" onClick={startCamera} className="px-5 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow-lg border-none cursor-pointer">📷 Turn On Camera</button>
+                                        <button type="button" onClick={camera.startCamera} className="px-5 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow-lg border-none cursor-pointer">📷 Turn On Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                                <button type="button" onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-700 border-none cursor-pointer">
-                                    {cameraOn ? '📷 Stop' : '📷 Start'}
+                                <button type="button" onClick={camera.toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-700 border-none cursor-pointer">
+                                    {camera.cameraOn ? '📷 Stop' : '📷 Start'}
                                 </button>
                                 <div className="flex items-center gap-1 py-1 px-2 bg-gray-50 rounded-lg">
                                     <span className="text-[9px] font-bold text-gray-500">FPS</span>
@@ -394,7 +349,7 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                                     onMouseLeave={stopBurstCapture}
                                     onTouchStart={startBurstCapture}
                                     onTouchEnd={stopBurstCapture}
-                                    disabled={!cameraOn || isCapturing || !selectedClass}
+                                    disabled={!camera.cameraOn || isCapturing || !selectedClass}
                                     className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white border-none cursor-pointer disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-purple-600'}`}>
                                     {isCapturing ? '⏳ Recording...' : '📸 Hold to Record'}
                                 </button>
@@ -479,10 +434,10 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                     <div className="flex flex-col lg:flex-row gap-4 flex-1 mt-3 min-h-0">
                         <div className="flex-1 flex flex-col min-w-0">
                             <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
-                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
+                                <video ref={camera.videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${camera.cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
                                 <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
-                                {cameraOn && (
+                                {camera.cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                                         <span className="text-white text-[9px] font-bold">🔍 LIVE</span>
@@ -499,18 +454,18 @@ export default function VirtualPianoPanel({ mode }: VirtualPianoPanelProps) {
                                         </div>
                                     </div>
                                 )}
-                                {!cameraOn && (
+                                {!camera.cameraOn && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                                         <span className="text-5xl mb-3">📷</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to play piano</p>
-                                        <button type="button" onClick={startCamera} className="px-5 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow-lg border-none cursor-pointer">📷 Start Camera</button>
+                                        <button type="button" onClick={camera.startCamera} className="px-5 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow-lg border-none cursor-pointer">📷 Start Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2 mt-2">
-                                <button type="button" onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-700 border-none cursor-pointer">
-                                    {cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
+                                <button type="button" onClick={camera.toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-700 border-none cursor-pointer">
+                                    {camera.cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
                                 </button>
                             </div>
                         </div>

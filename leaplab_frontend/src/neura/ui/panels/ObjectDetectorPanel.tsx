@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
+import { useCamera } from '../../hooks/useCamera'
 import { ObjectDetector } from '../../ml/classifiers/ObjectDetector'
 import { ObjectDetectionTrainer } from '../../ml/ObjectDetectionTrainer'
 import type { DetectionTrainingState } from '../../ml/ObjectDetectionTrainer'
@@ -77,14 +78,12 @@ const DETECT_THROTTLE_MS = 500
 
 export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) {
     const isMobile = useIsMobile(768)
-    const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const testFileInputRef = useRef<HTMLInputElement>(null)
     const cameraOffUploadRef = useRef<HTMLInputElement>(null)
     const classifierRef = useRef(new ObjectDetector())
     const trainerRef = useRef(new ObjectDetectionTrainer())
-    const streamRef = useRef<MediaStream | null>(null)
     const animFrameRef = useRef<number>(0)
     const isPredictingRef = useRef(false)
     const rebuildAbortRef = useRef(0)
@@ -95,10 +94,6 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const lastDetectTimeRef = useRef(0)
 
     const [isLoadingModel, setIsLoadingModel] = useState(true)
-    const [cameraOn, setCameraOn] = useState(false)
-    const cameraOnRef = useRef(false)
-    const [stream, setStream] = useState<MediaStream | null>(null)
-    const streamStateRef = useRef<MediaStream | null>(null)
     const [detections, setDetections] = useState<{ class: string; score: number; bbox: [number, number, number, number] }[]>([])
     const [uploadedImage, setUploadedImage] = useState<{ originalUrl: string; annotatedUrl: string | null; width: number; height: number } | null>(null)
     const [uploadedDetections, setUploadedDetections] = useState<{ class: string; score: number; bbox: [number, number, number, number] }[]>([])
@@ -107,7 +102,6 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const handleCaptureRef = useRef<() => Promise<void>>(null)
     const [realtimeEnabled, setRealtimeEnabled] = useState(true)
     const [showOriginal, setShowOriginal] = useState(true)
-    const [cameraError, setCameraError] = useState<string | null>(null)
     const [captureFlash, setCaptureFlash] = useState(false)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
     const [isDetecting, setIsDetecting] = useState(false)
@@ -134,37 +128,9 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
     const [scannedFrameUrl, setScannedFrameUrl] = useState<string | null>(null)
 
-    const startCamera = useCallback(async () => {
-        setCameraError(null)
-        try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480, facingMode: 'user' }
-            })
-            streamRef.current = mediaStream
-            setStream(mediaStream)
-            setCameraOn(true)
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream
-                await videoRef.current.play()
-            }
-        } catch (err) {
-            console.error('[ObjectDetector] Camera access denied:', err)
-            setCameraError('Camera access is needed for object detection. Please allow camera access in your browser settings and try again.')
-            setCameraOn(false)
-        }
-    }, [])
-
-    const stopCamera = useCallback(() => {
-        const s = streamRef.current
-        if (s) { s.getTracks().forEach(t => t.stop()); streamRef.current = null }
-        setStream(null)
-        setCameraOn(false)
-        setDetections([])
-    }, [])
-
-    const toggleCamera = useCallback(() => {
-        if (cameraOn) { stopCamera() } else { startCamera() }
-    }, [cameraOn, startCamera, stopCamera])
+    const camera = useCamera({
+        videoConstraints: { width: 640, height: 480, facingMode: 'user' }
+    })
 
     const showFlash = useCallback(() => {
         setCaptureFlash(true)
@@ -178,30 +144,10 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         savedTimeoutRef.current = setTimeout(() => setSavedMessage(null), 2000)
     }, [])
 
-    // Keep refs in sync
-    useEffect(() => { cameraOnRef.current = cameraOn }, [cameraOn])
-    useEffect(() => { streamStateRef.current = stream }, [stream])
-
-    // Sync stream to video element when stream changes (handles test mode timing)
-    useEffect(() => {
-        if (stream && videoRef.current && videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [stream])
-
-    // Re-sync when cameraOn changes (video element may mount after stream is set)
-    useEffect(() => {
-        if (cameraOn && stream && videoRef.current && videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [cameraOn])
-
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            stopCamera()
+            camera.stopCamera()
             cancelAnimationFrame(animFrameRef.current)
             classifierRef.current.dispose()
             trainerRef.current.dispose()
@@ -213,7 +159,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     // Stop camera when leaving collect/test modes
     useEffect(() => {
         if (mode.mode !== 'collect' && mode.mode !== 'test') {
-            stopCamera()
+            camera.stopCamera()
+            setDetections([])
         }
     }, [mode.mode])
 
@@ -244,8 +191,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
     // Detect from video frame
     const detectFrame = useCallback(async (manualScan = false): Promise<{ class: string; score: number; bbox: [number, number, number, number] }[]> => {
-        if (!videoRef.current || !videoRef.current.srcObject) return []
-        const video = videoRef.current
+        if (!camera.videoRef.current || !camera.videoRef.current.srcObject) return []
+        const video = camera.videoRef.current
         if (video.readyState < 2) return []
         try {
             const start = performance.now()
@@ -312,7 +259,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
     // Real-time detection loop (throttled)
     useEffect(() => {
-        if (!cameraOn || !realtimeEnabled || isLoadingModel) {
+        if (!camera.cameraOn || !realtimeEnabled || isLoadingModel) {
             cancelAnimationFrame(animFrameRef.current)
             return
         }
@@ -325,7 +272,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 detectFrame().then(dets => {
                     setDetections(dets)
                     const filteredDets = dets.filter(det => det.score >= confidenceThreshold)
-                    if (canvasRef.current && videoRef.current) drawDetections(filteredDets, canvasRef.current, videoRef.current)
+                    if (canvasRef.current && camera.videoRef.current) drawDetections(filteredDets, canvasRef.current, camera.videoRef.current)
                     isPredictingRef.current = false
                 })
             }
@@ -333,7 +280,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [cameraOn, realtimeEnabled, isLoadingModel, detectFrame, drawDetections, confidenceThreshold])
+    }, [camera.cameraOn, realtimeEnabled, isLoadingModel, detectFrame, drawDetections, confidenceThreshold])
 
     // Test mode: camera starts OFF — user chooses to turn on camera or upload
     useEffect(() => {
@@ -427,13 +374,13 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         if (isLoadingModel || isDetecting) return
         setIsDetecting(true)
         try {
-            if (cameraOn && videoRef.current && videoRef.current.readyState >= 2) {
-                const frameUrl = captureFrameFromVideo(videoRef.current)
+            if (camera.cameraOn && camera.videoRef.current && camera.videoRef.current.readyState >= 2) {
+                const frameUrl = captureFrameFromVideo(camera.videoRef.current)
                 setScannedFrameUrl(frameUrl)
-                const dets = await runDetectionOnImage(frameUrl, videoRef.current.videoWidth, videoRef.current.videoHeight)
+                const dets = await runDetectionOnImage(frameUrl, camera.videoRef.current.videoWidth, camera.videoRef.current.videoHeight)
                 setDetections(dets)
-                const annotatedUrl = await annotateImage(frameUrl, dets, videoRef.current.videoWidth, videoRef.current.videoHeight)
-                setUploadedImage({ originalUrl: frameUrl, annotatedUrl, width: videoRef.current.videoWidth, height: videoRef.current.videoHeight })
+                const annotatedUrl = await annotateImage(frameUrl, dets, camera.videoRef.current.videoWidth, camera.videoRef.current.videoHeight)
+                setUploadedImage({ originalUrl: frameUrl, annotatedUrl, width: camera.videoRef.current.videoWidth, height: camera.videoRef.current.videoHeight })
                 setUploadedDetections(dets)
                 setShowOriginal(true)
             } else if (scannedFrameUrl) {
@@ -451,7 +398,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             showSaved('⚠️ Detection failed. Please try again.')
         }
         setIsDetecting(false)
-    }, [isLoadingModel, isDetecting, cameraOn, isLoadingModel, scannedFrameUrl, uploadedImage, captureFrameFromVideo, runDetectionOnImage, annotateImage, showFlash, showSaved])
+    }, [isLoadingModel, isDetecting, camera.cameraOn, isLoadingModel, scannedFrameUrl, uploadedImage, captureFrameFromVideo, runDetectionOnImage, annotateImage, showFlash, showSaved])
 
     const resetScan = useCallback(() => {
         setScannedFrameUrl(null)
@@ -462,7 +409,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     }, [])
 
     const handleCapture = async () => {
-        if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return
+        if (!camera.videoRef.current || !mode.selectedClassId || !camera.cameraOn || isCapturing) return
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
             showSaved('⚠️ Sample limit reached! (20 per class)')
@@ -470,7 +417,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         }
         setIsCapturing(true)
         try {
-            const video = videoRef.current
+            const video = camera.videoRef.current
             const tempCanvas = document.createElement('canvas')
             // Resize to max 640px on longest side for smaller file size
             const maxDim = 640
@@ -497,11 +444,11 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     handleCaptureRef.current = handleCapture
 
     const startBurstCapture = useCallback(() => {
-        if (!mode.selectedClassId || !cameraOn) return
+        if (!mode.selectedClassId || !camera.cameraOn) return
         burstIntervalRef.current = setInterval(() => {
             handleCaptureRef.current?.()
         }, 1000 / captureFps)
-    }, [captureFps, mode.selectedClassId, cameraOn])
+    }, [captureFps, mode.selectedClassId, camera.cameraOn])
 
     const stopBurstCapture = useCallback(() => {
         if (burstIntervalRef.current) {
@@ -641,8 +588,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         }
 
         // In test mode: store uploaded image, wait for user to click Scan
-        setCameraOn(false)
-        stopCamera()
+        camera.stopCamera()
         const img = new Image()
         img.src = dataUrl
         await new Promise<void>((resolve) => {
@@ -704,7 +650,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         showSaved(`📂 Saved to ${className}! (${mode.getSelectedClass()?.samples.length || 0} total)`)
     }, [uploadedImage, mode, showSaved])
 
-    const handleResetUpload = () => { setUploadedImage(null); setUploadedDetections([]); setShowOriginal(true); startCamera() }
+    const handleResetUpload = () => { setUploadedImage(null); setUploadedDetections([]); setShowOriginal(true); camera.startCamera() }
 
     const handleRemoveSample = useCallback((classId: string, sampleId: string) => {
         mode.removeSample(classId, sampleId)
@@ -771,21 +717,21 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     {collectTab === 'camera' && (
                         <>
                             {/* Camera error */}
-                            {cameraError && !cameraOn && (
+                            {camera.cameraError && !camera.cameraOn && (
                                 <div className="flex flex-col items-center justify-center bg-white/85 backdrop-blur-md rounded-2xl p-5 border border-gray-200">
                                     <span className="text-[36px] mb-2">🚫</span>
                                     <h3 className="text-sm font-bold text-[#131b2e] mb-1.5">Camera Access Needed</h3>
-                                    <p className="text-[11px] text-gray-500 mb-3">{cameraError}</p>
+                                    <p className="text-[11px] text-gray-500 mb-3">{camera.cameraError}</p>
                                     <div className="flex gap-2.5">
-                                        <button onClick={startCamera} className="px-4 py-2 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer">Try Again</button>
-                                        <button onClick={() => { setCameraError(null); fileInputRef.current?.click() }} className="px-4 py-2 bg-[#f5f3ff] text-[#630ed4] rounded-xl text-[11px] font-bold border-none cursor-pointer">Upload Only</button>
+                                        <button onClick={camera.startCamera} className="px-4 py-2 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer">Try Again</button>
+                                        <button onClick={() => { camera.setCameraError(null); fileInputRef.current?.click() }} className="px-4 py-2 bg-[#f5f3ff] text-[#630ed4] rounded-xl text-[11px] font-bold border-none cursor-pointer">Upload Only</button>
                                     </div>
                                 </div>
                             )}
 
                             {/* Camera feed */}
-                            <div className={`relative rounded-2xl overflow-hidden bg-[#1e1b4b] w-full flex-1 min-h-0 ${cameraOn ? 'flex' : 'hidden'}`}>
-                                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
+                            <div className={`relative rounded-2xl overflow-hidden bg-[#1e1b4b] w-full flex-1 min-h-0 ${camera.cameraOn ? 'flex' : 'hidden'}`}>
+                                <video ref={camera.videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
                                 <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
                                 {captureFlash && <div className="absolute inset-0 bg-white/50 animate-fade-in" />}
                                 <div className="absolute top-2 left-2 flex items-center gap-1.25 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
@@ -793,7 +739,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     <span className="text-white text-[9px] font-bold">🔍 LIVE</span>
                                 </div>
                                 <div className="absolute top-2 right-2">
-                                    <button onClick={toggleCamera} className="flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-bold bg-[#d1fae5] text-[#006c44] border-none cursor-pointer">📷 On</button>
+                                    <button onClick={camera.toggleCamera} className="flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-bold bg-[#d1fae5] text-[#006c44] border-none cursor-pointer">📷 On</button>
                                 </div>
                                 {selectedClass && (
                                     <div className="absolute bottom-[60px] left-2 px-2.5 py-1.25 rounded-md text-white text-[10px] font-bold" style={{ background: `${selectedClass.color}CC` }}>{selectedClass.name}</div>
@@ -836,7 +782,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                             </div>
 
                             {/* Camera off placeholder */}
-                            {!cameraOn && !cameraError && (
+                            {!camera.cameraOn && !camera.cameraError && (
                                 <div
                                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
                                     onDragLeave={(e) => { e.preventDefault(); setIsDragging(false) }}
@@ -856,7 +802,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                         <h2 className="text-[15px] font-extrabold text-[#131b2e] mb-1">{isDragging ? 'Drop Image Files Here!' : 'Camera is off'}</h2>
                                         <p className="text-[11px] text-gray-500 mb-3">{isDragging ? 'Release to upload as samples' : 'Start camera or drag images to collect samples'}</p>
                                         <div className="flex gap-2">
-                                            <button onClick={startCamera} className="px-4 py-2 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer">📷 Turn On Camera</button>
+                                            <button onClick={camera.startCamera} className="px-4 py-2 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer">📷 Turn On Camera</button>
                                             <button onClick={() => cameraOffUploadRef.current?.click()} className="px-4 py-2 bg-white text-[#630ed4] rounded-xl text-[11px] font-bold border-2 border-[#630ed4] cursor-pointer transition-all duration-200">📂 Upload</button>
                                         </div>
                                     </div>
@@ -866,10 +812,10 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
                             {/* Controls */}
                             <div className="flex items-center gap-1.5 flex-wrap justify-center shrink-0">
-                                <button onClick={toggleCamera} disabled={isLoadingModel} className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold border-none cursor-pointer ${cameraOn ? 'bg-[#d1fae5] text-[#006c44]' : 'bg-[#f5f3ff] text-[#4a4455]'}`}>
-                                    {cameraOn ? '📷 Stop' : '📷 Start'}
+                                <button onClick={camera.toggleCamera} disabled={isLoadingModel} className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold border-none cursor-pointer ${camera.cameraOn ? 'bg-[#d1fae5] text-[#006c44]' : 'bg-[#f5f3ff] text-[#4a4455]'}`}>
+                                    {camera.cameraOn ? '📷 Stop' : '📷 Start'}
                                 </button>
-                                {cameraOn && !realtimeEnabled && (
+                                {camera.cameraOn && !realtimeEnabled && (
                                     <button onClick={handleScan} disabled={isLoadingModel || isDetecting} className="px-3 py-1.5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-lg text-[10px] font-bold border-none cursor-pointer">
                                         {isDetecting ? '⏳...' : '🔍 Scan'}
                                     </button>
@@ -954,8 +900,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                 key={tab.id}
                                 onClick={() => {
                                     setCollectTab(tab.id)
-                                    if (tab.id === 'camera' && !cameraOn) startCamera()
-                                    if (tab.id !== 'camera' && cameraOn) stopCamera()
+                                    if (tab.id === 'camera' && !camera.cameraOn) camera.startCamera()
+                                    if (tab.id !== 'camera' && camera.cameraOn) camera.stopCamera()
                                     if (tab.id === 'upload') setDetections([])
                                 }}
                                 className={`flex items-center justify-center gap-1.5 py-3 px-4 rounded-lg text-[13px] font-semibold flex-1 border-none cursor-pointer transition-all duration-200 ${
@@ -1054,7 +1000,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     {/* Camera / Image feed */}
                     <div className="relative rounded-2xl overflow-hidden bg-[#1e1b4b] w-full flex-1 min-h-0">
                         {/* Live camera feed (shown only when camera on and no scan yet) */}
-                        <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn && !scannedFrameUrl ? 'block' : 'hidden'}`} />
+                        <video ref={camera.videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${camera.cameraOn && !scannedFrameUrl ? 'block' : 'hidden'}`} />
 
                         {/* Scanned/Uploaded image with annotations (shown after scan or upload) */}
                         {uploadedImage && scannedFrameUrl && (
@@ -1069,7 +1015,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                         )}
 
                         {/* Uploaded image waiting for scan (no annotatedUrl yet) */}
-                        {uploadedImage && !uploadedImage.annotatedUrl && !cameraOn && (
+                        {uploadedImage && !uploadedImage.annotatedUrl && !camera.cameraOn && (
                             <div className="relative w-full h-full">
                                 <img src={uploadedImage.originalUrl} alt="Uploaded test" className="w-full h-full object-contain" />
                                 <div className="absolute top-2.5 right-2.5 py-1.25 px-2.5 rounded-lg text-[10px] font-bold bg-amber-500 text-white border-none shadow-[0_2px_8px_rgba(0,0,0,0.15)]">
@@ -1079,10 +1025,10 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                         )}
 
                         {/* Status badge */}
-                        <div className={`absolute top-2.5 left-2.5 flex items-center gap-1.5 py-1.25 px-2.5 bg-black/40 backdrop-blur-md rounded-lg ${cameraOn || uploadedImage ? 'visible' : 'invisible'}`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${uploadedImage?.annotatedUrl ? 'bg-emerald-500' : scannedFrameUrl ? 'bg-amber-500' : cameraOn ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-gray-500'}`} />
+                        <div className={`absolute top-2.5 left-2.5 flex items-center gap-1.5 py-1.25 px-2.5 bg-black/40 backdrop-blur-md rounded-lg ${camera.cameraOn || uploadedImage ? 'visible' : 'invisible'}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${uploadedImage?.annotatedUrl ? 'bg-emerald-500' : scannedFrameUrl ? 'bg-amber-500' : camera.cameraOn ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)] animate-pulse' : 'bg-gray-500'}`} />
                             <span className="text-white text-[9px] font-bold">
-                                {uploadedImage?.annotatedUrl ? '🎯 SCANNED' : scannedFrameUrl ? '📸 CAPTURED' : cameraOn ? '🔍 LIVE' : '📷 OFF'}
+                                {uploadedImage?.annotatedUrl ? '🎯 SCANNED' : scannedFrameUrl ? '📸 CAPTURED' : camera.cameraOn ? '🔍 LIVE' : '📷 OFF'}
                             </span>
                         </div>
 
@@ -1094,7 +1040,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                         )}
 
                         {/* Camera off / no image placeholder */}
-                        {!cameraOn && !uploadedImage && !isLoadingModel && (
+                        {!camera.cameraOn && !uploadedImage && !isLoadingModel && (
                             <div
                                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
                                 onDragLeave={(e) => { e.preventDefault(); setIsDragging(false) }}
@@ -1110,7 +1056,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                     <h3 className="text-white text-sm font-extrabold mb-1">Camera is off</h3>
                                     <p className="text-white/60 text-[10px] font-semibold mb-4 max-w-[240px] text-center">{isDragging ? 'Drop your image here' : 'Turn on camera or upload an image to test'}</p>
                                     <div className="flex gap-2">
-                                        <button onClick={startCamera} className="px-4 py-2 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.25)]">📷 Start Camera</button>
+                                        <button onClick={camera.startCamera} className="px-4 py-2 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.25)]">📷 Start Camera</button>
                                         <button onClick={() => testFileInputRef.current?.click()} className="px-4 py-2 bg-white text-[#630ed4] rounded-xl text-[11px] font-bold border-2 border-[#630ed4] cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.05)]">📂 Upload Image</button>
                                     </div>
                                 </div>
@@ -1122,7 +1068,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
                     {/* Controls */}
                     <div className="flex items-center gap-2 flex-wrap justify-center shrink-0">
-                        {scannedFrameUrl || (uploadedImage && !cameraOn) ? (
+                        {scannedFrameUrl || (uploadedImage && !camera.cameraOn) ? (
                             <>
                                 <button onClick={handleScan} disabled={isLoadingModel || isDetecting} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-[11px] font-bold bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.25)]">
                                     {isDetecting ? '⏳ Scanning...' : uploadedImage?.annotatedUrl ? '🔍 Re-scan' : '🔍 Scan'}
@@ -1132,10 +1078,10 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                             </>
                         ) : (
                             <>
-                                <button onClick={toggleCamera} disabled={isLoadingModel} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold border-none cursor-pointer ${cameraOn ? 'bg-[#d1fae5] text-[#006c44]' : 'bg-[#f5f3ff] text-[#4a4455]'}`}>
-                                    {cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
+                                <button onClick={camera.toggleCamera} disabled={isLoadingModel} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold border-none cursor-pointer ${camera.cameraOn ? 'bg-[#d1fae5] text-[#006c44]' : 'bg-[#f5f3ff] text-[#4a4455]'}`}>
+                                    {camera.cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
                                 </button>
-                                {cameraOn && (
+                                {camera.cameraOn && (
                                     <button onClick={handleScan} disabled={isLoadingModel || isDetecting} className="px-5 py-2.5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-[11px] font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.3)]">
                                         {isDetecting ? '⏳ Scanning...' : '🔍 Scan'}
                                     </button>

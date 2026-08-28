@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
+import { useCamera } from '../../hooks/useCamera'
 import { PoseClassifier } from '../../ml/classifiers/PoseClassifier'
 import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
@@ -19,12 +20,10 @@ interface PoseClassifierPanelProps {
 
 export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) {
     const isMobile = useIsMobile(768)
-    const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const testFileInputRef = useRef<HTMLInputElement>(null)
     const classifierRef = useRef(new PoseClassifier())
-    const streamRef = useRef<MediaStream | null>(null)
     const isPredictingRef = useRef(false)
     const rebuildAbortRef = useRef(0)
     const testCameraStartedRef = useRef(false)
@@ -35,9 +34,6 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     const [isTraining, setIsTraining] = useState(false)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
-    const [stream, setStream] = useState<MediaStream | null>(null)
-    const [cameraOn, setCameraOn] = useState(false)
-    const [cameraError, setCameraError] = useState<string | null>(null)
     const [modelLoading, setModelLoading] = useState(false)
     const [captureFlash, setCaptureFlash] = useState(false)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
@@ -50,47 +46,11 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     const [epochResults, setEpochResults] = useState<number[]>([])
     const [showNotRelated, setShowNotRelated] = useState(false)
     const notRelatedCooldownRef = useRef(0)
-    const cameraOnRef = useRef(false)
-    const streamStateRef = useRef<MediaStream | null>(null)
     const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
 
-    const startCamera = useCallback(async () => {
-        setCameraError(null)
-        try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480, facingMode: 'user' }
-            })
-            streamRef.current = mediaStream
-            setStream(mediaStream)
-            setCameraOn(true)
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream
-                await videoRef.current.play()
-            }
-        } catch (err) {
-            console.error('[PoseClassifier] Camera access denied:', err)
-            setCameraError('Camera access is needed for pose detection. Please allow camera access in your browser settings and try again.')
-            setCameraOn(false)
-        }
-    }, [])
-
-    const stopCamera = useCallback(() => {
-        const s = streamRef.current
-        if (s) {
-            s.getTracks().forEach(t => t.stop())
-            streamRef.current = null
-        }
-        setStream(null)
-        setCameraOn(false)
-    }, [])
-
-    const toggleCamera = useCallback(() => {
-        if (cameraOn) {
-            stopCamera()
-        } else {
-            startCamera()
-        }
-    }, [cameraOn, startCamera, stopCamera])
+    const camera = useCamera({
+        videoConstraints: { width: 640, height: 480, facingMode: 'user' }
+    })
 
     const showFlash = useCallback(() => {
         setCaptureFlash(true)
@@ -104,30 +64,10 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
         savedTimeoutRef.current = setTimeout(() => setSavedMessage(null), 2000)
     }, [])
 
-    // Keep refs in sync
-    useEffect(() => { cameraOnRef.current = cameraOn }, [cameraOn])
-    useEffect(() => { streamStateRef.current = stream }, [stream])
-
-    // Sync stream to video element
-    useEffect(() => {
-        if (stream && videoRef.current && videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [stream])
-
-    // Re-sync when cameraOn changes (video element may mount after stream is set)
-    useEffect(() => {
-        if (cameraOn && stream && videoRef.current && videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [cameraOn])
-
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            stopCamera()
+            camera.stopCamera()
             cancelAnimationFrame(0)
             classifierRef.current.dispose()
             if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current)
@@ -138,7 +78,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     // Stop camera when leaving collect/test modes
     useEffect(() => {
         if (mode.mode !== 'collect' && mode.mode !== 'test') {
-            stopCamera()
+            camera.stopCamera()
         }
     }, [mode.mode])
 
@@ -178,16 +118,16 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
         if (mode.mode !== 'test' || modelLoading) return
         const runPrediction = async () => {
             if (isPredictingRef.current) return
-            if (cameraOnRef.current && streamStateRef.current && videoRef.current && canvasRef.current) {
+            if (camera.cameraOnRef.current && camera.streamStateRef.current && camera.videoRef.current && canvasRef.current) {
                 isPredictingRef.current = true
                 setIsProcessing(true)
                 try {
                     const start = performance.now()
                     const ctx = canvasRef.current.getContext('2d')
                     if (ctx) {
-                        canvasRef.current.width = videoRef.current.videoWidth || 640
-                        canvasRef.current.height = videoRef.current.videoHeight || 480
-                        ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height)
+                        canvasRef.current.width = camera.videoRef.current.videoWidth || 640
+                        canvasRef.current.height = camera.videoRef.current.videoHeight || 480
+                        ctx.drawImage(camera.videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height)
                         const result = await classifierRef.current.predictFromImage(canvasRef.current)
                         const elapsed = Math.round(performance.now() - start)
                         if (result && result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
@@ -209,15 +149,15 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                 isPredictingRef.current = false
             }
         }
-        if (cameraOn && stream) {
+        if (camera.cameraOn && camera.stream) {
             runPrediction()
             const interval = setInterval(runPrediction, 1000)
             return () => clearInterval(interval)
         }
-    }, [mode.mode, stream, cameraOn, modelLoading, confidenceThreshold])
+    }, [mode.mode, camera.stream, camera.cameraOn, modelLoading, confidenceThreshold])
 
     const handleCapture = async () => {
-        if (!videoRef.current || !canvasRef.current || !mode.selectedClassId || !cameraOn) return
+        if (!camera.videoRef.current || !canvasRef.current || !mode.selectedClassId || !camera.cameraOn) return
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
             showSaved('⚠️ Sample limit reached! (20 per class)')
@@ -226,7 +166,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
         if (isCapturing) return
         setIsCapturing(true)
         try {
-            const video = videoRef.current
+            const video = camera.videoRef.current
             const canvas = canvasRef.current
             canvas.width = video.videoWidth
             canvas.height = video.videoHeight
@@ -257,11 +197,11 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     handleCaptureRef.current = handleCapture
 
     const startBurstCapture = useCallback(() => {
-        if (!mode.selectedClassId || !cameraOn) return
+        if (!mode.selectedClassId || !camera.cameraOn) return
         burstIntervalRef.current = setInterval(() => {
             handleCaptureRef.current?.()
         }, 1000 / captureFps)
-    }, [captureFps, mode.selectedClassId, cameraOn])
+    }, [captureFps, mode.selectedClassId, camera.cameraOn])
 
     const stopBurstCapture = useCallback(() => {
         if (burstIntervalRef.current) {
@@ -374,8 +314,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
             reader.readAsDataURL(file)
         })
         setTestImage(dataUrl)
-        setCameraOn(false)
-        stopCamera()
+        camera.stopCamera()
         setIsProcessing(true)
         try {
             const img = new Image()
@@ -439,17 +378,17 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
     }, [mode.mode, mode.selectedClassId, mode.project])
 
     const handleTestCapture = useCallback(async () => {
-        if (!videoRef.current || !cameraOn || modelLoading) return
+        if (!camera.videoRef.current || !camera.cameraOn || modelLoading) return
         setIsProcessing(true)
         try {
             const start = performance.now()
             const canvas = canvasRef.current
-            if (canvas && videoRef.current) {
-                canvas.width = videoRef.current.videoWidth || 640
-                canvas.height = videoRef.current.videoHeight || 480
+            if (canvas && camera.videoRef.current) {
+                canvas.width = camera.videoRef.current.videoWidth || 640
+                canvas.height = camera.videoRef.current.videoHeight || 480
                 const ctx = canvas.getContext('2d')
                 if (ctx) {
-                    ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height)
+                    ctx.drawImage(camera.videoRef.current, 0, 0, canvas.width, canvas.height)
                     const result = await classifierRef.current.predictFromImage(canvas)
                     const elapsed = Math.round(performance.now() - start)
                     if (result) {
@@ -470,7 +409,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
             console.error('[PoseClassifier] Test capture error:', err)
         }
         setIsProcessing(false)
-    }, [cameraOn, modelLoading])
+    }, [camera.cameraOn, modelLoading])
 
     const handleTrain = async () => {
         setIsTraining(true)
@@ -655,14 +594,14 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                     </div>
 
                     {/* Camera error */}
-                    {cameraError && !cameraOn && (
+                    {camera.cameraError && !camera.cameraOn && (
                         <div className="w-full max-w-[520px] bg-white rounded-3xl p-8 shadow-md border border-[#dae2fd] text-center animate-scale-in mx-auto">
                             <span className="text-5xl mb-4 block">🚫</span>
                             <h3 className="text-lg font-bold text-[#131b2e] mb-2">Camera Access Needed 📷</h3>
-                            <p className="text-sm text-[#4a4455] mb-6 max-w-sm mx-auto">{cameraError}</p>
+                            <p className="text-sm text-[#4a4455] mb-6 max-w-sm mx-auto">{camera.cameraError}</p>
                             <div className="flex gap-3 justify-center">
-                                <button onClick={startCamera} className="px-6 py-3 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all">Try Again 🔄</button>
-                                <button onClick={() => { setCameraError(null); fileInputRef.current?.click() }} className="px-6 py-3 bg-[#eaedff] text-[#131b2e] rounded-xl font-bold text-sm hover:bg-[#dae2fd] transition-all">Upload Only 📂</button>
+                                <button onClick={camera.startCamera} className="px-6 py-3 bg-gradient-to-r from-[#630ed4] to-[#7c3aed] text-white rounded-xl font-bold text-sm hover:shadow-lg transition-all">Try Again 🔄</button>
+                                <button onClick={() => { camera.setCameraError(null); fileInputRef.current?.click() }} className="px-6 py-3 bg-[#eaedff] text-[#131b2e] rounded-xl font-bold text-sm hover:bg-[#dae2fd] transition-all">Upload Only 📂</button>
                             </div>
                         </div>
                     )}
@@ -672,8 +611,8 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                         {/* Left half - Camera feed */}
                         <div className="flex-1 min-w-0 flex flex-col">
                             {/* Camera feed */}
-                            <div className={`relative rounded-2xl overflow-hidden bg-[#1e1b4b] w-full shadow-lg aspect-[4/3] transition-all duration-300 ${cameraOn ? '' : 'hidden'}`}>
-                                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain rounded-2xl -scale-x-100" />
+                            <div className={`relative rounded-2xl overflow-hidden bg-[#1e1b4b] w-full shadow-lg aspect-[4/3] transition-all duration-300 ${camera.cameraOn ? '' : 'hidden'}`}>
+                                <video ref={camera.videoRef} autoPlay playsInline muted className="w-full h-full object-contain rounded-2xl -scale-x-100" />
                                 <canvas ref={canvasRef} className="absolute inset-0 w-full h-full rounded-2xl pointer-events-none -scale-x-100" />
                                 {captureFlash && <div className="absolute inset-0 bg-white/50 animate-flash rounded-2xl" />}
                                 <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-xl">
@@ -686,7 +625,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                     </div>
                                 )}
                                 {/* Center capture button */}
-                                {cameraOn && (
+                                {camera.cameraOn && (
                                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2">
                                         <div className="flex items-center gap-1.5 py-1 px-2.5 bg-black/40 backdrop-blur-md rounded-lg">
                                             <span className="text-[9px] font-bold text-white/70">FPS</span>
@@ -719,7 +658,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                             </div>
 
                             {/* Camera off placeholder */}
-                            {!cameraOn && !cameraError && (
+                            {!camera.cameraOn && !camera.cameraError && (
                                 <div 
                                     onDragOver={(e) => {
                                         e.preventDefault()
@@ -754,7 +693,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                             {isDragging ? 'Drop files to upload instantly' : 'Start the camera to capture poses!'}
                                         </p>
                                         <div className={`flex gap-2.5 items-center transition-opacity duration-200 ${isDragging ? 'opacity-30' : 'opacity-100'}`}>
-                                            <button onClick={startCamera} className="px-5 py-2.5 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg hover:shadow-purple-500/25 transition-all">
+                                            <button onClick={camera.startCamera} className="px-5 py-2.5 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg hover:shadow-purple-500/25 transition-all">
                                                 📷 Turn On Camera
                                             </button>
                                             <span className="text-gray-400 text-[11px] font-semibold">or</span>
@@ -787,10 +726,10 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
 
                             {/* Controls */}
                             <div className="flex items-center gap-2">
-                                <button onClick={toggleCamera} className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border-none cursor-pointer text-white transition-all ${
-                                    cameraOn ? 'bg-gradient-to-r from-red-500 to-red-600 shadow-lg shadow-red-500/25' : 'bg-gradient-to-r from-purple-600 to-purple-700 shadow-lg shadow-purple-500/25'
+                                <button onClick={camera.toggleCamera} className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border-none cursor-pointer text-white transition-all ${
+                                    camera.cameraOn ? 'bg-gradient-to-r from-red-500 to-red-600 shadow-lg shadow-red-500/25' : 'bg-gradient-to-r from-purple-600 to-purple-700 shadow-lg shadow-purple-500/25'
                                 }`}>
-                                    {cameraOn ? '⏹️ Stop' : '📷 Start'}
+                                    {camera.cameraOn ? '⏹️ Stop' : '📷 Start'}
                                 </button>
                                 <button onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-500/25">
                                     📂 Upload
@@ -872,13 +811,13 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                         <TestPanel
                             prediction={prediction}
                             isProcessing={isProcessing}
-                            cameraOn={cameraOn}
+                            cameraOn={camera.cameraOn}
                             testImage={testImage}
-                            videoRef={videoRef}
+                            videoRef={camera.videoRef}
                             canvasRef={canvasRef}
                             onCapture={handleTestCapture}
                             onUpload={() => testFileInputRef.current?.click()}
-                            onToggleCamera={toggleCamera}
+                            onToggleCamera={camera.toggleCamera}
                             onReset={() => { setTestImage(null); setPrediction(null) }}
                             onTryAnother={() => { setTestImage(null); setPrediction(null) }}
                             onExport={handleExportTestReport}

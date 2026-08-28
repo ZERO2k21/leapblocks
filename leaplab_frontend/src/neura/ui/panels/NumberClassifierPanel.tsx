@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
+import { useCamera } from '../../hooks/useCamera'
 import { NumberClassifier } from '../../ml/classifiers/NumberClassifier'
 import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
@@ -19,18 +20,14 @@ interface NumberClassifierPanelProps {
 export default function NumberClassifierPanel({ mode }: NumberClassifierPanelProps) {
     const isMobile = useIsMobile(768)
     const drawCanvasRef = useRef<HTMLCanvasElement>(null)
-    const videoRef = useRef<HTMLVideoElement>(null)
     const cameraCanvasRef = useRef<HTMLCanvasElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const testFileInputRef = useRef<HTMLInputElement>(null)
     const classifierRef = useRef(new NumberClassifier())
-    const streamRef = useRef<MediaStream | null>(null)
     const isPredictingRef = useRef(false)
     const predictTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const testCameraStartedRef = useRef(false)
-    const cameraOnRef = useRef(false)
-    const streamStateRef = useRef<MediaStream | null>(null)
     const rebuildAbortRef = useRef(0)
 
     const [isDrawing, setIsDrawing] = useState(false)
@@ -39,8 +36,6 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [modelLoading, setModelLoading] = useState(false)
-    const [cameraOn, setCameraOn] = useState(false)
-    const [cameraError, setCameraError] = useState<string | null>(null)
     const [testImage, setTestImage] = useState<string | null>(null)
     const [inferenceTime, setInferenceTime] = useState(0)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
@@ -57,43 +52,9 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const lastPosRef = useRef<{ x: number; y: number } | null>(null)
     const skipNextRebuildRef = useRef(false)
 
-    const startCamera = useCallback(async () => {
-        setCameraError(null)
-        try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480, facingMode: 'environment' }
-            })
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream
-                await videoRef.current.play()
-            }
-            streamRef.current = mediaStream
-            setCameraOn(true)
-            setInputMode('camera')
-        } catch (err) {
-            console.error('Camera access denied:', err)
-            setCameraError('Camera access is needed to take photos. Please allow camera access and try again.')
-            setCameraOn(false)
-        }
-    }, [])
-
-    const stopCamera = useCallback(() => {
-        const s = streamRef.current
-        if (s) {
-            s.getTracks().forEach(t => t.stop())
-            streamRef.current = null
-        }
-        setCameraOn(false)
-    }, [])
-
-    const toggleCamera = useCallback(() => {
-        if (cameraOn) {
-            stopCamera()
-            setInputMode('draw')
-        } else {
-            startCamera()
-        }
-    }, [cameraOn, startCamera, stopCamera])
+    const camera = useCamera({
+        videoConstraints: { width: 640, height: 480, facingMode: 'environment' }
+    })
 
     const showSaved = useCallback((msg: string) => {
         setSavedMessage(msg)
@@ -102,24 +63,8 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     }, [])
 
     useEffect(() => {
-        cameraOnRef.current = cameraOn
-    }, [cameraOn])
-
-    useEffect(() => {
-        streamStateRef.current = streamRef.current
-    })
-
-    // Sync stream to video element when cameraOn changes (video element may mount after stream is set)
-    useEffect(() => {
-        if (cameraOn && streamRef.current && videoRef.current && videoRef.current.srcObject !== streamRef.current) {
-            videoRef.current.srcObject = streamRef.current
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [cameraOn])
-
-    useEffect(() => {
         return () => {
-            stopCamera()
+            camera.stopCamera()
             if (predictTimeoutRef.current) clearTimeout(predictTimeoutRef.current)
             if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
         }
@@ -166,16 +111,16 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
         if (mode.mode !== 'test' || modelLoading) return
         const runPrediction = async () => {
             if (isPredictingRef.current) return
-            if (cameraOnRef.current && streamRef.current && videoRef.current) {
+            if (camera.cameraOnRef.current && camera.streamStateRef.current && camera.videoRef.current) {
                 isPredictingRef.current = true
                 setIsProcessing(true)
                 try {
                     const canvas = cameraCanvasRef.current
-                    if (canvas && videoRef.current) {
-                        canvas.width = videoRef.current.videoWidth || 640
-                        canvas.height = videoRef.current.videoHeight || 480
+                    if (canvas && camera.videoRef.current) {
+                        canvas.width = camera.videoRef.current.videoWidth || 640
+                        canvas.height = camera.videoRef.current.videoHeight || 480
                         const ctx = canvas.getContext('2d')!
-                        ctx.drawImage(videoRef.current, 0, 0)
+                        ctx.drawImage(camera.videoRef.current, 0, 0)
                         const start = performance.now()
                         const result = await classifierRef.current.predict(canvas, 3)
                         const elapsed = Math.round(performance.now() - start)
@@ -202,12 +147,12 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                 isPredictingRef.current = false
             }
         }
-        if (cameraOn && streamRef.current) {
+        if (camera.cameraOn && camera.streamStateRef.current) {
             runPrediction()
             const interval = setInterval(runPrediction, 500)
             return () => clearInterval(interval)
         }
-    }, [mode.mode, cameraOn, modelLoading])
+    }, [mode.mode, camera.cameraOn, modelLoading])
 
     // Drawing handlers
     const clearCanvas = useCallback(() => {
@@ -278,10 +223,10 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
     // Capture from camera
     const handleCaptureCamera = useCallback(() => {
-        if (!mode.selectedClassId || !videoRef.current || !cameraOn) return
+        if (!mode.selectedClassId || !camera.videoRef.current || !camera.cameraOn) return
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) return
-        const video = videoRef.current
+        const video = camera.videoRef.current
         const canvas = document.createElement('canvas')
         canvas.width = video.videoWidth || 640
         canvas.height = video.videoHeight || 480
@@ -291,16 +236,16 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
         mode.addSample(mode.selectedClassId, { type: 'image', data: dataUrl })
         classifierRef.current.addSample(canvas, mode.getSelectedClass()?.name || '').catch(() => undefined)
         showSaved(`📸 Photo saved to ${mode.getSelectedClass()?.name || 'class'}!`)
-    }, [mode, cameraOn, showSaved])
+    }, [mode, camera.cameraOn, showSaved])
 
     handleCaptureRef.current = inputMode === 'draw' ? handleCaptureDrawing : handleCaptureCamera
 
     const startBurstCapture = useCallback(() => {
-        if (inputMode !== 'camera' || !mode.selectedClassId || !cameraOn) return
+        if (inputMode !== 'camera' || !mode.selectedClassId || !camera.cameraOn) return
         burstIntervalRef.current = setInterval(() => {
             handleCaptureRef.current?.()
         }, 1000 / captureFps)
-    }, [captureFps, inputMode, mode.selectedClassId, cameraOn])
+    }, [captureFps, inputMode, mode.selectedClassId, camera.cameraOn])
 
     const stopBurstCapture = useCallback(() => {
         if (burstIntervalRef.current) {
@@ -373,7 +318,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             reader.readAsDataURL(file)
         })
         setTestImage(dataUrl)
-        stopCamera()
+        camera.stopCamera()
         setIsProcessing(true)
         try {
             const img = new Image()
@@ -403,7 +348,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
         } catch { /* prediction failed */ }
         setIsProcessing(false)
         if (testFileInputRef.current) testFileInputRef.current.value = ''
-    }, [modelLoading, stopCamera])
+    }, [modelLoading, camera.stopCamera])
 
     // Register global window drag-and-drop upload handler
     useEffect(() => {
@@ -631,14 +576,14 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     </div>
 
                     {/* Camera error */}
-                    {cameraError && inputMode === 'camera' && (
+                    {camera.cameraError && inputMode === 'camera' && (
                         <div className="w-full max-w-[420px] bg-white rounded-2xl p-6 shadow-sm border border-[#dae2fd] text-center mx-auto mt-2.5">
                             <span className="text-4xl mb-3 block">🚫</span>
                             <h3 className="text-sm font-bold text-[#131b2e] mb-2">Camera Access Needed</h3>
-                            <p className="text-xs text-[#4a4455] mb-4">{cameraError}</p>
-                            <div className="flex gap-2 justify-center">
-                                <button onClick={startCamera} className="px-4 py-2 bg-[#630ed4] text-white rounded-xl text-xs font-bold hover:shadow-lg transition-all">Try Again</button>
-                                <button onClick={() => { setCameraError(null); setInputMode('draw') }} className="px-4 py-2 bg-[#eaedff] text-[#131b2e] rounded-xl text-xs font-bold hover:bg-[#dae2fd] transition-all">Draw Instead</button>
+                                <p className="text-xs text-[#4a4455] mb-4">{camera.cameraError}</p>
+                                <div className="flex gap-2 justify-center">
+                                    <button onClick={camera.startCamera} className="px-4 py-2 bg-[#630ed4] text-white rounded-xl text-xs font-bold hover:shadow-lg transition-all">Try Again</button>
+                                    <button onClick={() => { camera.setCameraError(null); setInputMode('draw') }} className="px-4 py-2 bg-[#eaedff] text-[#131b2e] rounded-xl text-xs font-bold hover:bg-[#dae2fd] transition-all">Draw Instead</button>
                             </div>
                         </div>
                     )}
@@ -679,9 +624,9 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             {/* Camera feed */}
                             {inputMode === 'camera' && (
                                 <div className="flex-1 relative rounded-2xl overflow-hidden bg-[#0f0e26] border border-[#3b2f63] shadow-[0_4px_20px_rgba(0,0,0,0.15)] min-h-[250px]">
-                                    {cameraOn ? (
+                                    {camera.cameraOn ? (
                                         <>
-                                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
+                                            <video ref={camera.videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
                                             <div className="absolute top-2.5 left-2.5 flex items-center gap-1.25 py-1 px-2.5 bg-black/50 backdrop-blur-md rounded-md z-10">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]" />
                                                 <span className="text-white text-[10px] font-bold">LIVE</span>
@@ -710,7 +655,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                                 <span className={`text-[3rem] mb-3 transition-transform duration-200 ${isDragging ? 'scale-115' : 'scale-100'}`}>{isDragging ? '📥' : '📷'}</span>
                                                 <p className="text-sm font-bold text-white mb-3">{isDragging ? 'Drop Images Here!' : 'Camera is off'}</p>
                                                 <div className={`flex gap-2 items-center transition-opacity duration-200 ${isDragging ? 'opacity-30' : 'opacity-100'}`}>
-                                                    <button onClick={startCamera} className="py-2 px-4 rounded-xl text-[11px] font-bold border-none cursor-pointer bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_4px_14px_rgba(99,14,212,0.35)]">
+                                                    <button onClick={camera.startCamera} className="py-2 px-4 rounded-xl text-[11px] font-bold border-none cursor-pointer bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_4px_14px_rgba(99,14,212,0.35)]">
                                                         📷 Turn On Camera
                                                     </button>
                                                     <span className="text-gray-400 text-[10px] font-semibold">or</span>
@@ -731,11 +676,11 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         <div className="w-full lg:w-[280px] shrink-0 flex flex-col gap-2.5">
                             {/* Input mode toggle */}
                             <div className="bg-white/85 backdrop-blur-md rounded-xl p-1 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)] flex gap-0.75">
-                                <button onClick={() => { if (cameraOn) stopCamera(); setInputMode('draw') }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all duration-200 ${inputMode === 'draw' ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_2px_8px_rgba(99,14,212,0.25)]' : 'bg-transparent text-gray-500'}`}>
+                                <button onClick={() => { if (camera.cameraOn) camera.stopCamera(); setInputMode('draw') }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all duration-200 ${inputMode === 'draw' ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_2px_8px_rgba(99,14,212,0.25)]' : 'bg-transparent text-gray-500'}`}>
                                     <span className="text-[13px]">✏️</span>
                                     Draw
                                 </button>
-                                <button onClick={() => { if (!cameraOn) startCamera(); setInputMode('camera') }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all duration-200 ${inputMode === 'camera' ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_2px_8px_rgba(99,14,212,0.25)]' : 'bg-transparent text-gray-500'}`}>
+                                <button onClick={() => { if (!camera.cameraOn) camera.startCamera(); setInputMode('camera') }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all duration-200 ${inputMode === 'camera' ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_2px_8px_rgba(99,14,212,0.25)]' : 'bg-transparent text-gray-500'}`}>
                                     <span className="text-[13px]">📷</span>
                                     Camera
                                 </button>
@@ -777,8 +722,8 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                 onMouseLeave={inputMode === 'camera' ? stopBurstCapture : undefined}
                                 onTouchStart={inputMode === 'camera' ? startBurstCapture : undefined}
                                 onTouchEnd={inputMode === 'camera' ? stopBurstCapture : undefined}
-                                disabled={inputMode === 'camera' ? !canAddSamples || !cameraOn : !canAddSamples}
-                                className={`py-3 px-5 rounded-xl text-xs font-bold border-none flex items-center justify-center gap-1.5 shadow-[0_4px_14px_rgba(99,14,212,0.35)] text-white transition-all ${(inputMode === 'camera' ? canAddSamples && cameraOn : canAddSamples) ? 'cursor-pointer opacity-100' : 'cursor-not-allowed opacity-50'} ${atSampleLimit ? 'bg-gradient-to-br from-gray-300 to-gray-400' : 'bg-gradient-to-br from-[#630ed4] to-[#8b5cf6]'}`}
+                                disabled={inputMode === 'camera' ? !canAddSamples || !camera.cameraOn : !canAddSamples}
+                                className={`py-3 px-5 rounded-xl text-xs font-bold border-none flex items-center justify-center gap-1.5 shadow-[0_4px_14px_rgba(99,14,212,0.35)] text-white transition-all ${(inputMode === 'camera' ? canAddSamples && camera.cameraOn : canAddSamples) ? 'cursor-pointer opacity-100' : 'cursor-not-allowed opacity-50'} ${atSampleLimit ? 'bg-gradient-to-br from-gray-300 to-gray-400' : 'bg-gradient-to-br from-[#630ed4] to-[#8b5cf6]'}`}
                             >
                                 <span className="text-sm">{inputMode === 'draw' ? '✏️' : '📸'}</span>
                                 {atSampleLimit ? 'Max Reached' : inputMode === 'draw' ? 'Add Drawing' : 'Hold to Record'}
@@ -885,21 +830,21 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                     <TestPanel
                                         prediction={prediction}
                                         isProcessing={isProcessing}
-                                        cameraOn={cameraOn}
+                                        cameraOn={camera.cameraOn}
                                         testImage={testImage}
-                                        videoRef={videoRef}
+                                        videoRef={camera.videoRef}
                                         canvasRef={cameraCanvasRef}
                                         videoFit="contain"
                                         onCapture={() => {
-                                            if (!videoRef.current || !cameraOn) return
-                                            const video = videoRef.current
+                                            if (!camera.videoRef.current || !camera.cameraOn) return
+                                            const video = camera.videoRef.current
                                             const canvas = document.createElement('canvas')
                                             canvas.width = video.videoWidth || 640
                                             canvas.height = video.videoHeight || 480
                                             const ctx = canvas.getContext('2d')!
                                             ctx.drawImage(video, 0, 0)
                                             setTestImage(canvas.toDataURL('image/png'))
-                                            stopCamera()
+                                            camera.stopCamera()
                                             setIsProcessing(true)
                                             classifierRef.current.predict(canvas, 3).then(result => {
                                                 if (result && result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
@@ -916,9 +861,9 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                             }).catch(() => setIsProcessing(false))
                                         }}
                                         onUpload={() => testFileInputRef.current?.click()}
-                                        onToggleCamera={toggleCamera}
+                                        onToggleCamera={camera.toggleCamera}
                                         onReset={() => { setTestImage(null); setPrediction(null) }}
-                                        onTryAnother={() => { setTestImage(null); setPrediction(null); if (!cameraOn) startCamera() }}
+                                        onTryAnother={() => { setTestImage(null); setPrediction(null); if (!camera.cameraOn) camera.startCamera() }}
                                         onExport={handleExportTestReport}
                                         fileInputRef={testFileInputRef}
                                         onFileChange={handleTestUpload}
@@ -935,10 +880,10 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         <div className="w-full lg:w-[280px] shrink-0 flex flex-col gap-2.5">
                             {/* Test input mode toggle */}
                             <div className="bg-white/85 backdrop-blur-md rounded-xl p-1 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)] flex gap-0.75">
-                                <button onClick={() => { if (cameraOn) stopCamera(); setTestImage(null); setPrediction(null); setInputMode('draw') }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all duration-200 ${inputMode === 'draw' ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_2px_8px_rgba(99,14,212,0.25)]' : 'bg-transparent text-gray-500'}`}>
+                                <button onClick={() => { if (camera.cameraOn) camera.stopCamera(); setTestImage(null); setPrediction(null); setInputMode('draw') }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all duration-200 ${inputMode === 'draw' ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_2px_8px_rgba(99,14,212,0.25)]' : 'bg-transparent text-gray-500'}`}>
                                     <span className="text-[13px]">✏️</span> Draw
                                 </button>
-                                <button onClick={() => { setTestImage(null); setPrediction(null); if (!cameraOn) startCamera(); setInputMode('camera') }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all duration-200 ${inputMode === 'camera' ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_2px_8px_rgba(99,14,212,0.25)]' : 'bg-transparent text-gray-500'}`}>
+                                <button onClick={() => { setTestImage(null); setPrediction(null); if (!camera.cameraOn) camera.startCamera(); setInputMode('camera') }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer transition-all duration-200 ${inputMode === 'camera' ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_2px_8px_rgba(99,14,212,0.25)]' : 'bg-transparent text-gray-500'}`}>
                                     <span className="text-[13px]">📷</span> Camera
                                 </button>
                                 <button onClick={() => testFileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-lg text-xs font-bold border-none cursor-pointer bg-transparent text-gray-500 transition-all duration-200">

@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
+import { useCamera } from '../../hooks/useCamera'
 import { PoseClassifier, Keypoint } from '../../ml/classifiers/PoseClassifier'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
@@ -39,11 +40,9 @@ const ACCENT_DARK = '#d97706'
 const PREDICT_INTERVAL_MS = 600
 
 export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
-    const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
     const classifierRef = useRef(new PoseClassifier())
-    const streamRef = useRef<MediaStream | null>(null)
     const animFrameRef = useRef<number>(0)
     const isPredictingRef = useRef(false)
     const testCameraStartedRef = useRef(false)
@@ -57,13 +56,8 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
     const handleCaptureRef = useRef<() => Promise<void>>(null)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
-    const [stream, setStream] = useState<MediaStream | null>(null)
     const [modelLoading, setModelLoading] = useState(false)
     const [captureStatus, setCaptureStatus] = useState<'idle' | 'detecting' | 'success' | 'no-pose' | 'error'>('idle')
-    const [cameraError, setCameraError] = useState<string | null>(null)
-    const [cameraOn, setCameraOn] = useState(false)
-    const cameraOnRef = useRef(false)
-    const streamStateRef = useRef<MediaStream | null>(null)
     const [inferenceTime, setInferenceTime] = useState(0)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
     const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
@@ -87,39 +81,14 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
         savedTimeoutRef.current = setTimeout(() => setSavedMessage(null), 2000)
     }, [])
 
-    const startCamera = useCallback(async () => {
-        setCameraError(null)
-        try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480, facingMode: 'user' }
-            })
-            streamRef.current = mediaStream
-            setStream(mediaStream)
-            setCameraOn(true)
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream
-                await videoRef.current.play()
-            }
-        } catch (err) {
-            console.error('[RepCounter] Camera access denied:', err)
-            setCameraError('Camera access is needed for pose detection.')
-            setCameraOn(false)
-        }
-    }, [])
+    const camera = useCamera({ videoConstraints: { width: 640, height: 480, facingMode: 'user' } })
 
-    const stopCamera = useCallback(() => {
-        const s = streamRef.current
-        if (s) { s.getTracks().forEach(t => t.stop()); streamRef.current = null }
-        setStream(null)
-        setCameraOn(false)
+    const handleStopCamera = useCallback(() => {
+        camera.stopCamera()
         setPoseDetected(false)
         setPrediction(null)
         setCurrentKeypoints([])
-    }, [])
-
-    const toggleCamera = useCallback(() => {
-        if (cameraOn) stopCamera(); else startCamera()
-    }, [cameraOn, startCamera, stopCamera])
+    }, [camera])
 
     const resetRepCount = useCallback(() => {
         setRepCount(0)
@@ -152,20 +121,8 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
         }
     }, [])
 
-    // Keep refs in sync
-    useEffect(() => { cameraOnRef.current = cameraOn }, [cameraOn])
-    useEffect(() => { streamStateRef.current = stream }, [stream])
-
-    useEffect(() => {
-        if (stream && videoRef.current && videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [stream])
-
     useEffect(() => {
         return () => {
-            stopCamera()
             cancelAnimationFrame(animFrameRef.current)
             classifierRef.current.dispose()
             if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
@@ -174,8 +131,8 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
     }, [])
 
     useEffect(() => {
-        if (mode.mode !== 'collect' && mode.mode !== 'test') stopCamera()
-    }, [mode.mode])
+        if (mode.mode !== 'collect' && mode.mode !== 'test') handleStopCamera()
+    }, [mode.mode, handleStopCamera])
 
     useEffect(() => {
         if (mode.mode !== 'test') {
@@ -276,7 +233,7 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
         if (mode.mode !== 'test' || modelLoading) return
         const runPrediction = async () => {
             if (isPredictingRef.current) return
-            if (streamStateRef.current && videoRef.current && canvasRef.current) {
+            if (camera.streamStateRef.current && camera.videoRef.current && canvasRef.current) {
                 isPredictingRef.current = true
                 setIsProcessing(true)
                 try {
@@ -285,7 +242,7 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                     if (ctx) {
                         canvasRef.current.width = 640
                         canvasRef.current.height = 480
-                        ctx.drawImage(videoRef.current, 0, 0, 640, 480)
+                        ctx.drawImage(camera.videoRef.current, 0, 0, 640, 480)
 
                         const keypoints = await classifierRef.current.detectPose(canvasRef.current)
                         setCurrentKeypoints(keypoints)
@@ -374,10 +331,10 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [mode.mode, stream, modelLoading, startCamera, drawSkeletonOverlay, exerciseActive, processPrediction])
+    }, [mode.mode, camera.stream, modelLoading, camera.startCamera, drawSkeletonOverlay, exerciseActive, processPrediction])
 
     const handleCapture = useCallback(async () => {
-        if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return
+        if (!camera.videoRef.current || !mode.selectedClassId || !camera.cameraOn || isCapturing) return
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
             showSaved('Sample limit reached!')
@@ -386,7 +343,7 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
         setIsCapturing(true)
         setCaptureStatus('detecting')
         try {
-            const video = videoRef.current
+            const video = camera.videoRef.current
             const tempCanvas = document.createElement('canvas')
             tempCanvas.width = video.videoWidth || 640
             tempCanvas.height = video.videoHeight || 480
@@ -413,16 +370,16 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
             setIsCapturing(false)
             setTimeout(() => setCaptureStatus('idle'), 1500)
         }
-    }, [cameraOn, isCapturing, mode, showSaved])
+    }, [camera.cameraOn, isCapturing, mode, showSaved])
 
     handleCaptureRef.current = handleCapture
 
     const startBurstCapture = useCallback(() => {
-        if (!mode.selectedClassId || !cameraOn) return
+        if (!mode.selectedClassId || !camera.cameraOn) return
         burstIntervalRef.current = setInterval(() => {
             handleCaptureRef.current?.()
         }, 1000 / captureFps)
-    }, [captureFps, mode.selectedClassId, cameraOn])
+    }, [captureFps, mode.selectedClassId, camera.cameraOn])
 
     const stopBurstCapture = useCallback(() => {
         if (burstIntervalRef.current) {
@@ -468,10 +425,10 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                     <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 mt-3">
                         <div className="flex-1 flex flex-col gap-2 min-w-0">
                             <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
-                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
+                                <video ref={camera.videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${camera.cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
                                 <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
-                                {cameraOn && (
+                                {camera.cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                                         <span className="text-white text-[9px] font-bold">LIVE</span>
@@ -482,18 +439,18 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                                         <span className="text-6xl">✓</span>
                                     </div>
                                 )}
-                                {!cameraOn && (
+                                {!camera.cameraOn && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                                         <span className="text-5xl mb-3">🏋️</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to collect exercise poses</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg bg-amber-500 hover:bg-amber-600 transition-colors">Turn On Camera</button>
+                                        <button onClick={camera.startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg bg-amber-500 hover:bg-amber-600 transition-colors">Turn On Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-amber-500 text-amber-500 bg-white hover:bg-amber-50 transition-colors">
-                                    {cameraOn ? 'Stop' : 'Start'}
+                                <button onClick={camera.toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-amber-500 text-amber-500 bg-white hover:bg-amber-50 transition-colors">
+                                    {camera.cameraOn ? 'Stop' : 'Start'}
                                 </button>
                                 <div className="flex items-center gap-1 py-1 px-2 bg-gray-50 rounded-lg">
                                     <span className="text-[9px] font-bold text-gray-500">FPS</span>
@@ -515,7 +472,7 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                                     onMouseLeave={stopBurstCapture}
                                     onTouchStart={startBurstCapture}
                                     onTouchEnd={stopBurstCapture}
-                                    disabled={!cameraOn || isCapturing || !selectedClass}
+                                    disabled={!camera.cameraOn || isCapturing || !selectedClass}
                                     className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white transition-colors disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-amber-500 hover:bg-amber-600'}`}
                                 >
                                     {isCapturing ? '⏳ Recording...' : '📸 Hold to Record'}
@@ -609,27 +566,27 @@ export default function RepCounterPanel({ mode }: RepCounterPanelProps) {
                     <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 mt-3">
                         <div className="flex-1 flex flex-col min-w-0">
                             <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
-                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
+                                <video ref={camera.videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${camera.cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
                                 <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none -scale-x-100" />
-                                {cameraOn && (
+                                {camera.cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                                         <span className="text-white text-[9px] font-bold">LIVE</span>
                                     </div>
                                 )}
-                                {!cameraOn && (
+                                {!camera.cameraOn && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                                         <span className="text-5xl mb-3">📷</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to test rep counter</p>
-                                        <button onClick={startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg bg-amber-500 hover:bg-amber-600 transition-colors">Start Camera</button>
+                                        <button onClick={camera.startCamera} className="px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg bg-amber-500 hover:bg-amber-600 transition-colors">Start Camera</button>
                                     </div>
                                 )}
                             </div>
                             <div className="flex items-center justify-center gap-2 mt-2">
-                                <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-amber-500 text-amber-500 bg-white hover:bg-amber-50 transition-colors">
-                                    {cameraOn ? 'Stop Camera' : 'Start Camera'}
+                                <button onClick={camera.toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-amber-500 text-amber-500 bg-white hover:bg-amber-50 transition-colors">
+                                    {camera.cameraOn ? 'Stop Camera' : 'Start Camera'}
                                 </button>
                             </div>
                         </div>

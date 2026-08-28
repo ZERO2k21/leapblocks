@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
+import { useCamera } from '../../hooks/useCamera'
 import { ImageClassifier } from '../../ml/classifiers/ImageClassifier'
 import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
@@ -17,7 +18,6 @@ interface ImageClassifierPanelProps {
 }
 
 export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps) {
-    const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const classifierRef = useRef(new ImageClassifier())
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -36,9 +36,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const [trainingError, setTrainingError] = useState<string | null>(null)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
-    const [stream, setStream] = useState<MediaStream | null>(null)
-    const [cameraError, setCameraError] = useState<string | null>(null)
-    const [cameraOn, setCameraOn] = useState(false)
+
     const [showOnboarding, setShowOnboarding] = useState(() => {
         return !localStorage.getItem('neura-onboarding-seen')
     })
@@ -53,40 +51,12 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const [totalEpochs, setTotalEpochs] = useState(50)
     const [currentEpoch, setCurrentEpoch] = useState(0)
     const [epochResults, setEpochResults] = useState<number[]>([])
-    const streamRef = useRef<MediaStream | null>(null)
-    const cameraOnRef = useRef(false)
-    const streamStateRef = useRef<MediaStream | null>(null)
+
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-    const startCamera = useCallback(async () => {
-        try {
-            setCameraError(null)
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { 
-                    width: { ideal: 640 },
-                    height: { ideal: 480 },
-                    facingMode: 'user',
-                    frameRate: { ideal: 30 }
-                }
-            })
-            streamRef.current = mediaStream
-            setStream(mediaStream)
-            setCameraOn(true)
-        } catch (err) {
-            console.error('Camera access denied:', err)
-            setCameraError('Camera access is needed to take photos. Please allow camera access in your browser settings and try again.')
-            setCameraOn(false)
-        }
-    }, [])
-
-    const stopCamera = useCallback(() => {
-        const s = streamRef.current
-        if (s) {
-            s.getTracks().forEach(t => t.stop())
-            streamRef.current = null
-            setStream(null)
-        }
-    }, [])
+    const camera = useCamera({
+        videoConstraints: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user', frameRate: { ideal: 30 } }
+    })
 
     const showSaved = useCallback((msg: string) => {
         setSavedMessage(msg)
@@ -94,44 +64,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         savedTimeoutRef.current = setTimeout(() => setSavedMessage(null), 2000)
     }, [])
 
-    const toggleCamera = useCallback(() => {
-        if (cameraOn) {
-            stopCamera()
-            setCameraOn(false)
-        } else {
-            startCamera()
-        }
-    }, [cameraOn, startCamera, stopCamera])
 
-    useEffect(() => {
-        return () => { stopCamera() }
-    }, [])
-
-    useEffect(() => { cameraOnRef.current = cameraOn }, [cameraOn])
-    useEffect(() => { streamStateRef.current = stream }, [stream])
-
-    // Sync stream to video element when stream changes
-    useEffect(() => {
-        if (stream && videoRef.current && videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [stream])
-
-    // Re-sync when cameraOn changes (video element may mount after stream is set)
-    useEffect(() => {
-        if (cameraOn && stream && videoRef.current && videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [cameraOn])
-
-    useEffect(() => {
-        if (cameraOn && stream && videoRef.current) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => {})
-        }
-    }, [cameraOn, stream])
 
     useEffect(() => {
         if ((mode.mode === 'train' || mode.mode === 'test') && mode.project) {
@@ -177,10 +110,10 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         // Camera starts OFF in test mode — user chooses to turn on camera or upload
         const runPrediction = async () => {
             if (isPredictingRef.current) return
-            if (cameraOnRef.current && streamStateRef.current && videoRef.current) {
+            if (camera.cameraOnRef.current && camera.streamStateRef.current && camera.videoRef.current) {
                 // Guard: skip if video has no valid dimensions yet (camera just started, no frames)
-                const vw = videoRef.current.videoWidth
-                const vh = videoRef.current.videoHeight
+                const vw = camera.videoRef.current.videoWidth
+                const vh = camera.videoRef.current.videoHeight
                 if (!vw || !vh || vw === 0 || vh === 0) return
                 // Stop predicting after 10 consecutive failures to prevent log spam
                 if (consecutiveFailuresRef.current >= 10) return
@@ -188,7 +121,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 setIsProcessing(true)
                 try {
                     const start = performance.now()
-                    const result = await classifierRef.current.predict(videoRef.current)
+                    const result = await classifierRef.current.predict(camera.videoRef.current)
                     const elapsed = Math.round(performance.now() - start)
                     if (result) {
                         consecutiveFailuresRef.current = 0
@@ -210,29 +143,29 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     consecutiveFailuresRef.current++
                     if (consecutiveFailuresRef.current >= 10) {
                         console.error('[Neura] Stopping predictions — too many consecutive failures. Reload the page to recover.')
-                        setCameraError('GPU memory issue. Please reload the page.')
+                        camera.setCameraError('GPU memory issue. Please reload the page.')
                     }
                 }
                 setIsProcessing(false)
                 isPredictingRef.current = false
             }
         }
-        if (cameraOn && stream) {
+        if (camera.cameraOn && camera.stream) {
             runPrediction()
             const interval = setInterval(runPrediction, 500)
             return () => clearInterval(interval)
         }
-    }, [mode.mode, stream, cameraOn, modelLoading])
+    }, [mode.mode, camera.stream, camera.cameraOn, modelLoading])
 
     const handleCapture = async () => {
-        if (!videoRef.current || !canvasRef.current || !mode.selectedClassId || !cameraOn) return
+        if (!camera.videoRef.current || !canvasRef.current || !mode.selectedClassId || !camera.cameraOn) return
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) return
         if (isCapturing) return
         setIsCapturing(true)
         try {
             const canvas = canvasRef.current
-            const video = videoRef.current
+            const video = camera.videoRef.current
             canvas.width = video.videoWidth
             canvas.height = video.videoHeight
             const ctx = canvas.getContext('2d')!
@@ -309,8 +242,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             reader.readAsDataURL(file)
         })
         setTestImage(dataUrl)
-        setCameraOn(false)
-        stopCamera()
+        camera.stopCamera()
         setIsProcessing(true)
         try {
             const img = new Image()
@@ -369,11 +301,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     }, [mode.mode, mode.selectedClassId, mode.project])
 
     const handleTestCapture = useCallback(async () => {
-        if (!videoRef.current || !cameraOn || modelLoading) return
+        if (!camera.videoRef.current || !camera.cameraOn || modelLoading) return
         setIsProcessing(true)
         try {
             const start = performance.now()
-            const result = await classifierRef.current.predict(videoRef.current)
+            const result = await classifierRef.current.predict(camera.videoRef.current)
             const elapsed = Math.round(performance.now() - start)
             if (result) {
                 if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
@@ -391,7 +323,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             console.error('[Neura] Test capture prediction error:', err)
         }
         setIsProcessing(false)
-    }, [cameraOn, modelLoading])
+    }, [camera.cameraOn, modelLoading])
 
     const handleExportTestReport = useCallback(() => {
         if (!prediction) return
@@ -426,11 +358,11 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     }, [prediction, inferenceTime, mode, showSaved])
 
     const startBurstCapture = useCallback(() => {
-        if (!mode.selectedClassId || !cameraOn) return
+        if (!mode.selectedClassId || !camera.cameraOn) return
         burstIntervalRef.current = setInterval(() => {
             handleCaptureRef.current?.()
         }, 1000 / captureFps)
-    }, [captureFps, mode.selectedClassId, cameraOn])
+    }, [captureFps, mode.selectedClassId, camera.cameraOn])
 
     const stopBurstCapture = useCallback(() => {
         if (burstIntervalRef.current) {
@@ -603,17 +535,17 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
     const CameraToggle = ({ size = 'md' }: { size?: 'sm' | 'md' }) => (
         <button
-            onClick={toggleCamera}
+            onClick={camera.toggleCamera}
             className={`flex items-center gap-1.5 rounded-xl text-xs font-bold border-none cursor-pointer transition-all duration-200 ${
                 size === 'sm' ? 'py-2 px-3' : 'py-2.5 px-4'
             } ${
-                cameraOn
+                camera.cameraOn
                     ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600 shadow-[0_2px_8px_rgba(5,150,105,0.15)]'
                     : 'bg-gradient-to-br from-red-50 to-red-100 text-red-600 shadow-[0_2px_8px_rgba(220,38,38,0.12)]'
             }`}
         >
-            <span className="text-sm">{cameraOn ? '📷' : '🚫'}</span>
-            {cameraOn ? 'Camera On' : 'Camera Off'}
+            <span className="text-sm">{camera.cameraOn ? '📷' : '🚫'}</span>
+            {camera.cameraOn ? 'Camera On' : 'Camera Off'}
         </button>
     )
 
@@ -743,7 +675,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         {/* Left half - Camera */}
                         <div className="flex-1 min-w-0 flex flex-col">
                             {/* Camera error */}
-                            {cameraError && !cameraOn && (
+                            {camera.cameraError && !camera.cameraOn && (
                                 <div className="w-full flex-1 min-h-0 bg-white rounded-2xl p-8 text-center shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-200 flex flex-col items-center justify-center">
                                     <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center mx-auto mb-5">
                                         <span className="text-3xl">🚫</span>
@@ -752,13 +684,13 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                         Camera Access Needed
                                     </h3>
                                     <p className="text-xs text-gray-500 max-w-[300px] mx-auto mb-5 leading-relaxed">
-                                        {cameraError}
+                                        {camera.cameraError}
                                     </p>
                                     <div className="flex items-center justify-center gap-2.5">
-                                        <button onClick={startCamera} className="flex items-center gap-1.5 py-2.5 px-5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold border-none cursor-pointer">
+                                        <button onClick={camera.startCamera} className="flex items-center gap-1.5 py-2.5 px-5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold border-none cursor-pointer">
                                             🔄 Try Again
                                         </button>
-                                        <button onClick={() => { setCameraError(null); setCameraOn(false) }} className="flex items-center gap-1.5 py-2.5 px-5 bg-[#f5f3ff] text-[#630ed4] rounded-xl text-xs font-bold border-none cursor-pointer">
+                                        <button onClick={() => { camera.setCameraError(null) }} className="flex items-center gap-1.5 py-2.5 px-5 bg-[#f5f3ff] text-[#630ed4] rounded-xl text-xs font-bold border-none cursor-pointer">
                                             📂 Upload Only
                                         </button>
                                     </div>
@@ -766,8 +698,8 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                             )}
 
                             {/* Camera feed */}
-                            <div className={`w-full flex-1 min-h-0 relative rounded-2xl overflow-hidden bg-[#1e1b4b] shadow-[0_2px_12px_rgba(0,0,0,0.1)] ${cameraOn ? 'flex' : 'hidden'}`}>
-                                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
+                            <div className={`w-full flex-1 min-h-0 relative rounded-2xl overflow-hidden bg-[#1e1b4b] shadow-[0_2px_12px_rgba(0,0,0,0.1)] ${camera.cameraOn ? 'flex' : 'hidden'}`}>
+                                <video ref={camera.videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
                                 {isCapturing && <div className="absolute inset-0 bg-white/40 animate-[flash_0.3s_ease-out]" />}
                                 
                                 {/* LIVE indicator */}
@@ -821,7 +753,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                             </div>
 
                             {/* Camera off placeholder */}
-                            {!cameraOn && !cameraError && (
+                            {!camera.cameraOn && !camera.cameraError && (
                                 <div
                                     className={`w-full flex-1 min-h-0 rounded-2xl py-10 px-6 text-center border-2 border-dashed flex flex-col items-center justify-center transition-all duration-200 ${isDragging ? 'bg-[#f5f3ff] border-[#630ed4] shadow-[0_8px_24px_rgba(99,14,212,0.08)]' : 'bg-white border-[#630ed4]/15 shadow-[0_2px_8px_rgba(0,0,0,0.03)]'}`}
                                     onDragOver={(e) => {
@@ -874,7 +806,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                         </p>
                                         <div className="flex items-center justify-center gap-3">
                                             <button
-                                                onClick={startCamera}
+                                                onClick={camera.startCamera}
                                                 className="flex items-center gap-1.5 py-3 px-6 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.25)] hover:shadow-[0_6px_20px_rgba(99,14,212,0.35)] transition-all duration-200"
                                             >
                                                 📷 Turn On Camera
@@ -991,7 +923,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         </div>
                     </div>
                     <div className="w-full mt-2.5 flex-1 min-h-0 flex flex-col">
-                        <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={cameraOn} testImage={testImage} videoRef={videoRef} canvasRef={canvasRef} onCapture={handleTestCapture} onUpload={() => testFileInputRef.current?.click()} onToggleCamera={toggleCamera} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={handleExportTestReport} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} projectName={mode.project?.name} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
+                        <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={camera.cameraOn} testImage={testImage} videoRef={camera.videoRef} canvasRef={canvasRef} onCapture={handleTestCapture} onUpload={() => testFileInputRef.current?.click()} onToggleCamera={camera.toggleCamera} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={handleExportTestReport} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} projectName={mode.project?.name} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
                     </div>
                 </div>
             )}

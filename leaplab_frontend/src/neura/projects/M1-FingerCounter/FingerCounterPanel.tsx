@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
+import { useCamera } from '../../hooks/useCamera'
 import { HandPoseClassifier } from '../../ml/classifiers/HandPoseClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import WorkflowIndicator from '../../ui/components/WorkflowIndicator'
@@ -25,11 +26,9 @@ const COUNT_COLORS: Record<number, string> = {
 }
 
 export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
-    const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
     const classifierRef = useRef(new HandPoseClassifier())
-    const streamRef = useRef<MediaStream | null>(null)
     const animFrameRef = useRef<number>(0)
     const isPredictingRef = useRef(false)
     const testCameraStartedRef = useRef(false)
@@ -44,13 +43,8 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
     const handleCaptureRef = useRef<() => Promise<void>>(null)
     const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
-    const [stream, setStream] = useState<MediaStream | null>(null)
     const [handDetected, setHandDetected] = useState(false)
     const [captureStatus, setCaptureStatus] = useState<CaptureStatus>('idle')
-    const [cameraError, setCameraError] = useState<string | null>(null)
-    const [cameraOn, setCameraOn] = useState(false)
-    const cameraOnRef = useRef(false)
-    const streamStateRef = useRef<MediaStream | null>(null)
     const [inferenceTime, setInferenceTime] = useState(0)
     const [savedMessage, setSavedMessage] = useState<string | null>(null)
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -91,71 +85,25 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
         } catch { /* ignore audio errors */ }
     }, [])
 
-    const startCamera = useCallback(async () => {
-        setCameraError(null)
-        try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480, facingMode: 'user' }
-            })
-            streamRef.current = mediaStream
-            setStream(mediaStream)
-            setCameraOn(true)
-            if (overlayCanvasRef.current) {
-                classifierRef.current.attachWebGLHandlers(overlayCanvasRef.current)
-            }
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream
-                await videoRef.current.play()
-            }
-        } catch (err) {
-            console.error('Camera access denied:', err)
-            setCameraError('Camera access is needed for hand tracking. Please allow camera access and try again.')
-            setCameraOn(false)
-        }
-    }, [])
+    const camera = useCamera({ videoConstraints: { width: 640, height: 480, facingMode: 'user' } })
 
-    const stopCamera = useCallback(() => {
-        const s = streamRef.current
-        if (s) { s.getTracks().forEach(t => t.stop()); streamRef.current = null }
-        setStream(null)
-        setCameraOn(false)
+    const handleStopCamera = useCallback(() => {
+        camera.stopCamera()
         setHandDetected(false)
         setPrediction(null)
         setCurrentCount(0)
-    }, [])
-
-    const toggleCamera = useCallback(() => {
-        if (cameraOn) stopCamera(); else startCamera()
-    }, [cameraOn, startCamera, stopCamera])
-
-    useEffect(() => { cameraOnRef.current = cameraOn }, [cameraOn])
-    useEffect(() => { streamStateRef.current = stream }, [stream])
-
-    useEffect(() => {
-        if (stream && videoRef.current && videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [stream])
-
-    useEffect(() => {
-        if (cameraOn && stream && videoRef.current && videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream
-            videoRef.current.play().catch(() => undefined)
-        }
-    }, [cameraOn])
+    }, [camera])
 
     useEffect(() => {
         return () => {
-            stopCamera()
             cancelAnimationFrame(animFrameRef.current)
             classifierRef.current.dispose()
         }
     }, [])
 
     useEffect(() => {
-        if (mode.mode !== 'collect' && mode.mode !== 'test') stopCamera()
-    }, [mode.mode])
+        if (mode.mode !== 'collect' && mode.mode !== 'test') handleStopCamera()
+    }, [mode.mode, handleStopCamera])
 
     useEffect(() => {
         if (mode.mode !== 'test') testCameraStartedRef.current = false
@@ -167,7 +115,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
         // Camera starts OFF in test mode — user chooses to turn on camera or upload
         const runPrediction = async () => {
             if (isPredictingRef.current) return
-            if (streamStateRef.current && videoRef.current && canvasRef.current) {
+            if (camera.streamStateRef.current && camera.videoRef.current && canvasRef.current) {
                 isPredictingRef.current = true
                 setIsProcessing(true)
                 try {
@@ -176,7 +124,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                     if (ctx) {
                         canvasRef.current.width = 640
                         canvasRef.current.height = 480
-                        ctx.drawImage(videoRef.current, 0, 0, 640, 480)
+                        ctx.drawImage(camera.videoRef.current, 0, 0, 640, 480)
                         
                         // Rule-based classification: detect hand, extract features, count fingers
                         const keypoints = await classifierRef.current.detectHand(canvasRef.current)
@@ -216,8 +164,8 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
 
                                 // Draw hand skeleton onto overlay canvas for real-time tracking feedback
                                 if (overlayCanvasRef.current) {
-                                    overlayCanvasRef.current.width = videoRef.current.videoWidth || 640
-                                    overlayCanvasRef.current.height = videoRef.current.videoHeight || 480
+                                    overlayCanvasRef.current.width = camera.videoRef.current.videoWidth || 640
+                                    overlayCanvasRef.current.height = camera.videoRef.current.videoHeight || 480
                                     classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, { readableLabels: true })
                                 }
                             }
@@ -255,7 +203,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [mode.mode, stream, startCamera, playCountSound, autoPredict, confidenceThreshold])
+    }, [mode.mode, camera.stream, camera.startCamera, playCountSound, autoPredict, confidenceThreshold])
 
     const manualPredict = useCallback(async () => {
         if (isPredictingRef.current) return
@@ -275,10 +223,10 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
                 width = img.naturalWidth
                 height = img.naturalHeight
             }
-        } else if (streamStateRef.current && videoRef.current) {
-            elementToDetect = videoRef.current
-            width = videoRef.current.videoWidth || 640
-            height = videoRef.current.videoHeight || 480
+        } else if (camera.streamStateRef.current && camera.videoRef.current) {
+            elementToDetect = camera.videoRef.current
+            width = camera.videoRef.current.videoWidth || 640
+            height = camera.videoRef.current.videoHeight || 480
         }
         
         if (!elementToDetect || !canvasRef.current) return
@@ -364,8 +312,7 @@ export default function FingerCounterPanel({ mode }: FingerCounterPanelProps) {
         })
         
         setTestImage(dataUrl)
-        setCameraOn(false)
-        stopCamera()
+        camera.stopCamera()
         
         setTimeout(() => {
             const img = new Image()
@@ -441,19 +388,19 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
 
     // Collect mode: throttled hand detection loop for overlay drawing
     useEffect(() => {
-        if (mode.mode !== 'collect' || !stream) return
+        if (mode.mode !== 'collect' || !camera.stream) return
         const detectLoop = async () => {
             if (isPredictingRef.current) return
-            if (videoRef.current && overlayCanvasRef.current) {
+            if (camera.videoRef.current && overlayCanvasRef.current) {
                 isPredictingRef.current = true
                 try {
                     const canvas = overlayCanvasRef.current
                     const ctx = canvas.getContext('2d')
                     if (ctx) {
-                        canvas.width = videoRef.current.videoWidth || 640
-                        canvas.height = videoRef.current.videoHeight || 480
+                        canvas.width = camera.videoRef.current.videoWidth || 640
+                        canvas.height = camera.videoRef.current.videoHeight || 480
                         ctx.clearRect(0, 0, canvas.width, canvas.height)
-                        const keypoints = await classifierRef.current.detectHand(videoRef.current)
+                        const keypoints = await classifierRef.current.detectHand(camera.videoRef.current)
                         if (keypoints.length > 0) {
                             setHandDetected(true)
                             classifierRef.current.drawHand(canvas, keypoints, undefined, { readableLabels: true })
@@ -476,10 +423,10 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
         }
         animFrameRef.current = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(animFrameRef.current)
-    }, [mode.mode, stream])
+    }, [mode.mode, camera.stream])
 
     const handleCapture = useCallback(async () => {
-        if (!videoRef.current || !mode.selectedClassId || !cameraOn || isCapturing) return
+        if (!camera.videoRef.current || !mode.selectedClassId || !camera.cameraOn || isCapturing) return
         const selectedClass = mode.getSelectedClass()
         if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
             showSaved('⚠️ Sample limit reached! (20 per class)')
@@ -488,7 +435,7 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
         setIsCapturing(true)
         setCaptureStatus('detecting')
         try {
-            const video = videoRef.current
+            const video = camera.videoRef.current
             const tempCanvas = document.createElement('canvas')
             tempCanvas.width = video.videoWidth || 640
             tempCanvas.height = video.videoHeight || 480
@@ -518,16 +465,16 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
             setIsCapturing(false)
             setTimeout(() => setCaptureStatus('idle'), 1500)
         }
-    }, [cameraOn, isCapturing, mode, showSaved])
+    }, [camera.cameraOn, isCapturing, mode, showSaved])
 
     handleCaptureRef.current = handleCapture
 
     const startBurstCapture = useCallback(() => {
-        if (!mode.selectedClassId || !cameraOn) return
+        if (!mode.selectedClassId || !camera.cameraOn) return
         burstIntervalRef.current = setInterval(() => {
             handleCaptureRef.current?.()
         }, 1000 / captureFps)
-    }, [captureFps, mode.selectedClassId, cameraOn])
+    }, [captureFps, mode.selectedClassId, camera.cameraOn])
 
     const stopBurstCapture = useCallback(() => {
         if (burstIntervalRef.current) {
@@ -635,24 +582,24 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
                     <div className="flex flex-col lg:flex-row gap-4 flex-1 mt-3 min-h-0">
                         {/* Camera */}
                         <div className="flex-1 flex flex-col gap-2 min-w-0">
-                            {cameraError && !cameraOn && (
+                            {camera.cameraError && !camera.cameraOn && (
                                 <div className="flex flex-col items-center justify-center bg-white/85 backdrop-blur-xl rounded-2xl p-5 border border-red-200">
                                     <span className="text-4xl mb-2">🚫</span>
                                     <h3 className="text-sm font-bold text-gray-800 mb-1">Camera Access Needed</h3>
-                                    <p className="text-xs text-gray-500 mb-3">{cameraError}</p>
+                                    <p className="text-xs text-gray-500 mb-3">{camera.cameraError}</p>
                                     <div className="flex gap-2">
-                                        <button onClick={startCamera} className="px-4 py-2 bg-[#0ea5e9] text-white rounded-xl text-xs font-bold">🔄 Try Again</button>
+                                        <button onClick={camera.startCamera} className="px-4 py-2 bg-[#0ea5e9] text-white rounded-xl text-xs font-bold">🔄 Try Again</button>
                                         <button onClick={() => collectFileInputRef.current?.click()} className="px-4 py-2 bg-blue-500 text-white rounded-xl text-xs font-bold hover:bg-blue-600">📁 Upload Only</button>
                                     </div>
                                 </div>
                             )}
 
                             <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px]">
-                                <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${cameraOn ? 'block' : 'hidden'}`} />
+                                <video ref={camera.videoRef} autoPlay playsInline muted className={`w-full h-full object-contain -scale-x-100 ${camera.cameraOn ? 'block' : 'hidden'}`} />
                                 <canvas ref={canvasRef} className="hidden" />
                                 <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 
-                                {cameraOn && (
+                                {camera.cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                                         <span className="text-white text-[9px] font-bold">🔍 LIVE</span>
@@ -670,13 +617,13 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
                                     </div>
                                 )}
 
-                                {!cameraOn && (
+                                {!camera.cameraOn && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                                         <span className="text-5xl mb-3">✋</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera to collect hand gesture samples</p>
                                         <div className="flex gap-2">
-                                            <button onClick={startCamera} className="px-5 py-2.5 bg-[#0ea5e9] text-white rounded-xl text-xs font-bold shadow-lg">📷 Turn On Camera</button>
+                                            <button onClick={camera.startCamera} className="px-5 py-2.5 bg-[#0ea5e9] text-white rounded-xl text-xs font-bold shadow-lg">📷 Turn On Camera</button>
                                             <button onClick={() => collectFileInputRef.current?.click()} className="px-5 py-2.5 bg-blue-500 text-white rounded-xl text-xs font-bold shadow-lg hover:bg-blue-600 transition-all">📁 Upload Image</button>
                                         </div>
                                         <p className="text-white/30 text-[9px] mt-3">PNG, JPG up to 10MB</p>
@@ -685,8 +632,8 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
                             </div>
 
                             <div className="flex items-center justify-center gap-2">
-                                <button onClick={toggleCamera} disabled={false} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1]">
-                                    {cameraOn ? '📷 Stop' : '📷 Start'}
+                                <button onClick={camera.toggleCamera} disabled={false} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1]">
+                                    {camera.cameraOn ? '📷 Stop' : '📷 Start'}
                                 </button>
                                 <div className="flex items-center gap-1 py-1 px-2 bg-gray-50 rounded-lg">
                                     <span className="text-[9px] font-bold text-gray-500">FPS</span>
@@ -707,7 +654,7 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
                                     onMouseLeave={stopBurstCapture}
                                     onTouchStart={startBurstCapture}
                                     onTouchEnd={stopBurstCapture}
-                                    disabled={!cameraOn || isCapturing || !selectedClass || selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS}
+                                    disabled={!camera.cameraOn || isCapturing || !selectedClass || selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS}
                                     className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold text-white disabled:opacity-40 ${isCapturing ? 'bg-slate-400' : 'bg-[#0ea5e9]'}`}>
                                     {isCapturing ? '⏳ Recording...' : '📸 Hold to Record'}
                                 </button>
@@ -802,23 +749,23 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
                         {/* Camera Feed / Test Image */}
                         <div className="flex-1 flex flex-col min-w-0">
                             <div className="relative rounded-2xl overflow-hidden bg-[#0a0128] flex-1 min-h-[300px] flex items-center justify-center">
-                                {cameraOn && (
-                                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
+                                {camera.cameraOn && (
+                                    <video ref={camera.videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
                                 )}
-                                {!cameraOn && testImage && (
+                                {!camera.cameraOn && testImage && (
                                     <img src={testImage} className="w-full h-full object-contain" />
                                 )}
                                 <canvas ref={canvasRef} className="hidden" />
                                 <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 
-                                {cameraOn && (
+                                {camera.cameraOn && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md z-10">
                                         <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                                         <span className="text-white text-[9px] font-bold">🔍 LIVE</span>
                                     </div>
                                 )}
                                 
-                                {!cameraOn && testImage && (
+                                {!camera.cameraOn && testImage && (
                                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-md z-10">
                                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                                         <span className="text-white text-[9px] font-bold">📂 TEST IMAGE</span>
@@ -842,13 +789,13 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
                                     </div>
                                 )}
 
-                                {!cameraOn && !testImage && (
+                                {!camera.cameraOn && !testImage && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
                                         <span className="text-5xl mb-3">📷</span>
                                         <h3 className="text-white text-sm font-bold mb-1">Camera is off</h3>
                                         <p className="text-white/50 text-[10px] mb-4">Start camera or upload an image to test</p>
                                         <div className="flex gap-2">
-                                            <button onClick={startCamera} className="px-5 py-2.5 bg-[#0ea5e9] text-white rounded-xl text-xs font-bold shadow-lg cursor-pointer">📷 Start Camera</button>
+                                            <button onClick={camera.startCamera} className="px-5 py-2.5 bg-[#0ea5e9] text-white rounded-xl text-xs font-bold shadow-lg cursor-pointer">📷 Start Camera</button>
                                             <button onClick={() => testFileInputRef.current?.click()} className="px-5 py-2.5 bg-white text-[#0ea5e9] border-2 border-[#0ea5e9] rounded-xl text-xs font-bold shadow-lg cursor-pointer">📂 Upload Image</button>
                                         </div>
                                     </div>
@@ -879,13 +826,13 @@ classifierRef.current.drawHand(overlayCanvasRef.current, keypoints, undefined, {
                                     </>
                                 ) : (
                                     <>
-                                        <button onClick={toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1] cursor-pointer">
-                                            {cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
+                                        <button onClick={camera.toggleCamera} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1] cursor-pointer">
+                                            {camera.cameraOn ? '📷 Stop Camera' : '📷 Start Camera'}
                                         </button>
                                         <button onClick={() => testFileInputRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[#e0f2fe] text-[#0369a1] cursor-pointer">
                                             📂 Upload Image
                                         </button>
-                                        {cameraOn && (
+                                        {camera.cameraOn && (
                                             <>
                                                 <button onClick={() => setAutoPredict(p => !p)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold cursor-pointer ${autoPredict ? 'bg-[#dcfce7] text-[#15803d]' : 'bg-[#fee2e2] text-[#b91c1c]'}`}>
                                                     {autoPredict ? '🔄 Auto Scan: ON' : '⏸️ Auto Scan: OFF'}
