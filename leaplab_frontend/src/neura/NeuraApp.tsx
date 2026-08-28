@@ -77,8 +77,16 @@ export default function NeuraApp({ onBack }: NeuraAppProps) {
     }
 
     const handleBackToHome = useCallback(() => {
+        if (view.screen === 'workspace') {
+            const projectType = view.type
+            try {
+                localStorage.removeItem(`neura-project-${projectType}`)
+                localStorage.removeItem(`neura-annotations-${projectType}`)
+            } catch { /* ignore */ }
+            useCloudProjectStore.getState().clearPendingProject()
+        }
         setView({ screen: 'home' })
-    }, [])
+    }, [view])
 
     const handleBack = useCallback((hasChanges?: boolean) => {
         if (view.screen === 'workspace') {
