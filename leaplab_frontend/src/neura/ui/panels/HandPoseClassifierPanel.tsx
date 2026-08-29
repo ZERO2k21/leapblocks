@@ -772,7 +772,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                             <p className="text-xs text-[#4a4455]">Show your hand to the camera and teach your AI! 🖐️</p>
                         </div>
                         <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} type="pose" />
                         </div>
                     </div>
 
@@ -973,7 +973,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                             <p className="text-xs text-[#4a4455]">Show a hand gesture and see if your AI recognizes it! 🎯</p>
                         </div>
                         <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} type="pose" />
                         </div>
                         {mode.project && mode.project.classes.some(c => c.samples.length < 2) && (
                             <div className="w-full max-w-[720px] mt-2 px-4 py-3 rounded-xl text-xs font-bold text-center bg-gradient-to-br from-amber-100 to-amber-200 text-amber-900 border border-amber-400">

@@ -330,7 +330,11 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             })
             if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
                 const start = performance.now()
-                const result = await classifierRef.current.predict(img, 3)
+                const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000))
+                const result = await Promise.race([
+                    classifierRef.current.predict(img, 3),
+                    timeoutPromise
+                ])
                 const elapsed = Math.round(performance.now() - start)
                 if (result) {
                     if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
@@ -382,7 +386,11 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
         setIsProcessing(true)
         try {
             const start = performance.now()
-            const result = await classifierRef.current.predict(drawCanvasRef.current, 3)
+            const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000))
+            const result = await Promise.race([
+                classifierRef.current.predict(drawCanvasRef.current, 3),
+                timeoutPromise
+            ])
             const elapsed = Math.round(performance.now() - start)
             if (result) {
                 if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
@@ -451,81 +459,95 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             setModelLoading(true)
             const { NumberClassifier } = await import('../../ml/classifiers/NumberClassifier')
 
-            // Step 1: Shuffle & split samples 80/20 per class, preload test images
+            // Step 1: Shuffle & split samples 80/20 per class
             const trainData: { cls: string; samples: typeof project.classes[0]['samples'] }[] = []
-            const testData: { img: HTMLImageElement; label: string }[] = []
+            const testDataUrls: { dataUrl: string; label: string }[] = []
 
             for (const cls of project.classes) {
                 const shuffled = [...cls.samples].sort(() => Math.random() - 0.5)
                 const splitIdx = Math.max(2, Math.floor(shuffled.length * 0.8))
                 trainData.push({ cls: cls.name, samples: shuffled.slice(0, splitIdx) })
                 for (const sample of shuffled.slice(splitIdx)) {
-                    try {
-                        const img = new Image()
-                        img.src = sample.data
-                        await new Promise<void>((resolve, reject) => {
-                            img.onload = () => resolve()
-                            img.onerror = () => reject(new Error('Failed to load image'))
-                            setTimeout(() => reject(new Error('Image load timeout')), 5000)
-                        })
-                        if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
-                            testData.push({ img, label: cls.name })
-                        }
-                        await new Promise(r => setTimeout(r, 0))
-                    } catch { }
+                    testDataUrls.push({ dataUrl: sample.data, label: cls.name })
+                }
+            }
+
+            if (trainData.every(t => t.samples.length === 0) || testDataUrls.length === 0) {
+                mode.setAccuracy(0)
+                setModelLoading(false)
+                setIsTraining(false)
+                return
+            }
+
+            // Step 2: Pre-compute ALL MobileNet embeddings ONCE (the expensive part)
+            const precomputedTrain: { cls: string; embeddings: Float32Array[] }[] = []
+            for (const td of trainData) {
+                if (td.samples.length > 0) {
+                    const embeddings = await NumberClassifier.precomputeEmbeddings(td.samples.map(s => s.data))
+                    precomputedTrain.push({ cls: td.cls, embeddings })
+                }
+            }
+            const precomputedTest: { embedding: Float32Array; label: string }[] = []
+            for (const item of testDataUrls) {
+                const embeddings = await NumberClassifier.precomputeEmbeddings([item.dataUrl])
+                if (embeddings.length > 0) {
+                    precomputedTest.push({ embedding: embeddings[0], label: item.label })
                 }
             }
 
             setModelLoading(false)
 
-            if (trainData.every(t => t.samples.length === 0) || testData.length === 0) {
+            if (precomputedTrain.every(t => t.embeddings.length === 0) || precomputedTest.length === 0) {
                 mode.setAccuracy(0)
                 setIsTraining(false)
                 return
             }
 
-            // Step 2: Progressive training
-            const epochResults: number[] = []
+            // Step 3: Progressive training using pre-computed embeddings (fast — no MobileNet)
+            const epochResultsLocal: number[] = []
             let bestAccuracy = 0
 
             for (let epoch = 1; epoch <= epochs; epoch++) {
-                setCurrentEpoch(epoch)
                 const progress = epoch / epochs
                 const delay = epochs > 50 ? Math.max(5, 20 / (epoch * 0.1)) : Math.max(10, 40 / (epoch * 0.1))
                 await new Promise(r => setTimeout(r, delay))
 
                 const evalClassifier = new NumberClassifier()
-                for (const td of trainData) {
-                    const numToAdd = Math.max(1, Math.ceil(progress * td.samples.length))
-                    const batchSamples = td.samples.slice(0, numToAdd)
-                    if (batchSamples.length > 0) {
+                for (const pt of precomputedTrain) {
+                    const numToAdd = Math.max(1, Math.ceil(progress * pt.embeddings.length))
+                    const batch = pt.embeddings.slice(0, numToAdd)
+                    if (batch.length > 0) {
                         try {
-                            await evalClassifier.rebuildClass(td.cls, batchSamples.map(s => s.data), false)
+                            await evalClassifier.addFromPrecomputed(pt.cls, batch)
                         } catch { }
                     }
                 }
 
                 let correct = 0
                 let total = 0
-                for (const item of testData) {
+                for (const item of precomputedTest) {
                     try {
-                        const result = await evalClassifier.predict(item.img, 3)
+                        const result = await evalClassifier.predictFromEmbedding(item.embedding, 3)
                         if (result && result.label === item.label) correct++
                         total++
                     } catch { total++ }
-                    await new Promise(r => setTimeout(r, 0))
                 }
 
                 evalClassifier.dispose()
 
                 const rawAccuracy = total > 0 ? correct / total : 0
-                epochResults.push(rawAccuracy)
-                setEpochResults([...epochResults])
+                epochResultsLocal.push(rawAccuracy)
                 if (rawAccuracy > bestAccuracy) bestAccuracy = rawAccuracy
-                mode.setAccuracy(rawAccuracy)
+
+                // Batch state updates — only update UI every 5 epochs to reduce re-renders
+                if (epoch % 5 === 0 || epoch === epochs) {
+                    setCurrentEpoch(epoch)
+                    setEpochResults([...epochResultsLocal])
+                    mode.setAccuracy(rawAccuracy)
+                }
             }
 
-            // Step 3: Build final classifier for actual use
+            // Step 4: Build final classifier for actual use
             classifierRef.current.clear()
             for (const cls of project.classes) {
                 if (cls.samples.length > 0) {
@@ -542,6 +564,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             setTimeout(() => { mode.setMode('test') }, 2000)
         } catch (err) {
             mode.setAccuracy(0)
+            setModelLoading(false)
             console.error('[NumberClassifier] Training error:', err)
         }
         setIsTraining(false)
@@ -571,7 +594,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             <p className="text-xs text-[#4a4455]">Draw, photograph, or upload numbers to teach your AI! 🔢</p>
                         </div>
                         <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} />
                         </div>
                     </div>
 
@@ -782,7 +805,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             <p className="text-xs text-[#4a4455]">Draw, photograph, or upload a number to test! 🎯</p>
                         </div>
                         <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} />
                         </div>
                     </div>
 
@@ -846,7 +869,11 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                             setTestImage(canvas.toDataURL('image/png'))
                                             camera.stopCamera()
                                             setIsProcessing(true)
-                                            classifierRef.current.predict(canvas, 3).then(result => {
+                                            const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000))
+                                            Promise.race([
+                                                classifierRef.current.predict(canvas, 3),
+                                                timeoutPromise
+                                            ]).then(result => {
                                                 if (result && result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
                                                     setPrediction(null)
                                                     setShowNotRelated(true)

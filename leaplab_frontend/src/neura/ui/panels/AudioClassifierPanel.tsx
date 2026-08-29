@@ -265,7 +265,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                         <p className="text-xs text-[#4a4455]">Record sounds to teach your AI!</p>
                     </div>
                     <div className="w-full max-w-[720px]">
-                        <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="audio" />
+                        <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} type="audio" />
                     </div>
                 </div>
             )}

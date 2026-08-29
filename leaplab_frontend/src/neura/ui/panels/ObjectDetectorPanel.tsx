@@ -738,7 +738,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             </div>
 
             <div className="px-5 shrink-0">
-                <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={totalSamples >= 4} />
+                <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={totalSamples >= 4} isTrained={mode.modelTrained} />
             </div>
 
             {/* Horizontal Split Layout */}
@@ -1008,7 +1008,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             </div>
 
             <div className="px-5 shrink-0">
-                <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={totalSamples >= 4} />
+                <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={totalSamples >= 4} isTrained={mode.modelTrained} />
             </div>
 
             {/* Model status */}

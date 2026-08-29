@@ -589,7 +589,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                             <p className="text-xs text-[#4a4455]">Strike a pose and teach your AI! 🕺</p>
                         </div>
                         <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} type="pose" />
                         </div>
                     </div>
 
@@ -789,7 +789,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                             <p className="text-xs text-[#4a4455]">Strike a pose and see if your AI recognizes it! 🎯</p>
                         </div>
                         <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} type="pose" />
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} type="pose" />
                         </div>
                         {/* Confidence Threshold */}
                         <div className="w-full max-w-[720px] mt-2 bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">

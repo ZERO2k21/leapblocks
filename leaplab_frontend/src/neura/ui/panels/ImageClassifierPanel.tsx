@@ -397,87 +397,94 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
             // Step 1: Shuffle & split samples 80/20 per class
             const trainData: { cls: string; samples: typeof project.classes[0]['samples'] }[] = []
-            const testData: { img: HTMLImageElement; label: string }[] = []
+            const testDataUrls: { dataUrl: string; label: string }[] = []
 
             for (const cls of project.classes) {
                 const shuffled = [...cls.samples].sort(() => Math.random() - 0.5)
                 const splitIdx = Math.max(2, Math.floor(shuffled.length * 0.8))
                 trainData.push({ cls: cls.name, samples: shuffled.slice(0, splitIdx) })
                 for (const sample of shuffled.slice(splitIdx)) {
-                    try {
-                        const img = new Image()
-                        img.src = sample.data
-                        await new Promise<void>((resolve, reject) => {
-                            img.onload = () => resolve()
-                            img.onerror = () => reject(new Error('Failed to load image'))
-                            setTimeout(() => reject(new Error('Image load timeout')), 5000)
-                        })
-                        if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
-                            testData.push({ img, label: cls.name })
-                        }
-                        await new Promise(r => setTimeout(r, 0))
-                    } catch { }
+                    testDataUrls.push({ dataUrl: sample.data, label: cls.name })
+                }
+            }
+
+            if (trainData.every(t => t.samples.length === 0) || testDataUrls.length === 0) {
+                mode.setAccuracy(0)
+                setModelLoading(false)
+                setIsTraining(false)
+                return
+            }
+
+            // Step 2: Pre-compute ALL embeddings ONCE (the expensive part)
+            const precomputedTrain: { cls: string; embeddings: Float32Array[] }[] = []
+            for (const td of trainData) {
+                if (td.samples.length > 0) {
+                    const embeddings = await ImageClassifier.precomputeEmbeddings(td.samples.map(s => s.data))
+                    precomputedTrain.push({ cls: td.cls, embeddings })
+                }
+            }
+            const precomputedTest: { embedding: Float32Array; label: string }[] = []
+            for (const item of testDataUrls) {
+                const embeddings = await ImageClassifier.precomputeEmbeddings([item.dataUrl])
+                if (embeddings.length > 0) {
+                    precomputedTest.push({ embedding: embeddings[0], label: item.label })
                 }
             }
 
             setModelLoading(false)
 
-            if (trainData.every(t => t.samples.length === 0) || testData.length === 0) {
+            if (precomputedTrain.every(t => t.embeddings.length === 0) || precomputedTest.length === 0) {
                 mode.setAccuracy(0)
                 setIsTraining(false)
                 return
             }
 
-            // Step 2: Progressive training — add samples incrementally, evaluate on test set
-            const epochResults: number[] = []
+            // Step 3: Progressive training using pre-computed embeddings (fast)
+            const epochResultsLocal: number[] = []
             let bestAccuracy = 0
 
             for (let epoch = 1; epoch <= epochs; epoch++) {
-                setCurrentEpoch(epoch)
                 const progress = epoch / epochs
                 const delay = epochs > 50 ? Math.max(5, 20 / (epoch * 0.1)) : Math.max(10, 40 / (epoch * 0.1))
                 await new Promise(r => setTimeout(r, delay))
 
-                // Create a fresh classifier for this epoch
                 const evalClassifier = new ImageClassifier()
 
-                // Add proportional subset of training data per class
-                for (const td of trainData) {
-                    const numToAdd = Math.max(1, Math.ceil(progress * td.samples.length))
-                    const batchSamples = td.samples.slice(0, numToAdd)
-                    if (batchSamples.length > 0) {
+                for (const pt of precomputedTrain) {
+                    const numToAdd = Math.max(1, Math.ceil(progress * pt.embeddings.length))
+                    const batch = pt.embeddings.slice(0, numToAdd)
+                    if (batch.length > 0) {
                         try {
-                            await evalClassifier.rebuildClass(
-                                td.cls,
-                                batchSamples.map(s => s.data),
-                                false
-                            )
+                            await evalClassifier.addFromPrecomputed(pt.cls, batch)
                         } catch { }
                     }
                 }
 
-                // Evaluate on test set
                 let correct = 0
                 let total = 0
-                for (const item of testData) {
+                for (const item of precomputedTest) {
                     try {
-                        const result = await evalClassifier.predict(item.img, 3)
+                        const result = await evalClassifier.predictFromEmbedding(item.embedding, 3)
                         if (result && result.label === item.label) correct++
                         total++
                     } catch { total++ }
-                    await new Promise(r => setTimeout(r, 0))
                 }
 
                 evalClassifier.dispose()
 
                 const rawAccuracy = total > 0 ? correct / total : 0
-                epochResults.push(rawAccuracy)
-                setEpochResults([...epochResults])
+                epochResultsLocal.push(rawAccuracy)
                 if (rawAccuracy > bestAccuracy) bestAccuracy = rawAccuracy
-                mode.setAccuracy(rawAccuracy)
+
+                // Batch state updates — only update UI every 5 epochs
+                if (epoch % 5 === 0 || epoch === epochs) {
+                    setCurrentEpoch(epoch)
+                    setEpochResults([...epochResultsLocal])
+                    mode.setAccuracy(rawAccuracy)
+                }
             }
 
-            // Step 3: Build the final classifier with ALL samples for actual use
+            // Step 4: Build the final classifier with ALL samples for actual use
             classifierRef.current.clear()
             for (const cls of project.classes) {
                 if (cls.samples.length > 0) {
@@ -645,7 +652,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
 
                     {/* Workflow and Tips - centered */}
                     <div className="max-w-[800px] w-full mx-auto mb-3">
-                        <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
+                        <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} />
 
                         {/* Tips */}
                         <div className="mt-2.5 animate-fade-in bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl p-2.5 px-3.5 border border-[#630ed4]/10">
@@ -919,7 +926,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                             <p className="text-xs text-[#4a4455]">Take a photo or upload an image to test! 🎯</p>
                         </div>
                         <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} />
                         </div>
                     </div>
                     <div className="w-full mt-2.5 flex-1 min-h-0 flex flex-col">

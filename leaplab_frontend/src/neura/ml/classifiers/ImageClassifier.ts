@@ -1,5 +1,6 @@
 import { KNNClassifier, ensureTf } from '../KNNClassifier'
 import { ensureMobileNet } from '../loadScript'
+import { extractShapeFeatures, normalizeShapeFeatures } from '../utils/shapeFeatures'
 
 export interface ImagePrediction {
     label: string
@@ -102,6 +103,62 @@ async function ensureSharedMobileNetModel(): Promise<any> {
 export class ImageClassifier {
     private knn = new KNNClassifier()
 
+    /**
+     * Pre-compute combined embeddings (MobileNet + shape features) for data URLs.
+     * Returns Float32Array[] reusable across training epochs.
+     */
+    static async precomputeEmbeddings(dataUrls: string[]): Promise<Float32Array[]> {
+        const embeddings: Float32Array[] = []
+        for (const dataUrl of dataUrls) {
+            try {
+                if (!dataUrl || !dataUrl.startsWith('data:image/')) continue
+                const img = new Image()
+                img.src = dataUrl
+                await new Promise<void>((resolve, reject) => {
+                    img.onload = () => resolve()
+                    img.onerror = () => reject(new Error('Failed to load image'))
+                    setTimeout(() => reject(new Error('Image load timeout')), 5000)
+                })
+                if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) continue
+                const instance = new ImageClassifier()
+                const embedding = await instance.extractEmbedding(img)
+                const data = await embedding.data() as Float32Array
+                embedding.dispose()
+                instance.dispose()
+                embeddings.push(new Float32Array(data))
+                await new Promise(r => setTimeout(r, 0))
+            } catch { }
+        }
+        return embeddings
+    }
+
+    /**
+     * Add pre-computed embeddings to a class (bypasses MobileNet inference).
+     */
+    async addFromPrecomputed(label: string, embeddings: Float32Array[]): Promise<void> {
+        const tf = await ensureTf()
+        for (const embData of embeddings) {
+            const embedding = tf.tensor1d(embData)
+            await this.knn.addExample(embedding, label)
+            embedding.dispose()
+        }
+    }
+
+    /**
+     * Predict from a pre-computed embedding (bypasses MobileNet inference).
+     */
+    async predictFromEmbedding(embeddingData: Float32Array, k = 5): Promise<ImagePrediction | null> {
+        try {
+            const tf = await ensureTf()
+            const embedding = tf.tensor1d(embeddingData)
+            const result = await this.knn.predictClass(embedding, k)
+            embedding.dispose()
+            return result
+        } catch {
+            return null
+        }
+    }
+
     private async ensureModel() {
         return ensureSharedMobileNetModel()
     }
@@ -148,8 +205,9 @@ export class ImageClassifier {
     }
 
     /**
-     * Extract a rich embedding by combining multiple layer outputs from MobileNet.
-     * This produces more discriminative features than a single layer.
+     * Extract a combined embedding: MobileNet features (1024-d) + geometric shape features (13-d).
+     * This gives the classifier both semantic understanding (MobileNet) and geometric shape
+     * discrimination (circularity, aspect ratio, vertices, Hu moments).
      * Uses tf.tidy to ensure no GPU tensors leak.
      */
     private async extractEmbedding(input: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement): Promise<any> {
@@ -163,17 +221,27 @@ export class ImageClassifier {
         const embedding = model.infer(tensor, true)
         tensor.dispose()
 
-        // L2-normalize the embedding for better cosine similarity behavior
-        const normalized = tf.tidy(() => {
+        // L2-normalize the MobileNet embedding
+        const normalizedMobileNet = tf.tidy(() => {
             const norm = tf.norm(embedding)
             return tf.div(embedding, tf.maximum(norm, 1e-10))
         })
         embedding.dispose()
 
+        // Extract geometric shape features (13-d) and normalize to [0,1]
+        const shapeRaw = extractShapeFeatures(input)
+        const shapeNorm = normalizeShapeFeatures(shapeRaw)
+        const shapeTensor = tf.tensor1d(Array.from(shapeNorm))
+
+        // Concatenate: [MobileNet 1024-d | Shape 13-d] = 1037-d
+        const combined = tf.concat([normalizedMobileNet, shapeTensor])
+        normalizedMobileNet.dispose()
+        shapeTensor.dispose()
+
         // Yield to browser to allow GPU memory cleanup
         await new Promise(r => setTimeout(r, 0))
 
-        return normalized
+        return combined
     }
 
     async addSample(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, label: string) {

@@ -104,7 +104,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                     </div>
 
                     <div className="px-5 shrink-0">
-                        <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
+                        <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} />
                     </div>
 
                     {/* Main content */}
@@ -190,7 +190,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                     </div>
 
                     <div className="px-5 shrink-0">
-                        <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} />
+                        <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} />
                     </div>
 
                     {/* Main content */}

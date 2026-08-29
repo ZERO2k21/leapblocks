@@ -91,8 +91,7 @@ async function getMobileNetModel(): Promise<any> {
 
 async function extractMobileNetEmbedding(isolatedCanvas: HTMLCanvasElement): Promise<any> {
     const tf = await ensureTf()
-    const mobilenet = await ensureMobileNet()
-    const model = await mobilenet.load()
+    const model = await getMobileNetModel()
 
     return tf.tidy(() => {
         let tensor = tf.browser.fromPixels(isolatedCanvas).toFloat()
@@ -106,6 +105,62 @@ async function extractMobileNetEmbedding(isolatedCanvas: HTMLCanvasElement): Pro
 
 export class NumberClassifier {
     private knn = new KNNClassifier()
+
+    /**
+     * Pre-compute MobileNet embeddings for an array of image data URLs.
+     * Returns Float32Array[] that can be reused across training epochs
+     * without re-running MobileNet inference.
+     */
+    static async precomputeEmbeddings(dataUrls: string[]): Promise<Float32Array[]> {
+        const embeddings: Float32Array[] = []
+        for (const dataUrl of dataUrls) {
+            try {
+                if (!dataUrl || !dataUrl.startsWith('data:image/')) continue
+                const img = new Image()
+                img.src = dataUrl
+                await new Promise<void>((resolve, reject) => {
+                    img.onload = () => resolve()
+                    img.onerror = () => reject(new Error('Failed to load image'))
+                    setTimeout(() => reject(new Error('Image load timeout')), 5000)
+                })
+                if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) continue
+                const isolated = await inputToIsolatedCanvas(img)
+                const embedding = await extractMobileNetEmbedding(isolated)
+                const data = await embedding.data() as Float32Array
+                embedding.dispose()
+                embeddings.push(new Float32Array(data))
+                await new Promise(r => setTimeout(r, 0))
+            } catch { }
+        }
+        return embeddings
+    }
+
+    /**
+     * Add pre-computed embeddings to a class (bypasses MobileNet inference).
+     */
+    async addFromPrecomputed(label: string, embeddings: Float32Array[]): Promise<void> {
+        const tf = await ensureTf()
+        for (const embData of embeddings) {
+            const embedding = tf.tensor1d(embData)
+            await this.knn.addExample(embedding, label)
+            embedding.dispose()
+        }
+    }
+
+    /**
+     * Predict from a pre-computed embedding (bypasses MobileNet inference).
+     */
+    async predictFromEmbedding(embeddingData: Float32Array, k = 3): Promise<NumberPrediction | null> {
+        try {
+            const tf = await ensureTf()
+            const embedding = tf.tensor1d(embeddingData)
+            const result = await this.knn.predictClass(embedding, k)
+            embedding.dispose()
+            return result
+        } catch {
+            return null
+        }
+    }
 
     async addSample(
         imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement,

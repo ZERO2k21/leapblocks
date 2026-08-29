@@ -6,10 +6,11 @@ interface WorkflowIndicatorProps {
     mode: ClassifierMode
     onModeChange: (mode: ClassifierMode) => void
     canTrain: boolean
+    isTrained?: boolean
     type?: string
 }
 
-export default function WorkflowIndicator({ mode, onModeChange, canTrain, type }: WorkflowIndicatorProps) {
+export default function WorkflowIndicator({ mode, onModeChange, canTrain, isTrained = false, type }: WorkflowIndicatorProps) {
     const isAudio = type === 'audio' || type === 'audio-classifier'
     const isPose = type === 'pose' || type === 'pose-classifier' || type === 'hand-pose' || type === 'hand-pose-classifier'
     const isObjectDetection = type === 'object-detection'
@@ -31,14 +32,17 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain, type }
     const modeOrder: ClassifierMode[] = isObjectDetection
         ? ['collect', 'annotate', 'train', 'test']
         : ['collect', 'train', 'test']
-    const currentIndex = modeOrder.indexOf(mode)
 
     return (
         <div className="w-full max-w-[600px] mx-auto">
             <div className="flex items-center justify-between bg-white rounded-2xl p-3 px-5 border border-gray-200 shadow-xs relative">
                 {steps.map((step, index) => {
                     const isActive = mode === step.id
-                    const isCompleted = index < currentIndex
+                    const isCompleted = step.id === 'collect'
+                        ? canTrain
+                        : step.id === 'train'
+                            ? isTrained
+                            : false
 
                     return (
                         <React.Fragment key={step.id}>
@@ -87,12 +91,12 @@ export default function WorkflowIndicator({ mode, onModeChange, canTrain, type }
                                 <div className="flex items-center justify-center shrink-0 mx-1">
                                     <div
                                         className={`w-3 h-0.5 rounded-xs transition-colors duration-300 ${
-                                            index < currentIndex ? 'bg-emerald-500' : 'bg-gray-200'
+                                            (index === 0 && canTrain) || (index === 1 && isTrained) ? 'bg-emerald-500' : 'bg-gray-200'
                                         }`}
                                     />
                                     <div
                                         className={`w-0 h-0 border-t-4 border-t-transparent border-b-4 border-b-transparent border-l-5 -ml-px transition-colors duration-300 ${
-                                            index < currentIndex ? 'border-l-emerald-500' : 'border-l-gray-200'
+                                            (index === 0 && canTrain) || (index === 1 && isTrained) ? 'border-l-emerald-500' : 'border-l-gray-200'
                                         }`}
                                     />
                                 </div>
