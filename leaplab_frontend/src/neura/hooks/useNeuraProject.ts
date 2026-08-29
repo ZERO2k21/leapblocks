@@ -52,6 +52,17 @@ export interface UseNeuraProjectReturn {
     removeBox: (boxId: string) => void
     updateBox: (boxId: string, updates: Partial<BoundingBox>) => void
     addAnnotation: (annotation: Omit<Annotation, 'id' | 'timestamp'>) => void
+    // Sidebar visibility (for Data Mode in numbers-cr)
+    hideSidebar: boolean
+    setHideSidebar: (hide: boolean) => void
+    // Data view mode (guided vs dashboard)
+    dataViewMode: 'guided' | 'dashboard'
+    setDataViewMode: (mode: 'guided' | 'dashboard') => void
+    // Data Mode separate training state
+    dataAccuracy: number | null
+    setDataAccuracy: (acc: number | null) => void
+    dataModelTrained: boolean
+    setDataModelTrained: (trained: boolean) => void
 }
 
 export function useNeuraProject(
@@ -113,6 +124,32 @@ export function useNeuraProject(
         setProject(prev => ({ ...prev, modelTrained: trained, updatedAt: Date.now() }))
     }, [])
 
+    // Data Mode separate training state
+    const [dataAccuracy, setDataAccuracyState] = useState<number | null>(() => {
+        const saved = localStorage.getItem(`neura-project-${type}`)
+        if (saved) {
+            try { return (JSON.parse(saved) as NeuraProject).dataAccuracy ?? null } catch { /* ignore */ }
+        }
+        return null
+    })
+    const [dataModelTrained, setDataModelTrainedState] = useState<boolean>(() => {
+        const saved = localStorage.getItem(`neura-project-${type}`)
+        if (saved) {
+            try { return (JSON.parse(saved) as NeuraProject).dataModelTrained || false } catch { /* ignore */ }
+        }
+        return false
+    })
+
+    const setDataAccuracy = useCallback((acc: number | null) => {
+        setDataAccuracyState(acc)
+        setProject(prev => ({ ...prev, dataAccuracy: acc ?? undefined, updatedAt: Date.now() }))
+    }, [])
+
+    const setDataModelTrained = useCallback((trained: boolean) => {
+        setDataModelTrainedState(trained)
+        setProject(prev => ({ ...prev, dataModelTrained: trained, updatedAt: Date.now() }))
+    }, [])
+
     const setProjectName = useCallback((name: string) => {
         setProject(prev => ({ ...prev, name, updatedAt: Date.now() }))
     }, [])
@@ -130,6 +167,10 @@ export function useNeuraProject(
     const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null)
     const [activeTool, setActiveTool] = useState<AnnotationToolType>('box')
     const [zoom, setZoom] = useState<number>(100)
+    const [hideSidebar, setHideSidebar] = useState<boolean>(false)
+    const [dataViewMode, setDataViewMode] = useState<'guided' | 'dashboard'>(
+        project?.dataViewMode ?? (project?.modelTrained ? 'dashboard' : 'guided')
+    )
 
     const addClass = useCallback((name: string) => {
         setProject(prev => {
@@ -382,7 +423,21 @@ export function useNeuraProject(
         addBox,
         removeBox,
         updateBox,
-        addAnnotation
+        addAnnotation,
+        // Sidebar visibility
+        hideSidebar,
+        setHideSidebar,
+        // Data view mode
+        dataViewMode,
+        setDataViewMode: (mode: 'guided' | 'dashboard') => {
+            setDataViewMode(mode)
+            setProject(prev => ({ ...prev, dataViewMode: mode, updatedAt: Date.now() }))
+        },
+        // Data Mode separate training state
+        dataAccuracy,
+        setDataAccuracy,
+        dataModelTrained,
+        setDataModelTrained,
     }
 }
 

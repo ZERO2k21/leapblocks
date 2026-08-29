@@ -373,25 +373,29 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
                 brandName="NEURA"
                 rightContent={
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="md:hidden w-8 h-8 rounded-lg bg-white/20 text-white flex items-center justify-center hover:bg-white/30 transition-all"
-                            title="Toggle sidebar"
-                        >
-                            {sidebarOpen ? '✕' : '☰'}
-                        </button>
+                        {!mode.hideSidebar && (
+                            <button
+                                onClick={() => setSidebarOpen(!sidebarOpen)}
+                                className="md:hidden w-8 h-8 rounded-lg bg-white/20 text-white flex items-center justify-center hover:bg-white/30 transition-all"
+                                title="Toggle sidebar"
+                            >
+                                {sidebarOpen ? '✕' : '☰'}
+                            </button>
+                        )}
                     </div>
                 }
             />
 
             <div className="flex-1 flex overflow-hidden relative">
-                {/* Desktop sidebar */}
-                <aside className="hidden md:flex flex-col z-40 animate-fade-in shrink-0 w-56 bg-white/95 backdrop-blur-md border-r-1.5 border-gray-200">
-                    {sidebarContent}
-                </aside>
+                {/* Desktop sidebar - hidden when hideSidebar is true */}
+                {!mode.hideSidebar && (
+                    <aside className="hidden md:flex flex-col z-40 animate-fade-in shrink-0 w-56 bg-white/95 backdrop-blur-md border-r-1.5 border-gray-200">
+                        {sidebarContent}
+                    </aside>
+                )}
 
-                {/* Mobile sidebar overlay */}
-                {isMobile && sidebarOpen && (
+                {/* Mobile sidebar overlay - hidden when hideSidebar is true */}
+                {isMobile && sidebarOpen && !mode.hideSidebar && (
                     <div className="fixed inset-0 z-50 flex">
                         <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
                         <div className="relative flex flex-col animate-slide-in-left w-[min(256px,80vw)] max-w-[80vw] bg-white/98 backdrop-blur-md shadow-2xl">
@@ -419,16 +423,20 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
             {/* Status Bar */}
             <footer className="flex items-center justify-between bg-white/90 backdrop-blur-md border-t-1.5 border-gray-200 px-4 py-2.5">
                 <div className="flex items-center gap-3">
-                    {/* Pics */}
-                    <div className="flex items-center gap-1.5 px-3 py-1.25 rounded-xl bg-purple-50 text-xs font-semibold text-[#630ed4]">
-                        <span className="text-sm">🖼️</span>
-                        <span>{mode.getTotalSamples()} pics</span>
-                    </div>
-                    {/* Types */}
-                    <div className="flex items-center gap-1.5 px-3 py-1.25 rounded-xl bg-emerald-50 text-xs font-semibold text-emerald-800">
-                        <span className="text-sm">📁</span>
-                        <span>{mode.project?.classes.length || 0} types</span>
-                    </div>
+                    {!mode.hideSidebar && (
+                        <>
+                            {/* Pics */}
+                            <div className="flex items-center gap-1.5 px-3 py-1.25 rounded-xl bg-purple-50 text-xs font-semibold text-[#630ed4]">
+                                <span className="text-sm">🖼️</span>
+                                <span>{mode.getTotalSamples()} pics</span>
+                            </div>
+                            {/* Types */}
+                            <div className="flex items-center gap-1.5 px-3 py-1.25 rounded-xl bg-emerald-50 text-xs font-semibold text-emerald-800">
+                                <span className="text-sm">📁</span>
+                                <span>{mode.project?.classes.length || 0} types</span>
+                            </div>
+                        </>
+                    )}
                     {/* Auto-saved */}
                     <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.25 rounded-xl bg-emerald-50 text-xs font-semibold text-emerald-600">
                         <span className="text-sm">💾</span>

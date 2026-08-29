@@ -27,6 +27,7 @@ export { FaceDetectionRuntimeSingleton as FaceDetectionRuntime } from './face-de
 export { HandPoseRuntimeSingleton as HandPoseRuntimeFolder } from './hand-pose/runtime';
 export { HumanBodyRuntimeSingleton as HumanBodyRuntimeFolder } from './human-body/runtime';
 export { MLMachineLearningRuntimeSingleton as MLMachineLearningRuntimeFolder } from './ml-machine-learning/runtime';
+export { NumbersAnalysisRuntime, numbersAnalysisRuntime } from './numbers-analysis/runtime';
 
 // Legacy exports (backward compatible)
 export {

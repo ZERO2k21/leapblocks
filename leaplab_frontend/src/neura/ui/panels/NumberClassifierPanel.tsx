@@ -12,6 +12,10 @@ import TrainPanel from '../components/TrainPanel'
 import TestPanel from '../components/TestPanel'
 import NotRelatedModal from '../components/NotRelatedModal'
 import SampleWarningModal from '../components/SampleWarningModal'
+import TabularPanel from './TabularPanel'
+import { useTabularState } from '../../hooks/useTabularState'
+import StepperShell from '../shells/StepperShell'
+import DashboardShell from '../shells/DashboardShell'
 
 interface NumberClassifierPanelProps {
     mode: UseNeuraProjectReturn
@@ -19,6 +23,7 @@ interface NumberClassifierPanelProps {
 
 export default function NumberClassifierPanel({ mode }: NumberClassifierPanelProps) {
     const isMobile = useIsMobile(768)
+    const [dataMode, setDataMode] = useState(false)
     const drawCanvasRef = useRef<HTMLCanvasElement>(null)
     const cameraCanvasRef = useRef<HTMLCanvasElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -55,6 +60,14 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const camera = useCamera({
         videoConstraints: { width: 640, height: 480, facingMode: 'environment' }
     })
+
+    const tabularState = useTabularState(mode)
+
+    // Sync dataMode to sidebar visibility
+    useEffect(() => {
+        mode.setHideSidebar(dataMode)
+        return () => { mode.setHideSidebar(false) }
+    }, [dataMode])
 
     const showSaved = useCallback((msg: string) => {
         setSavedMessage(msg)
@@ -572,8 +585,59 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
     const selectedClass = mode.getSelectedClass()
     const canTrain = mode.project && !modelLoading ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
+    const totalSamples = mode.getTotalSamples()
+    const isReallyTrained = mode.modelTrained && totalSamples > 0
     const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
     const canAddSamples = selectedClass && !atSampleLimit
+
+    // Data Mode: render shells based on viewMode
+    if (dataMode) {
+        const viewMode = mode.dataViewMode ?? 'guided'
+
+        return (
+            <div className="flex flex-col h-full relative">
+                {savedMessage && (
+                    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-[#006c44] text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
+                        {savedMessage}
+                    </div>
+                )}
+                {/* Mode toggle + View toggle */}
+                <div className="flex items-center justify-between py-2 px-5 bg-white/80 backdrop-blur-md border-b border-gray-200 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setDataMode(false)} className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-[10px] font-bold border-none bg-gray-100 text-gray-500 hover:bg-gray-200 transition-all">
+                            ✏️ Image Mode
+                        </button>
+                        <button className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-[10px] font-bold border-none bg-[#630ed4] text-white">
+                            📊 Data Mode
+                        </button>
+                    </div>
+                    <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+                        <button
+                            onClick={() => mode.setDataViewMode('guided')}
+                            className={`py-1 px-2.5 rounded-md text-[9px] font-bold border-none transition-all ${
+                                viewMode === 'guided' ? 'bg-white text-[#630ed4] shadow-sm' : 'bg-transparent text-gray-500'
+                            }`}
+                        >
+                            📋 Guided
+                        </button>
+                        <button
+                            onClick={() => mode.setDataViewMode('dashboard')}
+                            className={`py-1 px-2.5 rounded-md text-[9px] font-bold border-none transition-all ${
+                                viewMode === 'dashboard' ? 'bg-white text-[#630ed4] shadow-sm' : 'bg-transparent text-gray-500'
+                            }`}
+                        >
+                            📊 Dashboard
+                        </button>
+                    </div>
+                </div>
+                {viewMode === 'guided' ? (
+                    <StepperShell {...tabularState} />
+                ) : (
+                    <DashboardShell {...tabularState} />
+                )}
+            </div>
+        )
+    }
 
     return (
         <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
@@ -583,6 +647,16 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     {savedMessage}
                 </div>
             )}
+
+            {/* Mode toggle */}
+            <div className="flex items-center justify-center gap-2 py-2 px-5 bg-white/80 backdrop-blur-md border-b border-gray-200 shrink-0">
+                <button className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-[10px] font-bold border-none bg-[#630ed4] text-white">
+                    ✏️ Image Mode
+                </button>
+                <button onClick={() => setDataMode(true)} className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-[10px] font-bold border-none bg-gray-100 text-gray-500 hover:bg-gray-200 transition-all">
+                    📊 Data Mode
+                </button>
+            </div>
 
             {/* COLLECT MODE */}
             {mode.mode === 'collect' && (
@@ -594,7 +668,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             <p className="text-xs text-[#4a4455]">Draw, photograph, or upload numbers to teach your AI! 🔢</p>
                         </div>
                         <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} />
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={isReallyTrained} />
                         </div>
                     </div>
 
@@ -805,7 +879,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             <p className="text-xs text-[#4a4455]">Draw, photograph, or upload a number to test! 🎯</p>
                         </div>
                         <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} />
+                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={isReallyTrained} />
                         </div>
                     </div>
 

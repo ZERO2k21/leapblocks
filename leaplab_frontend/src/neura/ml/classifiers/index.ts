@@ -21,3 +21,6 @@ export type { DetectedObject, DetectionResult } from './ObjectDetector'
 
 export { CustomObjectDetector } from './CustomObjectDetector'
 export type { CustomDetection, CustomDetectionResult } from './CustomObjectDetector'
+
+export { TabularClassifier } from './TabularClassifier'
+export type { TabularPrediction } from './TabularClassifier'

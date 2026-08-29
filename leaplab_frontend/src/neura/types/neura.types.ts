@@ -42,6 +42,8 @@ export interface Sample {
     timestamp: number;
 }
 
+export type DataViewMode = 'guided' | 'dashboard'
+
 export interface NeuraProject {
     id: string;
     type: ProjectType;
@@ -52,6 +54,9 @@ export interface NeuraProject {
     modelTrained: boolean;
     accuracy?: number;
     projectData?: Record<string, any>;
+    dataViewMode?: DataViewMode;
+    dataModelTrained?: boolean;
+    dataAccuracy?: number;
 }
 
 export interface TrainingConfig {
@@ -106,4 +111,56 @@ export interface AnnotateState {
     zoom: number
     isDrawing: boolean
     drawStart: { x: number; y: number } | null
+}
+
+// ── Tabular / Numbers(C/R) Data Mode Types ──
+
+export type TabularTaskType = 'classification' | 'regression'
+
+export interface TabularConfig {
+    epochs: number
+    batchSize: number
+    learningRate: number
+    taskType: TabularTaskType
+    valSplit: number
+    seed?: number
+}
+
+export interface TabularData {
+    headers: string[]
+    rows: (string | number)[][]
+    featureIndices: number[]
+    targetIndex: number
+    columnTypes: ('numeric' | 'text')[]
+}
+
+export interface TabularColumnInfo {
+    index: number
+    name: string
+    type: 'numeric' | 'text'
+    uniqueValues: number
+    missingCount: number
+    isZeroVariance: boolean
+    labelMap?: Record<string, number>
+    reverseLabelMap?: Record<number, string>
+}
+
+export interface TabularTrainMetrics {
+    epoch: number
+    trainLoss: number
+    valLoss: number
+    trainMetric: number
+    valMetric: number
+    delta: string
+}
+
+export interface TabularModelExport {
+    version: number
+    taskType: TabularTaskType
+    featureOrder: string[]
+    featureMin: number[]
+    featureMax: number[]
+    classLabels?: string[]
+    labelMaps?: Record<string, Record<string, number>>
+    modelArtifacts: string
 }
