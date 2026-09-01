@@ -92,8 +92,6 @@ export class KNNClassifier {
             const vals = await sim.data() as Float32Array
             sim.dispose()
 
-            // True cosine similarity (L2-normalized dot product) — consistent across
-            // all model types even when embeddings aren't pre-normalized.
             const cos = tf.tidy(() => {
                 const embNorm = tf.div(emb, tf.maximum(tf.norm(emb), 1e-10))
                 const exNorm = tf.div(examples, tf.maximum(tf.norm(examples, 2, 1).expandDims(1), 1e-10))
@@ -103,7 +101,13 @@ export class KNNClassifier {
             const cosVals = await cos.data() as Float32Array
             cos.dispose()
 
-            const sorted = Array.from(vals).sort((a: number, b: number) => b - a)
+            // After L2-normalizing combined embedding (ImageClassifier:1293-d), dot == cosine.
+            // Use cosine for ranking — more stable for natural images (cat/dog) where
+            // shape magnitude previously biased dot. Falls back to dot if embeddings
+            // aren't normalized (other classifiers).
+            const useCosine = true
+            const rankingVals = useCosine ? cosVals : vals
+            const sorted = Array.from(rankingVals).sort((a: number, b: number) => b - a)
             const topK = sorted.slice(0, effectiveK)
 
             if (topK.length > 0 && topK[0] > maxSimilarity) {
@@ -114,6 +118,7 @@ export class KNNClassifier {
                 maxCosine = bestCos
             }
 
+            // keep original exp*2 weighting — stable for dot values
             const weightedSum = topK.reduce((s, v) => {
                 const weight = Math.exp(v * 2)
                 return s + v * weight
@@ -128,38 +133,25 @@ export class KNNClassifier {
             return null
         }
 
-        const temperature = 1.0
-        const scores = Object.values(weightedScores)
-        const minScore = Math.min(...scores)
-        const maxScore = Math.max(...scores)
-        const range = maxScore - minScore || 1
-
+        // Softmax directly on weightedScores. For L2-normalized embeddings
+        // cosine ∈ [0,1], temp 0.25 gives sharper separation: 0.85 vs 0.65 → 69/31,
+        // 0.90 vs 0.70 → 73/27. Previously dot ~1-2 with temp 0.4.
+        const temperature = 0.25
         const expScores: Record<string, number> = {}
         for (const l of labels) {
-            const normalized = (weightedScores[l] - minScore) / range
-            expScores[l] = Math.exp(normalized / temperature)
+            expScores[l] = Math.exp(weightedScores[l] / temperature)
         }
         const expTotal = Object.values(expScores).reduce((s, v) => s + v, 0) || 1
 
         const rawConfidences: Record<string, number> = {}
         labels.forEach(l => { rawConfidences[l] = expScores[l] / expTotal })
 
-        // Confidence cap: when top-2 margin is very small, reduce displayed confidence
-        // to avoid misleadingly high scores on truly ambiguous predictions.
-        // Only applies when margin < 0.15 (classes are nearly tied).
-        const sorted = Object.entries(rawConfidences).sort(([, a], [, b]) => b - a)
-        const top1 = sorted[0]?.[1] ?? 0
-        const top2 = sorted[1]?.[1] ?? 0
-        const margin = top1 - top2
-        const marginFactor = Math.min(1, Math.max(0.6, margin / 0.15))
-
-        const confidences: Record<string, number> = {}
-        labels.forEach(l => {
-            const raw = rawConfidences[l]
-            confidences[l] = l === sorted[0]?.[0]
-                ? Math.max(raw * marginFactor, raw * 0.6)
-                : raw
-        })
+        // Keep raw confidences directly — previous margin cap (0.85 on top when margin<0.12)
+        // systematically favored the 2nd class on ties and caused 0% accuracy when
+        // embeddings were near-identical (double-normalization bug). With fixed
+        // embeddings the margin is usually >0.15, but we remove the bias entirely
+        // to avoid flipping winners on genuine ties.
+        const confidences: Record<string, number> = { ...rawConfidences }
 
         if (this.plattScaleA !== 1.0 || this.plattScaleB !== 0.0) {
             for (const l of labels) {

@@ -7,6 +7,7 @@
     "postinstall": "cd leaplab_frontend && npm install",
     "build": "cd leaplab_frontend && npm run build",
     "build:web": "cd leaplab_frontend && npm run build:web",
-    "deploy:pages": "npm run build:web && wrangler pages deploy build --project-name=leaplab"
+    "deploy:pages": "npm run build:web && wrangler pages deploy leaplab_frontend/build --project-name=leaplab --commit-dirty=true",
+    "pages:deploy": "npm run build:web && wrangler pages deploy leaplab_frontend/build --project-name=leaplab --commit-dirty=true"
   }
 }

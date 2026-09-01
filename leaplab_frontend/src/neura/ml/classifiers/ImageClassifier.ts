@@ -109,26 +109,39 @@ export class ImageClassifier {
      */
     static async precomputeEmbeddings(dataUrls: string[]): Promise<Float32Array[]> {
         const embeddings: Float32Array[] = []
+        // warm up model once before loop — avoids per-image load and ensures WebGL ready
+        try { await ensureSharedMobileNetModel(); await ensureTf() } catch (e) { console.warn('[Neura] precompute warmup failed', e) }
         for (const dataUrl of dataUrls) {
             try {
-                if (!dataUrl || !dataUrl.startsWith('data:image/')) continue
+                if (!dataUrl || !dataUrl.startsWith('data:image/')) { console.warn('[Neura] precompute skip — not data:image', dataUrl?.slice(0, 30)); continue }
                 const img = new Image()
-                img.src = dataUrl
+                // set handlers BEFORE src — data URLs can load sync and fire onload immediately
                 await new Promise<void>((resolve, reject) => {
-                    img.onload = () => resolve()
-                    img.onerror = () => reject(new Error('Failed to load image'))
-                    setTimeout(() => reject(new Error('Image load timeout')), 5000)
+                    let settled = false
+                    const done = (fn: () => void) => { if (!settled) { settled = true; fn() } }
+                    const timer = setTimeout(() => done(() => reject(new Error('Image load timeout'))), 5000)
+                    img.onload = () => { clearTimeout(timer); done(() => resolve()) }
+                    img.onerror = () => { clearTimeout(timer); done(() => reject(new Error('Failed to load image'))) }
+                    img.src = dataUrl
+                    // if already complete (cached/data URL sync), resolve
+                    if (img.complete && img.naturalWidth > 0) { clearTimeout(timer); done(() => resolve()) }
                 })
-                if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) continue
+                if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) { console.warn('[Neura] precompute skip — zero dimensions', img.naturalWidth, img.naturalHeight); continue }
                 const instance = new ImageClassifier()
-                const embedding = await instance.extractEmbedding(img)
-                const data = await embedding.data() as Float32Array
-                embedding.dispose()
-                instance.dispose()
-                embeddings.push(new Float32Array(data))
+                let embedding: any = null
+                try {
+                    embedding = await instance.extractEmbedding(img)
+                    const data = await embedding.data() as Float32Array
+                    embeddings.push(new Float32Array(data))
+                } catch (e) { console.warn('[Neura] extractEmbedding failed', e) }
+                finally {
+                    if (embedding) try { embedding.dispose() } catch {}
+                    try { instance.dispose() } catch {}
+                }
                 await new Promise(r => setTimeout(r, 0))
-            } catch { }
+            } catch (e) { console.warn('[Neura] precompute image failed', e) }
         }
+        if (embeddings.length === 0 && dataUrls.length > 0) console.warn('[Neura] precompute returned 0 embeddings for', dataUrls.length, 'inputs')
         return embeddings
     }
 
@@ -188,7 +201,11 @@ export class ImageClassifier {
             throw new Error('Input has zero dimensions — camera may not be ready yet')
         }
 
-        // Use tf.tidy to auto-dispose all intermediate tensors (slice, resize, div, sub)
+        // Use tf.tidy to auto-dispose all intermediate tensors (slice, resize)
+        // NOTE: Do NOT normalize here — MobileNet's infer() expects raw 0-255 pixels
+        // and handles normalization internally ( *2/255 -1 ). Previously we returned
+        // normalized [-1,1] which caused double-normalization (≈ -1 ±0.008) and
+        // destroyed discriminability -> 0% accuracy.
         return tf.tidy(() => {
             let tensor = tf.browser.fromPixels(input).toFloat()
             const [th, tw] = tensor.shape
@@ -200,7 +217,7 @@ export class ImageClassifier {
             const left = Math.floor((tw - size) / 2)
             tensor = tf.slice(tensor, [top, left, 0], [size, size, 3])
             tensor = tf.image.resizeBilinear(tensor, [224, 224])
-            return tensor.div(127.5).sub(1)
+            return tensor // keep 0-255; infer() will normalize to [-1,1]
         })
     }
 
@@ -229,12 +246,29 @@ export class ImageClassifier {
         embedding.dispose()
 
         // Extract geometric shape features (13-d) and normalize to [0,1]
+        // Shape helps for face-vs-object (Chris vs Phone: oval vs rectangle) but
+        // hurts cat-vs-dog (both animals, shape noisy). 0.48 is a balanced
+        // compromise: ~18% of final L2 dot comes from shape, 82% from MobileNet.
+        // Previously 0.22 gave 75% on Chris/Phone (2 Phone→Chris errors, sim 0.93);
+        // 0.48 fixes those by boosting rectangular vs oval separation.
+        const SHAPE_WEIGHT = 0.48
         const shapeRaw = extractShapeFeatures(input)
         const shapeNorm = normalizeShapeFeatures(shapeRaw)
-        const shapeTensor = tf.tensor1d(Array.from(shapeNorm))
+        let shapeTensor: any = tf.tensor1d(Array.from(shapeNorm))
+        // tf.mul returns new tensor, dispose old
+        const weightedShape = tf.tidy(() => tf.mul(shapeTensor, SHAPE_WEIGHT))
+        shapeTensor.dispose()
+        shapeTensor = weightedShape
 
-        // Concatenate: [MobileNet 1024-d | Shape 13-d] = 1037-d
-        const combined = tf.concat([normalizedMobileNet, shapeTensor])
+        // Concatenate: [MobileNet 1280-d | Shape 13-d] = 1293-d
+        // Fix rank mismatch — normalizedMobileNet may be rank 2 [1,1280] while shape is rank1 [13]
+        // L2-normalize combined so dot == cosine and magnitude (shape weight) doesn't bias KNN.
+        const combined = tf.tidy(() => {
+            const flat = normalizedMobileNet.reshape([normalizedMobileNet.size])
+            const cat = tf.concat([flat, shapeTensor])
+            const norm = tf.norm(cat)
+            return tf.div(cat, tf.maximum(norm, 1e-10))
+        })
         normalizedMobileNet.dispose()
         shapeTensor.dispose()
 
@@ -251,12 +285,14 @@ export class ImageClassifier {
     }
 
     async addSampleFromData(imageData: ImageData, label: string) {
-        const tf = await ensureTf()
-        const tensor = tf.browser.fromPixels(imageData).toFloat()
-        const embedding = await this.extractEmbedding(tensor as any)
-        await this.knn.addExample(embedding, label)
-        tensor.dispose()
-        embedding.dispose()
+        // Convert ImageData -> canvas -> addSample (avoids double-normalization issue
+        // when passing a Tensor directly to extractEmbedding which expects an element)
+        const canvas = document.createElement('canvas')
+        canvas.width = imageData.width
+        canvas.height = imageData.height
+        const ctx = canvas.getContext('2d')!
+        ctx.putImageData(imageData, 0, 0)
+        await this.addSample(canvas, label)
     }
 
     async predict(imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement, k = 5): Promise<ImagePrediction | null> {
