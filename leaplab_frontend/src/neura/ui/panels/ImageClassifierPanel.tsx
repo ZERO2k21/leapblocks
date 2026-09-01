@@ -44,12 +44,14 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     const [newClassName, setNewClassName] = useState('')
     const [editingClassId, setEditingClassId] = useState<string | null>(null)
     const [editName, setEditName] = useState('')
+    const [expandedClasses, setExpandedClasses] = useState<Record<string, boolean>>({})
 
     // Free canvas state — default 100% for readability
     const [zoom, setZoom] = useState(1)
     const [pan, setPan] = useState({ x: 32, y: 24 })
     const [isPanning, setIsPanning] = useState(false)
     const panStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null)
+    const pinchRef = useRef<{ startDist: number; startZoom: number; startPan: { x: number; y: number }; center: { x: number; y: number } } | null>(null)
     const [classPositions, setClassPositions] = useState<Record<string, { x: number; y: number }>>({})
     const [brainPos, setBrainPos] = useState({ x: 920, y: 160 })
     const [visionPos, setVisionPos] = useState({ x: 1440, y: 140 })
@@ -422,8 +424,12 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
     }
     const handleViewportMouseUp = () => { setIsPanning(false); panStartRef.current = null; if (draggingId) setDraggingId(null) }
     const handleWheel = (e: React.WheelEvent) => {
-        // don't call preventDefault inside passive listener — just update zoom
-        const delta = -e.deltaY * 0.001
+        // Pinch on trackpad fires ctrlKey+wheel; we hijack it for canvas zoom
+        // and prevent the browser's page-zoom. Regular wheel (no ctrl) also zooms canvas.
+        e.preventDefault()
+        e.stopPropagation()
+        const isPinch = e.ctrlKey || (e as any).ctrlKey
+        const delta = -e.deltaY * (isPinch ? 0.008 : 0.0012)
         const newZoom = Math.min(1.4, Math.max(0.6, zoom + delta))
         const rect = viewportRef.current?.getBoundingClientRect()
         if (rect) {
@@ -434,6 +440,38 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         }
         setZoom(newZoom)
     }
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX
+            const dy = e.touches[0].clientY - e.touches[1].clientY
+            const dist = Math.hypot(dx, dy)
+            const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2
+            const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2
+            pinchRef.current = { startDist: dist, startZoom: zoom, startPan: { ...pan }, center: { x: cx, y: cy } }
+        }
+    }
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (e.touches.length === 2 && pinchRef.current) {
+            e.preventDefault()
+            const dx = e.touches[0].clientX - e.touches[1].clientX
+            const dy = e.touches[0].clientY - e.touches[1].clientY
+            const dist = Math.hypot(dx, dy)
+            const scale = dist / pinchRef.current.startDist
+            const newZoom = Math.min(1.4, Math.max(0.6, pinchRef.current.startZoom * scale))
+            const rect = viewportRef.current?.getBoundingClientRect()
+            if (rect) {
+                const mx = pinchRef.current.center.x - rect.left
+                const my = pinchRef.current.center.y - rect.top
+                const wx = (mx - pinchRef.current.startPan.x) / pinchRef.current.startZoom
+                const wy = (my - pinchRef.current.startPan.y) / pinchRef.current.startZoom
+                const nx = mx - wx * newZoom
+                const ny = my - wy * newZoom
+                setPan({ x: nx, y: ny })
+            }
+            setZoom(newZoom)
+        }
+    }
+    const handleTouchEnd = () => { if (pinchRef.current) pinchRef.current = null }
     const startNodeDrag = (e: React.PointerEvent | React.MouseEvent, id: string, orig: { x: number; y: number }) => {
         e.stopPropagation()
         // prevent text selection / scroll — safe for both mouse and pointer
@@ -473,8 +511,25 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         return () => { window.removeEventListener('mousemove', onMove as any); window.removeEventListener('mouseup', onUp as any); window.removeEventListener('pointermove', onMove as any); window.removeEventListener('pointerup', onUp as any) }
     }, [isPanning, draggingId, zoom, pan])
 
+    // Prevent trackpad pinch from zooming the browser page — always zoom canvas instead
+    useEffect(() => {
+        const el = viewportRef.current
+        if (!el) return
+        const onWheelNative = (e: WheelEvent) => {
+            // ctrlKey is true for trackpad pinch on macOS/Chrome
+            if (e.ctrlKey || Math.abs(e.deltaY) > 0) {
+                e.preventDefault()
+            }
+        }
+        el.addEventListener('wheel', onWheelNative, { passive: false })
+        return () => el.removeEventListener('wheel', onWheelNative)
+    }, [])
+
     const lastClassId = mode.project?.classes[mode.project.classes.length - 1]?.id
     const lastPos = lastClassId ? classPositions[lastClassId] : null
+    const isLastExpanded = lastClassId ? !!expandedClasses[lastClassId] : false
+    const lastSampleCount = lastClassId ? mode.project?.classes.find(c => c.id === lastClassId)?.samples.length || 0 : 0
+    const floaterTop = lastPos ? lastPos.y + 400 + (isLastExpanded && lastSampleCount > 8 ? Math.ceil((lastSampleCount - 8) / 4) * 86 : 0) : 0
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-[#F8FAFC] relative">
@@ -522,7 +577,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 </div>
             )}
 
-            {/* Canvas */}
+            {/* Canvas — wheel/pinch always zooms canvas, never the page */}
             <div
                 ref={viewportRef}
                 onMouseDown={handleViewportMouseDown as any}
@@ -532,6 +587,9 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 onPointerMove={handleViewportMouseMove as any}
                 onPointerUp={handleViewportMouseUp as any}
                 onWheel={handleWheel}
+                onTouchStart={handleTouchStart as any}
+                onTouchMove={handleTouchMove as any}
+                onTouchEnd={handleTouchEnd as any}
                 style={{ touchAction: 'none' }}
                 className={`flex-1 relative overflow-hidden ${isPanning ? 'cursor-grabbing' : 'cursor-grab'} bg-[#F8FAFC]`}
             >
@@ -605,15 +663,19 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                     >
                                         {cls.samples.length > 0 ? (
                                             <>
-                                                <div className="grid grid-cols-4 gap-2">
-                                                    {cls.samples.slice(0, 8).map(s => (
+                                                <div className={`grid grid-cols-4 gap-2 ${expandedClasses[cls.id] ? 'max-h-[360px] overflow-auto neura-scrollbar pr-1' : ''}`}>
+                                                    {(expandedClasses[cls.id] ? cls.samples : cls.samples.slice(0, 8)).map(s => (
                                                         <div key={s.id} className="relative aspect-square rounded-lg overflow-hidden bg-slate-50 border border-slate-200 group/thumb">
                                                             <img src={s.data} alt="" className="w-full h-full object-cover" />
                                                             <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleRemoveSample(cls.id, s.id) }} className="absolute top-1 right-1 w-5 h-5 rounded-md bg-white border border-slate-200 text-slate-600 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity shadow-sm">×</button>
                                                         </div>
                                                     ))}
                                                 </div>
-                                                {cls.samples.length > 8 && <div className="text-[11px] text-slate-500 text-center">+{cls.samples.length - 8} more</div>}
+                                                {cls.samples.length > 8 && (
+                                                    <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setExpandedClasses(prev => ({ ...prev, [cls.id]: !prev[cls.id] })) }} className="w-full h-7 rounded-full bg-white border border-violet-200 text-violet-700 text-[11px] font-bold hover:bg-violet-50 flex items-center justify-center gap-1">
+                                                        {expandedClasses[cls.id] ? <>Show less ↑</> : <>Expand +{cls.samples.length - 8} more ↓</>}
+                                                    </button>
+                                                )}
                                                 <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} disabled={atLimit} className={`w-full inline-flex items-center justify-center gap-2 h-9 rounded-lg border text-xs font-bold transition-all ${atLimit ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-violet-50 to-indigo-50 border-violet-200 text-violet-700 hover:from-violet-100 hover:to-indigo-100 hover:border-violet-300 hover:shadow-sm'}`}>
                                                     <span className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs">+</span>
                                                     Add images <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white border border-violet-200 text-violet-600 font-bold">multi</span>
@@ -640,20 +702,18 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         )
                     })}
 
-                    {/* Plus button under last folder — primary way to add new folder */}
-                    {lastPos && (
-                        <button
-                            data-node
-                            onPointerDown={e => e.stopPropagation()}
-                            onClick={() => setShowAddClass(true)}
-                            style={{ left: lastPos.x, top: lastPos.y + 400, width: 344, height: 60 }}
-                            className="absolute z-30 inline-flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-violet-300 bg-gradient-to-r from-violet-50 to-indigo-50 backdrop-blur hover:from-violet-100 hover:to-indigo-100 hover:border-violet-400 text-violet-700 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
-                        >
-                            <span className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-sm">＋</span>
-                            Add folder
-                            <span className="text-[11px] font-medium text-violet-600 bg-white px-2 py-0.5 rounded-full border border-violet-200">under last</span>
-                        </button>
-                    )}
+                    {/* Add folder — kept ABOVE training block (Brain) so it never hides behind expanded folders */}
+                    <button
+                        data-node
+                        onPointerDown={e => e.stopPropagation()}
+                        onClick={() => setShowAddClass(true)}
+                        style={{ left: brainPos.x, top: brainPos.y - 80, width: 344, height: 60 }}
+                        className="absolute z-30 inline-flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-violet-300 bg-gradient-to-r from-violet-50 to-indigo-50 backdrop-blur hover:from-violet-100 hover:to-indigo-100 hover:border-violet-400 text-violet-700 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
+                    >
+                        <span className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-sm">＋</span>
+                        Add folder
+                        <span className="text-[11px] font-medium text-violet-600 bg-white px-2 py-0.5 rounded-full border border-violet-200">above Brain</span>
+                    </button>
 
                     {mode.project?.classes.length === 0 && (
                         <div data-node style={{ left: 360, top: 220, width: 360, position: 'absolute' }} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col items-center text-center">

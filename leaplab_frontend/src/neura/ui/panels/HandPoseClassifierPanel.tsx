@@ -4,1014 +4,863 @@ import { useCamera } from '../../hooks/useCamera'
 import { HandPoseClassifier } from '../../ml/classifiers/HandPoseClassifier'
 import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
-import { useIsMobile } from '../../hooks/useResponsive'
-import WorkflowIndicator from '../components/WorkflowIndicator'
-import StatsBar from '../components/StatsBar'
-import CaptureButton from '../components/CaptureButton'
-import SampleGrid from '../components/SampleGrid'
-import TrainPanel from '../components/TrainPanel'
-import TestPanel from '../components/TestPanel'
+import AccuracyChart from '../components/AccuracyChart'
 import NotRelatedModal from '../components/NotRelatedModal'
-import SampleWarningModal from '../components/SampleWarningModal'
 
-interface HandPoseClassifierPanelProps {
-    mode: UseNeuraProjectReturn
-}
-
-type CaptureStatus = 'idle' | 'loading-model' | 'detecting' | 'success' | 'no-hand' | 'error'
-
-const DETECT_THROTTLE_MS = 33 // ~30fps for detection loop
-const PREDICT_THROTTLE_MS = 500 // ~2fps for test prediction
+interface HandPoseClassifierPanelProps { mode: UseNeuraProjectReturn }
 
 export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPanelProps) {
-    const isMobile = useIsMobile(768)
-    const canvasRef = useRef<HTMLCanvasElement>(null)
     const overlayCanvasRef = useRef<HTMLCanvasElement>(null)
+    const visionOverlayRef = useRef<HTMLCanvasElement>(null)
     const classifierRef = useRef(new HandPoseClassifier())
-    const animFrameRef = useRef<number>(0)
-    const isPredictingRef = useRef(false)
-    const rebuildAbortRef = useRef(0)
-    const testCameraStartedRef = useRef(false)
-    const removeDebounceRef = useRef<NodeJS.Timeout | null>(null)
-    const lastDetectTimeRef = useRef(0)
-    const lastPredictTimeRef = useRef(0)
-
-    const [isCapturing, setIsCapturing] = useState(false)
-    const [isTraining, setIsTraining] = useState(false)
-    const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
-    const [isProcessing, setIsProcessing] = useState(false)
-    const [modelLoading, setModelLoading] = useState(false)
-    const [handDetected, setHandDetected] = useState(false)
-    const [captureStatus, setCaptureStatus] = useState<CaptureStatus>('idle')
-    const [showOnboarding, setShowOnboarding] = useState(() => {
-        return !localStorage.getItem('neura-handpose-onboarding-seen')
-    })
-    const [epochResults, setEpochResults] = useState<number[]>([])
-    const [inferenceTime, setInferenceTime] = useState(0)
-    const [trainingError, setTrainingError] = useState<string | null>(null)
-    const [augmentMode, setAugmentMode] = useState(true)
-    const [batchCapturing, setBatchCapturing] = useState(false)
-    const [batchCountdown, setBatchCountdown] = useState(0)
-    const [isDragging, setIsDragging] = useState(false)
-    const [savedMessage, setSavedMessage] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const testFileInputRef = useRef<HTMLInputElement>(null)
-    const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-    const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
-    const [testImage, setTestImage] = useState<string | null>(null)
-    const [showNotRelated, setShowNotRelated] = useState(false)
-    const notRelatedCooldownRef = useRef(0)
-    const [captureFps, setCaptureFps] = useState(15)
+    const pendingUploadClassRef = useRef<string | null>(null)
     const burstIntervalRef = useRef<NodeJS.Timeout | null>(null)
-    const handleCaptureRef = useRef<() => Promise<void>>(null)
+    const isPredictingRef = useRef(false)
+    const rebuildAbortRef = useRef(0)
+    const consecutiveFailuresRef = useRef(0)
+    const notRelatedCooldownRef = useRef(0)
+    const removeDebounceRef = useRef<NodeJS.Timeout | null>(null)
+    const viewportRef = useRef<HTMLDivElement>(null)
+    const animFrameRef = useRef<number>(0)
+    const visionAnimRef = useRef<number>(0)
+    const handleCaptureRef = useRef<((classId: string) => Promise<void>) | null>(null)
+
+    const [isCapturing, setIsCapturing] = useState<string | null>(null)
+    const [dragOverClass, setDragOverClass] = useState<string | null>(null)
+    const [isTestDragging, setIsTestDragging] = useState(false)
+    const [isTraining, setIsTraining] = useState(false)
+    const [trainingError, setTrainingError] = useState<string | null>(null)
+    const [prediction, setPrediction] = useState<{ label: string; confidences: Record<string, number> } | null>(null)
+    const [isProcessing, setIsProcessing] = useState(false)
+    const [captureFps] = useState(15)
+    const [testImage, setTestImage] = useState<string | null>(null)
+    const [modelLoading, setModelLoading] = useState(false)
+    const [augmentMode, setAugmentMode] = useState(true)
+    const [inferenceTime, setInferenceTime] = useState(0)
+    const [savedMessage, setSavedMessage] = useState<string | null>(null)
+    const [showNotRelated, setShowNotRelated] = useState(false)
+    const [totalEpochs, setTotalEpochs] = useState(50)
+    const [currentEpoch, setCurrentEpoch] = useState(0)
+    const [epochResults, setEpochResults] = useState<number[]>([])
+    const [showAddClass, setShowAddClass] = useState(false)
+    const [newClassName, setNewClassName] = useState('')
+    const [editingClassId, setEditingClassId] = useState<string | null>(null)
+    const [editName, setEditName] = useState('')
+    const [expandedClasses, setExpandedClasses] = useState<Record<string, boolean>>({})
+    const [handDetected, setHandDetected] = useState(false)
+
+    const [zoom, setZoom] = useState(1)
+    const [pan, setPan] = useState({ x: 32, y: 24 })
+    const [isPanning, setIsPanning] = useState(false)
+    const panStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null)
+    const pinchRef = useRef<{ startDist: number; startZoom: number; startPan: { x: number; y: number }; center: { x: number; y: number } } | null>(null)
+    const [classPositions, setClassPositions] = useState<Record<string, { x: number; y: number }>>({})
+    const [brainPos, setBrainPos] = useState({ x: 920, y: 160 })
+    const [visionPos, setVisionPos] = useState({ x: 1440, y: 140 })
+    const [draggingId, setDraggingId] = useState<string | null>(null)
+    const dragStartRef = useRef<{ id: string; startX: number; startY: number; origX: number; origY: number } | null>(null)
+
+    const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const camera = useCamera({
+        videoConstraints: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user', frameRate: { ideal: 30 } },
+        onStreamAcquired: () => {
+            if (overlayCanvasRef.current) classifierRef.current.attachWebGLHandlers(overlayCanvasRef.current)
+        }
+    })
+
+    useEffect(() => { mode.setHideSidebar(true); return () => mode.setHideSidebar(false) }, [])
 
     const showSaved = useCallback((msg: string) => {
         setSavedMessage(msg)
         if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
-        savedTimeoutRef.current = setTimeout(() => setSavedMessage(null), 2000)
+        savedTimeoutRef.current = setTimeout(() => setSavedMessage(null), 2200)
     }, [])
 
-    const handleUpload = async (eOrFiles: React.ChangeEvent<HTMLInputElement> | FileList | File[]) => {
-        let files: FileList | File[] | null = null
-        if (eOrFiles instanceof FileList || Array.isArray(eOrFiles)) {
-            files = eOrFiles
-        } else if (eOrFiles && 'target' in eOrFiles) {
-            files = eOrFiles.target.files
+    useEffect(() => {
+        if (!mode.project) return
+        setClassPositions(prev => {
+            const next = { ...prev }
+            mode.project!.classes.forEach((cls, idx) => {
+                if (!next[cls.id]) {
+                    const col = Math.floor(idx / 4)
+                    const row = idx % 4
+                    next[cls.id] = { x: 48 + col * 380, y: 80 + row * 340 }
+                }
+            })
+            Object.keys(next).forEach(id => { if (!mode.project!.classes.some(c => c.id === id)) delete next[id] })
+            return next
+        })
+    }, [mode.project?.classes.map(c => c.id).join(',')])
+
+    useEffect(() => {
+        if (!mode.project) return
+        const thisBuild = ++rebuildAbortRef.current
+        let cancelled = false
+        setModelLoading(true)
+        const rebuild = async () => {
+            classifierRef.current.clear()
+            for (const cls of mode.project!.classes) {
+                if (thisBuild !== rebuildAbortRef.current) return
+                if (cls.samples.length > 0) await classifierRef.current.rebuildClass(cls.name, cls.samples.map(s => s.data), augmentMode)
+            }
+            if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false)
         }
-        if (!files || files.length === 0) return
-        // Auto-select first class if none selected
-        if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
-            mode.setSelectedClassId(mode.project.classes[0].id)
-        }
-        if (!mode.selectedClassId) { alert('Create a class first.'); return }
-        const selectedClass = mode.getSelectedClass()
-        if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
-            showSaved('⚠️ Sample limit reached! (20 per class)')
-            if (fileInputRef.current) fileInputRef.current.value = ''
+        rebuild().catch(() => { if (!cancelled && thisBuild === rebuildAbortRef.current) setModelLoading(false) })
+        return () => { cancelled = true }
+    }, [mode.project?.id])
+
+    const handleRename = (id: string, name: string) => {
+        const old = mode.project?.classes.find(c => c.id === id); if (!old) return
+        const trimmed = name.trim(); if (!trimmed || trimmed === old.name) { setEditingClassId(null); return }
+        mode.renameClass(id, trimmed)
+        setTimeout(async () => {
+            const updated = mode.project?.classes.find(c => c.id === id)
+            if (updated) { classifierRef.current.clearClass(old.name); if (updated.samples.length > 0) await classifierRef.current.rebuildClass(trimmed, updated.samples.map(s => s.data), augmentMode) }
+        }, 50)
+        setEditingClassId(null)
+    }
+
+    // Live prediction + hand skeleton overlay
+    useEffect(() => {
+        if (modelLoading) return
+        if (!camera.cameraOn || !camera.stream) {
+            setHandDetected(false)
             return
         }
+        let interval: ReturnType<typeof setInterval> | null = null
+        const runPrediction = async () => {
+            if (isPredictingRef.current) return
+            if (!camera.cameraOnRef.current || !camera.streamStateRef.current || !camera.videoRef.current) return
+            const vw = camera.videoRef.current.videoWidth, vh = camera.videoRef.current.videoHeight
+            if (!vw || !vh) return
+            if (consecutiveFailuresRef.current >= 10) return
+            if (!classifierRef.current.canClassify) return
+            // also need video ready
+            if (camera.videoRef.current.readyState < 2) return
+            isPredictingRef.current = true
+            try {
+                const start = performance.now()
+                const result = await classifierRef.current.predictFromImage(camera.videoRef.current, 3)
+                const elapsed = Math.round(performance.now() - start)
+                if (result) {
+                    consecutiveFailuresRef.current = 0
+                    if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
+                        setPrediction(null)
+                        const now = Date.now()
+                        if (now - notRelatedCooldownRef.current > 3000) { notRelatedCooldownRef.current = now; setShowNotRelated(true) }
+                    } else {
+                        const sorted = Object.entries(result.confidences).sort(([, a], [, b]) => b - a)
+                        if (sorted.length > 0) {
+                            const sortedConf: Record<string, number> = {}; sorted.forEach(([k, v]) => { sortedConf[k] = v })
+                            setPrediction({ label: sorted[0][0], confidences: sortedConf } as any)
+                        } else setPrediction(result)
+                        setInferenceTime(elapsed)
+                        if (testImage) setTestImage(null)
+                    }
+                } else {
+                    // no hand detected -> keep previous prediction but mark not detected? For hand pose we clear if no hand? Keep last.
+                    // To avoid flicker, don't clear immediately - but handDetected will show scanning
+                }
+            } catch { consecutiveFailuresRef.current++; if (consecutiveFailuresRef.current >= 10) camera.setCameraError('Hand tracking error. Please reload.') } finally { isPredictingRef.current = false }
+        }
+        runPrediction(); interval = setInterval(runPrediction, 400)
+        return () => { if (interval) clearInterval(interval) }
+    }, [camera.cameraOn, camera.stream, modelLoading, testImage])
 
-        let successCount = 0
-        let noHandCount = 0
-        let limitReached = false
+    useEffect(() => { consecutiveFailuresRef.current = 0 }, [camera.cameraOn, mode.project?.classes.length])
 
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i]
-            if (!file || !file.type.startsWith('image/')) continue
+    // Vision hand skeleton overlay — draws hand landmarks live on Vision canvas
+    useEffect(() => {
+        if (!camera.cameraOn || !camera.stream) {
+            setHandDetected(false)
+            const c = visionOverlayRef.current; if (c) { const ctx = c.getContext('2d'); if (ctx) ctx.clearRect(0, 0, c.width, c.height) }
+            return
+        }
+        let cancelled = false
+        let last = 0
+        const loop = async () => {
+            if (cancelled) return
+            visionAnimRef.current = requestAnimationFrame(loop as any)
+            const now = performance.now()
+            if (now - last < 40) return
+            last = now
+            const video = camera.videoRef.current
+            const canvas = visionOverlayRef.current
+            if (!video || !canvas) return
+            if (!video.videoWidth || video.readyState < 2) return
+            try {
+                const vw = video.videoWidth, vh = video.videoHeight
+                if (canvas.width !== vw) canvas.width = vw
+                if (canvas.height !== vh) canvas.height = vh
+                const keypoints = await classifierRef.current.detectHand(video)
+                if (keypoints.length > 0) {
+                    setHandDetected(true)
+                    classifierRef.current.drawHand(canvas, keypoints)
+                } else {
+                    setHandDetected(false)
+                    const ctx = canvas.getContext('2d'); if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height)
+                }
+            } catch {}
+        }
+        visionAnimRef.current = requestAnimationFrame(loop as any)
+        return () => { cancelled = true; cancelAnimationFrame(visionAnimRef.current) }
+    }, [camera.cameraOn, camera.stream])
 
-            const currentClass = mode.getSelectedClass()
-            if (currentClass && currentClass.samples.length >= MAX_SAMPLES_PER_CLASS) {
-                limitReached = true
-                break
+    const handleCaptureForClass = async (classId: string) => {
+        if (!camera.cameraOn) {
+            showSaved('Starting camera…')
+            try { await camera.startCamera() } catch (e) { console.warn('[HandPose] Camera start failed', e) }
+            for (let i = 0; i < 30; i++) {
+                await new Promise(r => setTimeout(r, 100))
+                const v = camera.videoRef.current
+                if (v && v.videoWidth && v.readyState >= 2) break
+                if (camera.cameraError) break
             }
+        }
+        const video = camera.videoRef.current
+        if (!video || !camera.cameraOn) {
+            if (camera.cameraError) showSaved(camera.cameraError)
+            else showSaved('Camera not ready — check permissions')
+            return
+        }
+        if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
+            try { await video.play().catch(() => {}) } catch {}
+            for (let i = 0; i < 10; i++) {
+                await new Promise(r => setTimeout(r, 100))
+                if (video.videoWidth && video.readyState >= 2) break
+            }
+            if (!video.videoWidth || video.readyState < 2) { showSaved('Camera warming up… try again'); return }
+        }
+        const cls = mode.project?.classes.find(c => c.id === classId)
+        if (cls && cls.samples.length >= MAX_SAMPLES_PER_CLASS) { showSaved('Maximum 20 gestures per folder'); return }
+        setIsCapturing(classId)
+        try {
+            const keypoints = await classifierRef.current.detectHand(video)
+            if (!keypoints || keypoints.length === 0) {
+                showSaved('No hand detected — show your hand clearly')
+                return
+            }
+            const features = classifierRef.current.extractFeatures(keypoints)
+            const data = JSON.stringify(Array.from(features))
+            const ok = mode.addSample(classId, { type: 'keypoints', data })
+            if (!ok) { showSaved('Folder full (20 max)'); return }
+            const targetName = cls?.name || mode.project?.classes.find(c => c.id === classId)?.name || ''
+            // add to KNN
+            const p = augmentMode ? classifierRef.current.addSampleAugmented(features, targetName) : classifierRef.current.addSample(features, targetName)
+            p.catch(e => console.warn('[HandPose][capture] embedding failed', e))
+            showSaved(`Captured for ${cls?.name || 'folder'} ✓`)
+        } catch (err) { console.warn('[capture] failed', err); showSaved('Capture failed — see console') } finally { setTimeout(() => setIsCapturing(null), 240) }
+    }
+    handleCaptureRef.current = handleCaptureForClass
+    const startBurstForClass = useCallback((classId: string) => {
+        burstIntervalRef.current = setInterval(() => { handleCaptureRef.current?.(classId) }, 1000 / captureFps)
+    }, [captureFps])
+    const stopBurst = useCallback(() => { if (burstIntervalRef.current) { clearInterval(burstIntervalRef.current); burstIntervalRef.current = null } }, [])
+    useEffect(() => () => { stopBurst(); if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current); cancelAnimationFrame(animFrameRef.current) }, [stopBurst])
 
-            const dataUrl = await new Promise<string>((resolve) => {
-                const reader = new FileReader()
-                reader.onload = () => resolve(reader.result as string)
-                reader.readAsDataURL(file)
-            })
-            const img = new Image()
-            img.src = dataUrl
-            await new Promise<void>((resolve) => {
-                img.onload = () => resolve()
-                img.onerror = () => resolve()
-                setTimeout(() => resolve(), 5000)
-            })
-
+    const processFilesForClass = async (files: FileList | File[], classId: string) => {
+        const cls = mode.project?.classes.find(c => c.id === classId); if (!cls) return
+        if (cls.samples.length >= MAX_SAMPLES_PER_CLASS) { showSaved('Maximum 20 per folder'); return }
+        let added = 0
+        let noHand = 0
+        const list = Array.from(files as any) as File[]
+        const imageFiles = list.filter(f => f.type.startsWith('image/'))
+        if (imageFiles.length === 0) { showSaved('No images found'); return }
+        for (let i = 0; i < imageFiles.length; i++) {
+            const file = imageFiles[i]
+            const cur = mode.project?.classes.find(c => c.id === classId)
+            if (cur && cur.samples.length >= MAX_SAMPLES_PER_CLASS) { showSaved(`Limit reached for ${cls.name}`); break }
+            const dataUrl = await new Promise<string>(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result as string); r.readAsDataURL(file) })
+            const img = new Image(); img.src = dataUrl
+            await new Promise<void>(resolve => { img.onload = () => resolve(); img.onerror = () => resolve(); setTimeout(() => resolve(), 3000) })
             if (img.complete && img.naturalWidth > 0) {
                 try {
                     const tempCanvas = document.createElement('canvas')
-                    tempCanvas.width = img.naturalWidth
-                    tempCanvas.height = img.naturalHeight
+                    tempCanvas.width = img.naturalWidth; tempCanvas.height = img.naturalHeight
                     const ctx = tempCanvas.getContext('2d')!
                     ctx.drawImage(img, 0, 0)
                     const keypoints = await classifierRef.current.detectHand(tempCanvas)
                     if (keypoints && keypoints.length > 0) {
                         const features = classifierRef.current.extractFeatures(keypoints)
-                        const added = mode.addSample(mode.selectedClassId, { type: 'keypoints', data: JSON.stringify(Array.from(features)) })
-                        if (!added) {
-                            limitReached = true
-                            break
-                        }
-                        successCount++
-                    } else {
-                        noHandCount++
-                    }
-                } catch (err) {
-                    console.warn('[HandPoseClassifier] Upload failed:', err)
-                }
+                        const data = JSON.stringify(Array.from(features))
+                        const ok = mode.addSample(classId, { type: 'keypoints', data })
+                        if (!ok) { showSaved(`Limit reached for ${cls.name}`); break }
+                        const targetName = mode.project?.classes.find(c => c.id === classId)?.name || cls.name
+                        if (augmentMode) await classifierRef.current.addSampleAugmented(features, targetName)
+                        else await classifierRef.current.addSample(features, targetName)
+                        added++
+                    } else { noHand++ }
+                } catch (e) { console.warn('[HandPose] upload detect failed', e); noHand++ }
             }
         }
-
-        const className = mode.getSelectedClass()?.name || 'class'
-        if (successCount > 0) {
-            showSaved(`📂 Saved ${successCount} gesture(s) to ${className}! (${mode.getSelectedClass()?.samples.length || 0} total)`)
-        }
-        if (noHandCount > 0) {
-            showSaved(`⚠️ No hand detected in ${noHandCount} image(s).`)
-        }
-        if (limitReached) {
-            showSaved('⚠️ Sample limit reached! (20 per class)')
-        }
-
-        if (fileInputRef.current) fileInputRef.current.value = ''
+        if (added > 0) showSaved(`Added ${added} gesture${added>1?'s':''} to ${cls.name} ✓`)
+        if (noHand > 0) showSaved(`No hand in ${noHand} image(s)`)
     }
-
-    const handleTestUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
+    const handleUploadClick = (classId: string) => { pendingUploadClassRef.current = classId; fileInputRef.current?.click() }
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files; if (!files || files.length === 0) return
+        const targetId = pendingUploadClassRef.current || mode.selectedClassId || mode.project?.classes[0]?.id
+        if (!targetId) { showSaved('Create a folder first'); return }
+        await processFilesForClass(files, targetId)
+        if (fileInputRef.current) fileInputRef.current.value = ''; pendingUploadClassRef.current = null
+    }
+    const handleTestUpload = async (e: React.ChangeEvent<HTMLInputElement> | FileList | File[]) => {
+        let file: File | null = null
+        if (e instanceof FileList) file = e[0] || null
+        else if (Array.isArray(e)) file = e[0] || null
+        else if ('target' in e && (e as any).target?.files) file = (e as any).target.files[0] || null
+        else if ('files' in (e as any)) file = (e as any).files[0] || null
         if (!file || !file.type.startsWith('image/')) return
-        if (modelLoading) {
-            showSaved('⚠️ Model is still loading. Please wait.')
-            return
-        }
-        const dataUrl = await new Promise<string>((resolve) => {
-            const reader = new FileReader()
-            reader.onload = () => resolve(reader.result as string)
-            reader.readAsDataURL(file)
-        })
-        setTestImage(dataUrl)
-        camera.stopCamera()
-        setIsProcessing(true)
+        if (modelLoading) { showSaved('Model loading…'); return }
+        if (!classifierRef.current.canClassify) { showSaved('Add at least 2 folders with 2 gestures, then Train'); return }
+        const dataUrl = await new Promise<string>(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result as string); r.readAsDataURL(file) })
+        setTestImage(dataUrl); if (camera.cameraOn) camera.stopCamera(); setIsProcessing(true)
         try {
-            const img = new Image()
-            img.src = dataUrl
-            await new Promise<void>((resolve) => {
-                img.onload = () => resolve()
-                img.onerror = () => resolve()
-                setTimeout(() => resolve(), 5000)
-            })
-            if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
-                const start = performance.now()
-                const result = await Promise.race([
-                    classifierRef.current.predictFromImage(img, 3),
-                    new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Prediction timeout')), 12000))
-                ])
-                const elapsed = Math.round(performance.now() - start)
+            const img = new Image(); img.src = dataUrl
+            await new Promise<void>(resolve => { img.onload = () => resolve(); img.onerror = () => resolve(); setTimeout(() => resolve(), 3000) })
+            if (img.complete && img.naturalWidth > 0) {
+                const start = performance.now(); const result = await classifierRef.current.predictFromImage(img, 3); const elapsed = Math.round(performance.now() - start)
                 if (result) {
-                    if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
-                        setPrediction(null)
-                        setShowNotRelated(true)
-                    } else {
-                        setPrediction(result)
-                        setInferenceTime(elapsed)
-                    }
-                } else {
-                    showSaved('⚠️ No hand detected in the image.')
-                }
+                    if (result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) { setPrediction(null); setShowNotRelated(true) }
+                    else { const sorted = Object.entries(result.confidences).sort(([, a], [, b]) => b - a); const sortedConf: Record<string, number> = {}; sorted.forEach(([k, v]) => { sortedConf[k] = v }); setPrediction({ label: sorted[0]?.[0] || result.label, confidences: sortedConf } as any); setInferenceTime(elapsed) }
+                } else { setPrediction(null); setShowNotRelated(true) }
             }
-        } catch (err) {
-            console.warn('[HandPoseClassifier] Test upload failed:', err)
-            showSaved('⚠️ Failed to analyze image.')
-        }
-        setIsProcessing(false)
-        if (testFileInputRef.current) testFileInputRef.current.value = ''
+        } catch { } finally { setIsProcessing(false); if (testFileInputRef.current) testFileInputRef.current.value = '' }
+    }
+    const handleTestDrop = async (e: React.DragEvent) => { e.preventDefault(); setIsTestDragging(false); if (e.dataTransfer.files.length > 0) await handleTestUpload(e.dataTransfer.files) }
+
+    const handleRemoveSample = async (classId: string, sampleId: string) => {
+        mode.removeSample(classId, sampleId)
+        if (removeDebounceRef.current) clearTimeout(removeDebounceRef.current)
+        removeDebounceRef.current = setTimeout(async () => {
+            const c = mode.project?.classes.find(x => x.id === classId); if (!c) return
+            const current = mode.project?.classes.find(x => x.id === classId)
+            const datas = (current?.samples || []).map(s => s.data)
+            classifierRef.current.clearClass(c.name)
+            if (datas.length > 0) await classifierRef.current.rebuildClass(c.name, datas, augmentMode)
+        }, 300)
+        showSaved('Gesture removed')
     }
 
-    // Register global window drag-and-drop upload handler (collect mode only — test mode uses live camera)
-    useEffect(() => {
-        if (mode.mode === 'collect') {
-            const selectedClass = mode.getSelectedClass();
-            (window as any).__activeUpload = {
-                handler: (files: FileList) => {
-                    if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
-                        mode.setSelectedClassId(mode.project.classes[0].id)
-                    }
-                    handleUpload(files)
-                },
-                label: selectedClass ? `Class: ${selectedClass.name}` : 'Hand Pose Samples'
-            }
-        } else if (mode.mode === 'test') {
-            (window as any).__activeUpload = {
-                handler: (files: FileList) => {
-                    if (files.length > 0) {
-                        const syntheticEvent = { target: { files } } as any
-                        handleTestUpload(syntheticEvent)
-                    }
-                },
-                label: 'Test Image'
-            }
-        } else {
-            (window as any).__activeUpload = null
-        }
-        return () => { (window as any).__activeUpload = null }
-    }, [mode.mode, mode.selectedClassId, mode.project])
-
-    const camera = useCamera({
-        videoConstraints: { width: 640, height: 480, facingMode: 'user' },
-        onStreamAcquired: () => {
-            if (overlayCanvasRef.current) {
-                classifierRef.current.attachWebGLHandlers(overlayCanvasRef.current)
-            }
-        }
-    })
-
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            camera.stopCamera()
-            cancelAnimationFrame(animFrameRef.current)
-            classifierRef.current.dispose()
-            if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
-        }
-    }, [])
-
-    // Stop camera when leaving collect/test modes
-    useEffect(() => {
-        if (mode.mode !== 'collect' && mode.mode !== 'test') {
-            camera.stopCamera()
-        }
-    }, [mode.mode])
-
-    // Reset test camera ref when leaving test mode
-    useEffect(() => {
-        if (mode.mode !== 'test') testCameraStartedRef.current = false
-    }, [mode.mode])
-
-    // Rebuild KNN classifier from saved samples (with abort pattern and augmentation)
-    useEffect(() => {
-        if (mode.mode === 'train' && mode.project) {
-            const thisBuild = ++rebuildAbortRef.current
-            let cancelled = false
-            setModelLoading(true)
-            const rebuild = async () => {
-                classifierRef.current.clear()
-                for (const cls of mode.project!.classes) {
-                    if (thisBuild !== rebuildAbortRef.current) return
-                    if (cls.samples.length > 0) {
-                        await classifierRef.current.rebuildClass(
-                            cls.name,
-                            cls.samples.map(s => s.data),
-                            augmentMode
-                        )
-                    }
-                }
-                if (!cancelled && thisBuild === rebuildAbortRef.current) {
-                    setModelLoading(false)
-                }
-            }
-            rebuild().catch((e) => {
-                console.error('[HandPose] Rebuild failed:', e)
-                if (!cancelled && thisBuild === rebuildAbortRef.current) {
-                    setModelLoading(false)
-                }
-            })
-            return () => { cancelled = true }
-        }
-    }, [mode.mode, mode.project, augmentMode])
-
-    // Test mode: camera starts OFF — user chooses to turn on camera or upload
-    useEffect(() => {
-        if (mode.mode !== 'test') return
-        const runPrediction = async () => {
-            if (isPredictingRef.current) return
-            if (camera.streamStateRef.current && camera.videoRef.current && canvasRef.current) {
-                isPredictingRef.current = true
-                setIsProcessing(true)
-                try {
-                    const start = performance.now()
-                    const ctx = canvasRef.current.getContext('2d')
-                    if (ctx) {
-                        canvasRef.current.width = 640
-                        canvasRef.current.height = 480
-                        ctx.drawImage(camera.videoRef.current, 0, 0, 640, 480)
-                        const result = await Promise.race([
-                            classifierRef.current.predictFromImage(canvasRef.current, 3),
-                            new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Prediction timeout')), 12000))
-                        ])
-                        const elapsed = Math.round(performance.now() - start)
-                        if (result && result.similarity !== undefined && result.similarity < RELATEDNESS_THRESHOLD) {
-                            setPrediction(null)
-                            setHandDetected(false)
-                            const now = Date.now()
-                            if (now - notRelatedCooldownRef.current > 3000) {
-                                notRelatedCooldownRef.current = now
-                                setShowNotRelated(true)
-                            }
-                        } else if (result && result.confidences[result.label] >= confidenceThreshold) {
-                            setPrediction(result)
-                            setHandDetected(true)
-                            setInferenceTime(elapsed)
-                        } else {
-                            setPrediction(null)
-                            setHandDetected(false)
-                        }
-                    }
-                } catch (e) { console.warn('[HandPose] Prediction error:', e) } finally {
-                    setIsProcessing(false)
-                    isPredictingRef.current = false
-                }
-            }
-        }
-        if (camera.streamStateRef.current || camera.stream) {
-            setIsProcessing(false)
-            lastPredictTimeRef.current = performance.now()
-            const tick = () => {
-                const now = performance.now()
-                if (now - lastPredictTimeRef.current >= PREDICT_THROTTLE_MS) {
-                    lastPredictTimeRef.current = now
-                    runPrediction()
-                }
-                animFrameRef.current = requestAnimationFrame(tick)
-            }
-            animFrameRef.current = requestAnimationFrame(tick)
-            return () => cancelAnimationFrame(animFrameRef.current)
-        }
-    }, [mode.mode, camera.stream, camera.startCamera, confidenceThreshold])
-
-    // Collect mode: throttled hand detection loop for overlay drawing
-    useEffect(() => {
-        if (mode.mode !== 'collect' || !camera.stream) return
-        const detectLoop = async () => {
-            if (isPredictingRef.current) return
-            if (camera.videoRef.current && overlayCanvasRef.current) {
-                isPredictingRef.current = true
-                try {
-                    const canvas = overlayCanvasRef.current
-                    const ctx = canvas.getContext('2d')
-                    if (ctx) {
-                        canvas.width = camera.videoRef.current.videoWidth || 640
-                        canvas.height = camera.videoRef.current.videoHeight || 480
-                        ctx.clearRect(0, 0, canvas.width, canvas.height)
-                        const keypoints = await classifierRef.current.detectHand(camera.videoRef.current)
-                        if (keypoints.length > 0) {
-                            setHandDetected(true)
-                            classifierRef.current.drawHand(canvas, keypoints)
-                        } else {
-                            setHandDetected(false)
-                        }
-                    }
-                } catch { /* ignore detection loop errors */ }
-                isPredictingRef.current = false
-            }
-        }
-        lastDetectTimeRef.current = performance.now()
-        const tick = () => {
-            const now = performance.now()
-            if (now - lastDetectTimeRef.current >= DETECT_THROTTLE_MS) {
-                lastDetectTimeRef.current = now
-                detectLoop()
-            }
-            animFrameRef.current = requestAnimationFrame(tick)
-        }
-        animFrameRef.current = requestAnimationFrame(tick)
-        return () => cancelAnimationFrame(animFrameRef.current)
-    }, [mode.mode, camera.stream])
-
-    const handleCapture = async () => {
-        if (!camera.videoRef.current || !mode.selectedClassId || !camera.stream) return
-        const selectedClass = mode.getSelectedClass()
-        if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) return
-        if (isCapturing) return
-
-        setIsCapturing(true)
-        setCaptureStatus('loading-model')
-
-        try {
-            const video = camera.videoRef.current
-            setCaptureStatus('detecting')
-            const keypoints = await classifierRef.current.detectHand(video)
-
-            if (keypoints && keypoints.length > 0) {
-                setCaptureStatus('success')
-                const features = classifierRef.current.extractFeatures(keypoints)
-                const added = mode.addSample(mode.selectedClassId, { type: 'keypoints', data: JSON.stringify(Array.from(features)) })
-                if (!added) {
-                    console.warn('[HandPose] Failed to add sample - limit reached?')
-                    setCaptureStatus('error')
-                }
-            } else {
-                setCaptureStatus('no-hand')
-            }
-        } catch (e) {
-            console.error('[HandPose] Capture error:', e)
-            setCaptureStatus('error')
-        } finally {
-            setTimeout(() => { setIsCapturing(false); setCaptureStatus('idle') }, 800)
-        }
-    }
-
-    handleCaptureRef.current = handleCapture
-
-    const startBurstCapture = useCallback(() => {
-        if (!mode.selectedClassId || !camera.stream) return
-        burstIntervalRef.current = setInterval(() => {
-            handleCaptureRef.current?.()
-        }, 1000 / captureFps)
-    }, [captureFps, mode.selectedClassId, camera.stream])
-
-    const stopBurstCapture = useCallback(() => {
-        if (burstIntervalRef.current) {
-            clearInterval(burstIntervalRef.current)
-            burstIntervalRef.current = null
-        }
-    }, [])
-
-    useEffect(() => {
-        return () => { stopBurstCapture() }
-    }, [])
-
-    const handleTrain = async (_epochs: number = 50) => {
-        setIsTraining(true)
-        setTrainingError(null)
-        setEpochResults([])
+    const handleTrain = async (epochs = 50) => {
+        setIsTraining(true); setTrainingError(null); setTotalEpochs(epochs); setCurrentEpoch(0); setEpochResults([])
         const project = mode.project
-        if (!project || project.classes.length < 2) { mode.setAccuracy(0); setIsTraining(false); return }
+        if (!project || project.classes.length < 2) { mode.setAccuracy(0); setIsTraining(false); const msg = 'Add at least 2 folders to train'; setTrainingError(msg); showSaved(`⚠️ ${msg}`); return }
+        if (project.classes.some(c => c.samples.length < 2)) { mode.setAccuracy(0); setIsTraining(false); const msg = 'Each folder needs at least 2 gestures'; setTrainingError(msg); showSaved(`⚠️ ${msg}`); return }
         try {
             setModelLoading(true)
             const { HandPoseClassifier } = await import('../../ml/classifiers/HandPoseClassifier')
-
-            // Step 1: Parse features, shuffle & split 80/20 per class
             const trainData: { cls: string; features: Float32Array }[] = []
             const testData: { features: Float32Array; label: string }[] = []
-
             for (const cls of project.classes) {
                 const shuffled = [...cls.samples].sort(() => Math.random() - 0.5)
-                const splitIdx = Math.max(2, Math.floor(shuffled.length * 0.8))
+                const trainCount = Math.max(1, Math.min(shuffled.length - 1, Math.floor(shuffled.length * 0.8)))
+                const splitIdx = shuffled.length <= 2 ? 1 : trainCount
                 for (let i = 0; i < shuffled.length; i++) {
                     try {
                         const data = JSON.parse(shuffled[i].data) as number[]
                         const raw = new Float32Array(data)
                         const features = raw.length < 78 ? (() => { const p = new Float32Array(78); p.set(raw); return p })() : raw
-                        if (i < splitIdx) {
-                            trainData.push({ cls: cls.name, features })
-                        } else {
-                            testData.push({ features, label: cls.name })
-                        }
-                    } catch { }
+                        if (i < splitIdx) trainData.push({ cls: cls.name, features })
+                        else testData.push({ features, label: cls.name })
+                    } catch {}
                 }
             }
-
+            if (trainData.length === 0 || testData.length === 0) { mode.setAccuracy(0); setModelLoading(false); setIsTraining(false); const msg = 'Not enough test gestures — add more samples'; setTrainingError(msg); showSaved(`⚠️ ${msg}`); return }
             setModelLoading(false)
-
-            if (trainData.length === 0 || testData.length === 0) {
-                mode.setAccuracy(0)
-                setIsTraining(false)
-                return
-            }
-
-            // Step 2: Progressive training
-            const epochResults: number[] = []
-            let bestAccuracy = 0
-
-            for (let epoch = 1; epoch <= _epochs; epoch++) {
-                setCurrentEpoch(epoch)
-                const progress = epoch / _epochs
-                await new Promise(r => setTimeout(r, Math.max(10, 40 / (epoch * 0.1))))
-
+            const epochResultsLocal: number[] = []; let bestAccuracy = 0
+            for (let epoch = 1; epoch <= epochs; epoch++) {
+                const progress = epoch / epochs; const delay = epochs > 50 ? Math.max(5, 20 / (epoch * 0.1)) : Math.max(10, 40 / (epoch * 0.1))
+                await new Promise(r => setTimeout(r, delay))
                 const evalClassifier = new HandPoseClassifier()
-                const numToAdd = Math.max(2, Math.ceil(progress * trainData.length))
+                const numToAdd = Math.max(1, Math.ceil(progress * trainData.length))
                 for (let i = 0; i < numToAdd; i++) {
                     const item = trainData[i]
-                    try { await evalClassifier.addSample(item.features, item.cls) } catch { }
+                    try { await evalClassifier.addSample(item.features, item.cls) } catch {}
                 }
-
-                let correct = 0
-                let total = 0
-                for (const item of testData) {
-                    try {
-                        const result = await evalClassifier.predict(item.features, 3)
-                        if (result && result.label === item.label) correct++
-                        total++
-                    } catch { total++ }
-                    await new Promise(r => setTimeout(r, 0))
-                }
-
-                evalClassifier.dispose()
-
-                const rawAccuracy = total > 0 ? correct / total : 0
-                epochResults.push(rawAccuracy)
-                setEpochResults([...epochResults])
-                if (rawAccuracy > bestAccuracy) bestAccuracy = rawAccuracy
-                mode.setAccuracy(rawAccuracy)
+                let correct = 0, total = 0
+                const perTestLog: string[] = []
+                for (const item of testData) try {
+                    const result = await evalClassifier.predict(item.features, 3)
+                    const predicted = result?.label ?? 'null'
+                    const isCorrect = result && result.label === item.label
+                    if (isCorrect) correct++
+                    total++
+                    const shouldLog = epoch===1 || epoch===epochs || !isCorrect
+                    if (shouldLog) perTestLog.push(`${item.label}→${predicted}${isCorrect?'✓':'✗'}`)
+                } catch { total++; perTestLog.push(`${item.label}→error`) }
+                evalClassifier.dispose(); const rawAccuracy = total > 0 ? correct / total : 0; epochResultsLocal.push(rawAccuracy); if (rawAccuracy > bestAccuracy) bestAccuracy = rawAccuracy
+                if (epoch % 5 === 0 || epoch === epochs) {
+                    setCurrentEpoch(epoch); setEpochResults([...epochResultsLocal]); mode.setAccuracy(rawAccuracy);
+                    console.log(`[HandPose] Epoch ${epoch}/${epochs} — accuracy ${(rawAccuracy * 100).toFixed(1)}% (best ${(bestAccuracy * 100).toFixed(1)}%) correct=${correct}/${total}`)
+                    if (perTestLog.length) perTestLog.forEach(l => console.log(`[HandPose][eval] ${l}`))
+                } else if (perTestLog.length) { perTestLog.forEach(l => console.log(`[HandPose][eval] epoch${epoch} ${l}`)) }
             }
-
-            // Step 3: Build final classifier for actual use
             classifierRef.current.clear()
-            for (const cls of project.classes) {
-                if (cls.samples.length > 0) {
-                    await classifierRef.current.rebuildClass(
-                        cls.name,
-                        cls.samples.map(s => s.data),
-                        augmentMode
-                    )
-                }
-            }
-
-            mode.setAccuracy(bestAccuracy)
-            skipNextRebuildRef.current = true
-            setTimeout(() => { mode.setMode('test') }, 2000)
-        } catch (e) {
-            mode.setAccuracy(0)
-            setTrainingError('Training failed. Please try again.')
-            console.error('[HandPose] Training error:', e)
-        }
-        setIsTraining(false)
+            for (const cls of project.classes) if (cls.samples.length > 0) await classifierRef.current.rebuildClass(cls.name, cls.samples.map(s => s.data), augmentMode)
+            mode.setAccuracy(bestAccuracy); mode.setModelTrained(true); showSaved(`Training complete — ${(bestAccuracy * 100).toFixed(0)}% accuracy`); console.log(`[HandPose] Training done — best ${(bestAccuracy * 100).toFixed(1)}% over ${epochs} epochs`, { bestAccuracy, epochResults: epochResultsLocal })
+        } catch (err) { mode.setAccuracy(0); setTrainingError('Training failed. Please try again.'); console.error('[HandPose] Training failed', err) }
+        setIsTraining(false); setModelLoading(false)
     }
 
-    const handleRemoveSample = useCallback((classId: string, sampleId: string) => {
-        mode.removeSample(classId, sampleId)
-        // Debounce rebuilds when removing multiple samples quickly
-        if (removeDebounceRef.current) clearTimeout(removeDebounceRef.current)
-        removeDebounceRef.current = setTimeout(async () => {
-            const project = mode.project
-            if (project) {
-                classifierRef.current.clear()
-                for (const cls of project.classes) {
-                    if (cls.samples.length > 0) {
-                        await classifierRef.current.rebuildClass(
-                            cls.name,
-                            cls.samples.map(s => s.data),
-                            augmentMode
-                        )
-                    }
-                }
-            }
-        }, 300)
-    }, [mode.project, mode.removeSample, augmentMode])
-
-    const handleBatchCapture = useCallback(async () => {
-        if (!camera.videoRef.current || !mode.selectedClassId || !camera.stream || batchCapturing) return
-        const selectedClass = mode.getSelectedClass()
-        if (selectedClass && selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS) return
-
-        setBatchCapturing(true)
-        const captureOne = async (): Promise<boolean> => {
-            if (!camera.videoRef.current || !mode.selectedClassId || !camera.stream) return false
-            const cls = mode.getSelectedClass()
-            if (cls && cls.samples.length >= MAX_SAMPLES_PER_CLASS) return false
-            try {
-                const keypoints = await classifierRef.current.detectHand(camera.videoRef.current)
-                if (keypoints && keypoints.length > 0) {
-                    const features = classifierRef.current.extractFeatures(keypoints)
-                    mode.addSample(mode.selectedClassId, { type: 'keypoints', data: JSON.stringify(Array.from(features)) })
-                    return true
-                }
-            } catch { /* skip failed capture */ }
-            return false
-        }
-
-        for (let i = 0; i < 5; i++) {
-            setBatchCountdown(5 - i)
-            await new Promise(r => setTimeout(r, 1000))
-            await captureOne()
-        }
-        setBatchCountdown(0)
-        setBatchCapturing(false)
-    }, [mode.selectedClassId, mode.getSelectedClass, mode.addSample, camera.stream, batchCapturing])
-
-    const handleExportTestReport = useCallback(() => {
-        const project = mode.project
-        if (!project) return
-
-        const sampleCounts: Record<string, number> = {}
-        for (const cls of project.classes) {
-            sampleCounts[cls.name] = cls.samples.length
-        }
-
-        const report = {
-            projectName: project.name,
-            classifierType: 'hand-pose-classifier',
-            exportedAt: new Date().toISOString(),
-            accuracy: mode.accuracy,
-            classCount: project.classes.length,
-            totalSamples: mode.getTotalSamples(),
-            sampleCounts,
-            deviceInfo: {
-                userAgent: navigator.userAgent,
-                cameraAvailable: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
-            },
-        }
-
-        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${project.name.replace(/\s+/g, '_')}_handpose_test_report.json`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-    }, [mode.project, mode.accuracy, mode.getTotalSamples])
-
-    const selectedClass = mode.getSelectedClass()
-    const canTrain = mode.project && !modelLoading ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
-    const atSampleLimit = selectedClass ? selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS : false
-    const canAddSamples = selectedClass && !atSampleLimit
-
-    const getCaptureLabel = () => {
-        if (captureStatus === 'loading-model') return 'Loading model...'
-        if (captureStatus === 'detecting') return 'Detecting hand...'
-        if (captureStatus === 'success') return 'Captured!'
-        if (captureStatus === 'no-hand') return 'No hand found!'
-        if (captureStatus === 'error') return 'Error!'
-        if (isCapturing) return 'Capturing...'
-        if (atSampleLimit) return 'Max Reached'
-        if (!camera.stream) return 'Start Camera First'
-        return 'Capture Hand'
-    }
-
-    const getCaptureDisabled = () => {
-        if (isCapturing) return true
-        if (atSampleLimit) return true
-        if (!camera.stream) return true
-        if (!selectedClass) return true
-        return false
-    }
-
-    const CameraToggle = ({ size = 'md' }: { size?: 'sm' | 'md' }) => (
-        <button
-            onClick={camera.toggleCamera}
-            className={`flex items-center gap-1.5 rounded-xl text-xs font-bold border-none cursor-pointer transition-all duration-200 ${
-                size === 'sm' ? 'py-2 px-3' : 'py-2.5 px-4'
-            } ${
-                camera.cameraOn
-                    ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600 shadow-[0_2px_8px_rgba(5,150,105,0.15)]'
-                    : 'bg-gradient-to-br from-red-50 to-red-100 text-red-600 shadow-[0_2px_8px_rgba(220,38,38,0.12)]'
-            }`}
-        >
-            <span className="text-sm">{camera.cameraOn ? '📷' : '🚫'}</span>
-            {camera.cameraOn ? 'Camera On' : 'Camera Off'}
-        </button>
-    )
-
-    const CaptureFeedback = () => {
-        if (captureStatus === 'idle') return null
-        const bg = captureStatus === 'success' ? 'bg-[#006c44]/90'
-            : captureStatus === 'no-hand' ? 'bg-[#f97316]/90'
-            : captureStatus === 'error' ? 'bg-[#991b1b]/90'
-            : 'bg-[#0ea5e9]/90'
-        const icon = captureStatus === 'success' ? '✅'
-            : captureStatus === 'no-hand' ? '✋'
-            : captureStatus === 'error' ? '❌'
-            : captureStatus === 'loading-model' ? '⏳'
-            : '🔍'
-        return (
-            <div className={`absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 ${bg} backdrop-blur-sm rounded-xl z-10 animate-fade-in`}>
-                <span className="text-white text-xs font-bold">{icon} {getCaptureLabel()}</span>
-            </div>
-        )
-    }
-
+    const canTrain = mode.project ? mode.project.classes.length >= 2 && mode.project.classes.every(c => c.samples.length >= 2) : false
     const totalSamplesAll = mode.getTotalSamples()
     let warningTitle = ''; let warningDesc = ''
-    if (mode.project && mode.project.classes.length < 2) {
-        warningTitle = 'Add at least 2 classes'; warningDesc = 'Create 2 or more classes to start training'
-    } else if (totalSamplesAll === 0) {
-        warningTitle = 'Add samples to train the model'; warningDesc = 'Capture hand gestures for each class'
-    } else if (mode.project && mode.project.classes.some(c => c.samples.length < 2)) {
-        warningTitle = 'Add more samples per class'; warningDesc = 'Each class needs at least 2 samples for reliable training. 5+ recommended for better accuracy.'
+    if (mode.project && mode.project.classes.length < 2) { warningTitle = 'Add at least 2 folders'; warningDesc = 'Create 2 or more folders to enable training' }
+    else if (totalSamplesAll === 0) { warningTitle = 'Add gestures to each folder'; warningDesc = 'Capture or upload hand gestures for every folder' }
+    else if (mode.project && mode.project.classes.some(c => c.samples.length < 2)) { warningTitle = 'Add more gestures per folder'; warningDesc = 'Each folder needs at least 2 gestures (5+ recommended)' }
+    const handleAddClass = () => {
+        const name = newClassName.trim(); if (!name) return
+        if (mode.project?.classes.some(c => c.name.toLowerCase() === name.toLowerCase())) { showSaved('Folder name already exists'); return }
+        mode.addClass(name); setNewClassName(''); setShowAddClass(false); showSaved(`Folder "${name}" added`)
+    }
+    const sortedPredictionEntries = prediction ? Object.entries(prediction.confidences).sort(([, a], [, b]) => b - a) : []
+    const topConfidence = sortedPredictionEntries.length > 0 ? sortedPredictionEntries[0][1] : 0
+    const topLabel = sortedPredictionEntries.length > 0 ? sortedPredictionEntries[0][0] : prediction?.label
+    const handleExportReport = () => {
+        if (!prediction) return
+        const report = { projectName: mode.project?.name || 'Untitled', projectType: 'hand-pose-classifier', exportedAt: new Date().toISOString(), testResults: { prediction: prediction.label, topConfidence, allConfidences: Object.fromEntries(sortedPredictionEntries.map(([k, v]) => [k, Math.round(v * 100) + '%'])), inferenceTime }, projectSummary: { totalSamples: mode.getTotalSamples(), totalClasses: mode.project?.classes.length || 0, classes: mode.project?.classes.map(c => ({ name: c.name, sampleCount: c.samples.length })), accuracy: mode.accuracy } }
+        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `${(mode.project?.name || 'report').replace(/[^a-z0-9]/gi, '_')}_test_report.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showSaved('Report downloaded')
     }
 
+    const getCanvasPoint = (clientX: number, clientY: number) => {
+        const rect = viewportRef.current?.getBoundingClientRect(); if (!rect) return { x: 0, y: 0 }
+        return { x: (clientX - rect.left - pan.x) / zoom, y: (clientY - rect.top - pan.y) / zoom }
+    }
+    const handleViewportMouseDown = (e: React.MouseEvent) => {
+        if ((e.target as HTMLElement).closest('[data-node]')) return
+        setIsPanning(true); panStartRef.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y }
+    }
+    const handleViewportMouseMove = (e: React.MouseEvent) => {
+        if (isPanning && panStartRef.current) {
+            const dx = e.clientX - panStartRef.current.x, dy = e.clientY - panStartRef.current.y
+            setPan({ x: panStartRef.current.panX + dx, y: panStartRef.current.panY + dy })
+        }
+        if (draggingId && dragStartRef.current) {
+            const cur = getCanvasPoint(e.clientX, e.clientY)
+            const s = dragStartRef.current
+            const nx = s.origX + (cur.x - s.startX), ny = s.origY + (cur.y - s.startY)
+            if (s.id === 'brain') setBrainPos({ x: nx, y: ny })
+            else if (s.id === 'vision') setVisionPos({ x: nx, y: ny })
+            else setClassPositions(prev => ({ ...prev, [s.id]: { x: nx, y: ny } }))
+        }
+    }
+    const handleViewportMouseUp = () => { setIsPanning(false); panStartRef.current = null; if (draggingId) setDraggingId(null) }
+    const handleWheel = (e: React.WheelEvent) => {
+        const delta = -e.deltaY * 0.001
+        const newZoom = Math.min(1.4, Math.max(0.6, zoom + delta))
+        const rect = viewportRef.current?.getBoundingClientRect()
+        if (rect) {
+            const mx = e.clientX - rect.left, my = e.clientY - rect.top
+            const wx = (mx - pan.x) / zoom, wy = (my - pan.y) / zoom
+            const nx = mx - wx * newZoom, ny = my - wy * newZoom
+            setPan({ x: nx, y: ny })
+        }
+        setZoom(newZoom)
+    }
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX
+            const dy = e.touches[0].clientY - e.touches[1].clientY
+            const dist = Math.hypot(dx, dy)
+            const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2
+            const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2
+            pinchRef.current = { startDist: dist, startZoom: zoom, startPan: { ...pan }, center: { x: cx, y: cy } }
+        }
+    }
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (e.touches.length === 2 && pinchRef.current) {
+            e.preventDefault()
+            const dx = e.touches[0].clientX - e.touches[1].clientX
+            const dy = e.touches[0].clientY - e.touches[1].clientY
+            const dist = Math.hypot(dx, dy)
+            const scale = dist / pinchRef.current.startDist
+            const newZoom = Math.min(1.4, Math.max(0.6, pinchRef.current.startZoom * scale))
+            const rect = viewportRef.current?.getBoundingClientRect()
+            if (rect) {
+                const mx = pinchRef.current.center.x - rect.left
+                const my = pinchRef.current.center.y - rect.top
+                const wx = (mx - pinchRef.current.startPan.x) / pinchRef.current.startZoom
+                const wy = (my - pinchRef.current.startPan.y) / pinchRef.current.startZoom
+                const nx = mx - wx * newZoom
+                const ny = my - wy * newZoom
+                setPan({ x: nx, y: ny })
+            }
+            setZoom(newZoom)
+        }
+    }
+    const handleTouchEnd = () => { if (pinchRef.current) pinchRef.current = null }
+    const startNodeDrag = (e: React.PointerEvent | React.MouseEvent, id: string, orig: { x: number; y: number }) => {
+        e.stopPropagation()
+        if ('preventDefault' in e) (e as any).preventDefault?.()
+        const p = getCanvasPoint((e as any).clientX, (e as any).clientY)
+        dragStartRef.current = { id, startX: p.x, startY: p.y, origX: orig.x, origY: orig.y }
+        setDraggingId(id)
+        if ('pointerId' in e && typeof (e as any).pointerId === 'number') {
+            try { (e.target as HTMLElement).setPointerCapture?.((e as any).pointerId) } catch {}
+        }
+    }
+    const zoomIn = () => setZoom(z => Math.min(1.4, +(z + 0.1).toFixed(2)))
+    const zoomOut = () => setZoom(z => Math.max(0.6, +(z - 0.1).toFixed(2)))
+    const resetView = () => { setZoom(1); setPan({ x: 32, y: 24 }) }
+
+    useEffect(() => {
+        const onMove = (e: MouseEvent | PointerEvent) => {
+            const cx = (e as any).clientX, cy = (e as any).clientY
+            if (isPanning && panStartRef.current) {
+                const dx = cx - panStartRef.current.x, dy = cy - panStartRef.current.y
+                setPan({ x: panStartRef.current.panX + dx, y: panStartRef.current.panY + dy })
+            }
+            if (draggingId && dragStartRef.current) {
+                const rect = viewportRef.current?.getBoundingClientRect(); if (!rect) return
+                const curX = (cx - rect.left - pan.x) / zoom, curY = (cy - rect.top - pan.y) / zoom
+                const s = dragStartRef.current
+                const nx = s.origX + (curX - s.startX), ny = s.origY + (curY - s.startY)
+                if (s.id === 'brain') setBrainPos({ x: nx, y: ny })
+                else if (s.id === 'vision') setVisionPos({ x: nx, y: ny })
+                else setClassPositions(prev => ({ ...prev, [s.id]: { x: nx, y: ny } }))
+            }
+        }
+        const onUp = () => { setIsPanning(false); panStartRef.current = null; setDraggingId(null) }
+        window.addEventListener('mousemove', onMove as any); window.addEventListener('mouseup', onUp)
+        window.addEventListener('pointermove', onMove as any); window.addEventListener('pointerup', onUp as any)
+        return () => { window.removeEventListener('mousemove', onMove as any); window.removeEventListener('mouseup', onUp as any); window.removeEventListener('pointermove', onMove as any); window.removeEventListener('pointerup', onUp as any) }
+    }, [isPanning, draggingId, zoom, pan])
+
+    // Prevent trackpad pinch from zooming the browser page — always zoom canvas instead
+    useEffect(() => {
+        const el = viewportRef.current
+        if (!el) return
+        const onWheelNative = (e: WheelEvent) => {
+            if (e.ctrlKey || Math.abs(e.deltaY) > 0) {
+                e.preventDefault()
+            }
+        }
+        el.addEventListener('wheel', onWheelNative, { passive: false })
+        return () => el.removeEventListener('wheel', onWheelNative)
+    }, [])
+
+    const lastClassId = mode.project?.classes[mode.project.classes.length - 1]?.id
+    const lastPos = lastClassId ? classPositions[lastClassId] : null
+    const isLastExpanded = lastClassId ? !!expandedClasses[lastClassId] : false
+    const lastSampleCount = lastClassId ? mode.project?.classes.find(c => c.id === lastClassId)?.samples.length || 0 : 0
+    const floaterTop = lastPos ? lastPos.y + 400 + (isLastExpanded && lastSampleCount > 8 ? Math.ceil((lastSampleCount - 8) / 4) * 86 : 0) : 0
+
     return (
-        <div className="flex flex-col h-full relative overflow-y-auto neura-scrollbar">
-            {savedMessage && (
-                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-5 py-2.5 bg-[#006c44] text-white rounded-xl text-xs font-bold shadow-lg animate-fade-in">
-                    {savedMessage}
-                </div>
-            )}
-            {/* Onboarding */}
-            {showOnboarding && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center p-4 animate-[onbFadeIn_0.3s_ease-out]">
-                    <div className="absolute inset-0 bg-[#0a0128]/70 backdrop-blur-lg" />
-                    <div className="relative w-full max-w-[440px] overflow-hidden animate-[onbSlideIn_0.35s_cubic-bezier(0.16,1,0.3,1)]">
-                        <div className="absolute -inset-[2px] rounded-[34px] bg-gradient-to-br from-[#c084fc]/50 via-[#a855f7]/30 to-[#630ed4]/50 blur-md" />
-                        <div className="relative bg-white rounded-[32px] shadow-[0_30px_70px_-15px_rgba(99,14,212,0.3)] overflow-hidden">
-                            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#c084fc] via-[#630ed4] to-[#a855f7]" />
-                            <div className="pt-10 px-10 pb-6">
-                                <div className="relative w-20 h-20 mx-auto mb-6">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-2xl rotate-6 shadow-[0_8px_24px_rgba(99,14,212,0.15)]" />
-                                    <div className="relative w-full h-full bg-white rounded-2xl flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-[#f5f3ff]/50">
-                                        <span className="text-[40px]">✋</span>
-                                    </div>
-                                </div>
-                                <h3 className="text-[22px] font-extrabold text-[#131b2e] mb-2.5 text-center tracking-tight leading-snug">Welcome to Hand Pose Classifier!</h3>
-                                <p className="text-sm text-gray-500 leading-relaxed text-center max-w-[300px] mx-auto">Teach AI to recognize your hand gestures using the camera! 🚀</p>
-                            </div>
-                            <div className="mx-10 h-[1px] bg-gradient-to-r from-transparent via-[#ede9fe] to-transparent" />
-                            <div className="pt-6 px-10 pb-8">
-                                <div className="flex flex-col gap-3 mb-6">
-                                    <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#faf9ff] border border-[#ede9fe]">
-                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] flex items-center justify-center shrink-0 text-sm font-bold text-[#630ed4] shadow-[0_2px_8px_rgba(99,14,212,0.1)]">1</div>
-                                        <div className="pt-0.5">
-                                            <p className="text-sm font-bold text-[#131b2e] mb-0.5">Create Classes</p>
-                                            <p className="text-xs text-gray-500 leading-relaxed">Click "+" in the sidebar to add gesture categories!</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#faf9ff] border border-[#ede9fe]">
-                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] flex items-center justify-center shrink-0 text-sm font-bold text-[#630ed4] shadow-[0_2px_8px_rgba(99,14,212,0.1)]">2</div>
-                                        <div className="pt-0.5">
-                                            <p className="text-sm font-bold text-[#131b2e] mb-0.5">Capture Gestures</p>
-                                            <p className="text-xs text-gray-500 leading-relaxed">Show your hand to the camera and capture samples!</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#f0fdf4] border border-[#d1fae5]">
-                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#d1fae5] to-[#a7f3d0] flex items-center justify-center shrink-0 text-sm font-bold text-[#006c44] shadow-[0_2px_8px_rgba(0,108,68,0.1)]">3</div>
-                                        <div className="pt-0.5">
-                                            <p className="text-sm font-bold text-[#131b2e] mb-0.5">Train & Test</p>
-                                            <p className="text-xs text-gray-500 leading-relaxed">Teach your AI, then test how well it recognizes gestures!</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button onClick={() => { setShowOnboarding(false); localStorage.setItem('neura-handpose-onboarding-seen', 'true') }} className="w-full p-4 rounded-2xl text-sm font-bold border-none cursor-pointer bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white shadow-[0_8px_24px_rgba(99,14,212,0.3)] relative overflow-hidden transition-all">
-                                    <span className="relative z-10">Let's Go! 🚀</span>
-                                </button>
-                            </div>
+        <div className="flex flex-col h-full overflow-hidden bg-[#F8FAFC] relative">
+            {savedMessage && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[80] px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-medium shadow-lg">{savedMessage}</div>}
+            <canvas ref={overlayCanvasRef} className="hidden" />
+            <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
+            <input ref={testFileInputRef} type="file" accept="image/*" onChange={handleTestUpload as any} className="hidden" />
+
+            {/* Header */}
+            <div className="shrink-0 h-[48px] flex items-center justify-between px-4 bg-white border-b border-slate-200 z-20">
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2"/><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2"/><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8"/><path d="M18 8a2 2 0 012 2v6a2 2 0 01-2 2 2 2 0 01-2-2v-2"/><path d="M2 12a2 2 0 002 2h2a2 2 0 002-2v-1a2 2 0 00-2-2H4a2 2 0 00-2 2v1z"/></svg>
+                        </div>
+                        <div className="min-w-0">
+                            <h1 className="text-[13px] font-semibold text-slate-900 leading-none tracking-tight">Teach Your AI to See Hands</h1>
+                            <p className="text-[11px] text-slate-500 leading-none mt-0.5 hidden sm:block">Canvas • Pan, zoom, and arrange gestures</p>
                         </div>
                     </div>
-                    <style>{`@keyframes onbFadeIn{from{opacity:0}to{opacity:1}}@keyframes onbSlideIn{from{opacity:0;transform:translateY(12px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}`}</style>
+                    <div className="hidden md:flex items-center gap-1.5 ml-4 pl-4 border-l border-slate-200">
+                        <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-violet-50 border border-violet-200 text-[11px] font-semibold text-violet-700">✋ {mode.project?.classes.length || 0} gestures</span>
+                        <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-semibold text-emerald-700">🖐️ {totalSamplesAll} samples</span>
+                        <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-amber-50 border border-amber-200 text-[11px] font-semibold text-amber-700">🎯 Goal 15 / gesture</span>
+                        {mode.modelTrained && <span className="inline-flex items-center h-7 px-2.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700">✓ {(mode.accuracy! * 100).toFixed(0)}%</span>}
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    <span className="hidden lg:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-medium text-slate-600">
+                        <span className={`w-1.5 h-1.5 rounded-full ${handDetected ? 'bg-emerald-500' : 'bg-slate-300'}`} />{handDetected ? '✋ Hand' : '👀 Scanning'} • {inferenceTime} ms
+                    </span>
+                    <button onClick={camera.toggleCamera} className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium border transition-colors ${camera.cameraOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>
+                        <span className={`w-2 h-2 rounded-full ${camera.cameraOn ? 'bg-emerald-400' : 'bg-slate-300'}`} />{camera.cameraOn ? 'Camera on' : 'Camera off'}
+                    </button>
+                    <div className="w-px h-6 bg-slate-200 hidden sm:block" />
+                    <button onClick={() => setShowAddClass(true)} className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-sm">+ New gesture</button>
+                </div>
+            </div>
+
+            {showAddClass && (
+                <div className="absolute top-[56px] left-1/2 -translate-x-1/2 z-30 bg-white rounded-xl shadow-xl border border-slate-200 p-3 flex gap-2 items-center w-[min(420px,95vw)]">
+                    <input autoFocus value={newClassName} onChange={e => setNewClassName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAddClass(); if (e.key === 'Escape') setShowAddClass(false) }} placeholder="Gesture name e.g. Peace" className="flex-1 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100" />
+                    <button onClick={handleAddClass} className="h-9 px-4 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800">Add</button>
+                    <button onClick={() => setShowAddClass(false)} className="h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600">Cancel</button>
                 </div>
             )}
 
-            {/* COLLECT MODE */}
-            {mode.mode === 'collect' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar py-3 px-5">
-                    {/* Header + Workflow - centered */}
-                    <div className="w-full flex flex-col items-center animate-fade-in">
-                        <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#0ea5e9] mb-0">✋ Hand Gesture Guru!</h2>
-                            <p className="text-xs text-[#4a4455]">Show your hand to the camera and teach your AI! 🖐️</p>
-                        </div>
-                        <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} type="pose" />
-                        </div>
-                    </div>
+            {/* Canvas */}
+            <div
+                ref={viewportRef}
+                onMouseDown={handleViewportMouseDown as any}
+                onMouseMove={handleViewportMouseMove as any}
+                onMouseUp={handleViewportMouseUp as any}
+                onPointerDown={handleViewportMouseDown as any}
+                onPointerMove={handleViewportMouseMove as any}
+                onPointerUp={handleViewportMouseUp as any}
+                onWheel={handleWheel}
+                onTouchStart={handleTouchStart as any}
+                onTouchMove={handleTouchMove as any}
+                onTouchEnd={handleTouchEnd as any}
+                style={{ touchAction: 'none' }}
+                className={`flex-1 relative overflow-hidden ${isPanning ? 'cursor-grabbing' : 'cursor-grab'} bg-[#F8FAFC]`}
+            >
+                <div
+                    className="absolute inset-0"
+                    style={{
+                        backgroundImage: `radial-gradient(circle, #DDD6FE 1.2px, transparent 1.2px)`,
+                        backgroundSize: '20px 20px',
+                        backgroundPosition: `${pan.x}px ${pan.y}px`,
+                    }}
+                />
+                <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: `linear-gradient(#7C3AED 1px, transparent 1px), linear-gradient(90deg, #7C3AED 1px, transparent 1px)`, backgroundSize: '80px 80px', backgroundPosition: `${pan.x}px ${pan.y}px` }} />
 
-                    {/* Camera error */}
-                    {camera.cameraError && !camera.cameraOn && (
-                        <div className="w-full max-w-[520px] bg-white rounded-2xl p-6 shadow-md border border-[#dae2fd] text-center animate-scale-in mx-auto mt-2.5">
-                            <span className="text-4xl mb-3 block">🚫</span>
-                            <h3 className="text-sm font-bold text-[#131b2e] mb-2">Camera Access Needed</h3>
-                            <p className="text-xs text-[#4a4455] mb-4">{camera.cameraError}</p>
-                            <button onClick={camera.startCamera} className="px-5 py-2.5 bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] text-white rounded-xl font-bold text-xs hover:shadow-lg transition-all">Try Again</button>
+                <div className="absolute inset-0" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: '0 0', width: 3000, height: 2000 }}>
+                    <svg className="absolute inset-0 pointer-events-none" width={3000} height={2000} style={{ overflow: 'visible' }}>
+                        <defs>
+                            <linearGradient id="wire" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#CBD5E1" /><stop offset="100%" stopColor="#94A3B8" /></linearGradient>
+                        </defs>
+                        {mode.project?.classes.map(cls => {
+                            const pos = classPositions[cls.id]; if (!pos) return null
+                            const x1 = pos.x + 344, y1 = pos.y + 132
+                            const x2 = brainPos.x, y2 = brainPos.y + 220
+                            const mx = (x1 + x2) / 2
+                            return <path key={cls.id} d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`} fill="none" stroke="#CBD5E1" strokeWidth={2} strokeLinecap="round" />
+                        })}
+                        {(() => {
+                            const x1 = brainPos.x + 400, y1 = brainPos.y + 220
+                            const x2 = visionPos.x, y2 = visionPos.y + 200
+                            const mx = (x1 + x2) / 2
+                            return <path d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`} fill="none" stroke="#CBD5E1" strokeWidth={2} strokeLinecap="round" />
+                        })()}
+                    </svg>
+
+                    {/* Folder compartments — hand gesture */}
+                    {mode.project?.classes.map(cls => {
+                        const pos = classPositions[cls.id] || { x: 48, y: 80 }
+                        const isSelected = mode.selectedClassId === cls.id
+                        const isDragOver = dragOverClass === cls.id
+                        const atLimit = cls.samples.length >= MAX_SAMPLES_PER_CLASS
+                        const progress = Math.min(100, (cls.samples.length / 15) * 100)
+                        return (
+                            <div key={cls.id} data-node onPointerDown={e => startNodeDrag(e, cls.id, pos)} onClick={() => mode.setSelectedClassId(cls.id)} style={{ left: pos.x, top: pos.y, width: 344, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === cls.id ? 'z-40' : isSelected ? 'z-20' : 'z-10'}`}>
+                                <div className={`bg-white rounded-xl border overflow-hidden flex flex-col transition-shadow ${isDragOver ? 'border-violet-400 shadow-lg' : isSelected ? 'border-violet-300 shadow-md' : 'border-slate-200 shadow-sm hover:shadow-md'}`} style={{ minHeight: 280 }}>
+                                    <div className="h-[44px] flex items-center gap-3 px-3 border-b border-slate-100 shrink-0" style={{ background: `${cls.color}0D`, borderLeft: `4px solid ${cls.color}` }}>
+                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border" style={{ background: `${cls.color}18`, borderColor: `${cls.color}30`, color: cls.color }}>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2"/><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2"/><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8"/><path d="M18 8a2 2 0 012 2v6a2 2 0 01-2 2 2 2 0 01-2-2v-2"/></svg>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            {editingClassId === cls.id ? (
+                                                <input autoFocus value={editName} onChange={e => setEditName(e.target.value)} onBlur={() => handleRename(cls.id, editName)} onKeyDown={e => { if (e.key === 'Enter') handleRename(cls.id, editName); if (e.key === 'Escape') setEditingClassId(null) }} onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()} className="w-full h-7 px-2 rounded-md border border-slate-300 bg-white text-sm font-medium outline-none focus:border-violet-300" />
+                                            ) : (
+                                                <p onDoubleClick={e => { e.stopPropagation(); setEditingClassId(cls.id); setEditName(cls.name) }} className="text-[13px] font-semibold text-slate-900 truncate leading-none" title="Double click to rename">{cls.name}</p>
+                                            )}
+                                            <p className="text-[11px] text-slate-500 leading-none mt-0.5">{cls.samples.length} / {MAX_SAMPLES_PER_CLASS} gestures</p>
+                                        </div>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); if (confirm(`Delete gesture "${cls.name}"?`)) { classifierRef.current.clearClass(cls.name); mode.removeClass(cls.id) } }} className="w-7 h-7 rounded-md hover:bg-slate-50 text-slate-400 hover:text-slate-700 flex items-center justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M3 6h18M8 6V4h8v2M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6" /></svg></button>
+                                            <div className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 cursor-grab active:cursor-grabbing" title="Drag to move">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="17" r="1" /><circle cx="15" cy="7" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="17" r="1" /></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="h-1.5 bg-slate-100 shrink-0"><div className="h-full transition-all" style={{ width: `${progress}%`, background: cls.color }} /></div>
+                                    {isDragOver && <div className="mx-3 mt-3 h-8 rounded-lg bg-violet-50 border border-violet-200 text-violet-700 text-xs font-medium flex items-center justify-center">Drop hand images here</div>}
+                                    <div
+                                        onDragOver={e => { e.preventDefault(); setDragOverClass(cls.id) }}
+                                        onDragLeave={e => { e.preventDefault(); if (dragOverClass === cls.id) setDragOverClass(null) }}
+                                        onDrop={async e => { e.preventDefault(); setDragOverClass(null); if (e.dataTransfer.files.length > 0) await processFilesForClass(e.dataTransfer.files, cls.id) }}
+                                        className="flex-1 p-3 flex flex-col gap-3 min-h-[150px]"
+                                    >
+                                        {cls.samples.length > 0 ? (
+                                            <>
+                                                <div className="grid grid-cols-4 gap-2">
+                                                    {cls.samples.slice(0, 8).map(s => (
+                                                        <div key={s.id} className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 group/thumb flex items-center justify-center">
+                                                            <span className="text-lg">✋</span>
+                                                            <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-violet-700 bg-white/80 px-1 rounded">#{cls.samples.indexOf(s)+1}</span>
+                                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleRemoveSample(cls.id, s.id) }} className="absolute top-1 right-1 w-5 h-5 rounded-md bg-white border border-slate-200 text-slate-600 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity shadow-sm">×</button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                {cls.samples.length > 8 && <div className="text-[11px] text-slate-500 text-center">+{cls.samples.length - 8} more</div>}
+                                                <div className="flex items-center justify-between text-[11px] text-slate-500">
+                                                    <span>{cls.samples.length} gestures</span>
+                                                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${cls.samples.length >= 15 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>{cls.samples.length >= 15 ? 'Goal met ✓' : `${15 - cls.samples.length} to goal`}</span>
+                                                </div>
+                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} disabled={atLimit} className={`w-full inline-flex items-center justify-center gap-2 h-9 rounded-lg border text-xs font-bold transition-all ${atLimit ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-violet-50 to-indigo-50 border-violet-200 text-violet-700 hover:from-violet-100 hover:to-indigo-100 hover:border-violet-300 hover:shadow-sm'}`}>
+                                                    <span className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs">+</span>
+                                                    Add gestures <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white border border-violet-200 text-violet-600 font-bold">multi</span>
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <div className="flex-1 flex flex-col items-center justify-center gap-3 py-4">
+                                                <div className={`w-12 h-12 rounded-xl border flex items-center justify-center ${isDragOver ? 'bg-violet-50 border-violet-200 text-violet-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}><span className="text-lg">✋</span></div>
+                                                <div className="text-center">
+                                                    <p className="text-xs font-medium text-slate-700">No gestures yet</p>
+                                                    <p className="text-[11px] text-slate-500">Capture with camera or upload</p>
+                                                </div>
+                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} className="h-8 px-4 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold shadow-sm hover:from-violet-700 hover:to-indigo-700">＋ Add gestures</button>
+                                                <p className="text-[10px] text-slate-400">PNG, JPG with hand visible</p>
+                                            </div>
+                                        )}
+                                        <div className="flex gap-2 pt-2 border-t border-slate-100 mt-auto">
+                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); mode.setSelectedClassId(cls.id); handleCaptureForClass(cls.id) }} onMouseDown={e => { e.stopPropagation(); mode.setSelectedClassId(cls.id); startBurstForClass(cls.id) }} onMouseUp={e => { e.stopPropagation(); stopBurst() }} onMouseLeave={stopBurst} disabled={atLimit || isTraining} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : isCapturing === cls.id ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>{isCapturing === cls.id ? '✓ Captured' : '✋ Snap'}</button>
+                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} disabled={atLimit} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>📂 Browse</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })}
+
+                    {/* Add gesture — kept ABOVE training block (Brain) so it never hides behind expanded folders */}
+                    <button
+                        data-node
+                        onPointerDown={e => e.stopPropagation()}
+                        onClick={() => setShowAddClass(true)}
+                        style={{ left: brainPos.x, top: brainPos.y - 80, width: 344, height: 60 }}
+                        className="absolute z-30 inline-flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-violet-300 bg-gradient-to-r from-violet-50 to-indigo-50 backdrop-blur hover:from-violet-100 hover:to-indigo-100 hover:border-violet-400 text-violet-700 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
+                    >
+                        <span className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-sm">＋</span>
+                        Add gesture
+                        <span className="text-[11px] font-medium text-violet-600 bg-white px-2 py-0.5 rounded-full border border-violet-200">above Brain</span>
+                    </button>
+
+                    {mode.project?.classes.length === 0 && (
+                        <div data-node style={{ left: 360, top: 220, width: 360, position: 'absolute' }} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col items-center text-center">
+                            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 mb-3">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2"/><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2"/><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8"/><path d="M18 8a2 2 0 012 2v6a2 2 0 01-2 2 2 2 0 01-2-2v-2"/></svg>
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-900">No gestures yet</h3>
+                            <p className="text-xs text-slate-500 mt-1 max-w-[260px]">Create a folder for each hand gesture. Each folder is a separate compartment on the canvas.</p>
+                            <button onClick={() => setShowAddClass(true)} className="mt-4 h-9 px-4 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800">Add first gesture</button>
                         </div>
                     )}
 
-                    {/* Horizontal split */}
-                    <div className="w-full flex flex-col lg:flex-row gap-4 flex-1 min-h-[35vh] lg:min-h-0 mt-4">
-                        {/* Left half - Camera feed */}
-                        <div className="flex-1 min-w-0 flex flex-col">
-                            {/* Camera feed */}
-                            <div className="flex-1 relative rounded-2xl overflow-hidden bg-[#0f0e26] border border-[#3b2f63] shadow-[0_4px_20px_rgba(0,0,0,0.15)] min-h-[350px]">
-                                {camera.cameraOn ? (
+                    {/* Brain */}
+                    <div data-node onPointerDown={e => startNodeDrag(e, 'brain', brainPos)} style={{ left: brainPos.x, top: brainPos.y, width: 400, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'brain' ? 'z-40' : 'z-10'}`}>
+                        <div className="bg-white rounded-xl border border-violet-200 shadow-md overflow-hidden flex flex-col cursor-grab active:cursor-grabbing">
+                            <div className="h-1.5 w-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500" />
+                            <div className="h-11 px-4 flex items-center justify-between border-b border-violet-100 bg-gradient-to-r from-violet-50 to-white">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3H9a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M15 3h0a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3V6a3 3 0 00-3-3z"/><path d="M9 11a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3v-2"/><path d="M15 11a3 3 0 013 3v2a3 3 0 01-3 3h0a3 3 0 01-3-3v-2" /></svg></div>
+                                    <div>
+                                        <p className="text-[13px] font-semibold text-slate-900 leading-none">Model</p>
+                                        <p className="text-[11px] text-slate-500 leading-none mt-0.5">{mode.modelTrained ? `Trained • ${(mode.accuracy! * 100).toFixed(0)}%` : canTrain ? 'Ready to train' : 'Needs data'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className={`inline-flex h-6 px-2 rounded-full text-[11px] font-medium border ${mode.modelTrained ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : canTrain ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>{mode.modelTrained ? 'Ready' : canTrain ? 'Ready' : 'Needs data'}</span>
+                                    <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="17" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="17" r="1"/></svg></span>
+                                </div>
+                            </div>
+                            <div className="p-5 flex flex-col items-center text-center gap-3">
+                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border-2 shadow-sm ${mode.modelTrained ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : isTraining ? 'bg-violet-50 border-violet-300 text-violet-700 animate-pulse' : 'bg-gradient-to-br from-violet-50 to-indigo-50 border-violet-200 text-violet-700'}`}><span className="text-xl">{isTraining ? '🧠' : mode.modelTrained ? '✓' : '🤖'}</span></div>
+                                <div>
+                                    <h3 className="text-sm font-semibold text-slate-900">{isTraining ? `Training ${currentEpoch}/${totalEpochs}` : modelLoading ? 'Preparing model' : mode.accuracy != null ? `${(mode.accuracy * 100).toFixed(0)}% accuracy` : canTrain ? 'Ready to train' : warningTitle || 'Add more data'}</h3>
+                                    <p className="text-xs text-slate-500 mt-1 max-w-[280px]">{isTraining ? `Learning from ${totalSamplesAll} gestures` : mode.accuracy != null ? `${totalSamplesAll} gestures across ${mode.project?.classes.length || 0} folders` : warningDesc || 'Add at least 2 folders with 2 gestures each'}</p>
+                                </div>
+                                <button onClick={() => handleTrain(totalEpochs)} disabled={isTraining || modelLoading} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} title={!canTrain ? warningTitle : undefined} className={`h-9 px-5 rounded-full text-sm font-bold shadow-sm transition-all ${canTrain && !isTraining && !modelLoading ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 hover:shadow-md hover:scale-[1.02] cursor-pointer' : isTraining || modelLoading ? 'bg-slate-100 text-slate-400 cursor-wait' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 cursor-pointer'}`}>{isTraining ? 'Training…' : mode.modelTrained ? '✨ Retrain' : '🚀 Train model'}</button>
+                                <div className="w-full rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 p-3" onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
+                                    <div className="flex justify-between text-[11px] font-semibold text-slate-700"><span className="flex items-center gap-1"><span className="w-5 h-5 rounded-md bg-violet-600 text-white flex items-center justify-center text-[10px]">◍</span>Epochs</span><span className="text-violet-700 font-bold bg-white px-2 py-0.5 rounded-full border border-violet-200">{totalEpochs}</span></div>
+                                    <input type="range" min={5} max={100} step={5} value={totalEpochs} onChange={e => setTotalEpochs(parseInt(e.target.value))} onInput={e => setTotalEpochs(parseInt((e.target as HTMLInputElement).value))} disabled={isTraining} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} className="w-full mt-3 h-2 accent-violet-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style={{ accentColor: '#7c3aed' }} />
+                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v)}} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
+                                </div>
+                                {(epochResults.length > 0 || isTraining) && <div className="w-full"><AccuracyChart epochResults={epochResults} isTraining={isTraining} currentEpoch={currentEpoch} /></div>}
+                                {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs font-medium text-red-700">{trainingError}</div>}
+                            </div>
+                            <div className="grid grid-cols-3 gap-px bg-slate-100 border-t border-slate-100">
+                                <div className="bg-white py-2.5 text-center"><p className="text-[10px] font-medium text-slate-500 tracking-wide uppercase">Folders</p><p className="text-sm font-semibold text-slate-900">{mode.project?.classes.length || 0}</p></div>
+                                <div className="bg-white py-2.5 text-center"><p className="text-[10px] font-medium text-slate-500 tracking-wide uppercase">Gestures</p><p className="text-sm font-semibold text-slate-900">{totalSamplesAll}</p></div>
+                                <div className="bg-white py-2.5 text-center"><p className="text-[10px] font-medium text-slate-500 tracking-wide uppercase">Accuracy</p><p className={`text-sm font-semibold ${mode.accuracy != null ? 'text-emerald-600' : 'text-slate-400'}`}>{mode.accuracy != null ? `${(mode.accuracy * 100).toFixed(0)}%` : '—'}</p></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Vision — live hand preview with skeleton overlay */}
+                    <div data-node onPointerDown={e => startNodeDrag(e, 'vision', visionPos)} style={{ left: visionPos.x, top: visionPos.y, width: 420, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'vision' ? 'z-40' : 'z-10'}`}>
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col cursor-grab active:cursor-grabbing">
+                            <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-white">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2"/><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2"/><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8"/><path d="M18 8a2 2 0 012 2v6a2 2 0 01-2 2 2 2 0 01-2-2v-2"/><path d="M2 12a2 2 0 002 2h2a2 2 0 002-2v-1a2 2 0 00-2-2H4a2 2 0 00-2 2v1z"/></svg></div>
+                                    <div>
+                                        <p className="text-[13px] font-semibold text-slate-900 leading-none">Live preview</p>
+                                        <p className="text-[11px] text-slate-500 leading-none mt-0.5">{camera.cameraOn ? (handDetected ? '✋ Hand detected' : '👀 Scanning') : testImage ? 'Static image' : 'Idle'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="hidden sm:inline-flex h-6 px-2 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-medium text-slate-600">{inferenceTime} ms</span>
+                                    <span className={`w-2 h-2 rounded-full ${camera.cameraOn ? (handDetected ? 'bg-emerald-500' : 'bg-amber-400') : 'bg-slate-300'}`} />
+                                </div>
+                            </div>
+                            <div onDragOver={e => { e.preventDefault(); setIsTestDragging(true) }} onDragLeave={e => { e.preventDefault(); setIsTestDragging(false) }} onDrop={handleTestDrop} className={`relative mx-3 mt-3 rounded-xl overflow-hidden bg-slate-950 border ${isTestDragging ? 'border-violet-300' : 'border-slate-800'} ${camera.cameraOn || testImage ? 'aspect-[4/3]' : 'min-h-[160px]'} flex flex-col`} onPointerDown={e => e.stopPropagation()}>
+                                <video ref={camera.videoRef} autoPlay playsInline muted className={`w-full h-full object-cover -scale-x-100 absolute inset-0 ${camera.cameraOn ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} />
+                                <canvas ref={visionOverlayRef} className={`absolute inset-0 w-full h-full pointer-events-none ${camera.cameraOn ? 'opacity-100' : 'opacity-0'}`} />
+                                {camera.cameraOn && (
                                     <>
-                                        <video ref={camera.videoRef} autoPlay playsInline muted className="w-full h-full object-contain -scale-x-100" />
-                                        <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
-                                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.25 py-1 px-2.5 bg-black/50 backdrop-blur-md rounded-md z-10">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]" />
-                                            <span className="text-white text-[10px] font-bold">✋ LIVE</span>
-                                        </div>
-                                        {camera.stream && (
-                                            <div className={`absolute top-2.5 right-2.5 flex items-center gap-1 py-0.75 px-2 backdrop-blur-md rounded-md z-10 ${handDetected ? 'bg-emerald-800/90' : 'bg-black/50'}`}>
-                                                <div className={`w-1.25 h-1.25 rounded-full bg-white ${handDetected ? 'opacity-100 animate-pulse' : 'opacity-50'}`} />
-                                                <span className="text-white text-[9px] font-bold">{handDetected ? '✋ HAND DETECTED' : '👀 SCANNING'}</span>
-                                            </div>
-                                        )}
-                                        {selectedClass && (
-                                            <div className="absolute bottom-2.5 left-2.5 py-1 px-2.5 rounded-md text-white text-[10px] font-bold z-10" style={{ background: selectedClass.color }}>
-                                                {selectedClass.name}
-                                            </div>
-                                        )}
-                                        <CaptureFeedback />
+                                        <div className="absolute top-2 left-2 inline-flex items-center gap-1.5 h-6 px-2 rounded-full bg-black/60 backdrop-blur text-white text-[11px] font-medium z-10"><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Live</div>
+                                        {topLabel && prediction && <div className="absolute top-2 right-2 h-6 px-2.5 rounded-full bg-white text-slate-900 text-xs font-semibold flex items-center z-10">{topLabel}</div>}
+                                        <div className={`absolute top-10 left-2 inline-flex items-center gap-1 h-5 px-2 rounded-full text-[10px] font-bold z-10 ${handDetected ? 'bg-emerald-600 text-white' : 'bg-black/50 text-white/80'}`}>{handDetected ? '✋ HAND' : '👀 SCANNING'}</div>
                                     </>
-                                ) : (
-                                    <div
-                                        onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
-                                        onDragLeave={(e) => { e.preventDefault(); setIsDragging(false) }}
-                                        onDrop={async (e) => {
-                                            e.preventDefault()
-                                            setIsDragging(false)
-                                            if (!mode.selectedClassId && mode.project && mode.project.classes.length > 0) {
-                                                mode.setSelectedClassId(mode.project.classes[0].id)
-                                            }
-                                            if (e.dataTransfer.files.length > 0) await handleUpload(e.dataTransfer.files)
-                                        }}
-                                        className={`absolute inset-0 flex flex-col items-center justify-center ${isDragging ? 'bg-[#0ea5e9]/5' : 'bg-transparent'}`}
-                                    >
-                                        <div className={`contents ${isDragging ? 'pointer-events-none' : 'pointer-events-auto'}`}>
-                                            <span className={`text-[3.5rem] mb-3 transition-transform duration-200 ${isDragging ? 'scale-115' : 'scale-100'}`}>{isDragging ? '📥' : '✋'}</span>
-                                            <p className="text-sm font-bold text-white mb-3">{isDragging ? 'Drop Gesture Images Here!' : 'Camera is off'}</p>
-                                            <div className={`flex gap-2 items-center transition-opacity duration-200 ${isDragging ? 'opacity-30' : 'opacity-100'}`}>
-                                                <button onClick={camera.startCamera} className="py-2.5 px-5 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)]">
-                                                    📷 Turn On Camera
-                                                </button>
-                                                <span className="text-gray-400 text-[11px] font-semibold">or</span>
-                                                <button onClick={() => fileInputRef.current?.click()} className="py-2.5 px-5 rounded-xl text-xs font-bold border-2 border-[#0ea5e9] cursor-pointer bg-white text-[#0ea5e9]">
-                                                    📂 Upload
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
+                                )}
+                                {!camera.cameraOn && testImage && (
+                                    <>
+                                        <img src={testImage} alt="" className="w-full h-full object-contain bg-black relative z-10" />
+                                        <button onPointerDown={e => e.stopPropagation()} onClick={() => { setTestImage(null); setPrediction(null) }} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center z-10">×</button>
+                                    </>
+                                )}
+                                {!camera.cameraOn && !testImage && (
+                                    <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center relative z-10">
+                                        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${isTestDragging ? 'bg-white text-slate-900 border-white' : 'bg-white/10 border-white/20 text-white/80'}`}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2"/><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2"/><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8"/></svg></div>
+                                        <p className="text-sm font-medium text-white">{isTestDragging ? 'Drop image to test' : 'No hand'}</p>
+                                        <p className="text-xs text-white/60 max-w-[220px]">Turn on camera to see hand skeleton</p>
+                                        <div className="flex gap-2"><button onPointerDown={e => e.stopPropagation()} onClick={camera.startCamera} className="h-8 px-3 rounded-lg bg-white text-slate-900 text-xs font-medium">Enable camera</button><button onPointerDown={e => e.stopPropagation()} onClick={() => testFileInputRef.current?.click()} className="h-8 px-3 rounded-lg bg-white/10 border border-white/20 text-white text-xs font-medium">Upload</button></div>
                                     </div>
                                 )}
                             </div>
-                        </div>
-
-                        {/* Right half - Controls, Stats, Samples */}
-                        <div className="w-full lg:w-[280px] shrink-0 flex flex-col gap-2.5 overflow-y-auto max-h-full neura-scrollbar">
-                            {/* Tips */}
-                            <div className="bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe] rounded-xl py-2.5 px-3.5 border border-[#0ea5e9]/10">
-                                <div className="flex items-center gap-1.5 mb-1.5">
-                                    <div className="w-5 h-5 rounded bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-[10px] shrink-0">💡</div>
-                                    <span className="text-[10px] font-bold text-[#0ea5e9] uppercase tracking-wider">Tips for Hand Tracking</span>
-                                </div>
-                                <div className="flex flex-wrap gap-1 gap-x-3">
-                                    {['Keep hand in center', 'Spread fingers apart', 'Good lighting helps'].map((tip) => (
-                                        <span key={tip} className="flex items-center gap-1 text-[10px] text-[#4a4455]">
-                                            <span className="w-0.75 h-0.75 rounded-full bg-[#0ea5e9] shrink-0" />
-                                            {tip}
-                                        </span>
-                                    ))}
-                                </div>
+                            <div className="flex gap-2 p-3 flex-wrap" onPointerDown={e => e.stopPropagation()}>
+                                <button onClick={camera.toggleCamera} className={`h-8 px-3 rounded-lg text-xs font-medium border ${camera.cameraOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>{camera.cameraOn ? 'Camera on' : 'Camera off'}</button>
+                                <button onClick={() => setAugmentMode(v => !v)} className={`h-8 px-3 rounded-lg text-xs font-medium border ${augmentMode ? 'bg-slate-50 text-slate-700 border-slate-200' : 'bg-white text-slate-500 border-slate-200'}`}>Smart {augmentMode ? 'on' : 'off'}</button>
+                                <button onClick={() => testFileInputRef.current?.click()} className="h-8 px-3 rounded-lg bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 text-xs font-medium">Upload</button>
+                                <span className="ml-auto inline-flex h-8 items-center px-2.5 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-medium text-slate-600">{mode.project?.classes.length || 0} gestures • {totalSamplesAll} samples</span>
                             </div>
-
-                            {/* Controls */}
-                            <div className="flex items-center gap-2">
-                                <button onClick={camera.toggleCamera} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none cursor-pointer text-white ${camera.cameraOn ? 'bg-gradient-to-br from-red-500 to-red-600 shadow-[0_4px_14px_rgba(239,68,68,0.35)]' : 'bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] shadow-[0_4px_14px_rgba(14,165,233,0.35)]'}`}>{camera.cameraOn ? '⏹️ Stop' : '📷 Start'}</button>
-                                <button onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none cursor-pointer bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)]">📂 Upload</button>
-                            </div>
-
-                            {/* Augment toggle */}
-                            <label className={`flex items-center gap-2 py-2.5 px-3.5 rounded-xl border cursor-pointer text-[11px] font-bold backdrop-blur-md shadow-[0_1px_4px_rgba(0,0,0,0.03)] ${augmentMode ? 'bg-gradient-to-br from-emerald-100 to-emerald-200 border-2 border-[#006c44] text-[#006c44]' : 'bg-white/85 border-gray-200 text-[#4a4455]'}`}>
-                                <input type="checkbox" checked={augmentMode} onChange={(e) => setAugmentMode(e.target.checked)} className="accent-[#0ea5e9]" />
-                                <div>
-                                    <div className="font-bold text-[11px]">Augment (5x)</div>
-                                    <div className="text-[9px] opacity-70">More varied training data</div>
-                                </div>
-                            </label>
-
-                            {/* Capture buttons */}
-                            {camera.cameraOn && (
-                                <div className="flex flex-col gap-2">
-                                    <div className="flex items-center gap-1.5 py-1 px-2.5 bg-gray-50 rounded-lg self-center">
-                                        <span className="text-[9px] font-bold text-gray-500">FPS</span>
-                                        <input
-                                            type="range"
-                                            min={5}
-                                            max={30}
-                                            step={1}
-                                            value={captureFps}
-                                            onChange={(e) => setCaptureFps(Number(e.target.value))}
-                                            className="w-14 h-1 accent-[#0ea5e9]"
-                                        />
-                                        <span className="text-[10px] font-bold text-[#0ea5e9] w-4 text-center">{captureFps}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={handleCapture}
-                                            onMouseDown={startBurstCapture}
-                                            onMouseUp={stopBurstCapture}
-                                            onMouseLeave={stopBurstCapture}
-                                            onTouchStart={startBurstCapture}
-                                            onTouchEnd={stopBurstCapture}
-                                            disabled={getCaptureDisabled()}
-                                            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-none bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white shadow-[0_4px_14px_rgba(14,165,233,0.35)] ${getCaptureDisabled() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'}`}
-                                        >
-                                            <span className="text-sm">📸</span>
-                                            {isCapturing ? 'Recording...' : 'Hold to Record'}
-                                        </button>
-                                        <button
-                                            onClick={handleBatchCapture}
-                                            disabled={batchCapturing || getCaptureDisabled()}
-                                            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold border-2 ${batchCapturing ? 'border-[#0ea5e9] bg-gradient-to-br from-sky-100 to-sky-200 text-[#0ea5e9]' : 'border-[#0ea5e9]/30 bg-white text-[#0ea5e9]'} ${batchCapturing || getCaptureDisabled() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'}`}
-                                        >
-                                            {batchCapturing ? `⏳ ${batchCountdown}` : '📸 Batch (5)'}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Stats */}
-                            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
-                                <div className="flex justify-between mb-1.5">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">📊 Total Samples</span>
-                                    <span className="text-sm font-extrabold text-[#0ea5e9]">{mode.getTotalSamples()}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">🎯 Classes</span>
-                                    <span className="text-sm font-extrabold text-[#0ea5e9]">{mode.project?.classes.length || 0}</span>
-                                </div>
-                            </div>
-
-                            {/* Samples */}
-                            {selectedClass && selectedClass.samples.length > 0 && (
-                                <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)] max-h-[200px] flex flex-col overflow-hidden">
-                                    <div className="flex items-center justify-between mb-2 shrink-0">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="w-2 h-2 rounded-full" style={{ background: selectedClass.color }} />
-                                            <span className="text-[11px] font-bold text-[#131b2e]">{selectedClass.name}</span>
+                            {camera.cameraError && <div className="mx-3 mb-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{camera.cameraError}</div>}
+                            <div className="px-3 pb-3 flex flex-col gap-2 max-h-[300px] overflow-auto" onPointerDown={e => e.stopPropagation()}>
+                                {!canTrain && !mode.modelTrained ? <div className="text-center py-8 text-xs text-slate-500">Add gestures and train to see predictions</div> : !prediction ? <div className="text-center py-6 text-xs text-slate-400">{camera.cameraOn ? (handDetected ? 'Hold a gesture' : 'Show your hand to camera') : 'Enable camera or upload an image'}</div> : (
+                                    <>
+                                        {topLabel && <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 flex justify-between items-center"><div><p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Top prediction</p><p className="text-sm font-semibold text-slate-900 mt-0.5 flex items-center gap-2"><span className="w-6 h-6 rounded-md bg-slate-900 text-white flex items-center justify-center text-[11px] font-semibold">{topLabel[0].toUpperCase()}</span>{topLabel}</p></div><div className="text-right"><p className="text-[11px] text-slate-500">{inferenceTime} ms</p></div></div>}
+                                        <div className="rounded-xl bg-slate-50 border border-slate-200 p-2.5">
+                                            <p className="text-[11px] font-medium text-slate-500 tracking-wide uppercase mb-2">All gestures — ranked</p>
+                                            {sortedPredictionEntries.map(([label], idx) => {
+                                                const isTop = idx === 0; const col = mode.project?.classes.find(c => c.name === label)?.color || '#0F172A'
+                                                return <div key={label} className={`mb-1.5 last:mb-0 p-2 rounded-lg border ${isTop ? 'bg-white border-slate-300' : 'bg-white border-slate-200'}`}><div className="flex justify-between text-xs font-medium"><span className="flex items-center gap-1.5 truncate"><span className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-semibold shrink-0" style={{ background: col }}>{label[0].toUpperCase()}</span><span className="truncate text-slate-900">{label}</span>{isTop && <span className="text-amber-500">★</span>}</span></div></div>
+                                            })}
                                         </div>
-                                        <span className={`text-[10px] font-bold py-0.5 px-1.5 rounded-md ${atSampleLimit ? 'bg-amber-100 text-[#c32c00]' : 'bg-sky-50 text-[#0ea5e9]'}`}>
-                                            {selectedClass.samples.length}/{MAX_SAMPLES_PER_CLASS}
-                                        </span>
-                                    </div>
-                                    <div className="flex-1 min-h-0 overflow-y-auto neura-scrollbar">
-                                        <SampleGrid samples={selectedClass.samples} type="keypoints" onRemove={(id) => handleRemoveSample(selectedClass.id, id)} />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* TRAIN MODE */}
-            {mode.mode === 'train' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar py-3 px-5">
-                    <div className="w-full flex-1 min-h-0 flex flex-col">
-                        <TrainPanel isTraining={isTraining} accuracy={mode.accuracy} canTrain={canTrain} onTrain={handleTrain} classCount={mode.project?.classes.length || 0} totalSamples={mode.getTotalSamples()} warningTitle={warningTitle} warningDesc={warningDesc} trainingError={trainingError} sampleType="poses" mode={mode.mode} onModeChange={mode.setMode} workflowType="pose" modelLoading={modelLoading} epochResults={epochResults} />
-                    </div>
-                </div>
-            )}
-
-            {/* TEST MODE */}
-            {mode.mode === 'test' && (
-                <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar py-3 px-5">
-                    {/* Header + Workflow - centered */}
-                    <div className="w-full flex flex-col items-center animate-fade-in">
-                        <div className="text-center mb-1">
-                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#0ea5e9] mb-0">🧪 Test Your AI!</h2>
-                            <p className="text-xs text-[#4a4455]">Show a hand gesture and see if your AI recognizes it! 🎯</p>
-                        </div>
-                        <div className="w-full max-w-[720px]">
-                            <WorkflowIndicator mode={mode.mode} onModeChange={mode.setMode} canTrain={canTrain} isTrained={mode.modelTrained} type="pose" />
-                        </div>
-                        {mode.project && mode.project.classes.some(c => c.samples.length < 2) && (
-                            <div className="w-full max-w-[720px] mt-2 px-4 py-3 rounded-xl text-xs font-bold text-center bg-gradient-to-br from-amber-100 to-amber-200 text-amber-900 border border-amber-400">
-                                ⚠️ Some classes have fewer than 2 samples — predictions may be unreliable. Go back to Collect and add more samples.
+                                        <div className="flex gap-2"><button onClick={() => { setTestImage(null); setPrediction(null) }} className="flex-1 h-8 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700">Clear</button><button onClick={handleExportReport} className="flex-1 h-8 rounded-lg bg-slate-900 text-white text-xs font-medium">Download report</button></div>
+                                    </>
+                                )}
                             </div>
-                        )}
-                        {/* Confidence Threshold */}
-                        <div className="w-full max-w-[720px] mt-2 bg-white/85 backdrop-blur-xl rounded-xl p-3 border border-gray-100">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-[10px] font-bold text-gray-700">🎚️ Confidence Threshold</span>
-                                <span className="text-xs font-extrabold text-[#0ea5e9] bg-[#f0f9ff] px-2 py-0.5 rounded-md">{Math.round(confidenceThreshold * 100)}%</span>
-                            </div>
-                            <input type="range" min="0" max="100" value={Math.round(confidenceThreshold * 100)}
-                                onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
-                                className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-[#0ea5e9]" />
                         </div>
                     </div>
-                    <div className="w-full mt-4 flex-1 min-h-0 flex flex-col">
-                        <TestPanel prediction={prediction} isProcessing={isProcessing} cameraOn={camera.cameraOn} testImage={testImage} videoRef={camera.videoRef} canvasRef={canvasRef} onToggleCamera={camera.toggleCamera} onUpload={() => testFileInputRef.current?.click()} onReset={() => { setTestImage(null); setPrediction(null) }} onTryAnother={() => { setTestImage(null); setPrediction(null) }} onExport={handleExportTestReport} fileInputRef={testFileInputRef} onFileChange={handleTestUpload} testsRun={prediction ? 1 : 0} inferenceTime={inferenceTime} modelLoading={modelLoading} />
-                    </div>
-                    <input ref={testFileInputRef} type="file" accept="image/*" onChange={handleTestUpload} className="hidden" />
                 </div>
-            )}
 
-            <NotRelatedModal
-                isOpen={showNotRelated}
-                onClose={() => setShowNotRelated(false)}
-                onUpload={() => testFileInputRef.current?.click()}
-            />
+                <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white rounded-full shadow-sm border border-slate-200 px-2 py-1.5">
+                    <span className="text-[11px] font-medium text-slate-600 px-2">Canvas</span>
+                    <button onClick={zoomOut} className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-700">−</button>
+                    <span className="text-xs font-medium w-11 text-center text-slate-900">{Math.round(zoom * 100)}%</span>
+                    <button onClick={zoomIn} className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-700">+</button>
+                    <div className="w-px h-5 bg-slate-200 mx-1" />
+                    <button onClick={resetView} className="h-7 px-3 rounded-full bg-slate-900 text-white text-xs font-medium">Reset</button>
+                </div>
+            </div>
 
-            {mode.mode === 'collect' && mode.project && (
-                <SampleWarningModal
-                    classes={mode.project.classes}
-                    accentColor="#630ed4"
-                    accentBg="#f5f3ff"
-                    projectType="hand gesture classifier"
-                />
-            )}
+            <NotRelatedModal isOpen={showNotRelated} onClose={() => setShowNotRelated(false)} onUpload={() => testFileInputRef.current?.click()} />
         </div>
     )
 }

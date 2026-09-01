@@ -169,6 +169,16 @@ export class PoseClassifier {
         return result
     }
 
+    async predictFromKeypoints(keypoints: Keypoint[], k = 5): Promise<PosePrediction | null> {
+        if (!keypoints || keypoints.length === 0) return null
+        const tf = await ensureTf()
+        const features = this.normalizeKeypoints(keypoints)
+        const embedding = tf.tensor1d(features)
+        const result = await this.knn.predictClass(embedding, k)
+        embedding.dispose()
+        return result
+    }
+
     drawPose(canvas: HTMLCanvasElement, keypoints: Keypoint[]) {
         const ctx = canvas.getContext('2d')
         if (!ctx) return
