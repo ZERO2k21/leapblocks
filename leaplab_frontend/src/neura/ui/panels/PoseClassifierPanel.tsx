@@ -351,8 +351,8 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                 } catch { noPose++ }
             }
         }
-        if (added > 0) showSaved(`Added ${added} pose${added>1?'s':''} to ${cls.name}`)
-        if (noPose > 0) showSaved(`No pose in ${noPose} image${noPose>1?'s':''}`)
+        if (added > 0) showSaved(`Added ${added} pose${added > 1 ? 's' : ''} to ${cls.name}`)
+        if (noPose > 0) showSaved(`No pose in ${noPose} image${noPose > 1 ? 's' : ''}`)
     }
     const handleUploadClick = (classId: string) => { pendingUploadClassRef.current = classId; fileInputRef.current?.click() }
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -434,7 +434,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                 }
                 trainData.push({ cls: cls.name, keypoints: trainKps })
             }
-            console.log('[Neura][Pose][split] summary', { trainData: trainData.map(t=>({cls:t.cls, n:t.keypoints.length})), test: testData.length })
+            console.log('[Neura][Pose][split] summary', { trainData: trainData.map(t => ({ cls: t.cls, n: t.keypoints.length })), test: testData.length })
             setModelLoading(false)
             if (trainData.every(t => t.keypoints.length === 0) || testData.length === 0) { mode.setAccuracy(0); setModelLoading(false); setIsTraining(false); const msg = 'Not enough test poses — add more samples'; setTrainingError(msg); showSaved(`⚠️ ${msg}`); console.warn('[Neura][Pose] Train aborted:', msg); return }
             // Pre-check if any keypoints are valid
@@ -448,7 +448,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                     const fallbackAcc = 0.75
                     mode.setAccuracy(fallbackAcc); mode.setModelTrained(true)
                     setEpochResults([fallbackAcc]); setCurrentEpoch(epochs)
-                    showSaved(`Training complete (fallback) — ${(fallbackAcc*100).toFixed(0)}%`)
+                    showSaved(`Training complete (fallback) — ${(fallbackAcc * 100).toFixed(0)}%`)
                 } catch (e) { console.error('[Neura][Pose] Fallback failed', e); setTrainingError('Training failed — model load error.') }
                 setIsTraining(false); return
             }
@@ -469,9 +469,9 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                     const isCorrect = result && result.label === item.label
                     if (isCorrect) correct++
                     total++
-                    const shouldLog = epoch===1 || epoch===epochs || !isCorrect
+                    const shouldLog = epoch === 1 || epoch === epochs || !isCorrect
                     if (shouldLog) {
-                        perTestLog.push(`${item.label}→${predicted}${isCorrect?'✓':'✗'} conf=${result ? Object.entries(result.confidences).map(([k,v])=>(k+':'+(v*100).toFixed(0)+'%')).join(',') : 'null'} sim=${result?.similarity?.toFixed(3) ?? 'null'}`)
+                        perTestLog.push(`${item.label}→${predicted}${isCorrect ? '✓' : '✗'} conf=${result ? Object.entries(result.confidences).map(([k, v]) => (k + ':' + (v * 100).toFixed(0) + '%')).join(',') : 'null'} sim=${result?.similarity?.toFixed(3) ?? 'null'}`)
                     }
                 } catch (e) { total++; perTestLog.push(`${item.label}→error`) }
                 evalClassifier.dispose(); const rawAccuracy = total > 0 ? correct / total : 0; epochResultsLocal.push(rawAccuracy); if (rawAccuracy > bestAccuracy) bestAccuracy = rawAccuracy
@@ -809,7 +809,6 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                     >
                         <span className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-sm">＋</span>
                         Add folder
-                        <span className="text-[11px] font-medium text-violet-600 bg-white px-2 py-0.5 rounded-full border border-violet-200">above Brain</span>
                     </button>
 
                     {mode.project?.classes.length === 0 && (
@@ -829,7 +828,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                             <div className="h-1.5 w-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500" />
                             <div className="h-11 px-4 flex items-center justify-between border-b border-violet-100 bg-gradient-to-r from-violet-50 to-white">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3H9a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M15 3h0a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3V6a3 3 0 00-3-3z"/><path d="M9 11a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3v-2"/><path d="M15 11a3 3 0 013 3v2a3 3 0 01-3 3h0a3 3 0 01-3-3v-2" /></svg></div>
+                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3H9a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V6a3 3 0 013-3z" /><path d="M15 3h0a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3V6a3 3 0 00-3-3z" /><path d="M9 11a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3v-2" /><path d="M15 11a3 3 0 013 3v2a3 3 0 01-3 3h0a3 3 0 01-3-3v-2" /></svg></div>
                                     <div>
                                         <p className="text-[13px] font-semibold text-slate-900 leading-none">Model</p>
                                         <p className="text-[11px] text-slate-500 leading-none mt-0.5">{mode.modelTrained ? `Trained • ${(mode.accuracy! * 100).toFixed(0)}%` : canTrain ? 'Ready to train' : 'Needs data'}</p>
@@ -837,7 +836,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className={`inline-flex h-6 px-2 rounded-full text-[11px] font-medium border ${mode.modelTrained ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : canTrain ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>{mode.modelTrained ? 'Ready' : canTrain ? 'Ready' : 'Needs data'}</span>
-                                    <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="17" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="17" r="1"/></svg></span>
+                                    <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="17" r="1" /><circle cx="15" cy="7" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="17" r="1" /></svg></span>
                                 </div>
                             </div>
                             <div className="p-5 flex flex-col items-center text-center gap-3">
@@ -850,7 +849,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                 <div className="w-full rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 p-3" onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
                                     <div className="flex justify-between text-[11px] font-semibold text-slate-700"><span className="flex items-center gap-1"><span className="w-5 h-5 rounded-md bg-violet-600 text-white flex items-center justify-center text-[10px]">◍</span>Epochs</span><span className="text-violet-700 font-bold bg-white px-2 py-0.5 rounded-full border border-violet-200">{totalEpochs}</span></div>
                                     <input type="range" min={5} max={100} step={5} value={totalEpochs} onChange={e => setTotalEpochs(parseInt(e.target.value))} onInput={e => setTotalEpochs(parseInt((e.target as HTMLInputElement).value))} disabled={isTraining} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} className="w-full mt-3 h-2 accent-violet-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style={{ accentColor: '#7c3aed' }} />
-                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v)}} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
+                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
                                 </div>
                                 {(epochResults.length > 0 || isTraining) && <div className="w-full"><AccuracyChart epochResults={epochResults} isTraining={isTraining} currentEpoch={currentEpoch} /></div>}
                                 {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs font-medium text-red-700">{trainingError}</div>}
@@ -868,7 +867,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col cursor-grab active:cursor-grabbing">
                             <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-white">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3" /></svg></div>
+                                    <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" /></svg></div>
                                     <div>
                                         <p className="text-[13px] font-semibold text-slate-900 leading-none">Live preview</p>
                                         <p className="text-[11px] text-slate-500 leading-none mt-0.5">{camera.cameraOn ? 'Live • Pose' : testImage ? 'Static image' : 'Idle'}</p>

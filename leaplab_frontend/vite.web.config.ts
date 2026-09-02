@@ -93,6 +93,10 @@ export default defineConfig({
     exclude: ['electron', 'serialport'],
   },
   server: {
+    watch: {
+      // Prevent EBUSY on Windows when build/ contains locked assets (video_frames etc.)
+      ignored: ['**/build/**', '**/dist/**', '**/out/**', '**/.wrangler/**', '**/node_modules/**', '**/build-electron/**'],
+    },
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',

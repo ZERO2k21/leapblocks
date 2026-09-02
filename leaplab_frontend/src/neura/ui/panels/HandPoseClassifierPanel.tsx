@@ -202,7 +202,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                     setHandDetected(false)
                     const ctx = canvas.getContext('2d'); if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height)
                 }
-            } catch {}
+            } catch { }
         }
         visionAnimRef.current = requestAnimationFrame(loop as any)
         return () => { cancelled = true; cancelAnimationFrame(visionAnimRef.current) }
@@ -226,7 +226,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
             return
         }
         if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
-            try { await video.play().catch(() => {}) } catch {}
+            try { await video.play().catch(() => { }) } catch { }
             for (let i = 0; i < 10; i++) {
                 await new Promise(r => setTimeout(r, 100))
                 if (video.videoWidth && video.readyState >= 2) break
@@ -295,7 +295,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                 } catch (e) { console.warn('[HandPose] upload detect failed', e); noHand++ }
             }
         }
-        if (added > 0) showSaved(`Added ${added} gesture${added>1?'s':''} to ${cls.name} ✓`)
+        if (added > 0) showSaved(`Added ${added} gesture${added > 1 ? 's' : ''} to ${cls.name} ✓`)
         if (noHand > 0) showSaved(`No hand in ${noHand} image(s)`)
     }
     const handleUploadClick = (classId: string) => { pendingUploadClassRef.current = classId; fileInputRef.current?.click() }
@@ -365,7 +365,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         const features = raw.length < 78 ? (() => { const p = new Float32Array(78); p.set(raw); return p })() : raw
                         if (i < splitIdx) trainData.push({ cls: cls.name, features })
                         else testData.push({ features, label: cls.name })
-                    } catch {}
+                    } catch { }
                 }
             }
             if (trainData.length === 0 || testData.length === 0) { mode.setAccuracy(0); setModelLoading(false); setIsTraining(false); const msg = 'Not enough test gestures — add more samples'; setTrainingError(msg); showSaved(`⚠️ ${msg}`); return }
@@ -378,7 +378,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                 const numToAdd = Math.max(1, Math.ceil(progress * trainData.length))
                 for (let i = 0; i < numToAdd; i++) {
                     const item = trainData[i]
-                    try { await evalClassifier.addSample(item.features, item.cls) } catch {}
+                    try { await evalClassifier.addSample(item.features, item.cls) } catch { }
                 }
                 let correct = 0, total = 0
                 const perTestLog: string[] = []
@@ -388,8 +388,8 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                     const isCorrect = result && result.label === item.label
                     if (isCorrect) correct++
                     total++
-                    const shouldLog = epoch===1 || epoch===epochs || !isCorrect
-                    if (shouldLog) perTestLog.push(`${item.label}→${predicted}${isCorrect?'✓':'✗'}`)
+                    const shouldLog = epoch === 1 || epoch === epochs || !isCorrect
+                    if (shouldLog) perTestLog.push(`${item.label}→${predicted}${isCorrect ? '✓' : '✗'}`)
                 } catch { total++; perTestLog.push(`${item.label}→error`) }
                 evalClassifier.dispose(); const rawAccuracy = total > 0 ? correct / total : 0; epochResultsLocal.push(rawAccuracy); if (rawAccuracy > bestAccuracy) bestAccuracy = rawAccuracy
                 if (epoch % 5 === 0 || epoch === epochs) {
@@ -499,7 +499,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
         dragStartRef.current = { id, startX: p.x, startY: p.y, origX: orig.x, origY: orig.y }
         setDraggingId(id)
         if ('pointerId' in e && typeof (e as any).pointerId === 'number') {
-            try { (e.target as HTMLElement).setPointerCapture?.((e as any).pointerId) } catch {}
+            try { (e.target as HTMLElement).setPointerCapture?.((e as any).pointerId) } catch { }
         }
     }
     const zoomIn = () => setZoom(z => Math.min(1.4, +(z + 0.1).toFixed(2)))
@@ -560,7 +560,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2"/><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2"/><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8"/><path d="M18 8a2 2 0 012 2v6a2 2 0 01-2 2 2 2 0 01-2-2v-2"/><path d="M2 12a2 2 0 002 2h2a2 2 0 002-2v-1a2 2 0 00-2-2H4a2 2 0 00-2 2v1z"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2" /><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2" /><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8" /><path d="M18 8a2 2 0 012 2v6a2 2 0 01-2 2 2 2 0 01-2-2v-2" /><path d="M2 12a2 2 0 002 2h2a2 2 0 002-2v-1a2 2 0 00-2-2H4a2 2 0 00-2 2v1z" /></svg>
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-[13px] font-semibold text-slate-900 leading-none tracking-tight">Teach Your AI to See Hands</h1>
@@ -652,7 +652,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                                 <div className={`bg-white rounded-xl border overflow-hidden flex flex-col transition-shadow ${isDragOver ? 'border-violet-400 shadow-lg' : isSelected ? 'border-violet-300 shadow-md' : 'border-slate-200 shadow-sm hover:shadow-md'}`} style={{ minHeight: 280 }}>
                                     <div className="h-[44px] flex items-center gap-3 px-3 border-b border-slate-100 shrink-0" style={{ background: `${cls.color}0D`, borderLeft: `4px solid ${cls.color}` }}>
                                         <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border" style={{ background: `${cls.color}18`, borderColor: `${cls.color}30`, color: cls.color }}>
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2"/><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2"/><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8"/><path d="M18 8a2 2 0 012 2v6a2 2 0 01-2 2 2 2 0 01-2-2v-2"/></svg>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2" /><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2" /><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8" /><path d="M18 8a2 2 0 012 2v6a2 2 0 01-2 2 2 2 0 01-2-2v-2" /></svg>
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             {editingClassId === cls.id ? (
@@ -683,7 +683,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                                                     {cls.samples.slice(0, 8).map(s => (
                                                         <div key={s.id} className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 group/thumb flex items-center justify-center">
                                                             <span className="text-lg">✋</span>
-                                                            <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-violet-700 bg-white/80 px-1 rounded">#{cls.samples.indexOf(s)+1}</span>
+                                                            <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-violet-700 bg-white/80 px-1 rounded">#{cls.samples.indexOf(s) + 1}</span>
                                                             <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleRemoveSample(cls.id, s.id) }} className="absolute top-1 right-1 w-5 h-5 rounded-md bg-white border border-slate-200 text-slate-600 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity shadow-sm">×</button>
                                                         </div>
                                                     ))}
@@ -729,13 +729,12 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                     >
                         <span className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-sm">＋</span>
                         Add gesture
-                        <span className="text-[11px] font-medium text-violet-600 bg-white px-2 py-0.5 rounded-full border border-violet-200">above Brain</span>
                     </button>
 
                     {mode.project?.classes.length === 0 && (
                         <div data-node style={{ left: 360, top: 220, width: 360, position: 'absolute' }} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col items-center text-center">
                             <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 mb-3">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2"/><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2"/><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8"/><path d="M18 8a2 2 0 012 2v6a2 2 0 01-2 2 2 2 0 01-2-2v-2"/></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2" /><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2" /><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8" /><path d="M18 8a2 2 0 012 2v6a2 2 0 01-2 2 2 2 0 01-2-2v-2" /></svg>
                             </div>
                             <h3 className="text-sm font-semibold text-slate-900">No gestures yet</h3>
                             <p className="text-xs text-slate-500 mt-1 max-w-[260px]">Create a folder for each hand gesture. Each folder is a separate compartment on the canvas.</p>
@@ -749,7 +748,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                             <div className="h-1.5 w-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500" />
                             <div className="h-11 px-4 flex items-center justify-between border-b border-violet-100 bg-gradient-to-r from-violet-50 to-white">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3H9a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M15 3h0a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3V6a3 3 0 00-3-3z"/><path d="M9 11a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3v-2"/><path d="M15 11a3 3 0 013 3v2a3 3 0 01-3 3h0a3 3 0 01-3-3v-2" /></svg></div>
+                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3H9a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V6a3 3 0 013-3z" /><path d="M15 3h0a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3V6a3 3 0 00-3-3z" /><path d="M9 11a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3v-2" /><path d="M15 11a3 3 0 013 3v2a3 3 0 01-3 3h0a3 3 0 01-3-3v-2" /></svg></div>
                                     <div>
                                         <p className="text-[13px] font-semibold text-slate-900 leading-none">Model</p>
                                         <p className="text-[11px] text-slate-500 leading-none mt-0.5">{mode.modelTrained ? `Trained • ${(mode.accuracy! * 100).toFixed(0)}%` : canTrain ? 'Ready to train' : 'Needs data'}</p>
@@ -757,7 +756,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className={`inline-flex h-6 px-2 rounded-full text-[11px] font-medium border ${mode.modelTrained ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : canTrain ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>{mode.modelTrained ? 'Ready' : canTrain ? 'Ready' : 'Needs data'}</span>
-                                    <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="17" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="17" r="1"/></svg></span>
+                                    <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="17" r="1" /><circle cx="15" cy="7" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="17" r="1" /></svg></span>
                                 </div>
                             </div>
                             <div className="p-5 flex flex-col items-center text-center gap-3">
@@ -770,7 +769,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                                 <div className="w-full rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 p-3" onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
                                     <div className="flex justify-between text-[11px] font-semibold text-slate-700"><span className="flex items-center gap-1"><span className="w-5 h-5 rounded-md bg-violet-600 text-white flex items-center justify-center text-[10px]">◍</span>Epochs</span><span className="text-violet-700 font-bold bg-white px-2 py-0.5 rounded-full border border-violet-200">{totalEpochs}</span></div>
                                     <input type="range" min={5} max={100} step={5} value={totalEpochs} onChange={e => setTotalEpochs(parseInt(e.target.value))} onInput={e => setTotalEpochs(parseInt((e.target as HTMLInputElement).value))} disabled={isTraining} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} className="w-full mt-3 h-2 accent-violet-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style={{ accentColor: '#7c3aed' }} />
-                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v)}} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
+                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
                                 </div>
                                 {(epochResults.length > 0 || isTraining) && <div className="w-full"><AccuracyChart epochResults={epochResults} isTraining={isTraining} currentEpoch={currentEpoch} /></div>}
                                 {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs font-medium text-red-700">{trainingError}</div>}
@@ -788,7 +787,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col cursor-grab active:cursor-grabbing">
                             <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-white">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2"/><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2"/><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8"/><path d="M18 8a2 2 0 012 2v6a2 2 0 01-2 2 2 2 0 01-2-2v-2"/><path d="M2 12a2 2 0 002 2h2a2 2 0 002-2v-1a2 2 0 00-2-2H4a2 2 0 00-2 2v1z"/></svg></div>
+                                    <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2" /><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2" /><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8" /><path d="M18 8a2 2 0 012 2v6a2 2 0 01-2 2 2 2 0 01-2-2v-2" /><path d="M2 12a2 2 0 002 2h2a2 2 0 002-2v-1a2 2 0 00-2-2H4a2 2 0 00-2 2v1z" /></svg></div>
                                     <div>
                                         <p className="text-[13px] font-semibold text-slate-900 leading-none">Live preview</p>
                                         <p className="text-[11px] text-slate-500 leading-none mt-0.5">{camera.cameraOn ? (handDetected ? '✋ Hand detected' : '👀 Scanning') : testImage ? 'Static image' : 'Idle'}</p>
@@ -817,7 +816,7 @@ export default function HandPoseClassifierPanel({ mode }: HandPoseClassifierPane
                                 )}
                                 {!camera.cameraOn && !testImage && (
                                     <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center relative z-10">
-                                        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${isTestDragging ? 'bg-white text-slate-900 border-white' : 'bg-white/10 border-white/20 text-white/80'}`}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2"/><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2"/><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8"/></svg></div>
+                                        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${isTestDragging ? 'bg-white text-slate-900 border-white' : 'bg-white/10 border-white/20 text-white/80'}`}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2" /><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2" /><path d="M10 10.5V6a2 2 0 00-2-2 2 2 0 00-2 2v8" /></svg></div>
                                         <p className="text-sm font-medium text-white">{isTestDragging ? 'Drop image to test' : 'No hand'}</p>
                                         <p className="text-xs text-white/60 max-w-[220px]">Turn on camera to see hand skeleton</p>
                                         <div className="flex gap-2"><button onPointerDown={e => e.stopPropagation()} onClick={camera.startCamera} className="h-8 px-3 rounded-lg bg-white text-slate-900 text-xs font-medium">Enable camera</button><button onPointerDown={e => e.stopPropagation()} onClick={() => testFileInputRef.current?.click()} className="h-8 px-3 rounded-lg bg-white/10 border border-white/20 text-white text-xs font-medium">Upload</button></div>

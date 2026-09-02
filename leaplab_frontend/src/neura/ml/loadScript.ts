@@ -54,7 +54,20 @@ function loadScript(src: string, retries = 2): Promise<void> {
 let tfPromise: Promise<any> | null = null
 
 export async function ensureTf(): Promise<any> {
-    if (window.tf) return window.tf
+    if (window.tf) {
+        try {
+            await window.tf.ready()
+            // Ensure a backend is actually set — WebGL can be lost
+            if (!window.tf.getBackend()) {
+                try { await window.tf.setBackend('webgl'); await window.tf.ready() } catch {}
+            }
+            if (!window.tf.getBackend()) {
+                await window.tf.setBackend('cpu')
+                await window.tf.ready()
+            }
+            return window.tf
+        } catch {}
+    }
     if (tfPromise) return tfPromise
 
     tfPromise = (async () => {
@@ -63,6 +76,18 @@ export async function ensureTf(): Promise<any> {
             const tf = await import('@tensorflow/tfjs')
             window.tf = tf
             await tf.ready()
+            if (!tf.getBackend()) {
+                try { await tf.setBackend('webgl'); await tf.ready() } catch {}
+            }
+            if (!tf.getBackend()) {
+                await tf.setBackend('cpu')
+                await tf.ready()
+            }
+            // Warm up — create and dispose a tiny tensor to force backend init
+            try {
+                const t = tf.tensor1d([1, 2, 3])
+                t.dispose()
+            } catch {}
             window._tfLoaded = true
             return tf
         } catch (e) {
@@ -70,6 +95,13 @@ export async function ensureTf(): Promise<any> {
             try {
                 await loadScript(`https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@${TF_VERSION}/dist/tf.min.js`)
                 await window.tf.ready()
+                if (!window.tf.getBackend()) {
+                    try { await window.tf.setBackend('webgl'); await window.tf.ready() } catch {}
+                }
+                if (!window.tf.getBackend()) {
+                    await window.tf.setBackend('cpu')
+                    await window.tf.ready()
+                }
                 window._tfLoaded = true
                 return window.tf
             } catch (cdnErr) {

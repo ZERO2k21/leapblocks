@@ -119,7 +119,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             if (updated) {
                 classifierRef.current.clearClass(old.name)
                 for (const s of updated.samples) {
-                    try { const f = JSON.parse(s.data); await classifierRef.current.addSample(f, trimmed) } catch {}
+                    try { const f = JSON.parse(s.data); await classifierRef.current.addSample(f, trimmed) } catch { }
                 }
             }
         }, 50)
@@ -206,7 +206,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
 
     const stopAudio = useCallback(() => {
         cancelAnimationFrame(animFrameRef.current)
-        try { audioContextRef.current?.close() } catch {}
+        try { audioContextRef.current?.close() } catch { }
         audioContextRef.current = null
         analyserRef.current = null
         micStreamRef.current?.getTracks().forEach(t => t.stop())
@@ -318,7 +318,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             }
         }
         setIsImporting(false)
-        if (added > 0) showSaved(`Added ${added} sound${added>1?'s':''} to ${cls.name}`)
+        if (added > 0) showSaved(`Added ${added} sound${added > 1 ? 's' : ''} to ${cls.name}`)
     }
 
     const handleImportClick = (classId: string) => { pendingImportClassRef.current = classId; fileInputRef.current?.click() }
@@ -370,7 +370,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                 try { return JSON.parse(s.data) } catch { return null }
             }).filter(Boolean) as number[][]
             for (const f of datas) {
-                try { await classifierRef.current.addSample(f, c.name) } catch {}
+                try { await classifierRef.current.addSample(f, c.name) } catch { }
             }
             const after = classifierRef.current.getSampleCounts()
             console.log('[Neura][audio] removed sample', { folder: c.name, before: before[c.name], after: after[c.name] })
@@ -391,7 +391,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             for (const cls of project.classes) {
                 if (cls.samples.length > 0) {
                     for (const sample of cls.samples) {
-                        try { const features = JSON.parse(sample.data); await classifierRef.current.addSample(features, cls.name) } catch {}
+                        try { const features = JSON.parse(sample.data); await classifierRef.current.addSample(features, cls.name) } catch { }
                     }
                 }
             }
@@ -436,7 +436,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                     setEpochResults([...local])
                     mode.setAccuracy(raw)
                 }
-                if (epoch % 10 === 0) console.log(`[Neura][audio] Epoch ${epoch}/${epochs} ~${(raw*100).toFixed(1)}%`)
+                if (epoch % 10 === 0) console.log(`[Neura][audio] Epoch ${epoch}/${epochs} ~${(raw * 100).toFixed(1)}%`)
             }
             // finalize with best
             mode.setAccuracy(best)
@@ -469,7 +469,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             osc.connect(gain).connect(ctx.destination)
             osc.start()
             gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6)
-            setTimeout(() => { try { osc.stop(); ctx.close() } catch {} ; setPlayingSampleId(null) }, 700)
+            setTimeout(() => { try { osc.stop(); ctx.close() } catch { }; setPlayingSampleId(null) }, 700)
             showSaved('Preview tone ♪')
         } catch {
             showSaved('Preview unavailable')
@@ -576,7 +576,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
         dragStartRef.current = { id, startX: p.x, startY: p.y, origX: orig.x, origY: orig.y }
         setDraggingId(id)
         if ('pointerId' in e && typeof (e as any).pointerId === 'number') {
-            try { (e.target as HTMLElement).setPointerCapture?.((e as any).pointerId) } catch {}
+            try { (e.target as HTMLElement).setPointerCapture?.((e as any).pointerId) } catch { }
         }
     }
     const zoomIn = () => setZoom(z => Math.min(1.4, +(z + 0.1).toFixed(2)))
@@ -832,7 +832,6 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                     >
                         <span className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-sm">＋</span>
                         Add folder
-                        <span className="text-[11px] font-medium text-violet-600 bg-white px-2 py-0.5 rounded-full border border-violet-200">above Brain</span>
                     </button>
 
                     {mode.project?.classes.length === 0 && (
@@ -852,7 +851,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                             <div className="h-1.5 w-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500" />
                             <div className="h-11 px-4 flex items-center justify-between border-b border-violet-100 bg-gradient-to-r from-violet-50 to-white">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3H9a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M15 3h0a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3V6a3 3 0 00-3-3z"/><path d="M9 11a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3v-2"/><path d="M15 11a3 3 0 013 3v2a3 3 0 01-3 3h0a3 3 0 01-3-3v-2" /></svg></div>
+                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3H9a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V6a3 3 0 013-3z" /><path d="M15 3h0a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3V6a3 3 0 00-3-3z" /><path d="M9 11a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3v-2" /><path d="M15 11a3 3 0 013 3v2a3 3 0 01-3 3h0a3 3 0 01-3-3v-2" /></svg></div>
                                     <div>
                                         <p className="text-[13px] font-semibold text-slate-900 leading-none">Model</p>
                                         <p className="text-[11px] text-slate-500 leading-none mt-0.5">{mode.modelTrained ? `Trained • ${(mode.accuracy! * 100).toFixed(0)}%` : canTrain ? 'Ready to train' : 'Needs data'}</p>
@@ -860,7 +859,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className={`inline-flex h-6 px-2 rounded-full text-[11px] font-medium border ${mode.modelTrained ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : canTrain ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>{mode.modelTrained ? 'Ready' : canTrain ? 'Ready' : 'Needs data'}</span>
-                                    <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="17" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="17" r="1"/></svg></span>
+                                    <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="17" r="1" /><circle cx="15" cy="7" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="17" r="1" /></svg></span>
                                 </div>
                             </div>
                             <div className="p-5 flex flex-col items-center text-center gap-3">
@@ -873,7 +872,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                 <div className="w-full rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 p-3" onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
                                     <div className="flex justify-between text-[11px] font-semibold text-slate-700"><span className="flex items-center gap-1"><span className="w-5 h-5 rounded-md bg-violet-600 text-white flex items-center justify-center text-[10px]">◍</span>Epochs</span><span className="text-violet-700 font-bold bg-white px-2 py-0.5 rounded-full border border-violet-200">{totalEpochs}</span></div>
                                     <input type="range" min={5} max={100} step={5} value={totalEpochs} onChange={e => setTotalEpochs(parseInt(e.target.value))} onInput={e => setTotalEpochs(parseInt((e.target as HTMLInputElement).value))} disabled={isTraining} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} className="w-full mt-3 h-2 accent-violet-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style={{ accentColor: '#7c3aed' }} />
-                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v)}} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
+                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
                                 </div>
                                 {(epochResults.length > 0 || isTraining) && <div className="w-full"><AccuracyChart epochResults={epochResults} isTraining={isTraining} currentEpoch={currentEpoch} /></div>}
                                 {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs font-medium text-red-700">{trainingError}</div>}

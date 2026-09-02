@@ -220,6 +220,37 @@ export class CustomObjectDetector {
         }
     }
 
+    private async createFlippedRegionDataUrl(
+        dataUrl: string,
+        bbox: { x: number; y: number; width: number; height: number }
+    ): Promise<{ dataUrl: string; bbox: { x: number; y: number; width: number; height: number } } | null> {
+        try {
+            const img = new Image()
+            img.src = dataUrl
+            await new Promise<void>((resolve, reject) => {
+                img.onload = () => resolve()
+                img.onerror = () => reject(new Error('Failed to load image'))
+                setTimeout(() => reject(new Error('Image load timeout')), 3000)
+            })
+            if (!img.complete || img.naturalWidth === 0) return null
+            const w = img.naturalWidth
+            const h = img.naturalHeight
+            const canvas = document.createElement('canvas')
+            canvas.width = w
+            canvas.height = h
+            const ctx = canvas.getContext('2d')!
+            ctx.translate(w, 0)
+            ctx.scale(-1, 1)
+            ctx.drawImage(img, 0, 0, w, h)
+            const flippedDataUrl = canvas.toDataURL('image/jpeg', 0.85)
+            // bbox is in % (0-100), mirror x: newX = 100 - (x + width)
+            const flippedBbox = { x: Math.max(0, 100 - (bbox.x + bbox.width)), y: bbox.y, width: bbox.width, height: bbox.height }
+            return { dataUrl: flippedDataUrl, bbox: flippedBbox }
+        } catch {
+            return null
+        }
+    }
+
     async trainFromAnnotations(
         samples: { data: string }[],
         onProgress?: (progress: number, message: string) => void
@@ -228,6 +259,25 @@ export class CustomObjectDetector {
         this.trainingProgress = 0
         this.onProgressCallback = onProgress || null
         this.totalRegionsProcessed = 0
+        // Ensure TF backend is alive before crunching — fixes "backend undefined" after tab sleep / WebGL loss
+        try {
+            const tf = await ensureTf()
+            await tf.ready()
+            if (!tf.getBackend()) {
+                try { await tf.setBackend('webgl'); await tf.ready() } catch {}
+            }
+            if (!tf.getBackend()) {
+                await tf.setBackend('cpu')
+                await tf.ready()
+            }
+        } catch (e) {
+            console.warn('[CustomObjectDetector] TF backend init failed, will try CPU:', e)
+            try {
+                const tf = await ensureTf()
+                await tf.setBackend('cpu')
+                await tf.ready()
+            } catch {}
+        }
 
         this.knn.clear()
 
@@ -269,10 +319,29 @@ export class CustomObjectDetector {
                         this.totalRegionsProcessed++
                     }
                 }
-                this.trainingProgress = Math.floor(((i + batch.length) / allRegions.length) * 100)
+                this.trainingProgress = Math.floor(((i + batch.length) / allRegions.length) * 90)
                 if (this.onProgressCallback) {
                     this.onProgressCallback(this.trainingProgress, `Processing region ${Math.min(i + BATCH_SIZE, allRegions.length)}/${totalRegions}`)
                 }
+                await new Promise(r => setTimeout(r, 0))
+            }
+            // Few-shot augmentation: for classes with <4 regions, add horizontally flipped variants
+            const needsAugment = Object.values(classCounts).some(c => c < 4)
+            if (needsAugment) {
+                for (const region of allRegions) {
+                    const cnt = classCounts[region.label] || 0
+                    if (cnt >= 6) continue
+                    try {
+                        const flipped = await this.createFlippedRegionDataUrl(region.dataUrl, region.bbox)
+                        if (!flipped) continue
+                        const success = await this.addSampleFromDataUrl(flipped.dataUrl, region.label, flipped.bbox)
+                        if (success) {
+                            classCounts[region.label] = (classCounts[region.label] || 0) + 1
+                            this.totalRegionsProcessed++
+                        }
+                    } catch {}
+                }
+                if (this.onProgressCallback) this.onProgressCallback(95, 'Augmenting few-shot classes')
                 await new Promise(r => setTimeout(r, 0))
             }
 
@@ -313,6 +382,17 @@ export class CustomObjectDetector {
 
     async calibrateConfidence(): Promise<void> {
         if (!this.knn.canClassify) return
+        // Ensure TF backend is alive — prevents "backend undefined" after tab sleep
+        try {
+            const tf = await ensureTf()
+            await tf.ready()
+            if (!tf.getBackend()) {
+                try { await tf.setBackend('webgl'); await tf.ready() } catch {}
+            }
+            if (!tf.getBackend()) {
+                await tf.setBackend('cpu'); await tf.ready()
+            }
+        } catch {}
         const counts = this.knn.getSampleCounts()
         const classNames = Object.keys(counts)
         if (classNames.length < 2) return
@@ -323,11 +403,28 @@ export class CustomObjectDetector {
 
         for (const label of classNames) {
             const count = counts[label]
-            for (let i = 0; i < Math.min(count, 5); i++) {
-                const removedData = await this.knn.removeExampleByIndex(label, i)
+            const n = Math.min(count, 5)
+            // Iterate backwards to avoid index-shift skip (see ObjectDetectionTrainer)
+            for (let i = n - 1; i >= 0; i--) {
+                let removedData: Float32Array | null = null
+                try {
+                    removedData = await this.knn.removeExampleByIndex(label, i)
+                } catch (e) {
+                    console.warn('[CustomObjectDetector] calibrate remove failed:', e)
+                    continue
+                }
                 if (!removedData) continue
-                const prediction = await this.knn.predictFromData(removedData, 3)
-                await this.knn.addExampleFromDataArray(Array.from(removedData), label)
+                let prediction: any = null
+                try {
+                    prediction = await this.knn.predictFromData(removedData, 3)
+                } catch (e) {
+                    console.warn('[CustomObjectDetector] calibrate predict failed:', e)
+                }
+                try {
+                    await this.knn.addExampleFromDataArray(Array.from(removedData), label)
+                } catch (e) {
+                    console.warn('[CustomObjectDetector] calibrate re-add failed:', e)
+                }
                 if (!prediction) continue
                 totalSamples++
                 const maxConf = Math.max(...Object.values(prediction.confidences)) as number

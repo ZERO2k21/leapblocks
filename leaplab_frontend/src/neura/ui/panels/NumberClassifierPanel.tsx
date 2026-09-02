@@ -6,6 +6,7 @@ import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import AccuracyChart from '../components/AccuracyChart'
 import NotRelatedModal from '../components/NotRelatedModal'
+import TabularPanel from './TabularPanel'
 
 interface NumberClassifierPanelProps { mode: UseNeuraProjectReturn }
 
@@ -28,6 +29,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const lastPosRef = useRef<{ x: number; y: number } | null>(null)
     const [isDrawing, setIsDrawing] = useState(false)
     const [visionInputMode, setVisionInputMode] = useState<'draw' | 'camera'>('draw')
+    const [ninjaMode, setNinjaMode] = useState<'vision' | 'data'>('vision')
 
     const [isCapturing, setIsCapturing] = useState<string | null>(null)
     const [dragOverClass, setDragOverClass] = useState<string | null>(null)
@@ -313,7 +315,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             return
         }
         if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
-            try { await video.play().catch(() => {}) } catch {}
+            try { await video.play().catch(() => { }) } catch { }
             for (let i = 0; i < 10; i++) {
                 await new Promise(r => setTimeout(r, 100))
                 if (video.videoWidth && video.readyState >= 2) break
@@ -370,7 +372,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                 added++
             }
         }
-        if (added > 0) showSaved(`Added ${added} image${added>1?'s':''} to ${cls.name}`)
+        if (added > 0) showSaved(`Added ${added} image${added > 1 ? 's' : ''} to ${cls.name}`)
     }
     const handleUploadClick = (classId: string) => { pendingUploadClassRef.current = classId; fileInputRef.current?.click() }
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -454,7 +456,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     const fallbackAcc = 0.75
                     mode.setAccuracy(fallbackAcc); mode.setModelTrained(true)
                     setEpochResults([fallbackAcc]); setCurrentEpoch(epochs)
-                    showSaved(`Training complete (fallback) — ${(fallbackAcc*100).toFixed(0)}%`)
+                    showSaved(`Training complete (fallback) — ${(fallbackAcc * 100).toFixed(0)}%`)
                 } catch (e) { setTrainingError('Training failed — model load error. Check internet and reload.') }
                 setIsTraining(false); return
             }
@@ -579,7 +581,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
         dragStartRef.current = { id, startX: p.x, startY: p.y, origX: orig.x, origY: orig.y }
         setDraggingId(id)
         if ('pointerId' in e && typeof (e as any).pointerId === 'number') {
-            try { (e.target as HTMLElement).setPointerCapture?.((e as any).pointerId) } catch {}
+            try { (e.target as HTMLElement).setPointerCapture?.((e as any).pointerId) } catch { }
         }
     }
     const zoomIn = () => setZoom(z => Math.min(1.4, +(z + 0.1).toFixed(2)))
@@ -641,7 +643,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M10 13H8M14 17H8M16 13h-1"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8z" /><path d="M14 2v6h6" /><path d="M10 13H8M14 17H8M16 13h-1" /></svg>
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-[13px] font-semibold text-slate-900 leading-none tracking-tight">Teach Your AI to Read Digits</h1>
@@ -667,6 +669,15 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                 </div>
             </div>
 
+            {/* Ninja Mode Toggle — Vision (draw) vs Data (CSV regression) */}
+            <div className="shrink-0 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-50 via-indigo-50 to-fuchsia-50 border-b border-violet-100">
+                <div className="inline-flex bg-white rounded-full p-1 border border-slate-200 shadow-sm">
+                    <button onClick={() => setNinjaMode('vision')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${ninjaMode==='vision' ? 'bg-slate-900 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}>✏️ Vision · Digits</button>
+                    <button onClick={() => setNinjaMode('data')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${ninjaMode==='data' ? 'bg-violet-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}>📊 Data · Regression</button>
+                </div>
+                <span className="hidden sm:inline text-[10px] text-slate-500 ml-2">{ninjaMode==='vision' ? 'Draw or capture digits (classification)' : 'Upload CSV → train regression → predict numbers'}</span>
+            </div>
+
             {showAddClass && (
                 <div className="absolute top-[56px] left-1/2 -translate-x-1/2 z-30 bg-white rounded-xl shadow-xl border border-slate-200 p-3 flex gap-2 items-center w-[min(420px,95vw)]">
                     <input autoFocus value={newClassName} onChange={e => setNewClassName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAddClass(); if (e.key === 'Escape') setShowAddClass(false) }} placeholder="Folder name e.g. 7 or Seven" className="flex-1 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100" />
@@ -675,7 +686,12 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                 </div>
             )}
 
-            {/* Canvas */}
+            {ninjaMode === 'data' ? (
+                <div className="flex-1 overflow-auto bg-[#F8FAFC] min-h-0">
+                    <TabularPanel mode={mode} />
+                </div>
+            ) : (
+            <>{/* Canvas */}
             <div
                 ref={viewportRef}
                 onMouseDown={handleViewportMouseDown as any}
@@ -804,7 +820,6 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     >
                         <span className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-sm">＋</span>
                         Add folder
-                        <span className="text-[11px] font-medium text-violet-600 bg-white px-2 py-0.5 rounded-full border border-violet-200">above Brain</span>
                     </button>
 
                     {mode.project?.classes.length === 0 && (
@@ -824,7 +839,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             <div className="h-1.5 w-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500" />
                             <div className="h-11 px-4 flex items-center justify-between border-b border-violet-100 bg-gradient-to-r from-violet-50 to-white">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3H9a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M15 3h0a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3V6a3 3 0 00-3-3z"/><path d="M9 11a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3v-2"/><path d="M15 11a3 3 0 013 3v2a3 3 0 01-3 3h0a3 3 0 01-3-3v-2" /></svg></div>
+                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3H9a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V6a3 3 0 013-3z" /><path d="M15 3h0a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3V6a3 3 0 00-3-3z" /><path d="M9 11a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3v-2" /><path d="M15 11a3 3 0 013 3v2a3 3 0 01-3 3h0a3 3 0 01-3-3v-2" /></svg></div>
                                     <div>
                                         <p className="text-[13px] font-semibold text-slate-900 leading-none">Model</p>
                                         <p className="text-[11px] text-slate-500 leading-none mt-0.5">{mode.modelTrained ? `Trained • ${(mode.accuracy! * 100).toFixed(0)}%` : canTrain ? 'Ready to train' : 'Needs data'}</p>
@@ -832,7 +847,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className={`inline-flex h-6 px-2 rounded-full text-[11px] font-medium border ${mode.modelTrained ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : canTrain ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>{mode.modelTrained ? 'Ready' : canTrain ? 'Ready' : 'Needs data'}</span>
-                                    <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="17" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="17" r="1"/></svg></span>
+                                    <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="17" r="1" /><circle cx="15" cy="7" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="17" r="1" /></svg></span>
                                 </div>
                             </div>
                             <div className="p-5 flex flex-col items-center text-center gap-3">
@@ -845,7 +860,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                 <div className="w-full rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 p-3" onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
                                     <div className="flex justify-between text-[11px] font-semibold text-slate-700"><span className="flex items-center gap-1"><span className="w-5 h-5 rounded-md bg-violet-600 text-white flex items-center justify-center text-[10px]">◍</span>Epochs</span><span className="text-violet-700 font-bold bg-white px-2 py-0.5 rounded-full border border-violet-200">{totalEpochs}</span></div>
                                     <input type="range" min={5} max={100} step={5} value={totalEpochs} onChange={e => setTotalEpochs(parseInt(e.target.value))} onInput={e => setTotalEpochs(parseInt((e.target as HTMLInputElement).value))} disabled={isTraining} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} className="w-full mt-3 h-2 accent-violet-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style={{ accentColor: '#7c3aed' }} />
-                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v)}} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
+                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
                                 </div>
                                 {(epochResults.length > 0 || isTraining) && <div className="w-full"><AccuracyChart epochResults={epochResults} isTraining={isTraining} currentEpoch={currentEpoch} /></div>}
                                 {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs font-medium text-red-700">{trainingError}</div>}
@@ -863,7 +878,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col cursor-grab active:cursor-grabbing">
                             <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-white">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 19l7-7a2 2 0 000-3l-1-1a2 2 0 00-3 0l-7 7v4h4z"/><path d="M12 19l-2 2"/><circle cx="12" cy="12" r="3" opacity="0.3" /></svg></div>
+                                    <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 19l7-7a2 2 0 000-3l-1-1a2 2 0 00-3 0l-7 7v4h4z" /><path d="M12 19l-2 2" /><circle cx="12" cy="12" r="3" opacity="0.3" /></svg></div>
                                     <div>
                                         <p className="text-[13px] font-semibold text-slate-900 leading-none">Vision &amp; Draw</p>
                                         <p className="text-[11px] text-slate-500 leading-none mt-0.5">{visionInputMode === 'draw' ? 'Draw a digit to collect or test' : camera.cameraOn ? 'Live • Realtime' : testImage ? 'Static image' : 'Idle'}</p>
@@ -879,33 +894,33 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
 
                             {/* Draw pad — sole input (camera removed per request) */}
                             <div className="mx-3 mt-3" onPointerDown={e => e.stopPropagation()}>
-                                    <div className="rounded-xl overflow-hidden bg-white border border-slate-200 shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)] p-2">
-                                        <canvas
-                                            ref={drawCanvasRef}
-                                            width={360}
-                                            height={360}
-                                            className="w-full aspect-square rounded-lg bg-white touch-none cursor-crosshair border border-slate-100 block"
-                                            onMouseDown={handleDrawStart}
-                                            onMouseMove={handleDrawMove}
-                                            onMouseUp={handleDrawEnd}
-                                            onMouseLeave={handleDrawEnd}
-                                            onTouchStart={handleDrawStart}
-                                            onTouchMove={handleDrawMove}
-                                            onTouchEnd={handleDrawEnd}
-                                        />
-                                        <div className="flex items-center gap-2 mt-2">
-                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); clearCanvas(); setTimeout(initDrawCanvas, 20) }} className="h-8 px-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium hover:bg-red-100">🗑️ Clear</button>
-                                            <span className="text-[11px] text-slate-500 flex-1 text-center truncate">{selectedClass ? `To: ${selectedClass.name}` : 'No folder'}</span>
-                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handlePredictDrawing() }} disabled={isProcessing || modelLoading} className={`h-8 px-3 rounded-lg text-xs font-bold border ${isProcessing ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>{isProcessing ? 'Analyzing…' : '🎯 Predict'}</button>
-                                        </div>
-                                        {selectedClass && (
-                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleCaptureDrawingForClass(selectedClass.id) }} disabled={selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS} className={`mt-2 w-full h-9 rounded-lg text-xs font-bold border flex items-center justify-center gap-1.5 ${selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-600 hover:from-violet-700 hover:to-indigo-700 shadow-sm'}`}>
-                                                ✏️ Save drawing to {selectedClass.name}
-                                            </button>
-                                        )}
+                                <div className="rounded-xl overflow-hidden bg-white border border-slate-200 shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)] p-2">
+                                    <canvas
+                                        ref={drawCanvasRef}
+                                        width={360}
+                                        height={360}
+                                        className="w-full aspect-square rounded-lg bg-white touch-none cursor-crosshair border border-slate-100 block"
+                                        onMouseDown={handleDrawStart}
+                                        onMouseMove={handleDrawMove}
+                                        onMouseUp={handleDrawEnd}
+                                        onMouseLeave={handleDrawEnd}
+                                        onTouchStart={handleDrawStart}
+                                        onTouchMove={handleDrawMove}
+                                        onTouchEnd={handleDrawEnd}
+                                    />
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); clearCanvas(); setTimeout(initDrawCanvas, 20) }} className="h-8 px-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium hover:bg-red-100">🗑️ Clear</button>
+                                        <span className="text-[11px] text-slate-500 flex-1 text-center truncate">{selectedClass ? `To: ${selectedClass.name}` : 'No folder'}</span>
+                                        <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handlePredictDrawing() }} disabled={isProcessing || modelLoading} className={`h-8 px-3 rounded-lg text-xs font-bold border ${isProcessing ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>{isProcessing ? 'Analyzing…' : '🎯 Predict'}</button>
                                     </div>
-                                    <p className="text-[11px] text-slate-500 text-center mt-1.5">Draw a digit (0-9) in the center with bold strokes</p>
+                                    {selectedClass && (
+                                        <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleCaptureDrawingForClass(selectedClass.id) }} disabled={selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS} className={`mt-2 w-full h-9 rounded-lg text-xs font-bold border flex items-center justify-center gap-1.5 ${selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-600 hover:from-violet-700 hover:to-indigo-700 shadow-sm'}`}>
+                                            ✏️ Save drawing to {selectedClass.name}
+                                        </button>
+                                    )}
                                 </div>
+                                <p className="text-[11px] text-slate-500 text-center mt-1.5">Draw a digit (0-9) in the center with bold strokes</p>
+                            </div>
 
                             {testImage && (
                                 <div className="mx-3 mt-2 relative rounded-xl overflow-hidden bg-black border border-slate-800" onPointerDown={e => e.stopPropagation()}>
@@ -950,6 +965,8 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             </div>
 
             <NotRelatedModal isOpen={showNotRelated} onClose={() => setShowNotRelated(false)} onUpload={() => testFileInputRef.current?.click()} />
+            </>
+            )}
         </div>
     )
 }

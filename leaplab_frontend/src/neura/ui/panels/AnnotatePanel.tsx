@@ -36,6 +36,7 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
     const [editingLabel, setEditingLabel] = useState('')
     const [isAutoDetecting, setIsAutoDetecting] = useState(false)
     const [showBoxList, setShowBoxList] = useState(true)
+    const [showLabels, setShowLabels] = useState(true)
     const [isDragging, setIsDragging] = useState(false)
     const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
@@ -96,6 +97,11 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
     const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file || !file.type.startsWith('image/')) return
+        if (!mode.selectedClassId) {
+            setSavedMessage('Create a class first, then upload')
+            setTimeout(() => setSavedMessage(null), 2000)
+            return
+        }
         const dataUrl = await new Promise<string>((resolve) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result as string); reader.readAsDataURL(file) })
         const img = new Image(); img.src = dataUrl
         await new Promise<void>((resolve) => {
@@ -104,10 +110,27 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
             setTimeout(() => resolve(), 5000)
         })
         if (!img.complete || img.naturalWidth === 0) return
-        setAnnotationImage(dataUrl); setImageSize({ width: img.naturalWidth, height: img.naturalHeight })
-        mode.addAnnotation({ imageUrl: dataUrl, boxes: [], imageName: file.name })
+        // Resize for storage
+        const maxDim = 640
+        const scale = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight, 1)
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.floor(img.naturalWidth * scale)
+        canvas.height = Math.floor(img.naturalHeight * scale)
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+        const resizedUrl = canvas.toDataURL('image/jpeg', 0.7)
+        const annotatedData = JSON.stringify({ imageUrl: resizedUrl, boxes: [], imageName: file.name })
+        const ok = mode.addSample(mode.selectedClassId, { type: 'image', data: annotatedData })
+        if (ok) {
+            // Switch to new image index
+            const newCount = (mode.getSelectedClass()?.samples.length || 0) + 1
+            setCurrentImageIndex(Math.max(0, newCount - 1))
+            setAnnotationImage(resizedUrl)
+            setImageSize({ width: canvas.width, height: canvas.height })
+            setSavedMessage(`Added to ${mode.getSelectedClass()?.name} — draw a box!`)
+            setTimeout(() => setSavedMessage(null), 2000)
+        }
         if (fileInputRef.current) fileInputRef.current.value = ''
-    }, [mode])
+    }, [mode, currentImageIndex])
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault()
@@ -127,6 +150,11 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
         setIsDragging(false)
         const file = e.dataTransfer.files?.[0]
         if (!file || !file.type.startsWith('image/')) return
+        if (!mode.selectedClassId) {
+            setSavedMessage('Create a class first')
+            setTimeout(() => setSavedMessage(null), 2000)
+            return
+        }
         const dataUrl = await new Promise<string>((resolve) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result as string); reader.readAsDataURL(file) })
         const img = new Image(); img.src = dataUrl
         await new Promise<void>((resolve) => {
@@ -135,8 +163,72 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
             setTimeout(() => resolve(), 5000)
         })
         if (!img.complete || img.naturalWidth === 0) return
-        setAnnotationImage(dataUrl); setImageSize({ width: img.naturalWidth, height: img.naturalHeight })
-        mode.addAnnotation({ imageUrl: dataUrl, boxes: [], imageName: file.name })
+        const maxDim = 640
+        const scale = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight, 1)
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.floor(img.naturalWidth * scale)
+        canvas.height = Math.floor(img.naturalHeight * scale)
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+        const resizedUrl = canvas.toDataURL('image/jpeg', 0.7)
+        const annotatedData = JSON.stringify({ imageUrl: resizedUrl, boxes: [], imageName: file.name })
+        const ok = mode.addSample(mode.selectedClassId, { type: 'image', data: annotatedData })
+        if (ok) {
+            const newCount = (mode.getSelectedClass()?.samples.length || 0) + 1
+            setCurrentImageIndex(Math.max(0, newCount - 1))
+            setAnnotationImage(resizedUrl)
+            setImageSize({ width: canvas.width, height: canvas.height })
+        }
+    }, [mode])
+
+    // Paste image from clipboard (Ctrl+V) — no download needed
+    useEffect(() => {
+        const handlePaste = async (e: ClipboardEvent) => {
+            const active = document.activeElement as HTMLElement | null
+            if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return
+            const items = e.clipboardData?.items
+            if (!items) return
+            const imageFiles: File[] = []
+            for (let i = 0; i < items.length; i++) {
+                const it = items[i]
+                if (it.kind === 'file' && it.type.startsWith('image/')) {
+                    const f = it.getAsFile()
+                    if (f) imageFiles.push(f)
+                }
+            }
+            if (imageFiles.length === 0 && e.clipboardData?.files?.length) {
+                for (let i = 0; i < e.clipboardData.files.length; i++) {
+                    const f = e.clipboardData.files[i]
+                    if (f.type.startsWith('image/')) imageFiles.push(f)
+                }
+            }
+            if (imageFiles.length === 0) return
+            if (!mode.selectedClassId) { setSavedMessage('Create/select a class first, then paste (Ctrl+V)'); setTimeout(() => setSavedMessage(null), 2000); return }
+            e.preventDefault()
+            const file = imageFiles[0]
+            const dataUrl = await new Promise<string>(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result as string); r.readAsDataURL(file) })
+            const img = new Image(); img.src = dataUrl
+            await new Promise<void>(resolve => { img.onload = () => resolve(); img.onerror = () => resolve(); setTimeout(() => resolve(), 5000) })
+            if (!img.complete || img.naturalWidth === 0) return
+            const maxDim = 640
+            const scale = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight, 1)
+            const canvas = document.createElement('canvas')
+            canvas.width = Math.floor(img.naturalWidth * scale)
+            canvas.height = Math.floor(img.naturalHeight * scale)
+            canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+            const resizedUrl = canvas.toDataURL('image/jpeg', 0.7)
+            const annotatedData = JSON.stringify({ imageUrl: resizedUrl, boxes: [], imageName: file.name || `pasted_${Date.now()}.jpg` })
+            const ok = mode.addSample(mode.selectedClassId, { type: 'image', data: annotatedData })
+            if (ok) {
+                const newCount = (mode.getSelectedClass()?.samples.length || 0) + 1
+                setCurrentImageIndex(Math.max(0, newCount - 1))
+                setAnnotationImage(resizedUrl)
+                setImageSize({ width: canvas.width, height: canvas.height })
+                setSavedMessage(`📋 Pasted to ${mode.getSelectedClass()?.name} — draw a box!`)
+                setTimeout(() => setSavedMessage(null), 2000)
+            }
+        }
+        window.addEventListener('paste', handlePaste as any)
+        return () => window.removeEventListener('paste', handlePaste as any)
     }, [mode])
 
     useEffect(() => {
@@ -352,6 +444,7 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
             }
             if (e.key === 'Delete' || e.key === 'Backspace') { if (mode.selectedBoxId) { saveUndoState(); mode.removeBox(mode.selectedBoxId) } }
             if (e.key === 'b' || e.key === 'B') mode.setActiveTool('box')
+            if (e.key.toLowerCase() === 'l') setShowLabels(v => !v)
             if (e.key === 'Escape') mode.setSelectedBoxId(null)
             if (e.ctrlKey && e.key === 'z') { e.preventDefault(); handleUndo() }
             if (e.ctrlKey && e.key === 'y') { e.preventDefault(); handleRedo() }
@@ -362,14 +455,29 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
 
     const handleSave = useCallback(() => {
         if (!annotationImage || !mode.selectedClassId || !mode.currentAnnotation?.id) return
+        const boxes = mode.currentAnnotation?.boxes || []
+        if (boxes.length === 0) {
+            setSavedMessage('⚠️ Draw at least one box before saving — empty images cannot be used for training')
+            setTimeout(() => setSavedMessage(null), 2500)
+            return
+        }
+        // validate each box label matches a class
+        const validNames = new Set((mode.project?.classes || []).map(c => c.name.toLowerCase()))
+        for (const b of boxes) {
+            if (!validNames.has(b.label.toLowerCase())) {
+                setSavedMessage(`⚠️ Box "${b.label}" must match a folder name`)
+                setTimeout(() => setSavedMessage(null), 2500)
+                return
+            }
+        }
         const annotationData = JSON.stringify({
             imageUrl: annotationImage,
-            boxes: mode.currentAnnotation?.boxes || [],
+            boxes,
             imageName: mode.currentAnnotation?.imageName || 'annotated'
         })
         mode.updateSample(mode.selectedClassId, mode.currentAnnotation.id, { type: 'image', data: annotationData })
         const className = mode.getSelectedClass()?.name || 'class'
-        setSavedMessage(`✅ Saved ${mode.currentAnnotation?.boxes.length || 0} boxes to ${className}!`)
+        setSavedMessage(`✅ Saved ${boxes.length} box${boxes.length!==1?'es':''} to ${className}!`)
         setTimeout(() => setSavedMessage(null), 2000)
     }, [annotationImage, mode])
 
@@ -483,6 +591,8 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                             <button onClick={handleAutoDetect} disabled={isAutoDetecting || !annotationImage} className={`p-2 rounded-lg text-sm border-none cursor-pointer ${isAutoDetecting ? 'bg-amber-500 text-white' : 'bg-transparent text-[#4a4455]'} ${!annotationImage ? 'opacity-40' : 'opacity-100'}`}>🤖</button>
                             <div className="w-full h-px bg-gray-200 my-1" />
                             <button onClick={() => mode.setActiveTool('delete')} className={`p-2 rounded-lg text-sm border-none cursor-pointer ${mode.activeTool === 'delete' ? 'bg-red-700 text-white' : 'bg-transparent text-[#4a4455]'}`}>🗑️</button>
+                            <div className="w-full h-px bg-gray-200 my-1" />
+                            <button onClick={() => setShowLabels(v => !v)} className={`p-2 rounded-lg text-[11px] font-bold border-none cursor-pointer ${showLabels ? 'bg-violet-600 text-white' : 'bg-transparent text-[#4a4455]'}`} title="Toggle labels (L)">🏷️</button>
                         </div>
 
                         {/* Box count / Timer */}
@@ -518,33 +628,48 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                                             <>
                                                 <span className="text-5xl block mb-3">🖼️</span>
                                                 <p className="text-base font-bold text-[#4a4455] mb-1.5">Upload a picture to start labeling!</p>
-                                                <p className="text-xs text-gray-400 mb-2">or use camera from Collect step</p>
-                                                <p className="text-xs text-gray-400 mb-4">Drag & drop an image here</p>
+                                                <p className="text-xs text-gray-400 mb-2">or paste (Ctrl+V) • no download needed!</p>
+                                                <p className="text-xs text-gray-400 mb-4">Drag & drop or <span className="font-bold text-violet-600">Ctrl+V</span> to paste copied image</p>
                                                 <button onClick={() => fileInputRef.current?.click()} className="py-3 px-6 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-sm font-bold border-none cursor-pointer">📂 Upload Picture</button>
+                                                <p className="text-[11px] text-violet-500 mt-3 font-medium">💡 Copy any image (right-click → Copy image) then Ctrl+V here</p>
                                             </>
                                         )}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Bounding boxes */}
-                            {mode.currentAnnotation?.boxes.map((box) => (
-                                <div key={box.id} className="absolute border-2 cursor-move" style={{ left: `${box.x}%`, top: `${box.y}%`, width: `${box.width}%`, height: `${box.height}%`, borderColor: box.color, backgroundColor: `${box.color}1a`, zIndex: mode.selectedBoxId === box.id ? 10 : 1 }} onMouseDown={(e) => handleBoxMouseDown(e, box.id)} onDoubleClick={() => handleStartEditLabel(box.id, box.label)}>
+                            {/* Bounding boxes — compact labels that don't hide image */}
+                            {mode.currentAnnotation?.boxes.map((box) => {
+                                const isSelected = mode.selectedBoxId === box.id
+                                const showThisLabel = showLabels || isSelected || editingBoxId === box.id
+                                const nearTop = box.y < 6
+                                return (
+                                <div key={box.id} className="absolute cursor-move" style={{ left: `${box.x}%`, top: `${box.y}%`, width: `${box.width}%`, height: `${box.height}%`, borderColor: box.color, backgroundColor: isSelected ? `${box.color}14` : `${box.color}0D`, borderWidth: isSelected ? 2 : 1.5, zIndex: isSelected ? 10 : 1, borderStyle: 'solid' }} onMouseDown={(e) => handleBoxMouseDown(e, box.id)} onDoubleClick={() => handleStartEditLabel(box.id, box.label)}>
                                     {editingBoxId === box.id ? (
-                                        <input ref={labelInputRef} value={editingLabel} onChange={(e) => setEditingLabel(e.target.value)} onBlur={handleSaveLabel} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLabel(); if (e.key === 'Escape') { setEditingBoxId(null); setEditingLabel('') } }} className="absolute -top-6 left-0 py-1 px-2 text-[11px] font-bold text-white border-2 border-white rounded-md min-w-[60px] outline-none z-30" style={{ background: box.color }} onClick={(e) => e.stopPropagation()} />
+                                        <input ref={labelInputRef} value={editingLabel} onChange={(e) => setEditingLabel(e.target.value)} onBlur={handleSaveLabel} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLabel(); if (e.key === 'Escape') { setEditingBoxId(null); setEditingLabel('') } }} className="absolute left-0 py-1 px-2 text-[11px] font-bold text-white border border-white rounded-md min-w-[60px] outline-none z-30 shadow-md" style={{ background: box.color, top: nearTop ? '2px' : '-28px' }} onClick={(e) => e.stopPropagation()} />
+                                    ) : showThisLabel ? (
+                                        <div
+                                            className={`absolute left-0 px-1.5 py-0.5 rounded text-[9px] font-bold text-white whitespace-nowrap shadow-sm flex items-center gap-1 cursor-text max-w-[90%] truncate ${isSelected ? 'ring-1 ring-white/50' : 'opacity-85'}`}
+                                            style={{ background: box.color, top: nearTop ? '1px' : '-1px', transform: nearTop ? 'none' : 'translateY(-100%)', marginTop: nearTop ? 0 : '-2px' }}
+                                            onDoubleClick={(e) => { e.stopPropagation(); handleStartEditLabel(box.id, box.label) }}
+                                            title={`${box.label} — double-click to edit`}
+                                        >
+                                            <span className="truncate max-w-[80px]">{box.label}</span>
+                                            {isSelected && <span className="opacity-60 text-[8px]">✎</span>}
+                                        </div>
                                     ) : (
-                                        <div className="absolute -top-5.5 left-0 py-0.75 px-2 text-[11px] font-bold text-white rounded-t-md whitespace-nowrap cursor-text z-20" style={{ background: box.color }} onDoubleClick={(e) => { e.stopPropagation(); handleStartEditLabel(box.id, box.label) }}>{box.label}</div>
+                                        <div className="absolute top-0.5 left-0.5 w-1.5 h-1.5 rounded-full shadow-sm" style={{ background: box.color }} />
                                     )}
-                                    {mode.selectedBoxId === box.id && (
+                                    {isSelected && (
                                         <>
-                                            <div className="absolute -top-1.25 -left-1.25 w-2.5 h-2.5 bg-white border-2 cursor-nw-resize z-30" style={{ borderColor: box.color }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'nw')} />
-                                            <div className="absolute -top-1.25 -right-1.25 w-2.5 h-2.5 bg-white border-2 cursor-ne-resize z-30" style={{ borderColor: box.color }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'ne')} />
-                                            <div className="absolute -bottom-1.25 -left-1.25 w-2.5 h-2.5 bg-white border-2 cursor-sw-resize z-30" style={{ borderColor: box.color }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'sw')} />
-                                            <div className="absolute -bottom-1.25 -right-1.25 w-2.5 h-2.5 bg-white border-2 cursor-se-resize z-30" style={{ borderColor: box.color }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'se')} />
+                                            <div className="absolute -top-1 -left-1 w-2.5 h-2.5 bg-white border rounded-sm cursor-nw-resize shadow-sm" style={{ borderColor: box.color, borderWidth: 1.5 }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'nw')} />
+                                            <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-white border rounded-sm cursor-ne-resize shadow-sm" style={{ borderColor: box.color, borderWidth: 1.5 }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'ne')} />
+                                            <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 bg-white border rounded-sm cursor-sw-resize shadow-sm" style={{ borderColor: box.color, borderWidth: 1.5 }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'sw')} />
+                                            <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-white border rounded-sm cursor-se-resize shadow-sm" style={{ borderColor: box.color, borderWidth: 1.5 }} onMouseDown={(e) => handleResizeMouseDown(e, box.id, 'se')} />
                                         </>
                                     )}
                                 </div>
-                            ))}
+                            )})}
 
                             {previewBox && previewBox.width > 0.5 && previewBox.height > 0.5 && (
                                 <div className="absolute border-2 border-dashed border-[#630ed4] bg-[#630ed4]/10 pointer-events-none z-10" style={{ left: `${previewBox.x}%`, top: `${previewBox.y}%`, width: `${previewBox.width}%`, height: `${previewBox.height}%` }} />
@@ -622,6 +747,7 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                             <span className="text-xs text-[#4a4455]">• Drag boxes to move them</span>
                             <span className="text-xs text-[#4a4455]">• Use corners to resize</span>
                             <span className="text-xs text-[#4a4455]">• Press <kbd className="py-0.5 px-1.5 bg-[#f5f3ff] rounded text-[11px]">B</kbd> for box tool</span>
+                            <span className="text-xs text-[#4a4455]">• Press <kbd className="py-0.5 px-1.5 bg-[#f5f3ff] rounded text-[11px]">L</kbd> to hide/show labels</span>
                             <span className="text-xs text-[#4a4455]">• Press <kbd className="py-0.5 px-1.5 bg-[#f5f3ff] rounded text-[11px]">DEL</kbd> to remove</span>
                             <span className="text-xs text-[#4a4455]">• Press <kbd className="py-0.5 px-1.5 bg-[#f5f3ff] rounded text-[11px]">Ctrl+Z</kbd> to undo</span>
                         </div>

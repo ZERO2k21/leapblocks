@@ -102,7 +102,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
             if (updated) {
                 classifierRef.current.clearClass(old.name)
                 if (updated.samples.length > 0) {
-                    try { await classifierRef.current.addSampleBatch(updated.samples.map(s => s.data), trimmed) } catch {}
+                    try { await classifierRef.current.addSampleBatch(updated.samples.map(s => s.data), trimmed) } catch { }
                 }
             }
         }, 50)
@@ -124,7 +124,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
         const targetName = selectedClass?.name || mode.project?.classes.find(c => c.id === mode.selectedClassId)?.name || ''
         const ok = mode.addSample(mode.selectedClassId, { type: 'text', data: textInput.trim() })
         if (!ok) { showSaved('Folder full (20 max)'); return }
-        classifierRef.current.addSample(textInput.trim(), targetName).catch(() => {})
+        classifierRef.current.addSample(textInput.trim(), targetName).catch(() => { })
         setTextInput('')
         showSaved(`Added to ${targetName || 'folder'}`)
     }, [textInput, mode, showSaved])
@@ -138,7 +138,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
         const ok = mode.addSample(classId, { type: 'text', data: txt })
         if (!ok) { showSaved('Folder full (20 max)'); return }
         setSampleInputs(prev => ({ ...prev, [classId]: '' }))
-        try { await classifierRef.current.addSample(txt, cls.name) } catch {}
+        try { await classifierRef.current.addSample(txt, cls.name) } catch { }
         showSaved(`Added to ${cls.name}`)
     }, [mode, sampleInputs, showSaved])
 
@@ -175,7 +175,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
             const datas = (current?.samples || []).map(s => s.data)
             classifierRef.current.clearClass(c.name)
             if (datas.length > 0) {
-                try { await classifierRef.current.addSampleBatch(datas, c.name) } catch {}
+                try { await classifierRef.current.addSampleBatch(datas, c.name) } catch { }
             }
         }, 300)
         showSaved('Text removed')
@@ -201,7 +201,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                 trainData.push({ cls: cls.name, samples: shuffled.slice(0, splitIdx).map(s => s.data) })
                 for (const s of shuffled.slice(splitIdx)) testData.push({ text: s.data, label: cls.name })
             }
-            console.log('[Neura][text][split] summary', { trainData: trainData.map(t=>({cls:t.cls, n:t.samples.length})), test: testData.length })
+            console.log('[Neura][text][split] summary', { trainData: trainData.map(t => ({ cls: t.cls, n: t.samples.length })), test: testData.length })
             if (trainData.every(t => t.samples.length === 0) || testData.length === 0) {
                 mode.setAccuracy(0); setModelLoading(false); setIsTraining(false);
                 const msg = 'Not enough test texts — add more samples'; setTrainingError(msg); showSaved(`⚠️ ${msg}`); return
@@ -214,7 +214,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                 const evalClassifier = new TextClassifier()
                 for (const pt of trainData) {
                     const numToAdd = Math.max(1, Math.ceil(progress * pt.samples.length)); const batch = pt.samples.slice(0, numToAdd)
-                    if (batch.length > 0) try { await evalClassifier.addSampleBatch(batch, pt.cls) } catch {}
+                    if (batch.length > 0) try { await evalClassifier.addSampleBatch(batch, pt.cls) } catch { }
                 }
                 let correct = 0, total = 0
                 const perTestLog: string[] = []
@@ -224,8 +224,8 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                     const isCorrect = result && result.label === item.label
                     if (isCorrect) correct++
                     total++
-                    const shouldLog = epoch===1 || epoch===epochs || !isCorrect
-                    if (shouldLog) perTestLog.push(`${item.label}→${predicted}${isCorrect?'✓':'✗'} conf=${result ? Object.entries(result.confidences).map(([k,v])=>(k+':'+(v*100).toFixed(0)+'%')).join(',') : 'null'}`)
+                    const shouldLog = epoch === 1 || epoch === epochs || !isCorrect
+                    if (shouldLog) perTestLog.push(`${item.label}→${predicted}${isCorrect ? '✓' : '✗'} conf=${result ? Object.entries(result.confidences).map(([k, v]) => (k + ':' + (v * 100).toFixed(0) + '%')).join(',') : 'null'}`)
                 } catch { total++; perTestLog.push(`${item.label}→error`) }
                 evalClassifier.dispose(); const rawAccuracy = total > 0 ? correct / total : 0; epochResultsLocal.push(rawAccuracy); if (rawAccuracy > bestAccuracy) bestAccuracy = rawAccuracy
                 if (epoch % 5 === 0 || epoch === epochs) {
@@ -237,7 +237,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
             // rebuild main classifier with full data for live inference
             classifierRef.current.clear()
             for (const cls of project.classes) if (cls.samples.length > 0) {
-                try { await classifierRef.current.addSampleBatch(cls.samples.map(s => s.data), cls.name) } catch {}
+                try { await classifierRef.current.addSampleBatch(cls.samples.map(s => s.data), cls.name) } catch { }
             }
             mode.setAccuracy(bestAccuracy); mode.setModelTrained(true); showSaved(`Training complete — ${(bestAccuracy * 100).toFixed(0)}% accuracy`); console.log(`[Neura][text] Training done — best ${(bestAccuracy * 100).toFixed(1)}% over ${epochs} epochs`, { bestAccuracy, epochResults: epochResultsLocal })
         } catch (err) { mode.setAccuracy(0); setTrainingError('Training failed. Please try again.'); console.error('[Neura][text] Training failed', err) }
@@ -338,7 +338,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
         dragStartRef.current = { id, startX: p.x, startY: p.y, origX: orig.x, origY: orig.y }
         setDraggingId(id)
         if ('pointerId' in e && typeof (e as any).pointerId === 'number') {
-            try { (e.target as HTMLElement).setPointerCapture?.((e as any).pointerId) } catch {}
+            try { (e.target as HTMLElement).setPointerCapture?.((e as any).pointerId) } catch { }
         }
     }
     const zoomIn = () => setZoom(z => Math.min(1.4, +(z + 0.1).toFixed(2)))
@@ -542,7 +542,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                             </>
                                         ) : (
                                             <div className="flex-1 flex flex-col items-center justify-center gap-2 py-4 text-center">
-                                                <div className="w-12 h-12 rounded-xl border flex items-center justify-center bg-slate-50 border-slate-200 text-slate-400"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M10 13H8"/><path d="M16 17H8"/><path d="M13 13h1"/></svg></div>
+                                                <div className="w-12 h-12 rounded-xl border flex items-center justify-center bg-slate-50 border-slate-200 text-slate-400"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /><path d="M10 13H8" /><path d="M16 17H8" /><path d="M13 13h1" /></svg></div>
                                                 <div>
                                                     <p className="text-xs font-medium text-slate-700">No texts yet</p>
                                                     <p className="text-[11px] text-slate-500">Type above and Add</p>
@@ -568,7 +568,6 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                     >
                         <span className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-sm">＋</span>
                         Add folder
-                        <span className="text-[11px] font-medium text-violet-600 bg-white px-2 py-0.5 rounded-full border border-violet-200">above Brain</span>
                     </button>
 
                     {mode.project?.classes.length === 0 && (
@@ -588,7 +587,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                             <div className="h-1.5 w-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500" />
                             <div className="h-11 px-4 flex items-center justify-between border-b border-violet-100 bg-gradient-to-r from-violet-50 to-white">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3H9a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M15 3h0a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3V6a3 3 0 00-3-3z"/><path d="M9 11a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3v-2"/><path d="M15 11a3 3 0 013 3v2a3 3 0 01-3 3h0a3 3 0 01-3-3v-2" /></svg></div>
+                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3H9a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V6a3 3 0 013-3z" /><path d="M15 3h0a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3V6a3 3 0 00-3-3z" /><path d="M9 11a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3v-2" /><path d="M15 11a3 3 0 013 3v2a3 3 0 01-3 3h0a3 3 0 01-3-3v-2" /></svg></div>
                                     <div>
                                         <p className="text-[13px] font-semibold text-slate-900 leading-none">Model</p>
                                         <p className="text-[11px] text-slate-500 leading-none mt-0.5">{mode.modelTrained ? `Trained • ${(mode.accuracy! * 100).toFixed(0)}%` : canTrain ? 'Ready to train' : 'Needs data'}</p>
@@ -596,7 +595,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className={`inline-flex h-6 px-2 rounded-full text-[11px] font-medium border ${mode.modelTrained ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : canTrain ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>{mode.modelTrained ? 'Ready' : canTrain ? 'Ready' : 'Needs data'}</span>
-                                    <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="17" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="17" r="1"/></svg></span>
+                                    <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="17" r="1" /><circle cx="15" cy="7" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="17" r="1" /></svg></span>
                                 </div>
                             </div>
                             <div className="p-5 flex flex-col items-center text-center gap-3">
@@ -609,7 +608,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                 <div className="w-full rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 p-3" onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
                                     <div className="flex justify-between text-[11px] font-semibold text-slate-700"><span className="flex items-center gap-1"><span className="w-5 h-5 rounded-md bg-violet-600 text-white flex items-center justify-center text-[10px]">◍</span>Epochs</span><span className="text-violet-700 font-bold bg-white px-2 py-0.5 rounded-full border border-violet-200">{totalEpochs}</span></div>
                                     <input type="range" min={5} max={100} step={5} value={totalEpochs} onChange={e => setTotalEpochs(parseInt(e.target.value))} onInput={e => setTotalEpochs(parseInt((e.target as HTMLInputElement).value))} disabled={isTraining} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} className="w-full mt-3 h-2 accent-violet-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style={{ accentColor: '#7c3aed' }} />
-                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v)}} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
+                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
                                 </div>
                                 {(epochResults.length > 0 || isTraining) && <div className="w-full"><AccuracyChart epochResults={epochResults} isTraining={isTraining} currentEpoch={currentEpoch} /></div>}
                                 {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs font-medium text-red-700">{trainingError}</div>}
@@ -627,7 +626,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col cursor-grab active:cursor-grabbing">
                             <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-white">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></div>
+                                    <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /><path d="M10 9H8" /></svg></div>
                                     <div>
                                         <p className="text-[13px] font-semibold text-slate-900 leading-none">Test</p>
                                         <p className="text-[11px] text-slate-500 leading-none mt-0.5">{isProcessing ? 'Analyzing…' : prediction ? 'Live • Prediction ready' : 'Idle • Type to test'}</p>

@@ -175,7 +175,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         }
         // ensure video is playing and has dimensions
         if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
-            try { await video.play().catch(() => {}) } catch {}
+            try { await video.play().catch(() => { }) } catch { }
             // wait a bit more
             for (let i = 0; i < 10; i++) {
                 await new Promise(r => setTimeout(r, 100))
@@ -235,7 +235,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 added++
             }
         }
-        if (added > 0) showSaved(`Added ${added} image${added>1?'s':''} to ${cls.name}`)
+        if (added > 0) showSaved(`Added ${added} image${added > 1 ? 's' : ''} to ${cls.name}`)
     }
     const handleUploadClick = (classId: string) => { pendingUploadClassRef.current = classId; fileInputRef.current?.click() }
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -245,6 +245,35 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         await processFilesForClass(files, targetId)
         if (fileInputRef.current) fileInputRef.current.value = ''; pendingUploadClassRef.current = null
     }
+    // Pasted images from clipboard (Ctrl+V) — no download needed
+    useEffect(() => {
+        const handlePaste = async (e: ClipboardEvent) => {
+            const active = document.activeElement as HTMLElement | null
+            if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return
+            const items = e.clipboardData?.items
+            if (!items) return
+            const imageFiles: File[] = []
+            for (let i = 0; i < items.length; i++) {
+                const it = items[i]
+                if (it.kind === 'file' && it.type.startsWith('image/')) {
+                    const f = it.getAsFile(); if (f) imageFiles.push(f)
+                }
+            }
+            if (imageFiles.length === 0 && e.clipboardData?.files?.length) {
+                for (let i = 0; i < e.clipboardData.files.length; i++) {
+                    const f = e.clipboardData.files[i]
+                    if (f.type.startsWith('image/')) imageFiles.push(f)
+                }
+            }
+            if (imageFiles.length === 0) return
+            e.preventDefault()
+            const targetId = pendingUploadClassRef.current || mode.selectedClassId || mode.project?.classes[0]?.id
+            if (!targetId) { showSaved('Create a folder first, then paste (Ctrl+V)'); return }
+            await processFilesForClass(imageFiles, targetId)
+        }
+        window.addEventListener('paste', handlePaste as any)
+        return () => window.removeEventListener('paste', handlePaste as any)
+    }, [mode.selectedClassId, mode.project?.classes])
     const handleTestUpload = async (e: React.ChangeEvent<HTMLInputElement> | FileList | File[]) => {
         let file: File | null = null
         if (e instanceof FileList) file = e[0] || null
@@ -304,7 +333,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 trainData.push({ cls: cls.name, samples: shuffled.slice(0, splitIdx) })
                 for (const sample of shuffled.slice(splitIdx)) testDataUrls.push({ dataUrl: sample.data, label: cls.name })
             }
-            console.log('[Neura][split] summary', { trainData: trainData.map(t=>({cls:t.cls, n:t.samples.length})), test: testDataUrls.length, testLabels: testDataUrls.map(t=>t.label) })
+            console.log('[Neura][split] summary', { trainData: trainData.map(t => ({ cls: t.cls, n: t.samples.length })), test: testDataUrls.length, testLabels: testDataUrls.map(t => t.label) })
             if (trainData.every(t => t.samples.length === 0) || testDataUrls.length === 0) { mode.setAccuracy(0); setModelLoading(false); setIsTraining(false); const msg = 'Not enough test images — add more samples'; setTrainingError(msg); showSaved(`⚠️ ${msg}`); console.warn('[Neura] Train aborted:', msg, { trainData, testDataUrls }); return }
             const precomputedTrain: { cls: string; embeddings: Float32Array[] }[] = []
             for (const td of trainData) if (td.samples.length > 0) {
@@ -321,15 +350,15 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             }
             console.log('[Neura] Precompute done', { train: precomputedTrain.map(t => ({ cls: t.cls, n: t.embeddings.length })), test: precomputedTest.length })
             // Diagnostic: check embedding stats for first train/test to catch double-normalization bug
-            if (precomputedTrain.length >0 && precomputedTrain[0].embeddings.length>0) {
-                const e = precomputedTrain[0].embeddings[0]; const mean = e.reduce((s,v)=>s+v,0)/e.length; const variance = e.reduce((s,v)=>s+(v-mean)**2,0)/e.length; console.log('[Neura][embed diag] train0 mean', mean.toFixed(4), 'var', variance.toFixed(4), 'len', e.length, 'first5', Array.from(e.slice(0,5)).map(v=>v.toFixed(3)))
+            if (precomputedTrain.length > 0 && precomputedTrain[0].embeddings.length > 0) {
+                const e = precomputedTrain[0].embeddings[0]; const mean = e.reduce((s, v) => s + v, 0) / e.length; const variance = e.reduce((s, v) => s + (v - mean) ** 2, 0) / e.length; console.log('[Neura][embed diag] train0 mean', mean.toFixed(4), 'var', variance.toFixed(4), 'len', e.length, 'first5', Array.from(e.slice(0, 5)).map(v => v.toFixed(3)))
             }
-            if (precomputedTest.length>0) {
-                const e = precomputedTest[0].embedding; const mean = e.reduce((s,v)=>s+v,0)/e.length; const variance = e.reduce((s,v)=>s+(v-mean)**2,0)/e.length; console.log('[Neura][embed diag] test0 mean', mean.toFixed(4), 'var', variance.toFixed(4), 'len', e.length, 'label', precomputedTest[0].label)
+            if (precomputedTest.length > 0) {
+                const e = precomputedTest[0].embedding; const mean = e.reduce((s, v) => s + v, 0) / e.length; const variance = e.reduce((s, v) => s + (v - mean) ** 2, 0) / e.length; console.log('[Neura][embed diag] test0 mean', mean.toFixed(4), 'var', variance.toFixed(4), 'len', e.length, 'label', precomputedTest[0].label)
             }
             setModelLoading(false)
             if (precomputedTrain.every(t => t.embeddings.length === 0) || precomputedTest.length === 0) {
-                console.warn('[Neura] Precompute failed — embeddings empty', { precomputedTrain, precomputedTestLen: precomputedTest.length, trainDataLen: trainData.map(t=>t.samples.length), testUrls: testDataUrls.length })
+                console.warn('[Neura] Precompute failed — embeddings empty', { precomputedTrain, precomputedTestLen: precomputedTest.length, trainDataLen: trainData.map(t => t.samples.length), testUrls: testDataUrls.length })
                 // fallback: still build model so user isn't blocked — estimate accuracy
                 // try direct rebuild instead of aborting
                 try {
@@ -338,7 +367,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     const fallbackAcc = 0.75
                     mode.setAccuracy(fallbackAcc); mode.setModelTrained(true)
                     setEpochResults([fallbackAcc]); setCurrentEpoch(epochs)
-                    showSaved(`Training complete (fallback) — ${(fallbackAcc*100).toFixed(0)}%`)
+                    showSaved(`Training complete (fallback) — ${(fallbackAcc * 100).toFixed(0)}%`)
                     console.log('[Neura] Fallback training done')
                 } catch (e) { console.error('[Neura] Fallback failed', e); setTrainingError('Training failed — model load error. Check internet and reload.') }
                 setIsTraining(false); return
@@ -361,9 +390,9 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     if (isCorrect) correct++
                     total++
                     // keep per-test detail for first, last, and any misclassified to pinpoint weak samples
-                    const shouldLog = epoch===1 || epoch===epochs || !isCorrect
+                    const shouldLog = epoch === 1 || epoch === epochs || !isCorrect
                     if (shouldLog) {
-                        perTestLog.push(`${item.label}→${predicted}${isCorrect?'✓':'✗'} conf=${result ? Object.entries(result.confidences).map(([k,v])=>(k+':'+(v*100).toFixed(0)+'%')).join(',') : 'null'} sim=${result?.similarity?.toFixed(3) ?? 'null'}`)
+                        perTestLog.push(`${item.label}→${predicted}${isCorrect ? '✓' : '✗'} conf=${result ? Object.entries(result.confidences).map(([k, v]) => (k + ':' + (v * 100).toFixed(0) + '%')).join(',') : 'null'} sim=${result?.similarity?.toFixed(3) ?? 'null'}`)
                     }
                 } catch (e) { total++; perTestLog.push(`${item.label}→error`) }
                 evalClassifier.dispose(); const rawAccuracy = total > 0 ? correct / total : 0; epochResultsLocal.push(rawAccuracy); if (rawAccuracy > bestAccuracy) bestAccuracy = rawAccuracy
@@ -481,7 +510,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
         setDraggingId(id)
         // setPointerCapture only for PointerEvents with a valid pointerId
         if ('pointerId' in e && typeof (e as any).pointerId === 'number') {
-            try { (e.target as HTMLElement).setPointerCapture?.((e as any).pointerId) } catch {}
+            try { (e.target as HTMLElement).setPointerCapture?.((e as any).pointerId) } catch { }
         }
     }
     const zoomIn = () => setZoom(z => Math.min(1.4, +(z + 0.1).toFixed(2)))
@@ -686,10 +715,10 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                                 <div className={`w-12 h-12 rounded-xl border flex items-center justify-center ${isDragOver ? 'bg-violet-50 border-violet-200 text-violet-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M12 5v14M5 12h14" /></svg></div>
                                                 <div className="text-center">
                                                     <p className="text-xs font-medium text-slate-700">No images yet</p>
-                                                    <p className="text-[11px] text-slate-500">Drop multiple images or use +</p>
+                                                    <p className="text-[11px] text-slate-500">Drop, Browse or Paste (Ctrl+V)</p>
                                                 </div>
                                                 <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} className="h-8 px-4 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold shadow-sm hover:from-violet-700 hover:to-indigo-700">＋ Add images</button>
-                                                <p className="text-[10px] text-slate-400">PNG, JPG • Multi-select supported</p>
+                                                <p className="text-[10px] text-slate-400">PNG, JPG • Multi-select • or Ctrl+V to paste</p>
                                             </div>
                                         )}
                                         <div className="flex gap-2 pt-2 border-t border-slate-100 mt-auto">
@@ -712,7 +741,6 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                     >
                         <span className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-sm">＋</span>
                         Add folder
-                        <span className="text-[11px] font-medium text-violet-600 bg-white px-2 py-0.5 rounded-full border border-violet-200">above Brain</span>
                     </button>
 
                     {mode.project?.classes.length === 0 && (
@@ -732,7 +760,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                             <div className="h-1.5 w-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500" />
                             <div className="h-11 px-4 flex items-center justify-between border-b border-violet-100 bg-gradient-to-r from-violet-50 to-white">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3H9a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M15 3h0a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3V6a3 3 0 00-3-3z"/><path d="M9 11a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3v-2"/><path d="M15 11a3 3 0 013 3v2a3 3 0 01-3 3h0a3 3 0 01-3-3v-2" /></svg></div>
+                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3H9a3 3 0 013 3v2a3 3 0 01-3 3H9a3 3 0 01-3-3V6a3 3 0 013-3z" /><path d="M15 3h0a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3V6a3 3 0 00-3-3z" /><path d="M9 11a3 3 0 00-3 3v2a3 3 0 003 3h0a3 3 0 003-3v-2" /><path d="M15 11a3 3 0 013 3v2a3 3 0 01-3 3h0a3 3 0 01-3-3v-2" /></svg></div>
                                     <div>
                                         <p className="text-[13px] font-semibold text-slate-900 leading-none">Model</p>
                                         <p className="text-[11px] text-slate-500 leading-none mt-0.5">{mode.modelTrained ? `Trained • ${(mode.accuracy! * 100).toFixed(0)}%` : canTrain ? 'Ready to train' : 'Needs data'}</p>
@@ -740,7 +768,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className={`inline-flex h-6 px-2 rounded-full text-[11px] font-medium border ${mode.modelTrained ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : canTrain ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>{mode.modelTrained ? 'Ready' : canTrain ? 'Ready' : 'Needs data'}</span>
-                                    <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="17" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="17" r="1"/></svg></span>
+                                    <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="9" cy="7" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="17" r="1" /><circle cx="15" cy="7" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="17" r="1" /></svg></span>
                                 </div>
                             </div>
                             <div className="p-5 flex flex-col items-center text-center gap-3">
@@ -753,7 +781,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                 <div className="w-full rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 p-3" onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
                                     <div className="flex justify-between text-[11px] font-semibold text-slate-700"><span className="flex items-center gap-1"><span className="w-5 h-5 rounded-md bg-violet-600 text-white flex items-center justify-center text-[10px]">◍</span>Epochs</span><span className="text-violet-700 font-bold bg-white px-2 py-0.5 rounded-full border border-violet-200">{totalEpochs}</span></div>
                                     <input type="range" min={5} max={100} step={5} value={totalEpochs} onChange={e => setTotalEpochs(parseInt(e.target.value))} onInput={e => setTotalEpochs(parseInt((e.target as HTMLInputElement).value))} disabled={isTraining} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} className="w-full mt-3 h-2 accent-violet-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style={{ accentColor: '#7c3aed' }} />
-                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v)}} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
+                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
                                 </div>
                                 {(epochResults.length > 0 || isTraining) && <div className="w-full"><AccuracyChart epochResults={epochResults} isTraining={isTraining} currentEpoch={currentEpoch} /></div>}
                                 {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs font-medium text-red-700">{trainingError}</div>}
@@ -771,7 +799,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col cursor-grab active:cursor-grabbing">
                             <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-white">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3" /></svg></div>
+                                    <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" /></svg></div>
                                     <div>
                                         <p className="text-[13px] font-semibold text-slate-900 leading-none">Live preview</p>
                                         <p className="text-[11px] text-slate-500 leading-none mt-0.5">{camera.cameraOn ? 'Live • Realtime' : testImage ? 'Static image' : 'Idle'}</p>
@@ -800,7 +828,7 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                                 )}
                                 {!camera.cameraOn && !testImage && (
                                     <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center relative z-10">
-                                        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${isTestDragging ? 'bg-white text-slate-900 border-white' : 'bg-white/10 border-white/20 text-white/80'}`}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+                                        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${isTestDragging ? 'bg-white text-slate-900 border-white' : 'bg-white/10 border-white/20 text-white/80'}`}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg></div>
                                         <p className="text-sm font-medium text-white">{isTestDragging ? 'Drop image to test' : 'No input'}</p>
                                         <p className="text-xs text-white/60 max-w-[220px]">Turn on camera for realtime or drop an image</p>
                                         <div className="flex gap-2"><button onPointerDown={e => e.stopPropagation()} onClick={camera.startCamera} className="h-8 px-3 rounded-lg bg-white text-slate-900 text-xs font-medium">Enable camera</button><button onPointerDown={e => e.stopPropagation()} onClick={() => testFileInputRef.current?.click()} className="h-8 px-3 rounded-lg bg-white/10 border border-white/20 text-white text-xs font-medium">Upload</button></div>

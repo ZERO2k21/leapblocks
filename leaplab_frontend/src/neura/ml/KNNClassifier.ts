@@ -186,7 +186,16 @@ export class KNNClassifier {
     getSampleCounts(): Record<string, number> {
         const out: Record<string, number> = {}
         for (const [k, v] of Object.entries(this.examples)) {
-            out[k] = (v as any).shape[0]
+            try {
+                // Guard against disposed tensors (bug #disposed) — treat as 0
+                if ((v as any).isDisposed) {
+                    out[k] = 0
+                    continue
+                }
+                out[k] = (v as any).shape[0]
+            } catch {
+                out[k] = 0
+            }
         }
         return out
     }
@@ -237,10 +246,17 @@ export class KNNClassifier {
     async removeExampleByIndex(label: string, index: number): Promise<Float32Array | null> {
         const tf = await ensureTf()
         const examples = this.examples[label]
-        if (!examples || examples.shape[0] <= index) return null
+        if (!examples || (examples as any).isDisposed) return null
+        try {
+            if (examples.shape[0] <= index) return null
+        } catch {
+            return null
+        }
 
-        // Extract the row data before removing
-        const rowData = await examples.slice([index, 0], [1, -1]).data() as Float32Array
+        // Extract the row data before removing — dispose slice after .data()
+        const sliceForData = examples.slice([index, 0], [1, -1])
+        const rowData = await sliceForData.data() as Float32Array
+        sliceForData.dispose()
         const embedding = Array.from(rowData)
 
         // Remove the row by concatenating slices before and after
@@ -250,19 +266,26 @@ export class KNNClassifier {
         const hasAfter = after.shape[0] > 0
 
         if (hasBefore && hasAfter) {
-            this.examples[label] = tf.concat([before, after], 0)
+            const concatenated = tf.concat([before, after], 0)
+            this.examples[label] = concatenated
+            before.dispose()
+            after.dispose()
+            examples.dispose()
         } else if (hasBefore) {
             this.examples[label] = before
+            after.dispose()
+            examples.dispose()
         } else if (hasAfter) {
             this.examples[label] = after
+            before.dispose()
+            examples.dispose()
         } else {
             // Only one example existed, now empty
-            this.examples[label].dispose()
+            before.dispose()
+            after.dispose()
+            examples.dispose()
             delete this.examples[label]
         }
-
-        before.dispose()
-        after.dispose()
 
         return new Float32Array(embedding)
     }

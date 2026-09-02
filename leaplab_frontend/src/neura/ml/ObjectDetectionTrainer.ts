@@ -59,6 +59,70 @@ export class ObjectDetectionTrainer {
         this.state.isTraining = true
         this.notifyListeners()
 
+        // Pre-validate: single Dataset + palette OR multi-folder — count per BOX label, not per folder
+        let annotatedImages = 0
+        let totalBoxes = 0
+        const validClassNames = new Set(project.classes.map(c => c.name.toLowerCase()))
+        const labelToImageCount: Record<string, number> = {}
+        const labelToBoxCount: Record<string, number> = {}
+
+        for (const cls of project.classes) {
+            for (const sample of cls.samples) {
+                if (sample.type !== 'image') continue
+                try {
+                    const parsed = JSON.parse(sample.data)
+                    if (parsed && Array.isArray(parsed.boxes) && parsed.boxes.length > 0) {
+                        const validBoxes = parsed.boxes.filter((b: any) => b.label && validClassNames.has(String(b.label).toLowerCase()) && b.width > 1 && b.height > 1)
+                        if (validBoxes.length > 0) {
+                            annotatedImages++
+                            totalBoxes += validBoxes.length
+                            const seenInImage = new Set<string>()
+                            for (const b of validBoxes) {
+                                const low = String(b.label).toLowerCase()
+                                labelToBoxCount[low] = (labelToBoxCount[low] || 0) + 1
+                                if (!seenInImage.has(low)) {
+                                    seenInImage.add(low)
+                                    labelToImageCount[low] = (labelToImageCount[low] || 0) + 1
+                                }
+                            }
+                        }
+                    }
+                } catch {}
+            }
+        }
+
+        if (annotatedImages === 0) {
+            console.warn('[ObjectDetectionTrainer] No annotated images — training blocked')
+            this.state.isTraining = false
+            this.state.isComplete = false
+            this.notifyListeners()
+            return false
+        }
+        const distinctLabels = Object.keys(labelToBoxCount)
+        if (distinctLabels.length < 2) {
+            console.warn(`[ObjectDetectionTrainer] Need 2 distinct labels, have ${distinctLabels.length} —`, distinctLabels)
+            this.state.isTraining = false
+            this.state.isComplete = false
+            this.notifyListeners()
+            return false
+        }
+        for (const low of distinctLabels) {
+            const imgCount = labelToImageCount[low] || 0
+            if (imgCount < 2) {
+                const pretty = project.classes.find(c => c.name.toLowerCase() === low)?.name || low
+                console.warn(`[ObjectDetectionTrainer] Label "${pretty}" needs 2 images, has ${imgCount}`)
+                this.state.isTraining = false
+                this.state.isComplete = false
+                this.notifyListeners()
+                return false
+            }
+        }
+        if (totalBoxes < distinctLabels.length * 2) {
+            this.state.isTraining = false
+            this.notifyListeners()
+            return false
+        }
+
         const allSamples: { data: string }[] = []
         for (const cls of project.classes) {
             for (const sample of cls.samples) {
@@ -74,26 +138,44 @@ export class ObjectDetectionTrainer {
             return false
         }
 
-        const result = await this.detector.trainFromAnnotations(
-            allSamples,
-            (progress) => {
-                if (this.trainingAborted) return
-                this.state.progress = Math.floor(progress * 100)
-                this.notifyListeners()
-            }
-        )
+        let result: any
+        try {
+            result = await this.detector.trainFromAnnotations(
+                allSamples,
+                (progress) => {
+                    if (this.trainingAborted) return
+                    this.state.progress = Math.floor(progress * 100)
+                    this.notifyListeners()
+                }
+            )
+        } catch (e: any) {
+            const msg = String(e?.message || e || '')
+            const isBackend = msg.includes('backend') || String(e?.stack || '').includes('backend') || msg.includes('moveData')
+            console.warn('[ObjectDetectionTrainer] trainFromAnnotations threw, treating as failed:', e)
+            this.state.isTraining = false
+            this.state.isComplete = false
+            this.state.progress = 0
+            this.notifyListeners()
+            // surface a backend hint for the panel to show friendly message
+            if (isBackend) throw new Error('backend: ' + msg)
+            return false
+        }
 
         if (this.trainingAborted) return false
 
-        if (!result.success) {
+        if (!result || !result.success) {
             this.state.isTraining = false
-            this.state.isComplete = true
-            this.state.progress = 100
+            this.state.isComplete = false
+            this.state.progress = 0
             this.notifyListeners()
             return false
         }
 
-        await this.detector.calibrateConfidence()
+        try {
+            await this.detector.calibrateConfidence()
+        } catch (e) {
+            console.warn('[ObjectDetectionTrainer] calibrateConfidence failed (backend busy), continuing without calibration:', e)
+        }
 
         this.state.metrics = {
             totalRegions: result.totalRegions,
@@ -149,6 +231,18 @@ export class ObjectDetectionTrainer {
         overallAccuracy: number
         classMetrics: { name: string; tp: number; fp: number; fn: number; precision: number; recall: number; f1: number; sampleCount: number }[]
     }> {
+        // Ensure TF backend ready before heavy LOO (same as train)
+        try {
+            const { ensureTf } = await import('./loadScript')
+            const tf = await ensureTf()
+            await tf.ready()
+            if (!tf.getBackend()) {
+                try { await tf.setBackend('webgl'); await tf.ready() } catch {}
+            }
+            if (!tf.getBackend()) {
+                await tf.setBackend('cpu'); await tf.ready()
+            }
+        } catch {}
         const knn = this.detector.getKNN()
         const counts = knn.getSampleCounts()
         const classNames = Object.keys(counts)
@@ -162,15 +256,32 @@ export class ObjectDetectionTrainer {
 
         for (const label of classNames) {
             const count = counts[label]
-            for (let i = 0; i < count; i++) {
+            // Iterate backwards — forward iteration with remove+append-at-end
+            // shifts indices and skips samples (e.g. removing 0 then appending
+            // makes original index 1 move to 0). Backwards avoids the skip.
+            for (let i = count - 1; i >= 0; i--) {
                 const removedData = await knn.removeExampleByIndex(label, i)
                 if (!removedData) continue
 
-                const prediction = await knn.predictFromData(removedData, 3)
+                let prediction: any = null
+                try {
+                    prediction = await knn.predictFromData(removedData, 3)
+                } catch (e) {
+                    console.warn('[ObjectDetectionTrainer] LOO predict failed:', e)
+                }
 
-                await knn.addExampleFromDataArray(Array.from(removedData), label)
+                try {
+                    await knn.addExampleFromDataArray(Array.from(removedData), label)
+                } catch (e) {
+                    console.warn('[ObjectDetectionTrainer] LOO re-add failed:', e)
+                }
 
-                if (!prediction) continue
+                if (!prediction) {
+                    // Count as evaluated sample but incorrect (no prediction = miss)
+                    totalSamples++
+                    classConfusion[label].fn++
+                    continue
+                }
 
                 totalSamples++
                 if (prediction.label === label) {

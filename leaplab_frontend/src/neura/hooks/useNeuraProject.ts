@@ -37,6 +37,14 @@ export interface UseNeuraProjectReturn {
     resetProject: () => void
     getSelectedClass: () => ClassData | undefined
     getTotalSamples: () => number
+    parseSample: (data: string) => { imageUrl: string; boxes: BoundingBox[]; imageName?: string } | null
+    isSampleAnnotated: (sample: Sample) => boolean
+    getAnnotatedSampleCount: () => number
+    getUnannotatedSampleCount: () => number
+    getTotalAnnotatedRegions: () => number
+    getPerClassAnnotatedCounts: () => Record<string, number>
+    getPerClassRegionCounts: () => Record<string, number>
+    canTrainObjectDetection: () => { ok: boolean; reason: string }
     loadProject: (project: NeuraProject) => void
     // Annotation state
     annotations: Annotation[]
@@ -269,6 +277,132 @@ export function useNeuraProject(
         return project.classes.reduce((total, c) => total + c.samples.length, 0)
     }, [project])
 
+    // Helpers for object-detection annotation validation
+    const parseSample = useCallback((data: string): { imageUrl: string; boxes: BoundingBox[]; imageName?: string } | null => {
+        try {
+            const parsed = JSON.parse(data)
+            if (parsed && typeof parsed.imageUrl === 'string' && parsed.imageUrl) {
+                return { imageUrl: parsed.imageUrl, boxes: Array.isArray(parsed.boxes) ? parsed.boxes : [], imageName: parsed.imageName }
+            }
+            if (parsed && typeof parsed.data === 'string' && parsed.data) {
+                // legacy wrap
+                return { imageUrl: parsed.data, boxes: [], imageName: parsed.imageName }
+            }
+        } catch {}
+        if (data && data.startsWith('data:image')) {
+            return { imageUrl: data, boxes: [], imageName: 'image' }
+        }
+        return null
+    }, [])
+
+    const isSampleAnnotated = useCallback((sample: Sample): boolean => {
+        const parsed = parseSample(sample.data)
+        return !!parsed && parsed.boxes.length > 0
+    }, [parseSample])
+
+    const getAnnotatedSampleCount = useCallback((): number => {
+        if (!project) return 0
+        let count = 0
+        for (const cls of project.classes) {
+            for (const s of cls.samples) if (isSampleAnnotated(s)) count++
+        }
+        return count
+    }, [project, isSampleAnnotated])
+
+    const getUnannotatedSampleCount = useCallback((): number => {
+        if (!project) return 0
+        return getTotalSamples() - getAnnotatedSampleCount()
+    }, [project, getTotalSamples, getAnnotatedSampleCount])
+
+    const getTotalAnnotatedRegions = useCallback((): number => {
+        if (!project) return 0
+        let total = 0
+        for (const cls of project.classes) {
+            for (const s of cls.samples) {
+                const p = parseSample(s.data)
+                if (p) total += p.boxes.length
+            }
+        }
+        return total
+    }, [project, parseSample])
+
+    const getPerClassAnnotatedCounts = useCallback((): Record<string, number> => {
+        if (!project) return {}
+        const out: Record<string, number> = {}
+        for (const cls of project.classes) {
+            let c = 0
+            for (const s of cls.samples) if (isSampleAnnotated(s)) c++
+            out[cls.id] = c
+        }
+        return out
+    }, [project, isSampleAnnotated])
+
+    const getPerClassRegionCounts = useCallback((): Record<string, number> => {
+        if (!project) return {}
+        const out: Record<string, number> = {}
+        for (const cls of project.classes) {
+            let c = 0
+            for (const s of cls.samples) {
+                const p = parseSample(s.data)
+                if (p) c += p.boxes.length
+            }
+            out[cls.id] = c
+        }
+        return out
+    }, [project, parseSample])
+
+    const canTrainObjectDetection = useCallback((): { ok: boolean; reason: string } => {
+        if (!project) return { ok: false, reason: 'No project' }
+        // Collect box-label stats across all images (true object-detection dataset)
+        const labelToImageCount: Record<string, number> = {}
+        const labelToBoxCount: Record<string, number> = {}
+        const validClassNames = new Set(project.classes.map(c => c.name.toLowerCase()))
+        let totalBoxes = 0
+        for (const cls of project.classes) {
+            for (const s of cls.samples) {
+                const p = parseSample(s.data)
+                if (!p || p.boxes.length === 0) continue
+                const seenInThisImage = new Set<string>()
+                for (const b of p.boxes) {
+                    if (!b.label || b.width < 1 || b.height < 1) return { ok: false, reason: `Invalid box in "${cls.name}" — fix before training` }
+                    const low = b.label.toLowerCase()
+                    if (!validClassNames.has(low)) return { ok: false, reason: `Box label "${b.label}" is not a folder name — create a folder for it or fix the label` }
+                    totalBoxes++
+                    labelToBoxCount[low] = (labelToBoxCount[low] || 0) + 1
+                    if (!seenInThisImage.has(low)) {
+                        seenInThisImage.add(low)
+                        labelToImageCount[low] = (labelToImageCount[low] || 0) + 1
+                    }
+                }
+            }
+        }
+        const distinctLabels = Object.keys(labelToBoxCount)
+        // Support both patterns:
+        //  - Classic: 2+ folders, each with its own images (per-folder count)
+        //  - Mixed: 1 folder with boxes of many labels (per-label count)
+        if (distinctLabels.length < 2) {
+            if (project.classes.length < 2) return { ok: false, reason: 'Add at least 2 classes (folders)' }
+            // fall back to per-folder check for legacy
+            const perClassAnnotated = getPerClassAnnotatedCounts()
+            for (const cls of project.classes) {
+                const n = perClassAnnotated[cls.id] || 0
+                if (n < 2) return { ok: false, reason: `Class "${cls.name}" needs at least 2 annotated images (${n}/2)` }
+            }
+            if (distinctLabels.length < 2) return { ok: false, reason: `Need at least 2 object types with boxes — currently only "${distinctLabels[0] || 'none'}" has boxes` }
+        }
+        // Each distinct label needs at least 2 images containing it (few-shot threshold)
+        for (const low of distinctLabels) {
+            const imgCount = labelToImageCount[low] || 0
+            if (imgCount < 2) {
+                const pretty = project.classes.find(c => c.name.toLowerCase() === low)?.name || low
+                return { ok: false, reason: `Label "${pretty}" needs at least 2 annotated images (${imgCount}/2) — draw boxes for it in 2+ images (can be in any folder)` }
+            }
+        }
+        const minBoxes = distinctLabels.length * 2
+        if (totalBoxes < minBoxes) return { ok: false, reason: `Need at least ${minBoxes} boxes total (${distinctLabels.length} labels ×2), have ${totalBoxes}` }
+        return { ok: true, reason: 'Ready' }
+    }, [project, getPerClassAnnotatedCounts, parseSample])
+
     const loadProject = useCallback((importedProject: NeuraProject) => {
         setProject(importedProject)
         setAccuracy(importedProject.accuracy ?? null)
@@ -409,6 +543,14 @@ export function useNeuraProject(
         resetProject,
         getSelectedClass,
         getTotalSamples,
+        parseSample,
+        isSampleAnnotated,
+        getAnnotatedSampleCount,
+        getUnannotatedSampleCount,
+        getTotalAnnotatedRegions,
+        getPerClassAnnotatedCounts,
+        getPerClassRegionCounts,
+        canTrainObjectDetection,
         loadProject,
         // Annotation state
         annotations,
