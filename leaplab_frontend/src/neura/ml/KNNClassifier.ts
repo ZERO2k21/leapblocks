@@ -130,6 +130,7 @@ export class KNNClassifier {
         emb.dispose()
 
         if (maxSimilarity < this.minSimilarityThreshold) {
+            console.log(`[KNN] outlier rejected maxSim=${maxSimilarity.toFixed(3)} < TH=${this.minSimilarityThreshold} labels=${labels.join(',')}`)
             return null
         }
 
@@ -161,10 +162,12 @@ export class KNNClassifier {
         }
 
         const winner = labels.reduce((a, b) => confidences[a] > confidences[b] ? a : b)
+        console.log(`[KNN] k=${effectiveK} maxSim=${maxSimilarity.toFixed(3)} maxCos=${maxCosine.toFixed(3)} weighted=`, weightedScores, 'conf=', Object.fromEntries(Object.entries(confidences).map(([k,v])=>[k,(v as number).toFixed(3)])), `winner=${winner}`)
 
         return { label: winner, confidences, similarity: maxCosine }
         } catch (err) {
             // TF.js backend corruption (e.g. WebGL context loss) — return null instead of crashing
+            console.warn('[KNN] predictClass error', err)
             return null
         }
     }

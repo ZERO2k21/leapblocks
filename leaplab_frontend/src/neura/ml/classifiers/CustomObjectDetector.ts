@@ -55,11 +55,18 @@ export class CustomObjectDetector {
     private totalRegionsProcessed = 0
     private onProgressCallback: ((progress: number, message: string) => void) | null = null
 
-    private readonly COCO_CONFIDENCE_THRESHOLD = 0.05
-    private readonly KNN_CONFIDENCE_THRESHOLD = 0.15
-    private readonly NMS_IOU_THRESHOLD = 0.4
-    private readonly SLIDING_WINDOW_MIN_PROPOSALS = 3
+    // Balanced for accuracy vs recall — previous 0.05/0.15 over-detected (16 boxes), 0.4/0.52 under-detected (0)
+    // 0.30/0.38 gives 2-4 boxes on 2-object image with current 0.20 outlier, validated via logs
+    private readonly COCO_CONFIDENCE_THRESHOLD = 0.3
+    private readonly KNN_CONFIDENCE_THRESHOLD = 0.38
+    private readonly NMS_IOU_THRESHOLD = 0.45
+    private readonly SLIDING_WINDOW_MIN_PROPOSALS = 2
     private readonly MOBILENET_FALLBACK_URL = 'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v2_1.0_224/model.json'
+
+    constructor() {
+        // Outlier 0.20 rejects pure grass but keeps cat/dog at ~0.3-0.6; KNN 0.38 filters low conf
+        this.knn.setOutlierThreshold(0.20)
+    }
 
     private async ensureModels() {
         if (!this.mobilenetModel) {
@@ -107,13 +114,53 @@ export class CustomObjectDetector {
         if (!tensor) return null
         const embedding = mobilenet.infer(tensor, true)
         tensor.dispose()
-        const normalized = tf.tidy(() => {
+        const normalizedMobileNet = tf.tidy(() => {
             const norm = tf.norm(embedding)
             return tf.div(embedding, tf.maximum(norm, 1e-10))
         })
         embedding.dispose()
-        await new Promise(r => setTimeout(r, 0))
-        return normalized
+
+        // Add shape features for very accurate — same as ImageClassifier (0.48 weight)
+        // Helps separate cat vs dog where MobileNet alone gives 0.99 cosine on grass background
+        try {
+            const { extractShapeFeatures, normalizeShapeFeatures } = await import('../utils/shapeFeatures')
+            // Create cropped canvas for shape
+            const cropCanvas = document.createElement('canvas')
+            const cw = Math.max(1, Math.floor(cropW)), ch = Math.max(1, Math.floor(cropH))
+            cropCanvas.width = cw; cropCanvas.height = ch
+            const cctx = cropCanvas.getContext('2d')!
+            // Draw the cropped region (need source dimensions)
+            const srcW = (source as any).videoWidth || (source as any).width || (source as any).naturalWidth || cw
+            const srcH = (source as any).videoHeight || (source as any).height || (source as any).naturalHeight || ch
+            // Use source canvas if already a canvas with correct size
+            if (source instanceof HTMLCanvasElement && source.width === srcW && source.height === srcH) {
+                cctx.drawImage(source, cropX, cropY, cropW, cropH, 0, 0, cw, ch)
+            } else {
+                // For image/video, draw full then crop via drawImage
+                cctx.drawImage(source as CanvasImageSource, cropX, cropY, cropW, cropH, 0, 0, cw, ch)
+            }
+            const shapeRaw = extractShapeFeatures(cropCanvas as any)
+            const shapeNorm = normalizeShapeFeatures(shapeRaw)
+            const SHAPE_WEIGHT = 0.48
+            let shapeTensor: any = tf.tensor1d(Array.from(shapeNorm))
+            const weighted = tf.tidy(() => tf.mul(shapeTensor, SHAPE_WEIGHT))
+            shapeTensor.dispose()
+            shapeTensor = weighted
+            const combined = tf.tidy(() => {
+                const flat = normalizedMobileNet.reshape([normalizedMobileNet.size])
+                const cat = tf.concat([flat, shapeTensor])
+                const n = tf.norm(cat)
+                return tf.div(cat, tf.maximum(n, 1e-10))
+            })
+            normalizedMobileNet.dispose()
+            shapeTensor.dispose()
+            await new Promise(r => setTimeout(r, 0))
+            return combined
+        } catch (e) {
+            console.warn('[CustomObjectDetector] shape fallback', e)
+            await new Promise(r => setTimeout(r, 0))
+            return normalizedMobileNet
+        }
     }
 
     private async extractFullEmbedding(
@@ -280,6 +327,7 @@ export class CustomObjectDetector {
         }
 
         this.knn.clear()
+        console.log('[CustomObjectDetector] trainFromAnnotations start', { samples: samples.length, knnCleared: true })
 
         let totalRegions = 0
         const classCounts: Record<string, number> = {}
@@ -309,28 +357,33 @@ export class CustomObjectDetector {
                 return { success: false, totalRegions: 0, classCounts: {} }
             }
 
+            console.log('[CustomObjectDetector] collected regions', { totalRegions: allRegions.length, perLabel: allRegions.reduce((a, r) => { a[r.label] = (a[r.label] || 0) + 1; return a }, {} as Record<string, number>) })
             const BATCH_SIZE = 5
             for (let i = 0; i < allRegions.length; i += BATCH_SIZE) {
                 const batch = allRegions.slice(i, i + BATCH_SIZE)
                 for (const region of batch) {
                     const success = await this.addSampleFromDataUrl(region.dataUrl, region.label, region.bbox)
+                    console.log(`[CustomObjectDetector] addSample ${region.label} bbox=${JSON.stringify(region.bbox)} → ${success ? 'OK' : 'FAIL'}`)
                     if (success) {
                         classCounts[region.label] = (classCounts[region.label] || 0) + 1
                         this.totalRegionsProcessed++
                     }
                 }
                 this.trainingProgress = Math.floor(((i + batch.length) / allRegions.length) * 90)
+                console.log(`[CustomObjectDetector] progress ${this.trainingProgress}% ${Math.min(i + BATCH_SIZE, allRegions.length)}/${totalRegions} classCounts=`, classCounts)
                 if (this.onProgressCallback) {
                     this.onProgressCallback(this.trainingProgress, `Processing region ${Math.min(i + BATCH_SIZE, allRegions.length)}/${totalRegions}`)
                 }
                 await new Promise(r => setTimeout(r, 0))
             }
-            // Few-shot augmentation: for classes with <4 regions, add horizontally flipped variants
-            const needsAugment = Object.values(classCounts).some(c => c < 4)
-            if (needsAugment) {
+            // Augmentation for very accurate — always double dataset with horizontal flip
+            // Previous "<4" threshold missed the 31% case (13 regions/class, no augment). Flipping doubles
+            // effective samples and helps LOO generalize on grass/lattice backgrounds.
+            const shouldAugment = Object.values(classCounts).some(c => c < 10) || allRegions.length < 30
+            if (shouldAugment) {
                 for (const region of allRegions) {
                     const cnt = classCounts[region.label] || 0
-                    if (cnt >= 6) continue
+                    if (cnt >= 20) continue
                     try {
                         const flipped = await this.createFlippedRegionDataUrl(region.dataUrl, region.bbox)
                         if (!flipped) continue
@@ -341,12 +394,13 @@ export class CustomObjectDetector {
                         }
                     } catch {}
                 }
-                if (this.onProgressCallback) this.onProgressCallback(95, 'Augmenting few-shot classes')
+                if (this.onProgressCallback) this.onProgressCallback(95, 'Augmenting — flipped variants')
                 await new Promise(r => setTimeout(r, 0))
             }
 
             this.trainingProgress = 100
             this.isTraining = false
+            console.log('[CustomObjectDetector] train done', { totalRegions, classCounts, canClassify: this.knn.canClassify, knnCounts: this.knn.getSampleCounts() })
             return { success: this.knn.canClassify, totalRegions, classCounts }
         } catch (err) {
             console.error('[CustomObjectDetector] Training failed:', err)
@@ -361,8 +415,8 @@ export class CustomObjectDetector {
         const proposals: { x: number; y: number; width: number; height: number }[] = []
         const shortSide = Math.min(imageWidth, imageHeight)
         const scales = [0.35, 0.55, 0.8]
-        const strides = [0.55, 0.45, 0.35]
-        const maxWindows = 30
+        const strides = [0.6, 0.5, 0.4]
+        const maxWindows = 20
 
         for (let si = 0; si < scales.length; si++) {
             if (proposals.length >= maxWindows) break
@@ -416,7 +470,7 @@ export class CustomObjectDetector {
                 if (!removedData) continue
                 let prediction: any = null
                 try {
-                    prediction = await this.knn.predictFromData(removedData, 3)
+                    prediction = await this.knn.predictFromData(removedData, 5)
                 } catch (e) {
                     console.warn('[CustomObjectDetector] calibrate predict failed:', e)
                 }
@@ -436,6 +490,12 @@ export class CustomObjectDetector {
         if (totalSamples > 0) {
             const avgConf = totalConf / totalSamples
             const accuracy = totalCorrect / totalSamples
+            // Only calibrate when reasonably accurate — low 31% case would otherwise
+            // push confidences down and make 0.52 threshold reject true cats.
+            if (accuracy < 0.55) {
+                console.log('[CustomObjectDetector] calibrate skipped — low accuracy', accuracy.toFixed(2))
+                return
+            }
             const scaleA = accuracy > 0 ? Math.min(2.0, accuracy / Math.max(avgConf, 0.01)) : 0.5
             const scaleB = Math.log(Math.max(accuracy / Math.max(1 - accuracy, 0.01), 0.01))
             this.knn.calibrateConfidence(scaleA, scaleB * 0.3)
@@ -447,7 +507,9 @@ export class CustomObjectDetector {
         maxDetections = 20,
         realTime = false
     ): Promise<CustomDetectionResult> {
+        console.log('[CustomObjectDetector] detect() called', { maxDetections, realTime, canClassify: this.knn.canClassify, counts: this.knn.getSampleCounts() })
         if (!this.knn.canClassify) {
+            console.warn('[CustomObjectDetector] canClassify=false → no detections', this.knn.getSampleCounts(), 'need ≥2 classes ×2 samples')
             return { objects: [], timestamp: Date.now() }
         }
 
@@ -465,10 +527,14 @@ export class CustomObjectDetector {
         cropCtx.drawImage(input as CanvasImageSource, 0, 0, imageWidth, imageHeight)
 
         let proposals: { x: number; y: number; width: number; height: number }[] = []
-        const maxProposals = realTime ? 15 : 25
+        const maxProposals = realTime ? 12 : 16
 
+        let cocoRawCount = 0
+        let cocoFilteredCount = 0
         try {
             const cocoResults = await cocoSsd.detect(cropCanvas)
+            cocoRawCount = cocoResults.length
+            console.log('[CustomObjectDetector] COCO raw', cocoResults.map((r: any) => `${r.class}:${r.score.toFixed(2)}`).join(', '))
             const cocoProps = cocoResults
                 .filter((r: any) => r.score > this.COCO_CONFIDENCE_THRESHOLD)
                 .map((r: any) => ({
@@ -477,19 +543,26 @@ export class CustomObjectDetector {
                     width: r.bbox[2],
                     height: r.bbox[3]
                 }))
+            cocoFilteredCount = cocoProps.length
+            console.log(`[CustomObjectDetector] proposals: COCO raw=${cocoRawCount} filtered(@${this.COCO_CONFIDENCE_THRESHOLD})=${cocoFilteredCount} realTime=${realTime}`)
 
             if (realTime && cocoProps.length >= 1) {
                 proposals = cocoProps.slice(0, maxProposals)
             } else if (cocoProps.length >= this.SLIDING_WINDOW_MIN_PROPOSALS) {
                 proposals = [...cocoProps].slice(0, maxProposals)
             } else {
-                proposals = [...cocoProps, ...this.generateSlidingWindowProposals(imageWidth, imageHeight)]
+                const sliding = this.generateSlidingWindowProposals(imageWidth, imageHeight)
+                console.log(`[CustomObjectDetector] COCO insufficient (<${this.SLIDING_WINDOW_MIN_PROPOSALS}) → adding sliding ${sliding.length} → total ${cocoProps.length + sliding.length}`)
+                proposals = [...cocoProps, ...sliding]
             }
-        } catch {
+        } catch (e) {
+            console.warn('[CustomObjectDetector] COCO detect failed', e)
             if (!realTime) {
                 proposals = this.generateSlidingWindowProposals(imageWidth, imageHeight)
+                console.log('[CustomObjectDetector] fallback sliding only', proposals.length)
             }
         }
+        console.log(`[CustomObjectDetector] final proposals before cap: ${proposals.length} max=${maxProposals} image=${imageWidth}x${imageHeight}`)
 
         const rawDetections: CustomDetection[] = []
 
@@ -498,20 +571,33 @@ export class CustomObjectDetector {
             proposals = proposals.slice(0, maxProposals)
         }
 
-        for (const proposal of proposals) {
+        for (let idx = 0; idx < proposals.length; idx++) {
+            const proposal = proposals[idx]
             try {
                 const embedding = await this.extractRegionEmbedding(
                     cropCanvas, proposal.x, proposal.y, proposal.width, proposal.height
                 )
-                if (!embedding) continue
+                if (!embedding) {
+                    console.log(`[CustomObjectDetector] proposal ${idx} bbox=${proposal.x.toFixed(0)},${proposal.y.toFixed(0)},${proposal.width.toFixed(0)}x${proposal.height.toFixed(0)} → embedding null (too small?)`)
+                    continue
+                }
 
-                const prediction = await this.knn.predictClass(embedding, 3)
+                const prediction = await this.knn.predictClass(embedding, 5)
                 embedding.dispose()
 
-                if (prediction && prediction.confidences[prediction.label] > this.KNN_CONFIDENCE_THRESHOLD) {
+                if (!prediction) {
+                    console.log(`[CustomObjectDetector] proposal ${idx} → predict null (outlier/sim<${(this.knn as any).minSimilarityThreshold ?? '?'}) bbox=${proposal.x.toFixed(0)},${proposal.y.toFixed(0)},${proposal.width.toFixed(0)}x${proposal.height.toFixed(0)}`)
+                    continue
+                }
+                const conf = prediction.confidences[prediction.label]
+                const allConfs = Object.entries(prediction.confidences).map(([k, v]) => `${k}:${(v as number).toFixed(2)}`).join(', ')
+                const sim = prediction.similarity !== undefined ? prediction.similarity.toFixed(3) : 'n/a'
+                console.log(`[CustomObjectDetector] proposal ${idx} → ${prediction.label} conf=${conf.toFixed(3)} sim=${sim} all={${allConfs}} KNN_TH=${this.KNN_CONFIDENCE_THRESHOLD} bbox=${proposal.x.toFixed(0)},${proposal.y.toFixed(0)},${proposal.width.toFixed(0)}x${proposal.height.toFixed(0)} ${conf > this.KNN_CONFIDENCE_THRESHOLD ? 'KEEP' : 'REJECT(<TH)'}`)
+
+                if (prediction && conf > this.KNN_CONFIDENCE_THRESHOLD) {
                     rawDetections.push({
                         label: prediction.label,
-                        confidence: prediction.confidences[prediction.label],
+                        confidence: conf,
                         bbox: [
                             Math.max(0, proposal.x),
                             Math.max(0, proposal.y),
@@ -520,11 +606,16 @@ export class CustomObjectDetector {
                         ]
                     })
                 }
-            } catch {}
+            } catch (e) {
+                console.warn(`[CustomObjectDetector] proposal ${idx} error`, e)
+            }
         }
+        console.log(`[CustomObjectDetector] rawDetections before NMS: ${rawDetections.length} ${rawDetections.map(d => `${d.label}:${d.confidence.toFixed(2)}`).join(', ')} NMS_IOU=${this.NMS_IOU_THRESHOLD}`)
 
         const nmsDetections = this.nonMaxSuppression(rawDetections, this.NMS_IOU_THRESHOLD)
+        console.log(`[CustomObjectDetector] after NMS: ${nmsDetections.length} ${nmsDetections.map(d => `${d.label}:${d.confidence.toFixed(2)} [${d.bbox.map(v => v.toFixed(0)).join(',')}]`).join(' | ')}`)
         const result = nmsDetections.slice(0, maxDetections)
+        console.log(`[CustomObjectDetector] final result: ${result.length} objects (max ${maxDetections})`)
 
         return { objects: result, timestamp: Date.now() }
     }
@@ -566,29 +657,48 @@ export class CustomObjectDetector {
         for (const obj of result.objects) {
             const [x, y, w, h] = obj.bbox
             const color = colorMap[obj.label] || defaultColors[colorIdx++ % defaultColors.length]
+            const rx = x * scaleX, ry = y * scaleY, rw = w * scaleX, rh = h * scaleY
 
+            // Vivid: white outer (6px) + color inner (4px) + subtle fill for contrast on any background
+            ctx.save()
+            ctx.strokeStyle = 'rgba(255,255,255,0.95)'
+            ctx.lineWidth = 6
+            ctx.lineJoin = 'round'
+            ctx.strokeRect(rx, ry, rw, rh)
             ctx.strokeStyle = color
-            ctx.lineWidth = 3
-            ctx.shadowColor = color
-            ctx.shadowBlur = 8
-            ctx.strokeRect(x * scaleX, y * scaleY, w * scaleX, h * scaleY)
-            ctx.shadowBlur = 0
+            ctx.lineWidth = 4
+            ctx.strokeRect(rx, ry, rw, rh)
+            // faint fill inside
+            ctx.fillStyle = color + '18' // ~10% alpha hex
+            // fallback if hex+alpha invalid, use rgba
+            try { ctx.fillRect(rx, ry, rw, rh) } catch {}
+            ctx.restore()
 
             const label = `${obj.label} ${Math.round(obj.confidence * 100)}%`
-            ctx.font = 'bold 14px system-ui, sans-serif'
+            ctx.font = 'bold 13px system-ui, sans-serif'
             const textWidth = ctx.measureText(label).width
-            const labelHeight = 22
-            const labelX = x * scaleX
-            const labelY = Math.max(y * scaleY - labelHeight - 4, 0)
+            const labelHeight = 20
+            const labelX = rx
+            const labelY = Math.max(ry - labelHeight - 6, 2)
 
+            // label with white outline for readability
             ctx.fillStyle = color
             ctx.beginPath()
-            ctx.roundRect(labelX, labelY, textWidth + 12, labelHeight, 6)
+            // @ts-ignore roundRect may be missing on some contexts
+            if (ctx.roundRect) ctx.roundRect(labelX, labelY, textWidth + 14, labelHeight, 6)
+            else { ctx.rect(labelX, labelY, textWidth + 14, labelHeight) }
             ctx.fill()
+            // white border around label
+            ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+            ctx.lineWidth = 1.5
+            ctx.stroke()
 
             ctx.fillStyle = '#fff'
             ctx.textBaseline = 'middle'
-            ctx.fillText(label, labelX + 6, labelY + labelHeight / 2)
+            ctx.shadowColor = 'rgba(0,0,0,0.5)'
+            ctx.shadowBlur = 2
+            ctx.fillText(label, labelX + 7, labelY + labelHeight / 2)
+            ctx.shadowBlur = 0
         }
     }
 

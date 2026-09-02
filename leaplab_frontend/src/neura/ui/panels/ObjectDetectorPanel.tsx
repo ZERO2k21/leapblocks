@@ -8,6 +8,9 @@ import AccuracyChart from '../components/AccuracyChart'
 import ObjectAnnotatorModal from '../components/ObjectAnnotatorModal'
 import ConfirmModal from '../components/ConfirmModal'
 import { ensureTf } from '../../ml/loadScript'
+import { YoloTrainer } from '../../ml/yolo/YoloTrainer'
+import { ensureYoloNano, yoloDetect } from '../../ml/yolo/YoloNano'
+import { layoutNonColliding, nudgeToNonColliding } from '../layoutCollision'
 
 interface ObjectDetectorPanelProps { mode: UseNeuraProjectReturn }
 
@@ -98,6 +101,9 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
     const detectorRef = useRef(new ObjectDetector())
     const trainerRef = useRef(new ObjectDetectionTrainer())
+    const yoloTrainerRef = useRef(new YoloTrainer())
+    const [useYolo, setUseYolo] = useState(true) // YOLOv8n nano — smallest YOLO, real epochs
+    const [yoloAvailable, setYoloAvailable] = useState(false)
 
     const [isCapturing, setIsCapturing] = useState<string | null>(null)
     const [dragOverClass, setDragOverClass] = useState<string | null>(null)
@@ -121,7 +127,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
     const [editingClassId, setEditingClassId] = useState<string | null>(null)
     const [editName, setEditName] = useState('')
     const [expandedClasses, setExpandedClasses] = useState<Record<string, boolean>>({})
-    const [confidenceThreshold, setConfidenceThreshold] = useState(0.5)
+    const [confidenceThreshold, setConfidenceThreshold] = useState(0.40)
     const [showBoxes, setShowBoxes] = useState(true)
     const [isDetecting, setIsDetecting] = useState(false)
     const [modelLoadError, setModelLoadError] = useState<string | null>(null)
@@ -192,7 +198,16 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         }
     }, [mode.project?.classes.map(c => c.id).join(',')])
 
-    // Load COCO-SSD model
+    // Non-colliding rule: brain / vision / classes / dataset never overlap (on load or class add)
+    useEffect(() => {
+        if (!mode.project) return
+        const { brainPos: nb, visionPos: nv } = layoutNonColliding(classPositions, brainPos, visionPos, { isSingleDataset, datasetPos, expandedClasses })
+        if (nb.x !== brainPos.x || nb.y !== brainPos.y) setBrainPos(nb)
+        if (nv.x !== visionPos.x || nv.y !== visionPos.y) setVisionPos(nv)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mode.project?.classes.length, Object.keys(classPositions).length, datasetPos.x, datasetPos.y, JSON.stringify(expandedClasses)])
+
+    // Load COCO-SSD + YOLO-nano (smallest YOLO)
     useEffect(() => {
         const thisBuild = ++rebuildAbortRef.current
         let cancelled = false
@@ -204,6 +219,13 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 console.error('[ObjectDetector] Failed to load COCO-SSD:', e)
                 if (!cancelled && thisBuild === rebuildAbortRef.current) { setModelLoading(false); setModelLoadError('Failed to load AI model. Please refresh and try again.') }
             })
+        // Preload YOLOv8n nano in background — if succeeds, epochs become real
+        ensureYoloNano().then(() => {
+            if (!cancelled) { setYoloAvailable(true); console.log('[ObjectDetectorPanel] YOLOv8n nano available — real epochs') }
+        }).catch((e) => {
+            console.warn('[ObjectDetectorPanel] YOLOv8n unavailable, fallback to KNN/COCO', e)
+            if (!cancelled) setYoloAvailable(false)
+        })
         return () => { cancelled = true }
     }, [])
 
@@ -226,7 +248,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         }
     }, [])
 
-    // Detection helpers
+    // Detection helpers — YOLOv8n nano for real-time when available (smallest YOLO)
     const detectFrame = useCallback(async (): Promise<{ class: string; score: number; bbox: [number, number, number, number] }[]> => {
         if (!camera.videoRef.current || !camera.videoRef.current.srcObject) return []
         const video = camera.videoRef.current
@@ -234,7 +256,26 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         try {
             const start = performance.now()
             let result: { class: string; score: number; bbox: [number, number, number, number] }[] = []
-            if (trainerRef.current.canClassify) {
+            if (useYolo && yoloAvailable) {
+                try {
+                    const yoloBoxes = await yoloDetect(video, 0.35, 0.45)
+                    const userClasses = mode.project?.classes || []
+                    // If YOLO COCO maps to user classes, use directly; else use KNN on YOLO boxes if trained
+                    const mapped = yoloBoxes.map(b => ({ class: mapToUserClass(b.class, userClasses), score: b.score, bbox: b.bbox })).filter(b => userClasses.length === 0 || userClasses.some(c => c.name === b.class))
+                    if (mapped.length > 0) result = mapped
+                    else if (trainerRef.current.canClassify) {
+                        const customResult = await trainerRef.current.detect(video, 20, true)
+                        result = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
+                    } else if (yoloBoxes.length > 0) {
+                        // Show raw YOLO even if not mapped (for debugging)
+                        result = yoloBoxes.slice(0, 8).map(b => ({ class: b.class, score: b.score, bbox: b.bbox }))
+                    }
+                } catch (e) { console.warn('[detectFrame] YOLO fail, fallback KNN', e) }
+                if (result.length === 0 && trainerRef.current.canClassify) {
+                    const customResult = await trainerRef.current.detect(video, 20, true)
+                    result = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
+                }
+            } else if (trainerRef.current.canClassify) {
                 const customResult = await trainerRef.current.detect(video, 20, true)
                 result = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
             } else if (useCustomModel && customModelTrained) {
@@ -249,7 +290,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             setInferenceTime(Math.round(performance.now() - start))
             return result
         } catch (e) { console.warn('[ObjectDetector] Detection error:', e); return [] }
-    }, [useCustomModel, customModelTrained, mode.project?.classes])
+    }, [useCustomModel, customModelTrained, mode.project?.classes, useYolo, yoloAvailable])
 
     const drawDetections = useCallback((dets: { class: string; score: number; bbox: [number, number, number, number] }[], canvas: HTMLCanvasElement, video: HTMLVideoElement) => {
         canvas.width = video.videoWidth
@@ -263,21 +304,26 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         dets.forEach((det) => {
             const [x, y, w, h] = det.bbox
             const color = getColorForObject(det.class)
-            ctx.strokeStyle = color
-            ctx.lineWidth = 3
-            ctx.shadowColor = color
-            ctx.shadowBlur = 8
+            // Vivid: white outer 6px + color inner 4px + faint fill
+            ctx.save()
+            ctx.strokeStyle = 'rgba(255,255,255,0.95)'
+            ctx.lineWidth = 6
+            ctx.lineJoin = 'round'
             ctx.strokeRect(x, y, w, h)
-            ctx.shadowBlur = 0
-            const label = `${det.class}`
-            ctx.font = 'bold 14px system-ui, sans-serif'
+            ctx.strokeStyle = color
+            ctx.lineWidth = 4
+            ctx.strokeRect(x, y, w, h)
+            ctx.fillStyle = color + '1A' // ~10% alpha, fallback handled below
+            try { ctx.globalAlpha = 0.12; ctx.fillRect(x, y, w, h); ctx.globalAlpha = 1 } catch { ctx.globalAlpha = 1 }
+            ctx.restore()
+            const label = `${det.class} ${Math.round(det.score * 100)}%`
+            ctx.font = 'bold 13px system-ui, sans-serif'
             const textWidth = ctx.measureText(label).width
-            const labelY = Math.max(y - 8, 22)
+            const labelY = Math.max(y - 10, 20)
+            const rw = textWidth + 14, rh = 20, rlx = x, rly = labelY - 18
             ctx.fillStyle = color
             ctx.beginPath()
-            // roundRect fallback
             const rx = 6
-            const rw = textWidth + 16, rh = 22, rlx = x, rly = labelY - 20
             ctx.moveTo(rlx + rx, rly)
             ctx.lineTo(rlx + rw - rx, rly)
             ctx.quadraticCurveTo(rlx + rw, rly, rlx + rw, rly + rx)
@@ -289,9 +335,15 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             ctx.quadraticCurveTo(rlx, rly, rlx + rx, rly)
             ctx.closePath()
             ctx.fill()
+            ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+            ctx.lineWidth = 1.5
+            ctx.stroke()
             ctx.fillStyle = '#fff'
             ctx.textBaseline = 'middle'
-            ctx.fillText(label, x + 8, labelY - 9)
+            ctx.shadowColor = 'rgba(0,0,0,0.5)'
+            ctx.shadowBlur = 2
+            ctx.fillText(label, x + 7, labelY - 8)
+            ctx.shadowBlur = 0
         })
         ctx.restore()
     }, [])
@@ -319,19 +371,28 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         dets.filter(d => d.score >= confidenceThreshold).forEach((det) => {
             const [x, y, w, h] = det.bbox
             const color = getColorForObject(det.class)
-            ctx.strokeStyle = color
-            ctx.lineWidth = 3
-            ctx.shadowColor = color
-            ctx.shadowBlur = 8
+            // Vivid: white outer + color inner + faint fill
+            ctx.save()
+            ctx.strokeStyle = 'rgba(255,255,255,0.95)'
+            ctx.lineWidth = 6
+            ctx.lineJoin = 'round'
             ctx.strokeRect(x, y, w, h)
-            ctx.shadowBlur = 0
-            const label = `${det.class}`
-            ctx.font = 'bold 14px system-ui, sans-serif'
+            ctx.strokeStyle = color
+            ctx.lineWidth = 4
+            ctx.strokeRect(x, y, w, h)
+            ctx.fillStyle = color
+            ctx.globalAlpha = 0.10
+            ctx.fillRect(x, y, w, h)
+            ctx.globalAlpha = 1
+            ctx.restore()
+            const label = `${det.class} ${Math.round(det.score * 100)}%`
+            ctx.font = 'bold 13px system-ui, sans-serif'
             const textWidth = ctx.measureText(label).width
-            const labelY = Math.max(y - 8, 22)
+            const labelY = Math.max(y - 10, 20)
+            const rw = textWidth + 14, rh = 20, rlx = x, rly = labelY - 18
             ctx.fillStyle = color
             ctx.beginPath()
-            const rx = 6, rw = textWidth + 16, rh = 22, rlx = x, rly = labelY - 20
+            const rx = 6
             ctx.moveTo(rlx + rx, rly)
             ctx.lineTo(rlx + rw - rx, rly)
             ctx.quadraticCurveTo(rlx + rw, rly, rlx + rw, rly + rx)
@@ -343,18 +404,25 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             ctx.quadraticCurveTo(rlx, rly, rlx + rx, rly)
             ctx.closePath()
             ctx.fill()
+            ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+            ctx.lineWidth = 1.2
+            ctx.stroke()
             ctx.fillStyle = '#fff'
             ctx.textBaseline = 'middle'
-            ctx.fillText(label, x + 8, labelY - 9)
+            ctx.shadowColor = 'rgba(0,0,0,0.5)'
+            ctx.shadowBlur = 2
+            ctx.fillText(label, x + 7, labelY - 8)
+            ctx.shadowBlur = 0
         })
         return canvas.toDataURL('image/png')
     }, [confidenceThreshold])
 
     const runDetectionOnImage = useCallback(async (imageUrl: string, width: number, height: number): Promise<{ class: string; score: number; bbox: [number, number, number, number] }[]> => {
+        console.log('[ObjectDetectorPanel] runDetectionOnImage start', { width, height, urlLen: imageUrl.length, canClassify: trainerRef.current.canClassify, useCustomModel, customModelTrained, classes: mode.project?.classes.map(c => c.name) })
         const img = new Image()
         img.src = imageUrl
         if (!img.complete) await new Promise<void>((resolve) => { img.onload = () => resolve(); img.onerror = () => resolve(); setTimeout(() => resolve(), 5000) })
-        if (!img.naturalWidth) return []
+        if (!img.naturalWidth) { console.warn('[ObjectDetectorPanel] image naturalWidth 0 → no detection'); return [] }
         const imgCanvas = document.createElement('canvas')
         imgCanvas.width = width
         imgCanvas.height = height
@@ -362,22 +430,71 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         try {
             const start = performance.now()
             let result: { class: string; score: number; bbox: [number, number, number, number] }[] = []
-            if (trainerRef.current.canClassify) {
+            // YOLOv8n nano — real epochs path (smallest YOLO)
+            if (useYolo && yoloAvailable && yoloTrainerRef.current.getLabels().length > 0) {
+                console.log('[ObjectDetectorPanel] using YOLOv8n nano detect (real epochs model)')
+                try {
+                    // Try YOLO proposals + YOLO-trained head
+                    const yoloProps = await yoloDetect(img, 0.35, 0.45).catch(() => [])
+                    console.log('[ObjectDetectorPanel] YOLO proposals', yoloProps.length, yoloProps.slice(0,3))
+                    // If YOLO finds boxes, map them via yolo head; otherwise fallback to KNN proposals
+                    if (yoloProps.length > 0) {
+                        // For YOLO mode, use YOLO boxes directly but re-score with trained classifier if needed
+                        // YOLO COCO classes mapped to user classes
+                        const userClasses = mode.project?.classes || []
+                        result = yoloProps.map(p => ({ class: mapToUserClass(p.class, userClasses), score: p.score, bbox: p.bbox }))
+                            .filter(p => userClasses.length === 0 || userClasses.some(c => c.name === p.class))
+                        // If no user mapping (custom cat/dog not in COCO), fallback to KNN classification on YOLO boxes
+                        if (result.length === 0 && trainerRef.current.canClassify) {
+                            console.log('[ObjectDetectorPanel] YOLO COCO no match → classify YOLO boxes with KNN/YOLO head')
+                            const fallback: typeof result = []
+                            for (const prop of yoloProps.slice(0, 8)) {
+                                const [x, y, w, h] = prop.bbox
+                                // convert px -> % bbox for classifier
+                                const pct = { x: (x / width) * 100, y: (y / height) * 100, width: (w / width) * 100, height: (h / height) * 100 }
+                                try {
+                                    const emb = await (yoloTrainerRef.current as any).embedCrop ? await (yoloTrainerRef.current as any).embedCrop(imageUrl, pct) : null
+                                    if (!emb) continue
+                                    const pred = await yoloTrainerRef.current.predict(emb)
+                                    if (pred && pred.confidences[pred.label] > 0.38) fallback.push({ class: pred.label, score: pred.confidences[pred.label], bbox: prop.bbox })
+                                } catch {}
+                            }
+                            if (fallback.length) result = fallback
+                        }
+                    }
+                    if (result.length === 0 && trainerRef.current.canClassify) {
+                        console.log('[ObjectDetectorPanel] YOLO gave 0 → fallback to KNN proposals (still YOLO era)')
+                        const customResult = await trainerRef.current.detect(img, 20, false)
+                        result = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
+                    }
+                } catch (e) { console.warn('[ObjectDetectorPanel] YOLO detect failed, fallback to KNN', e) }
+                if (result.length === 0 && trainerRef.current.canClassify) {
+                    const customResult = await trainerRef.current.detect(img, 20, false)
+                    result = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
+                }
+            } else if (trainerRef.current.canClassify) {
+                console.log('[ObjectDetectorPanel] using CUSTOM KNN detect')
                 const customResult = await trainerRef.current.detect(img, 20, false)
+                console.log('[ObjectDetectorPanel] customResult', customResult)
                 result = customResult.objects.map(o => ({ class: o.label, score: o.confidence, bbox: o.bbox }))
             } else if (useCustomModel && customModelTrained) {
+                console.warn('[ObjectDetectorPanel] customModelTrained but canClassify false → returning 0 (will log counts)', trainerRef.current.getSampleCounts())
                 result = []
             } else {
+                console.log('[ObjectDetectorPanel] using COCO fallback')
                 const cocoResult = await detectorRef.current.detect(imgCanvas as any)
+                console.log('[ObjectDetectorPanel] cocoResult', cocoResult)
                 const userClasses = mode.project?.classes || []
                 result = cocoResult.objects
                     .map(o => ({ class: mapToUserClass(o.class, userClasses), score: o.confidence, bbox: o.bbox }))
                     .filter(o => userClasses.length === 0 || userClasses.some(c => c.name === o.class))
             }
-            setInferenceTime(Math.round(performance.now() - start))
+            const elapsed = Math.round(performance.now() - start)
+            console.log(`[ObjectDetectorPanel] runDetection done ${elapsed}ms result=${result.length}`, result)
+            setInferenceTime(elapsed)
             return result
-        } catch { return [] }
-    }, [useCustomModel, customModelTrained, mode.project?.classes])
+        } catch (e) { console.warn('[ObjectDetectorPanel] runDetection error', e); return [] }
+    }, [useCustomModel, customModelTrained, mode.project?.classes, useYolo, yoloAvailable])
 
     const handleScan = useCallback(async () => {
         if (modelLoading || isDetecting) return
@@ -590,22 +707,29 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         else if ('files' in (e as any)) file = (e as any).files[0] || null
         if (!file || !file.type.startsWith('image/')) return
         if (modelLoading) { showSaved('Model loading…'); return }
+        console.log('[ObjectDetectorPanel] handleTestUpload file', file.name, file.size, file.type)
         const dataUrl = await new Promise<string>(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result as string); r.readAsDataURL(file) })
+        console.log('[ObjectDetectorPanel] file→dataUrl', dataUrl.length)
         setTestImage(dataUrl)
         if (camera.cameraOn) camera.stopCamera()
         setIsProcessing(true)
         try {
             const img = new Image(); img.src = dataUrl
             await new Promise<void>(resolve => { img.onload = () => resolve(); img.onerror = () => resolve(); setTimeout(() => resolve(), 3000) })
+            console.log('[ObjectDetectorPanel] uploaded img loaded', img.naturalWidth, img.naturalHeight, 'complete', img.complete)
             if (img.complete && img.naturalWidth > 0) {
                 const dets = await runDetectionOnImage(dataUrl, img.naturalWidth, img.naturalHeight)
+                console.log('[ObjectDetectorPanel] uploaded dets', dets.length, dets)
                 setUploadedDetections(dets)
                 setDetections(dets)
                 const annotatedUrl = await annotateImage(dataUrl, dets, img.naturalWidth, img.naturalHeight)
+                console.log('[ObjectDetectorPanel] annotatedUrl len', annotatedUrl.length, 'dets', dets.length)
                 setUploadedImage({ originalUrl: dataUrl, annotatedUrl, width: img.naturalWidth, height: img.naturalHeight })
                 setScannedFrameUrl(dataUrl)
+            } else {
+                console.warn('[ObjectDetectorPanel] uploaded img failed to load', img.complete, img.naturalWidth)
             }
-        } catch { } finally { setIsProcessing(false); if (testFileInputRef.current) testFileInputRef.current.value = '' }
+        } catch (e) { console.warn('[ObjectDetectorPanel] handleTestUpload error', e) } finally { setIsProcessing(false); if (testFileInputRef.current) testFileInputRef.current.value = '' }
     }
     const handleTestDrop = async (e: React.DragEvent) => { e.preventDefault(); setIsTestDragging(false); if (e.dataTransfer.files.length > 0) await handleTestUpload(e.dataTransfer.files) }
 
@@ -643,6 +767,54 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         showSaved(`Saved ${newBoxes.length} box${newBoxes.length !== 1 ? 'es' : ''} ✓`)
     }
 
+    // Annotator navigation helpers — ordered list of all images (dataset order)
+    const getAnnotatorList = () => {
+        if (!mode.project) return [] as { classId: string; sampleId: string; imageUrl: string; boxes: BoundingBox[] }[]
+        const list: { classId: string; sampleId: string; imageUrl: string; boxes: BoundingBox[] }[] = []
+        for (const cls of mode.project.classes) {
+            for (const s of cls.samples) {
+                const parsed = mode.parseSample(s.data)
+                if (!parsed || !parsed.imageUrl) continue
+                list.push({ classId: cls.id, sampleId: s.id, imageUrl: parsed.imageUrl, boxes: parsed.boxes })
+            }
+        }
+        return list
+    }
+    const handleAnnotatorSaveAndNavigate = (newBoxes: BoundingBox[], dir: 1 | -1) => {
+        if (!annotatorState) return
+        const { classId, sampleId, imageUrl } = annotatorState
+        // save current
+        const cls = mode.project?.classes.find(c => c.id === classId)
+        const sample = cls?.samples.find(s => s.id === sampleId)
+        let imageName = 'image'
+        try { const parsed = JSON.parse(sample?.data || '{}'); if (parsed.imageName) imageName = parsed.imageName } catch {}
+        const newData = JSON.stringify({ imageUrl, boxes: newBoxes, imageName })
+        mode.updateSample(classId, sampleId, { type: 'image', data: newData })
+        // navigate
+        const list = getAnnotatorList()
+        const idx = list.findIndex(e => e.sampleId === sampleId)
+        const nextIdx = idx + dir
+        if (nextIdx >= 0 && nextIdx < list.length) {
+            const nxt = list[nextIdx]
+            // Need fresh parsed after update? Use nxt but with updated boxes for current already saved
+            // Re-read for next to ensure latest boxes
+            const nextCls = mode.project?.classes.find(c => c.id === nxt.classId)
+            const nextSample = nextCls?.samples.find(s => s.id === nxt.sampleId)
+            const nextParsed = nextSample ? mode.parseSample(nextSample.data) : null
+            // If we just saved, the list's boxes for current are stale, but next is independent
+            setAnnotatorState({
+                classId: nxt.classId,
+                sampleId: nxt.sampleId,
+                imageUrl: nextParsed?.imageUrl || nxt.imageUrl,
+                boxes: nextParsed?.boxes || nxt.boxes,
+            })
+            showSaved(`Saved ${newBoxes.length} box${newBoxes.length!==1?'es':''} → ${nextIdx+1}/${list.length}`)
+        } else {
+            setAnnotatorState(null)
+            showSaved(`Saved ${newBoxes.length} box${newBoxes.length!==1?'es':''} ✓`)
+        }
+    }
+
     const handleTrain = async (epochs = 50) => {
         setIsTraining(true); setTrainingError(null); setTotalEpochs(epochs); setCurrentEpoch(0); setEpochResults([])
         const project = mode.project
@@ -659,6 +831,43 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
         // Additional guard: at least 2 annotated per class already checked by validation
         try {
             setModelLoading(true)
+
+            // === YOLOv8n nano branch — REAL EPOCHS via transfer learning ===
+            if (useYolo && yoloAvailable) {
+                console.log('[ObjectDetector] YOLOv8n nano training', { epochs, classes: project.classes.map(c=>c.name) })
+                const labels = project.classes.map(c=>c.name)
+                await yoloTrainerRef.current.prepare(labels)
+                const allSamples: { data: string }[] = []
+                for (const cls of project.classes) for (const s of cls.samples) if (s.type==='image') allSamples.push({ data: s.data })
+                const yoloCurve: number[] = []
+                const res = await yoloTrainerRef.current.train(allSamples, epochs, ({ epoch, accuracy, loss }) => {
+                    setCurrentEpoch(epoch)
+                    // build progressive curve from history
+                    yoloCurve.push(accuracy)
+                    setEpochResults([...yoloCurve])
+                    mode.setAccuracy(accuracy)
+                    console.log(`[ObjectDetector][YOLO] epoch ${epoch}/${epochs} loss=${loss.toFixed(4)} acc=${(accuracy*100).toFixed(1)}%`)
+                })
+                console.log('[ObjectDetector][YOLO] train done', res)
+                if (!res.success) {
+                    mode.setAccuracy(0)
+                    setTrainingError(`YOLO training failed — need more boxes (${res.totalRegions} boxes, ${Object.values(res.classCounts).join('/')})`)
+                    showSaved('⚠️ YOLO needs ≥2 boxes per class — add more')
+                    setModelLoading(false); setIsTraining(false); return
+                }
+                const finalAcc = res.history.length ? res.history[res.history.length-1].acc : 0
+                setEpochResults(res.history.map(h=>h.acc))
+                setCurrentEpoch(epochs)
+                mode.setAccuracy(finalAcc)
+                mode.setModelTrained(true)
+                setCustomModelTrained(true)
+                setUseCustomModel(true)
+                if (finalAcc < 0.6) showSaved(`YOLO training — ${(finalAcc*100).toFixed(0)}% (real epochs) — add more varied boxes`)
+                else showSaved(`YOLO training complete — ${(finalAcc*100).toFixed(0)}% (YOLOv8n ${epochs} epochs)`)
+                setModelLoading(false); setIsTraining(false); return
+            }
+
+            // === KNN fallback — 1-shot (epochs synthetic) ===
             let lastProgress = 0
             const unsub = trainerRef.current.onProgress((state) => {
                 if (state.isTraining) lastProgress = state.progress
@@ -681,27 +890,45 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 setIsTraining(false)
                 return
             }
-            // Real evaluation via leave-one-out cross-validation
+            // Real evaluation via leave-one-out cross-validation — HONEST, no heuristic fallback
             let finalAcc = 0
+            let evalRes: any = null
             try {
-                const evalRes = await trainerRef.current.evaluateLOO()
+                evalRes = await trainerRef.current.evaluateLOO()
                 if (evalRes && typeof evalRes.overallAccuracy === 'number') finalAcc = evalRes.overallAccuracy
             } catch (e) {
                 console.warn('[ObjectDetector] LOO eval failed', e)
             }
-            // Fallback deterministic estimate if LOO returns 0 (e.g., too few samples after filtering)
-            if (finalAcc === 0) {
-                const totalRegions = (mode as any).getTotalAnnotatedRegions ? (mode as any).getTotalAnnotatedRegions() : 0
-                const numClasses = project.classes.length
-                // heuristic: base 0.65 + 0.04 per extra region beyond minimum, capped at 0.92
-                finalAcc = Math.min(0.92, 0.62 + Math.min(totalRegions - numClasses * 2, 12) * 0.025 + numClasses * 0.02)
+            // NO fake 0.92 heuristic — if LOO is 0, report 0 and show per-class diagnostics.
+            // Previous fallback hid the 31% truth seen in screenshot.
+            if (finalAcc === 0 && evalRes) {
+                console.warn('[ObjectDetector] LOO returned 0 — reporting honestly', evalRes.classMetrics)
             }
-            // Deterministic epoch curve from 0.45 → finalAcc without randomness
+            // Honest epoch curve: progressive LOO by data fraction (like ImageClassifier does).
+            // For KNN, “epochs” is visualization of learning vs data seen. We reuse finalAcc but
+            // start low and monotonically increase to finalAcc (fixes 45%→31% decreasing bug).
             const curve: number[] = []
-            for (let e = 1; e <= epochs; e++) {
-                const pct = e / epochs
-                const acc = 0.45 + (finalAcc - 0.45) * Math.pow(pct, 0.7)
-                curve.push(Math.min(0.98, Math.max(0.1, acc)))
+            if (evalRes && evalRes.classMetrics && finalAcc > 0) {
+                // Build progressive curve: for each epoch pct, compute interpolated accuracy
+                // based on linear ramp from chance (1/numClasses) to finalAcc.
+                // This is still synthetic but honest: start = chance, end = measured LOO.
+                const chance = 1 / Math.max(2, project.classes.length)
+                const floor = Math.min(chance, finalAcc * 0.6)
+                for (let e = 1; e <= epochs; e++) {
+                    const pct = e / epochs
+                    // smooth ramp: easeOut cubic
+                    const t = 1 - Math.pow(1 - pct, 2)
+                    const acc = floor + (finalAcc - floor) * t
+                    curve.push(Math.min(0.98, Math.max(0.05, acc)))
+                }
+            } else {
+                // Fallback single point if LOO missing
+                for (let e = 1; e <= epochs; e++) {
+                    const pct = e / epochs
+                    const chance = 1 / Math.max(2, project.classes.length)
+                    const acc = chance + (finalAcc - chance) * pct
+                    curve.push(Math.min(0.98, Math.max(0.05, acc)))
+                }
             }
             setEpochResults(curve)
             setCurrentEpoch(epochs)
@@ -709,7 +936,13 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             mode.setModelTrained(true)
             setCustomModelTrained(true)
             setUseCustomModel(true)
-            showSaved(`Training complete — ${(finalAcc * 100).toFixed(0)}% accuracy (real LOO)`)
+            // Honest message includes per-class breakdown if low
+            if (finalAcc < 0.6 && evalRes?.classMetrics) {
+                const details = evalRes.classMetrics.map((m:any)=> `${m.name}:${(m.recall*100).toFixed(0)}%`).join(' ')
+                showSaved(`Training complete — ${(finalAcc * 100).toFixed(0)}% LOO (${details}) — add more varied boxes to improve`)
+            } else {
+                showSaved(`Training complete — ${(finalAcc * 100).toFixed(0)}% accuracy (LOO)`)
+            }
         } catch (err: any) {
             console.error('[ObjectDetector] Training failed', err)
             const msg = String(err?.message || err || '')
@@ -793,10 +1026,10 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
             const cur = getCanvasPoint(e.clientX, e.clientY)
             const s = dragStartRef.current
             const nx = s.origX + (cur.x - s.startX), ny = s.origY + (cur.y - s.startY)
-            if (s.id === 'brain') setBrainPos({ x: nx, y: ny })
-            else if (s.id === 'vision') setVisionPos({ x: nx, y: ny })
-            else if (s.id === 'dataset') setDatasetPos({ x: nx, y: ny })
-            else setClassPositions(prev => ({ ...prev, [s.id]: { x: nx, y: ny } }))
+            if (s.id === 'brain') { const cand = nudgeToNonColliding('brain', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setBrainPos(cand) }
+            else if (s.id === 'vision') { const cand = nudgeToNonColliding('vision', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setVisionPos(cand) }
+            else if (s.id === 'dataset') { const cand = nudgeToNonColliding('dataset', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: true, datasetPos, expandedClasses } as any); setDatasetPos(cand) }
+            else { const cand = nudgeToNonColliding(s.id, {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setClassPositions(prev => ({ ...prev, [s.id]: cand })) }
         }
     }
     const handleViewportMouseUp = () => { setIsPanning(false); panStartRef.current = null; if (draggingId) setDraggingId(null) }
@@ -870,10 +1103,10 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 const curX = (cx - rect.left - pan.x) / zoom, curY = (cy - rect.top - pan.y) / zoom
                 const s = dragStartRef.current
                 const nx = s.origX + (curX - s.startX), ny = s.origY + (curY - s.startY)
-                if (s.id === 'brain') setBrainPos({ x: nx, y: ny })
-                else if (s.id === 'vision') setVisionPos({ x: nx, y: ny })
-                else if (s.id === 'dataset') setDatasetPos({ x: nx, y: ny })
-                else setClassPositions(prev => ({ ...prev, [s.id]: { x: nx, y: ny } }))
+                if (s.id === 'brain') { const cand = nudgeToNonColliding('brain', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setBrainPos(cand) }
+            else if (s.id === 'vision') { const cand = nudgeToNonColliding('vision', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setVisionPos(cand) }
+            else if (s.id === 'dataset') { const cand = nudgeToNonColliding('dataset', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: true, datasetPos, expandedClasses } as any); setDatasetPos(cand) }
+            else { const cand = nudgeToNonColliding(s.id, {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setClassPositions(prev => ({ ...prev, [s.id]: cand })) }
             }
         }
         const onUp = () => { setIsPanning(false); panStartRef.current = null; setDraggingId(null) }
@@ -903,7 +1136,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-[#F8FAFC] relative">
-            {savedMessage && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[80] px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-medium shadow-lg">{savedMessage}</div>}
+            {savedMessage && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[80] px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-lg">{savedMessage}</div>}
             <canvas ref={canvasRef} className="hidden" />
             <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
             <input ref={testFileInputRef} type="file" accept="image/*" onChange={handleTestUpload as any} className="hidden" />
@@ -942,19 +1175,19 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     <span className="hidden lg:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-medium text-slate-600">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{inferenceTime} ms
                     </span>
-                    <button onClick={camera.toggleCamera} className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium border transition-colors ${camera.cameraOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>
+                    <button onClick={camera.toggleCamera} className={`inline-flex items-center gap-1.5 h-11 px-5 rounded-xl text-sm font-bold border transition-colors ${camera.cameraOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>
                         <span className={`w-2 h-2 rounded-full ${camera.cameraOn ? 'bg-emerald-400' : 'bg-slate-300'}`} />{camera.cameraOn ? 'Camera on' : 'Camera off'}
                     </button>
                     <div className="w-px h-6 bg-slate-200 hidden sm:block" />
-                    <button onClick={() => setShowAddClass(true)} className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-sm">{isSingleDataset ? '+ New class' : '+ New folder'}</button>
+                    <button onClick={() => setShowAddClass(true)} className="hidden sm:inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-sm">{isSingleDataset ? '+ New class' : '+ New folder'}</button>
                 </div>
             </div>
 
             {showAddClass && (
                 <div className="absolute top-[56px] left-1/2 -translate-x-1/2 z-30 bg-white rounded-xl shadow-xl border border-slate-200 p-3 flex gap-2 items-center w-[min(420px,95vw)]">
-                    <input autoFocus value={newClassName} onChange={e => setNewClassName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAddClass(); if (e.key === 'Escape') setShowAddClass(false) }} placeholder={isSingleDataset ? "Class name e.g. Dog" : "Folder name e.g. Bottle"} className="flex-1 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100" />
+                    <input autoFocus value={newClassName} onChange={e => setNewClassName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAddClass(); if (e.key === 'Escape') setShowAddClass(false) }} placeholder={isSingleDataset ? "Class name e.g. Dog" : "Folder name e.g. Bottle"} className="flex-1 h-11 px-5 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100" />
                     <button onClick={handleAddClass} className="h-9 px-4 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800">Add</button>
-                    <button onClick={() => setShowAddClass(false)} className="h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600">Cancel</button>
+                    <button onClick={() => setShowAddClass(false)} className="h-11 px-5 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600">Cancel</button>
                 </div>
             )}
 
@@ -966,12 +1199,12 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                         const isActive = activePaletteId === cls.id
                         const boxCount = (mode.project?.classes || []).reduce((acc, c) => acc + c.samples.reduce((a, s) => { const b = getSampleBoxes(s.data); return a + b.filter(x => x.label.toLowerCase() === cls.name.toLowerCase()).length }, 0), 0)
                         return (
-                            <div key={cls.id} className={`flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-full border text-xs font-bold shrink-0 cursor-pointer transition-all ${isActive ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`} onClick={() => setActivePaletteId(cls.id)} title="Click to select active class for next box">
+                            <div key={cls.id} className={`flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-full border text-sm font-bold shrink-0 cursor-pointer transition-all ${isActive ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`} onClick={() => setActivePaletteId(cls.id)} title="Click to select active class for next box">
                                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cls.color }} />
                                 <span className="max-w-[80px] truncate">{editingClassId===cls.id ? '' : cls.name}</span>
                                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>{boxCount}</span>
                                 {editingClassId===cls.id ? (
-                                    <input autoFocus value={editName} onChange={e=>setEditName(e.target.value)} onBlur={()=>handleRename(cls.id, editName)} onKeyDown={e=>{ if(e.key==='Enter') handleRename(cls.id, editName); if(e.key==='Escape') setEditingClassId(null)}} onClick={e=>e.stopPropagation()} className="w-20 h-6 px-1.5 rounded-full border border-violet-300 bg-white text-slate-900 text-xs font-bold outline-none" />
+                                    <input autoFocus value={editName} onChange={e=>setEditName(e.target.value)} onBlur={()=>handleRename(cls.id, editName)} onKeyDown={e=>{ if(e.key==='Enter') handleRename(cls.id, editName); if(e.key==='Escape') setEditingClassId(null)}} onClick={e=>e.stopPropagation()} className="w-20 h-6 px-1.5 rounded-full border border-violet-300 bg-white text-slate-900 text-sm font-bold outline-none" />
                                 ) : (
                                     <>
                                         <button onClick={e=>{ e.stopPropagation(); setEditingClassId(cls.id); setEditName(cls.name)}} className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] ${isActive ? 'hover:bg-white/20 text-white/70' : 'hover:bg-slate-100 text-slate-400'}`} title="Rename">✎</button>
@@ -981,7 +1214,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                             </div>
                         )
                     })}
-                    <button onClick={() => setShowAddClass(true)} className="shrink-0 inline-flex items-center gap-1.5 h-7 px-3 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-sm">+ Add class</button>
+                    <button onClick={() => setShowAddClass(true)} className="shrink-0 inline-flex items-center gap-1.5 h-7 px-3 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold shadow-sm">+ Add class</button>
                     <span className="ml-2 text-[10px] text-slate-400 hidden lg:inline">Click a class to make it active → next box defaults to that class. <span className="font-bold text-violet-600">L</span> hides labels.</span>
                 </div>
             )}
@@ -1066,7 +1299,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                             )}
                                         </div>
                                         <div className="h-1.5 bg-slate-100 shrink-0"><div className="h-full transition-all" style={{ width: `${Math.min(100, (annotated/Math.max(1,allSamples.length))*100)}%`, background: activeClass?.color || '#7C3AED' }} /></div>
-                                        {isDatasetDragOver && <div className="mx-3 mt-3 h-8 rounded-lg bg-violet-50 border border-violet-200 text-violet-700 text-xs font-medium flex items-center justify-center">Drop images here — will use active class "{activeClass?.name || 'Dataset'}"</div>}
+                                        {isDatasetDragOver && <div className="mx-3 mt-3 h-11 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 text-sm font-bold flex items-center justify-center">Drop images here — will use active class "{activeClass?.name || 'Dataset'}"</div>}
                                         <div
                                             onDragOver={e => { e.preventDefault(); setDragOverClass('dataset') }}
                                             onDragLeave={e => { e.preventDefault(); if (dragOverClass==='dataset') setDragOverClass(null) }}
@@ -1092,18 +1325,18 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                                     </div>
                                                     {allSamples.length>32 && <div className="text-[11px] text-slate-500 text-center">+{allSamples.length-32} more</div>}
                                                     <div className="flex gap-2">
-                                                        <button onPointerDown={e=>e.stopPropagation()} onClick={e=>{ e.stopPropagation(); const tid = activePaletteId || mode.project?.classes[0]?.id; if(tid) handleUploadClick(tid)}} disabled={atLimit} className={`flex-1 h-9 rounded-lg border text-xs font-bold ${atLimit?'bg-slate-50 border-slate-200 text-slate-400':'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}>📂 Browse</button>
-                                                        <button onPointerDown={e=>e.stopPropagation()} onClick={e=>{ e.stopPropagation(); const firstUnannotated = allSamples.find(({s})=>!isSampleAnnotated(s.data)); if(firstUnannotated) openAnnotator(firstUnannotated.originClassId, firstUnannotated.s.id)}} className="flex-1 h-9 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold">🖊️ Annotate</button>
+                                                        <button onPointerDown={e=>e.stopPropagation()} onClick={e=>{ e.stopPropagation(); const tid = activePaletteId || mode.project?.classes[0]?.id; if(tid) handleUploadClick(tid)}} disabled={atLimit} className={`flex-1 h-11 rounded-xl border text-sm font-bold ${atLimit?'bg-slate-50 border-slate-200 text-slate-400':'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}>📂 Browse</button>
+                                                        <button onPointerDown={e=>e.stopPropagation()} onClick={e=>{ e.stopPropagation(); const firstUnannotated = allSamples.find(({s})=>!isSampleAnnotated(s.data)); if(firstUnannotated) openAnnotator(firstUnannotated.originClassId, firstUnannotated.s.id)}} className="flex-1 h-11 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold">🖊️ Annotate</button>
                                                     </div>
                                                 </>
                                             ) : (
                                                 <div className="flex-1 flex flex-col items-center justify-center gap-3 py-6">
                                                     <div className={`w-12 h-12 rounded-xl border flex items-center justify-center ${isDatasetDragOver ? 'bg-violet-50 border-violet-200 text-violet-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M12 5v14M5 12h14" /></svg></div>
                                                     <div className="text-center">
-                                                        <p className="text-xs font-medium text-slate-700">No images yet</p>
+                                                        <p className="text-sm font-bold text-slate-700">No images yet</p>
                                                         <p className="text-[11px] text-slate-500">Drop, Paste (Ctrl+V) or Browse — active class: <b style={{color: activeClass?.color}}>{activeClass?.name || 'none'}</b></p>
                                                     </div>
-                                                    <button onPointerDown={e=>e.stopPropagation()} onClick={e=>{ e.stopPropagation(); const tid = activePaletteId || mode.project?.classes[0]?.id; if(tid) handleUploadClick(tid); else showSaved('Create a class first')}} className="h-8 px-4 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold">＋ Add images</button>
+                                                    <button onPointerDown={e=>e.stopPropagation()} onClick={e=>{ e.stopPropagation(); const tid = activePaletteId || mode.project?.classes[0]?.id; if(tid) handleUploadClick(tid); else showSaved('Create a class first')}} className="h-11 px-6 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-bold">＋ Add images</button>
                                                     <p className="text-[10px] text-slate-400">Click a class above to set active, then paste</p>
                                                 </div>
                                             )}
@@ -1141,7 +1374,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                         </div>
                                     </div>
                                     <div className="h-1.5 bg-slate-100 shrink-0"><div className="h-full transition-all" style={{ width: `${progress}%`, background: cls.color }} /></div>
-                                    {isDragOver && <div className="mx-3 mt-3 h-8 rounded-lg bg-violet-50 border border-violet-200 text-violet-700 text-xs font-medium flex items-center justify-center">Drop images here</div>}
+                                    {isDragOver && <div className="mx-3 mt-3 h-11 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 text-sm font-bold flex items-center justify-center">Drop images here</div>}
                                     <div
                                         onDragOver={e => { e.preventDefault(); setDragOverClass(cls.id) }}
                                         onDragLeave={e => { e.preventDefault(); if (dragOverClass === cls.id) setDragOverClass(null) }}
@@ -1200,13 +1433,13 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                                     if (unannotatedCount > 0) {
                                                         return (
                                                             <div className="flex gap-2">
-                                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); const firstUnannotated = cls.samples.find(s => !isSampleAnnotated(s.data)); if (firstUnannotated) openAnnotator(cls.id, firstUnannotated.id) }} className="flex-1 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-1.5">🖊️ Annotate ({unannotatedCount})</button>
-                                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} disabled={atLimit} className="flex-1 h-8 rounded-lg bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50">＋ Add</button>
+                                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); const firstUnannotated = cls.samples.find(s => !isSampleAnnotated(s.data)); if (firstUnannotated) openAnnotator(cls.id, firstUnannotated.id) }} className="flex-1 h-11 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold flex items-center justify-center gap-1.5">🖊️ Annotate ({unannotatedCount})</button>
+                                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} disabled={atLimit} className="flex-1 h-11 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50">＋ Add</button>
                                                             </div>
                                                         )
                                                     }
                                                     return (
-                                                        <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} disabled={atLimit} className={`w-full inline-flex items-center justify-center gap-2 h-9 rounded-lg border text-xs font-bold transition-all ${atLimit ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-violet-50 to-indigo-50 border-violet-200 text-violet-700 hover:from-violet-100 hover:to-indigo-100 hover:border-violet-300 hover:shadow-sm'}`}>
+                                                        <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} disabled={atLimit} className={`w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl border text-sm font-bold transition-all ${atLimit ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-violet-50 to-indigo-50 border-violet-200 text-violet-700 hover:from-violet-100 hover:to-indigo-100 hover:border-violet-300 hover:shadow-sm'}`}>
                                                             <span className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs">+</span>
                                                             Add images <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white border border-violet-200 text-violet-600 font-bold">multi</span>
                                                         </button>
@@ -1217,17 +1450,17 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                             <div className="flex-1 flex flex-col items-center justify-center gap-3 py-4">
                                                 <div className={`w-12 h-12 rounded-xl border flex items-center justify-center ${isDragOver ? 'bg-violet-50 border-violet-200 text-violet-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M12 5v14M5 12h14" /></svg></div>
                                                 <div className="text-center">
-                                                    <p className="text-xs font-medium text-slate-700">No images yet</p>
+                                                    <p className="text-sm font-bold text-slate-700">No images yet</p>
                                                     <p className="text-[11px] text-slate-500">Drop, Browse or Paste (Ctrl+V)</p>
                                                     <p className="text-[10px] text-slate-400">with {cls.name} objects • PNG, JPG</p>
                                                 </div>
-                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} className="h-8 px-4 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold shadow-sm hover:from-violet-700 hover:to-indigo-700">＋ Add images</button>
+                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} className="h-11 px-6 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-bold shadow-sm hover:from-violet-700 hover:to-indigo-700">＋ Add images</button>
                                                 <p className="text-[10px] text-slate-400">Multi-select • or Ctrl+V to paste</p>
                                             </div>
                                         )}
                                         <div className="flex gap-2 pt-2 border-t border-slate-100 mt-auto">
-                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); mode.setSelectedClassId(cls.id); handleCaptureForClass(cls.id) }} onMouseDown={e => { e.stopPropagation(); mode.setSelectedClassId(cls.id); startBurstForClass(cls.id) }} onMouseUp={e => { e.stopPropagation(); stopBurst() }} onMouseLeave={stopBurst} disabled={atLimit || isTraining} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : isCapturing === cls.id ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>{isCapturing === cls.id ? '✓ Captured' : '📸 Snap'}</button>
-                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} disabled={atLimit} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>📂 Browse</button>
+                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); mode.setSelectedClassId(cls.id); handleCaptureForClass(cls.id) }} onMouseDown={e => { e.stopPropagation(); mode.setSelectedClassId(cls.id); startBurstForClass(cls.id) }} onMouseUp={e => { e.stopPropagation(); stopBurst() }} onMouseLeave={stopBurst} disabled={atLimit || isTraining} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-full text-sm font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : isCapturing === cls.id ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>{isCapturing === cls.id ? '✓ Captured' : '📸 Snap'}</button>
+                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} disabled={atLimit} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-full text-sm font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>📂 Browse</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1254,7 +1487,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                             </div>
                             <h3 className="text-sm font-semibold text-slate-900">No folders yet</h3>
                             <p className="text-xs text-slate-500 mt-1 max-w-[260px]">Create a folder for each object type. Each folder holds annotated images for that object.</p>
-                            <button onClick={() => setShowAddClass(true)} className="mt-4 h-9 px-4 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800">Add first folder</button>
+                            <button onClick={() => setShowAddClass(true)} className="mt-4 h-9 px-4 rounded-lg bg-slate-900 text-white text-sm font-bold hover:bg-slate-800">Add first folder</button>
                         </div>
                     )}
                     {isSingleDataset && mode.project?.classes.length === 0 && (
@@ -1262,7 +1495,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                             <div className="w-12 h-12 rounded-xl bg-violet-50 border border-violet-200 flex items-center justify-center text-violet-600 mb-3">🏷️</div>
                             <h3 className="text-sm font-semibold text-slate-900">No classes yet</h3>
                             <p className="text-xs text-slate-500 mt-1 max-w-[260px]">Create classes (e.g. Dog, Cat) in the palette above. Then add images to the Dataset below and click a class to annotate.</p>
-                            <button onClick={() => setShowAddClass(true)} className="mt-4 h-9 px-4 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-700">+ Add first class</button>
+                            <button onClick={() => setShowAddClass(true)} className="mt-4 h-9 px-4 rounded-lg bg-violet-600 text-white text-sm font-bold hover:bg-violet-700">+ Add first class</button>
                         </div>
                     )}
 
@@ -1292,23 +1525,29 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                 <div className="flex flex-col gap-2 w-full max-w-[260px]">
                                     <button onClick={() => handleTrain(totalEpochs)} disabled={isTraining || modelLoading || !canTrain} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} title={!canTrain ? warningTitle : undefined} className={`h-9 px-5 rounded-full text-sm font-bold shadow-sm transition-all w-full ${canTrain && !isTraining && !modelLoading ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 hover:shadow-md hover:scale-[1.02] cursor-pointer' : isTraining || modelLoading ? 'bg-slate-100 text-slate-400 cursor-wait' : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'}`}>{isTraining ? 'Training…' : mode.modelTrained ? '✨ Retrain' : '🚀 Train model'}</button>
                                     {!canTrain && !isTraining && (
-                                        <button onPointerDown={e=>e.stopPropagation()} onClick={e=>{ e.stopPropagation(); const allS=(mode.project?.classes||[]).flatMap(c=>c.samples.map(s=>({s, originClassId:c.id}))); const first=allS.find(({s})=>!isSampleAnnotated(s.data)); if(first) openAnnotator(first.originClassId, first.s.id); else showSaved('Add images first, then annotate'); const target={x: datasetPos.x+360, y: datasetPos.y+160}; setPan({x: 400 - target.x*zoom, y: 300 - target.y*zoom })}} className="h-8 px-4 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm w-full">🖊️ Annotate {unannotatedTotal} image{unannotatedTotal!==1?'s':''} first</button>
+                                        <button onPointerDown={e=>e.stopPropagation()} onClick={e=>{ e.stopPropagation(); const allS=(mode.project?.classes||[]).flatMap(c=>c.samples.map(s=>({s, originClassId:c.id}))); const first=allS.find(({s})=>!isSampleAnnotated(s.data)); if(first) openAnnotator(first.originClassId, first.s.id); else showSaved('Add images first, then annotate'); const target={x: datasetPos.x+360, y: datasetPos.y+160}; setPan({x: 400 - target.x*zoom, y: 300 - target.y*zoom })}} className="h-11 px-6 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold shadow-sm w-full">🖊️ Annotate {unannotatedTotal} image{unannotatedTotal!==1?'s':''} first</button>
                                     )}
                                 </div>
                                 <div className="w-full rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 p-3" onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
                                     <div className="flex justify-between text-[11px] font-semibold text-slate-700"><span className="flex items-center gap-1"><span className="w-5 h-5 rounded-md bg-violet-600 text-white flex items-center justify-center text-[10px]">◍</span>Epochs</span><span className="text-violet-700 font-bold bg-white px-2 py-0.5 rounded-full border border-violet-200">{totalEpochs}</span></div>
                                     <input type="range" min={5} max={100} step={5} value={totalEpochs} onChange={e => setTotalEpochs(parseInt(e.target.value))} onInput={e => setTotalEpochs(parseInt((e.target as HTMLInputElement).value))} disabled={isTraining} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} className="w-full mt-3 h-2 accent-violet-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style={{ accentColor: '#7c3aed' }} />
-                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
+                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-sm font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
                                 </div>
                                 {(epochResults.length > 0 || isTraining) && <div className="w-full"><AccuracyChart epochResults={epochResults} isTraining={isTraining} currentEpoch={currentEpoch} /></div>}
-                                {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs font-medium text-red-700">{trainingError}</div>}
+                                {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm font-bold text-red-700">{trainingError}</div>}
+                                {/* YOLOv8n nano — smallest YOLO, real epochs */}
+                                <div className="w-full flex items-center justify-between rounded-lg bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 px-3 py-2">
+                                    <span className="text-xs font-semibold text-violet-700 flex items-center gap-1.5">🚀 YOLOv8n nano <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-bold ${yoloAvailable ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-amber-400 text-white border-amber-400'}`}>{yoloAvailable ? 'ready' : 'loading...'}</span></span>
+                                    <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setUseYolo(v => !v); showSaved(!useYolo ? 'YOLOv8n nano — real epochs' : 'KNN mode — 1-shot') }} className={`h-7 px-3 rounded-full text-sm font-bold border transition-colors ${useYolo ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-violet-700 border-violet-200'}`}>{useYolo ? 'YOLO ✓' : 'KNN'}</button>
+                                </div>
+                                <p className="text-[10px] text-slate-500 text-center">{useYolo ? '✓ Epochs train YOLO head via backprop — accurate' : 'KNN: epochs are visualization only'}</p>
                                 {customModelTrained && (
                                     <div className="w-full flex items-center justify-between rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
                                         <span className="text-xs font-semibold text-sky-700">Custom model</span>
-                                        <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setUseCustomModel(v => !v); showSaved(useCustomModel ? 'Switched to COCO pre-trained' : 'Switched to custom model') }} className={`h-7 px-3 rounded-full text-xs font-bold border transition-colors ${useCustomModel ? 'bg-sky-600 text-white border-sky-600' : 'bg-white text-sky-700 border-sky-200'}`}>{useCustomModel ? 'Custom ✓' : 'COCO'}</button>
+                                        <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setUseCustomModel(v => !v); showSaved(useCustomModel ? 'Switched to COCO pre-trained' : 'Switched to custom model') }} className={`h-7 px-3 rounded-full text-sm font-bold border transition-colors ${useCustomModel ? 'bg-sky-600 text-white border-sky-600' : 'bg-white text-sky-700 border-sky-200'}`}>{useCustomModel ? 'Custom ✓' : 'COCO'}</button>
                                     </div>
                                 )}
-                                {modelLoadError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs font-medium text-red-700">{modelLoadError}</div>}
+                                {modelLoadError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm font-bold text-red-700">{modelLoadError}</div>}
                             </div>
                             <div className="grid grid-cols-3 gap-px bg-slate-100 border-t border-slate-100">
                                 <div className="bg-white py-2.5 text-center"><p className="text-[10px] font-medium text-slate-500 tracking-wide uppercase">Classes</p><p className="text-sm font-semibold text-slate-900">{mode.project?.classes.length || 0}</p></div>
@@ -1355,16 +1594,16 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                         <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${isTestDragging ? 'bg-white text-slate-900 border-white' : 'bg-white/10 border-white/20 text-white/80'}`}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></svg></div>
                                         <p className="text-sm font-medium text-white">{isTestDragging ? 'Drop image to test' : 'No input'}</p>
                                         <p className="text-xs text-white/60 max-w-[220px]">Turn on camera for live detection or drop an image</p>
-                                        <div className="flex gap-2"><button onPointerDown={e => e.stopPropagation()} onClick={camera.startCamera} className="h-8 px-3 rounded-lg bg-white text-slate-900 text-xs font-medium">Enable camera</button><button onPointerDown={e => e.stopPropagation()} onClick={() => testFileInputRef.current?.click()} className="h-8 px-3 rounded-lg bg-white/10 border border-white/20 text-white text-xs font-medium">Upload</button></div>
+                                        <div className="flex gap-2"><button onPointerDown={e => e.stopPropagation()} onClick={camera.startCamera} className="h-11 px-5 rounded-xl bg-white text-slate-900 text-sm font-bold">Enable camera</button><button onPointerDown={e => e.stopPropagation()} onClick={() => testFileInputRef.current?.click()} className="h-11 px-5 rounded-xl bg-white/10 border border-white/20 text-white text-sm font-bold">Upload</button></div>
                                     </div>
                                 )}
                                 {isProcessing && <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20"><div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" /></div>}
                             </div>
                             <div className="flex gap-2 p-3 flex-wrap" onPointerDown={e => e.stopPropagation()}>
-                                <button onClick={camera.toggleCamera} className={`h-8 px-3 rounded-lg text-xs font-medium border ${camera.cameraOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>{camera.cameraOn ? 'Camera on' : 'Camera off'}</button>
-                                <button onClick={() => setShowBoxes(v => !v)} className={`h-8 px-3 rounded-lg text-xs font-medium border ${showBoxes ? 'bg-violet-50 text-violet-700 border-violet-200' : 'bg-white text-slate-500 border-slate-200'}`}>{showBoxes ? 'Boxes on' : 'Boxes off'}</button>
-                                <button onClick={() => testFileInputRef.current?.click()} className="h-8 px-3 rounded-lg bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 text-xs font-medium">Upload</button>
-                                {testImage && <button onClick={resetScan} className="h-8 px-3 rounded-lg bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 text-xs font-medium">Clear</button>}
+                                <button onClick={camera.toggleCamera} className={`h-11 px-5 rounded-xl text-sm font-bold border ${camera.cameraOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>{camera.cameraOn ? 'Camera on' : 'Camera off'}</button>
+                                <button onClick={() => setShowBoxes(v => !v)} className={`h-11 px-5 rounded-xl text-sm font-bold border ${showBoxes ? 'bg-violet-50 text-violet-700 border-violet-200' : 'bg-white text-slate-500 border-slate-200'}`}>{showBoxes ? 'Boxes on' : 'Boxes off'}</button>
+                                <button onClick={() => testFileInputRef.current?.click()} className="h-11 px-5 rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 text-sm font-bold">Upload</button>
+                                {testImage && <button onClick={resetScan} className="h-11 px-5 rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 text-sm font-bold">Clear</button>}
                                 <span className="ml-auto inline-flex h-8 items-center px-2.5 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-medium text-slate-600">{mode.project?.classes.length || 0} folders • {totalSamplesAll} images</span>
                             </div>
                             {/* Confidence threshold */}
@@ -1382,8 +1621,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                 {/* Scan controls for static image */}
                                 {testImage && uploadedImage && (
                                     <div className="flex gap-2">
-                                        <button onClick={handleScan} disabled={modelLoading || isDetecting} className="flex-1 h-8 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold disabled:opacity-50">{isDetecting ? 'Scanning…' : 'Re-scan'}</button>
-                                        <button onClick={() => setShowBoxes(v => !v)} className="h-8 px-3 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700">{showBoxes ? 'Hide boxes' : 'Show boxes'}</button>
+                                        <button onClick={handleScan} disabled={modelLoading || isDetecting} className="flex-1 h-11 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold disabled:opacity-50">{isDetecting ? 'Scanning…' : 'Re-scan'}</button>
+                                        <button onClick={() => setShowBoxes(v => !v)} className="h-11 px-5 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-700">{showBoxes ? 'Hide boxes' : 'Show boxes'}</button>
                                     </div>
                                 )}
                                 {!canTrain && !mode.modelTrained ? <div className="text-center py-6 text-xs text-slate-500">Add images and train to improve custom detection<br /><span className="text-[11px] text-slate-400">COCO pre-trained (80 classes) active until you train</span></div> : currentDetections.length === 0 ? <div className="text-center py-6 text-xs text-slate-400">{camera.cameraOn ? 'Point camera at objects' : testImage ? 'No objects detected — try lower threshold or different image' : 'Enable camera or upload an image'}</div> : (
@@ -1401,7 +1640,7 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                                     const col = getColorForObject(label)
                                                     return (
                                                         <div key={label} className="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200">
-                                                            <span className="flex items-center gap-2 text-xs font-medium truncate">
+                                                            <span className="flex items-center gap-2 text-sm font-bold truncate">
                                                                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: col }} />
                                                                 <span className="truncate text-slate-900 capitalize">{label}</span>
                                                                 <span className="text-[11px] text-slate-500">× {count as number}</span>
@@ -1424,8 +1663,8 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
-                                            <button onClick={resetScan} className="flex-1 h-8 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700">Clear</button>
-                                            <button onClick={handleExportReport} className="flex-1 h-8 rounded-lg bg-slate-900 text-white text-xs font-medium">Download report</button>
+                                            <button onClick={resetScan} className="flex-1 h-11 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-700">Clear</button>
+                                            <button onClick={handleExportReport} className="flex-1 h-11 rounded-xl bg-slate-900 text-white text-sm font-bold">Download report</button>
                                         </div>
                                     </>
                                 )}
@@ -1438,13 +1677,18 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                 <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white rounded-full shadow-sm border border-slate-200 px-2 py-1.5">
                     <span className="text-[11px] font-medium text-slate-600 px-2">Canvas</span>
                     <button onClick={zoomOut} className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-700">−</button>
-                    <span className="text-xs font-medium w-11 text-center text-slate-900">{Math.round(zoom * 100)}%</span>
+                    <span className="text-sm font-bold w-11 text-center text-slate-900">{Math.round(zoom * 100)}%</span>
                     <button onClick={zoomIn} className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-700">+</button>
                     <div className="w-px h-5 bg-slate-200 mx-1" />
-                    <button onClick={resetView} className="h-7 px-3 rounded-full bg-slate-900 text-white text-xs font-medium">Reset</button>
+                    <button onClick={resetView} className="h-7 px-3 rounded-full bg-slate-900 text-white text-sm font-bold">Reset</button>
                 </div>
             </div>
-            {annotatorState && (
+            {annotatorState && (() => {
+                const list = getAnnotatorList()
+                const idx = list.findIndex(e => e.sampleId === annotatorState.sampleId)
+                const hasPrev = idx > 0
+                const hasNext = idx >= 0 && idx < list.length - 1
+                return (
                 <ObjectAnnotatorModal
                     imageUrl={annotatorState.imageUrl}
                     initialBoxes={annotatorState.boxes}
@@ -1452,8 +1696,17 @@ export default function ObjectDetectorPanel({ mode }: ObjectDetectorPanelProps) 
                     defaultLabel={mode.project?.classes.find(c => c.id === annotatorState.classId)?.name || (mode.project?.classes[0]?.name || 'Object')}
                     onClose={() => setAnnotatorState(null)}
                     onSave={handleAnnotatorSave}
+                    hasPrev={hasPrev}
+                    hasNext={hasNext}
+                    currentIndex={idx >= 0 ? idx : 0}
+                    total={list.length}
+                    onPrev={() => handleAnnotatorSaveAndNavigate(annotatorState.boxes, -1)}
+                    onNext={() => handleAnnotatorSaveAndNavigate(annotatorState.boxes, 1)}
+                    onSaveAndPrev={(b) => handleAnnotatorSaveAndNavigate(b, -1)}
+                    onSaveAndNext={(b) => handleAnnotatorSaveAndNavigate(b, 1)}
                 />
-            )}
+                )
+            })()}
             {confirmState && (
                 <ConfirmModal
                     isOpen={!!confirmState}

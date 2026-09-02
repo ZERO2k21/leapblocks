@@ -120,7 +120,7 @@ export default function EvaluatePanel({ mode, trainer }: EvaluatePanelProps) {
                 </div>
                 <h2 className="text-xl font-extrabold text-[#131b2e] mb-2">No Model Yet</h2>
                 <p className="text-xs text-gray-500 mb-6 max-w-xs">Train your model first, then come back to evaluate its performance.</p>
-                <button onClick={() => mode.setMode('train')} className="px-8 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl text-xs font-bold border-none cursor-pointer shadow-lg shadow-purple-600/30">🏋️ Go to Training</button>
+                <button onClick={() => mode.setMode('train')} className="px-8 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl text-sm font-bold border-none cursor-pointer shadow-lg shadow-purple-600/30">🏋️ Go to Training</button>
             </div>
         )
     }
@@ -195,7 +195,7 @@ export default function EvaluatePanel({ mode, trainer }: EvaluatePanelProps) {
                     <div className="flex items-start gap-3">
                         <span className="text-xl">⚠️</span>
                         <div>
-                            <p className="text-xs font-bold text-[#92400e] mb-1">Classes May Need More Training Data</p>
+                            <p className="text-sm font-bold text-[#92400e] mb-1">Classes May Need More Training Data</p>
                             <div className="flex flex-wrap gap-2">
                                 {weakClasses.map(c => (
                                     <span key={c.name} className="px-2 py-0.5 bg-white rounded text-[10px] font-bold text-[#92400e] border border-[#fde68a]">
@@ -230,11 +230,11 @@ export default function EvaluatePanel({ mode, trainer }: EvaluatePanelProps) {
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2">
                                             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cm.color }} />
-                                            <span className="text-xs font-bold text-[#131b2e]">{cm.name}</span>
+                                            <span className="text-sm font-bold text-[#131b2e]">{cm.name}</span>
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-center">
-                                        <span className="text-xs font-bold text-[#630ed4]">{cm.sampleCount}</span>
+                                        <span className="text-sm font-bold text-[#630ed4]">{cm.sampleCount}</span>
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2">
@@ -265,7 +265,7 @@ export default function EvaluatePanel({ mode, trainer }: EvaluatePanelProps) {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-center">
-                                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                                        <span className={`text-sm font-bold px-2 py-0.5 rounded ${
                                             cm.f1 >= 0.7 ? 'bg-[#d1fae5] text-[#006c44]' :
                                             cm.f1 >= 0.4 ? 'bg-[#fef3c7] text-[#92400e]' :
                                             'bg-[#fee2e2] text-[#991b1b]'
@@ -285,7 +285,7 @@ export default function EvaluatePanel({ mode, trainer }: EvaluatePanelProps) {
                     <h3 className="text-sm font-extrabold text-[#131b2e]">Confusion Matrix</h3>
                     <button
                         onClick={() => setShowConfusion(!showConfusion)}
-                        className="text-xs font-bold text-[#630ed4] hover:underline"
+                        className="text-sm font-bold text-[#630ed4] hover:underline"
                     >
                         {showConfusion ? 'Hide' : 'Show'}
                     </button>
@@ -345,8 +345,8 @@ export default function EvaluatePanel({ mode, trainer }: EvaluatePanelProps) {
             </div>
 
             <div className="flex gap-3 justify-center mt-5">
-                <button onClick={() => mode.setMode('train')} className="px-5 py-2.5 bg-purple-50 text-[#630ed4] rounded-xl text-xs font-bold border-none cursor-pointer hover:bg-purple-100 transition-colors">🔄 Re-train Model</button>
-                <button onClick={() => mode.setMode('test')} className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl text-xs font-bold border-none cursor-pointer shadow-lg shadow-purple-600/30">🧪 Test Model</button>
+                <button onClick={() => mode.setMode('train')} className="px-5 py-2.5 bg-purple-50 text-[#630ed4] rounded-xl text-sm font-bold border-none cursor-pointer hover:bg-purple-100 transition-colors">🔄 Re-train Model</button>
+                <button onClick={() => mode.setMode('test')} className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl text-sm font-bold border-none cursor-pointer shadow-lg shadow-purple-600/30">🧪 Test Model</button>
             </div>
             </div>
         </div>

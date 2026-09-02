@@ -410,13 +410,13 @@ export default function TabularPanel({ mode }: TabularPanelProps) {
                             />
                         </div>
                         <div className="flex gap-2 shrink-0 pb-2">
-                            <button onClick={() => { setStep('collect'); setCollectMode('choose') }} className="py-2.5 px-4 rounded-xl text-xs font-bold border-2 border-gray-200 text-gray-500 cursor-pointer bg-white hover:bg-gray-50 transition-all">
+                            <button onClick={() => { setStep('collect'); setCollectMode('choose') }} className="py-2.5 px-4 rounded-xl text-sm font-bold border-2 border-gray-200 text-gray-500 cursor-pointer bg-white hover:bg-gray-50 transition-all">
                                 ← Data
                             </button>
                             <button
                                 onClick={() => setStep('train')}
                                 disabled={featureIndices.length === 0}
-                                className={`flex-1 py-2.5 rounded-xl text-xs font-bold border-none transition-all ${
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-bold border-none transition-all ${
                                     featureIndices.length > 0
                                         ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white cursor-pointer shadow-[0_4px_14px_rgba(99,14,212,0.35)]'
                                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
@@ -482,7 +482,7 @@ export default function TabularPanel({ mode }: TabularPanelProps) {
                         <button
                             onClick={handleTrain}
                             disabled={isTraining || featureIndices.length === 0}
-                            className={`w-full py-3 rounded-xl text-xs font-bold border-none transition-all shrink-0 ${
+                            className={`w-full py-3 rounded-xl text-sm font-bold border-none transition-all shrink-0 ${
                                 !isTraining && featureIndices.length > 0
                                     ? 'bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white cursor-pointer shadow-[0_4px_14px_rgba(99,14,212,0.35)] hover:opacity-95'
                                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
@@ -576,9 +576,9 @@ export default function TabularPanel({ mode }: TabularPanelProps) {
 
                         {finalAccuracy !== null && !isTraining && (
                             <div className="flex gap-2 shrink-0 pb-2">
-                                <button onClick={() => setStep('configure')} className="py-2.5 px-4 rounded-xl text-xs font-bold border-2 border-gray-200 text-gray-500 cursor-pointer bg-white hover:bg-gray-50 transition-all">← Setup</button>
-                                <button onClick={() => setStep('test')} className="flex-1 py-2.5 rounded-xl text-xs font-bold border-none bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white cursor-pointer shadow-md hover:opacity-95 transition-all">🧪 Test Model</button>
-                                <button onClick={handleExportModel} className="py-2.5 px-4 rounded-xl text-xs font-bold border-2 border-[#630ed4] text-[#630ed4] cursor-pointer bg-white hover:bg-[#f5f3ff] transition-all">💾</button>
+                                <button onClick={() => setStep('configure')} className="py-2.5 px-4 rounded-xl text-sm font-bold border-2 border-gray-200 text-gray-500 cursor-pointer bg-white hover:bg-gray-50 transition-all">← Setup</button>
+                                <button onClick={() => setStep('test')} className="flex-1 py-2.5 rounded-xl text-sm font-bold border-none bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white cursor-pointer shadow-md hover:opacity-95 transition-all">🧪 Test Model</button>
+                                <button onClick={handleExportModel} className="py-2.5 px-4 rounded-xl text-sm font-bold border-2 border-[#630ed4] text-[#630ed4] cursor-pointer bg-white hover:bg-[#f5f3ff] transition-all">💾</button>
                             </div>
                         )}
                     </div>
@@ -595,8 +595,8 @@ export default function TabularPanel({ mode }: TabularPanelProps) {
                             onPredict={handlePredict}
                         />
                         <div className="flex gap-2 shrink-0 pb-2">
-                            <button onClick={() => setStep('train')} className="py-2.5 px-4 rounded-xl text-xs font-bold border-2 border-gray-200 text-gray-500 cursor-pointer bg-white hover:bg-gray-50 transition-all">← Train</button>
-                            <button onClick={handleExportModel} className="flex-1 py-2.5 rounded-xl text-xs font-bold border-none bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white cursor-pointer shadow-md hover:opacity-95 transition-all">💾 Export Model</button>
+                            <button onClick={() => setStep('train')} className="py-2.5 px-4 rounded-xl text-sm font-bold border-2 border-gray-200 text-gray-500 cursor-pointer bg-white hover:bg-gray-50 transition-all">← Train</button>
+                            <button onClick={handleExportModel} className="flex-1 py-2.5 rounded-xl text-sm font-bold border-none bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white cursor-pointer shadow-md hover:opacity-95 transition-all">💾 Export Model</button>
                         </div>
                     </div>
                 )}

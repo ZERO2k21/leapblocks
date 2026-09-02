@@ -10,6 +10,15 @@ interface ObjectAnnotatorModalProps {
     defaultLabel?: string
     onSave: (boxes: BoundingBox[]) => void
     onClose: () => void
+    // Navigation for dataset — when annotating many images
+    hasPrev?: boolean
+    hasNext?: boolean
+    onPrev?: () => void
+    onNext?: () => void
+    currentIndex?: number
+    total?: number
+    onSaveAndNext?: (boxes: BoundingBox[]) => void
+    onSaveAndPrev?: (boxes: BoundingBox[]) => void
 }
 
 const TOOL_COLORS = ['#7C3AED', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#8B5CF6', '#F97316', '#14B8A6']
@@ -19,7 +28,7 @@ function getNextColor(existing: BoundingBox[]): string {
     return TOOL_COLORS.find(c => !used.includes(c)) || TOOL_COLORS[0]
 }
 
-export default function ObjectAnnotatorModal({ imageUrl, initialBoxes, classOptions, defaultLabel: defaultLabelProp, onSave, onClose }: ObjectAnnotatorModalProps) {
+export default function ObjectAnnotatorModal({ imageUrl, initialBoxes, classOptions, defaultLabel: defaultLabelProp, onSave, onClose, hasPrev, hasNext, onPrev, onNext, currentIndex, total, onSaveAndNext, onSaveAndPrev }: ObjectAnnotatorModalProps) {
     const canvasRef = useRef<HTMLDivElement>(null)
     const imgRef = useRef<HTMLImageElement>(null)
     const [boxes, setBoxes] = useState<BoundingBox[]>(() => initialBoxes.map(b => ({ ...b })))
@@ -42,6 +51,15 @@ export default function ObjectAnnotatorModal({ imageUrl, initialBoxes, classOpti
     const [activeLabel, setActiveLabel] = useState(defaultLabel)
     // keep activeLabel in sync when palette changes externally
     useEffect(() => { setActiveLabel(defaultLabel) }, [defaultLabel])
+
+    // Sync when navigating to next/prev image (imageUrl changes)
+    useEffect(() => {
+        setBoxes(initialBoxes.map(b => ({ ...b })))
+        setSelectedId(null)
+        setUndoStack([])
+        setRedoStack([])
+        setIsDrawing(false); setDrawStart(null); setDrawCurrent(null); setDragState(null); setResizeState(null)
+    }, [imageUrl])
 
     const pushUndo = useCallback((prev: BoundingBox[]) => {
         setUndoStack(s => {
@@ -242,6 +260,16 @@ export default function ObjectAnnotatorModal({ imageUrl, initialBoxes, classOpti
                 if (e.key === 'Escape') { setEditingLabelId(null); setEditingLabel('') }
                 return
             }
+            if (e.key === 'ArrowLeft' && hasPrev && onPrev) {
+                e.preventDefault()
+                if (onSaveAndPrev) onSaveAndPrev(boxes); else onPrev()
+                return
+            }
+            if (e.key === 'ArrowRight' && hasNext && onNext) {
+                e.preventDefault()
+                if (onSaveAndNext) onSaveAndNext(boxes); else onNext()
+                return
+            }
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 if (selectedId) {
                     pushUndo(boxes)
@@ -259,7 +287,7 @@ export default function ObjectAnnotatorModal({ imageUrl, initialBoxes, classOpti
         }
         window.addEventListener('keydown', onKey)
         return () => window.removeEventListener('keydown', onKey)
-    }, [selectedId, boxes, pushUndo, handleUndo, handleRedo, editingLabelId, editingLabel, classOptions, onClose, isDrawing, dragState, resizeState])
+    }, [selectedId, boxes, pushUndo, handleUndo, handleRedo, editingLabelId, editingLabel, classOptions, onClose, isDrawing, dragState, resizeState, hasPrev, hasNext, onPrev, onNext, onSaveAndNext, onSaveAndPrev])
 
     const previewBox = isDrawing && drawStart && drawCurrent ? { x: Math.min(drawStart.x, drawCurrent.x), y: Math.min(drawStart.y, drawCurrent.y), width: Math.abs(drawCurrent.x - drawStart.x), height: Math.abs(drawCurrent.y - drawStart.y) } : null
 
@@ -275,11 +303,18 @@ export default function ObjectAnnotatorModal({ imageUrl, initialBoxes, classOpti
                             <p className="text-xs text-slate-500 leading-none mt-0.5">Draw boxes around objects • {boxes.length} box{boxes.length!==1?'es':''}</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                        {(hasPrev !== undefined || hasNext !== undefined) && (
+                            <div className="flex items-center gap-1 mr-1">
+                                <button onClick={() => { if (hasPrev && onPrev) { if (onSaveAndPrev) onSaveAndPrev(boxes); else onPrev() } }} disabled={!hasPrev} className={`h-8 px-2.5 rounded-lg text-xs font-bold border flex items-center gap-1 ${!hasPrev ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`} title="Previous image (←)">‹ Prev</button>
+                                <span className="text-[11px] font-bold text-slate-600 px-1">{currentIndex !== undefined && total !== undefined ? `${currentIndex + 1}/${total}` : ''}</span>
+                                <button onClick={() => { if (hasNext && onNext) { if (onSaveAndNext) onSaveAndNext(boxes); else onNext() } }} disabled={!hasNext} className={`h-8 px-2.5 rounded-lg text-xs font-bold border flex items-center gap-1 ${!hasNext ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-violet-600 text-white border-violet-600 hover:bg-violet-700'}`} title="Next image (→) — saves current">Next ›</button>
+                            </div>
+                        )}
                         <button onClick={() => setShowLabels(v => !v)} className={`h-8 px-2.5 rounded-lg text-xs font-bold border ${showLabels ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`} title="Toggle labels (L)">{showLabels ? '🏷️ Labels on' : '🏷️ Labels off'}</button>
                         <button onClick={handleAutoDetect} disabled={isAutoDetecting} className={`h-8 px-3 rounded-lg text-xs font-bold border ${isAutoDetecting ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>{isAutoDetecting ? 'Detecting…' : '🤖 Auto-detect'}</button>
-                        <button onClick={handleUndo} disabled={undoStack.length===0} className={`h-8 px-2.5 rounded-lg text-xs font-bold border ${undoStack.length===0?'bg-slate-50 text-slate-400 border-slate-200':'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>↩️ Undo</button>
-                        <button onClick={handleRedo} disabled={redoStack.length===0} className={`h-8 px-2.5 rounded-lg text-xs font-bold border ${redoStack.length===0?'bg-slate-50 text-slate-400 border-slate-200':'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>↪️ Redo</button>
+                        <button onClick={handleUndo} disabled={undoStack.length===0} className={`h-8 px-2.5 rounded-lg text-xs font-bold border ${undoStack.length===0?'bg-slate-50 text-slate-400 border-slate-200':'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>↩️</button>
+                        <button onClick={handleRedo} disabled={redoStack.length===0} className={`h-8 px-2.5 rounded-lg text-xs font-bold border ${redoStack.length===0?'bg-slate-50 text-slate-400 border-slate-200':'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>↪️</button>
                         <button onClick={onClose} className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center hover:bg-slate-800">✕</button>
                     </div>
                 </div>
@@ -437,8 +472,30 @@ export default function ObjectAnnotatorModal({ imageUrl, initialBoxes, classOpti
                                 </div>
                             ))}
                         </div>
-                        <div className="p-3 border-t border-slate-200 bg-white flex gap-2">
-                            <button onClick={onClose} className="flex-1 h-9 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50">Cancel</button>
+                        <div className="p-3 border-t border-slate-200 bg-white flex gap-1.5">
+                            <button onClick={onClose} className="h-9 px-3 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 shrink-0">Cancel</button>
+                            {hasPrev !== undefined && (
+                                <button
+                                    onClick={() => {
+                                        const validNames = new Set(classOptions.map(c => c.name.toLowerCase()))
+                                        for (const b of boxes) if (!validNames.has(b.label.toLowerCase())) { alert(`Box "${b.label}" invalid`); return }
+                                        if (onSaveAndPrev) onSaveAndPrev(boxes); else if (onPrev) onPrev()
+                                    }}
+                                    disabled={!hasPrev}
+                                    className={`h-9 px-3 rounded-xl text-xs font-bold border shrink-0 ${!hasPrev?'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed':'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
+                                >‹ Prev</button>
+                            )}
+                            {hasNext !== undefined && (
+                                <button
+                                    onClick={() => {
+                                        const validNames = new Set(classOptions.map(c => c.name.toLowerCase()))
+                                        for (const b of boxes) if (!validNames.has(b.label.toLowerCase())) { alert(`Box "${b.label}" invalid`); return }
+                                        if (onSaveAndNext) onSaveAndNext(boxes); else if (onNext) onNext()
+                                    }}
+                                    disabled={!hasNext}
+                                    className={`h-9 px-3 rounded-xl text-xs font-bold border shrink-0 ${!hasNext?'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed':'bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100'}`}
+                                >Next ›</button>
+                            )}
                             <button
                                 onClick={handleSave}
                                 disabled={boxes.length===0}

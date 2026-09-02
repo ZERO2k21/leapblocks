@@ -527,9 +527,9 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
             const cur = getCanvasPoint(e.clientX, e.clientY)
             const s = dragStartRef.current
             const nx = s.origX + (cur.x - s.startX), ny = s.origY + (cur.y - s.startY)
-            if (s.id === 'brain') setBrainPos({ x: nx, y: ny })
-            else if (s.id === 'vision') setVisionPos({ x: nx, y: ny })
-            else setClassPositions(prev => ({ ...prev, [s.id]: { x: nx, y: ny } }))
+            if (s.id === 'brain') { const cand = nudgeToNonColliding('brain', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setBrainPos(cand) }
+            else if (s.id === 'vision') { const cand = nudgeToNonColliding('vision', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setVisionPos(cand) }
+            else { const cand = nudgeToNonColliding(s.id, {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setClassPositions(prev => ({ ...prev, [s.id]: cand })) }
         }
     }
     const handleViewportMouseUp = () => { setIsPanning(false); panStartRef.current = null; if (draggingId) setDraggingId(null) }
@@ -603,9 +603,9 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                 const curX = (cx - rect.left - pan.x) / zoom, curY = (cy - rect.top - pan.y) / zoom
                 const s = dragStartRef.current
                 const nx = s.origX + (curX - s.startX), ny = s.origY + (curY - s.startY)
-                if (s.id === 'brain') setBrainPos({ x: nx, y: ny })
-                else if (s.id === 'vision') setVisionPos({ x: nx, y: ny })
-                else setClassPositions(prev => ({ ...prev, [s.id]: { x: nx, y: ny } }))
+                if (s.id === 'brain') { const cand = nudgeToNonColliding('brain', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setBrainPos(cand) }
+            else if (s.id === 'vision') { const cand = nudgeToNonColliding('vision', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setVisionPos(cand) }
+            else { const cand = nudgeToNonColliding(s.id, {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setClassPositions(prev => ({ ...prev, [s.id]: cand })) }
             }
         }
         const onUp = () => { setIsPanning(false); panStartRef.current = null; setDraggingId(null) }
@@ -635,7 +635,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-[#F8FAFC] relative">
-            {savedMessage && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[80] px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-medium shadow-lg">{savedMessage}</div>}
+            {savedMessage && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[80] px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-lg">{savedMessage}</div>}
             <canvas ref={canvasRef} className="hidden" />
             <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
             <input ref={testFileInputRef} type="file" accept="image/*" onChange={handleTestUpload as any} className="hidden" />
@@ -663,19 +663,19 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                     <span className="hidden lg:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-medium text-slate-600">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{inferenceTime} ms
                     </span>
-                    <button onClick={camera.toggleCamera} className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium border transition-colors ${camera.cameraOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>
+                    <button onClick={camera.toggleCamera} className={`inline-flex items-center gap-1.5 h-11 px-5 rounded-xl text-sm font-bold border transition-colors ${camera.cameraOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>
                         <span className={`w-2 h-2 rounded-full ${camera.cameraOn ? 'bg-emerald-400' : 'bg-slate-300'}`} />{camera.cameraOn ? 'Camera on' : 'Camera off'}
                     </button>
                     <div className="w-px h-6 bg-slate-200 hidden sm:block" />
-                    <button onClick={() => setShowAddClass(true)} className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-sm">+ New folder</button>
+                    <button onClick={() => setShowAddClass(true)} className="hidden sm:inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-sm">+ New folder</button>
                 </div>
             </div>
 
             {showAddClass && (
                 <div className="absolute top-[56px] left-1/2 -translate-x-1/2 z-30 bg-white rounded-xl shadow-xl border border-slate-200 p-3 flex gap-2 items-center w-[min(420px,95vw)]">
-                    <input autoFocus value={newClassName} onChange={e => setNewClassName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAddClass(); if (e.key === 'Escape') setShowAddClass(false) }} placeholder="Folder name e.g. T-Pose" className="flex-1 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100" />
+                    <input autoFocus value={newClassName} onChange={e => setNewClassName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAddClass(); if (e.key === 'Escape') setShowAddClass(false) }} placeholder="Folder name e.g. T-Pose" className="flex-1 h-11 px-5 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100" />
                     <button onClick={handleAddClass} className="h-9 px-4 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800">Add</button>
-                    <button onClick={() => setShowAddClass(false)} className="h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600">Cancel</button>
+                    <button onClick={() => setShowAddClass(false)} className="h-11 px-5 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600">Cancel</button>
                 </div>
             )}
 
@@ -756,7 +756,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                         </div>
                                     </div>
                                     <div className="h-1.5 bg-slate-100 shrink-0"><div className="h-full transition-all" style={{ width: `${progress}%`, background: cls.color }} /></div>
-                                    {isDragOver && <div className="mx-3 mt-3 h-8 rounded-lg bg-violet-50 border border-violet-200 text-violet-700 text-xs font-medium flex items-center justify-center">Drop images here</div>}
+                                    {isDragOver && <div className="mx-3 mt-3 h-11 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 text-sm font-bold flex items-center justify-center">Drop images here</div>}
                                     <div
                                         onDragOver={e => { e.preventDefault(); setDragOverClass(cls.id) }}
                                         onDragLeave={e => { e.preventDefault(); if (dragOverClass === cls.id) setDragOverClass(null) }}
@@ -774,7 +774,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                                     ))}
                                                 </div>
                                                 {cls.samples.length > 8 && <div className="text-[11px] text-slate-500 text-center">+{cls.samples.length - 8} more</div>}
-                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} disabled={atLimit} className={`w-full inline-flex items-center justify-center gap-2 h-9 rounded-lg border text-xs font-bold transition-all ${atLimit ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-violet-50 to-indigo-50 border-violet-200 text-violet-700 hover:from-violet-100 hover:to-indigo-100 hover:border-violet-300 hover:shadow-sm'}`}>
+                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} disabled={atLimit} className={`w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl border text-sm font-bold transition-all ${atLimit ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-violet-50 to-indigo-50 border-violet-200 text-violet-700 hover:from-violet-100 hover:to-indigo-100 hover:border-violet-300 hover:shadow-sm'}`}>
                                                     <span className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs">+</span>
                                                     Add poses <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white border border-violet-200 text-violet-600 font-bold">multi</span>
                                                 </button>
@@ -783,16 +783,16 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                             <div className="flex-1 flex flex-col items-center justify-center gap-3 py-4">
                                                 <div className={`w-12 h-12 rounded-xl border flex items-center justify-center ${isDragOver ? 'bg-violet-50 border-violet-200 text-violet-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}><span className="text-lg">🤸</span></div>
                                                 <div className="text-center">
-                                                    <p className="text-xs font-medium text-slate-700">No poses yet</p>
+                                                    <p className="text-sm font-bold text-slate-700">No poses yet</p>
                                                     <p className="text-[11px] text-slate-500">Strike a pose or drop images</p>
                                                 </div>
-                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} className="h-8 px-4 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold shadow-sm hover:from-violet-700 hover:to-indigo-700">＋ Add poses</button>
+                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} className="h-11 px-6 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-bold shadow-sm hover:from-violet-700 hover:to-indigo-700">＋ Add poses</button>
                                                 <p className="text-[10px] text-slate-400">PNG, JPG • Pose will be detected</p>
                                             </div>
                                         )}
                                         <div className="flex gap-2 pt-2 border-t border-slate-100 mt-auto">
-                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); mode.setSelectedClassId(cls.id); handleCaptureForClass(cls.id) }} onMouseDown={e => { e.stopPropagation(); mode.setSelectedClassId(cls.id); startBurstForClass(cls.id) }} onMouseUp={e => { e.stopPropagation(); stopBurst() }} onMouseLeave={stopBurst} disabled={atLimit || isTraining} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : isCapturing === cls.id ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>{isCapturing === cls.id ? '✓ Captured' : '📸 Snap'}</button>
-                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} disabled={atLimit} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>📂 Browse</button>
+                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); mode.setSelectedClassId(cls.id); handleCaptureForClass(cls.id) }} onMouseDown={e => { e.stopPropagation(); mode.setSelectedClassId(cls.id); startBurstForClass(cls.id) }} onMouseUp={e => { e.stopPropagation(); stopBurst() }} onMouseLeave={stopBurst} disabled={atLimit || isTraining} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-full text-sm font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : isCapturing === cls.id ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>{isCapturing === cls.id ? '✓ Captured' : '📸 Snap'}</button>
+                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleUploadClick(cls.id) }} disabled={atLimit} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-full text-sm font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>📂 Browse</button>
                                         </div>
                                     </div>
                                 </div>
@@ -818,7 +818,7 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                             </div>
                             <h3 className="text-sm font-semibold text-slate-900">No folders yet</h3>
                             <p className="text-xs text-slate-500 mt-1 max-w-[260px]">Create a folder for each pose. Each folder is a separate compartment on the canvas.</p>
-                            <button onClick={() => setShowAddClass(true)} className="mt-4 h-9 px-4 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800">Add first folder</button>
+                            <button onClick={() => setShowAddClass(true)} className="mt-4 h-9 px-4 rounded-lg bg-slate-900 text-white text-sm font-bold hover:bg-slate-800">Add first folder</button>
                         </div>
                     )}
 
@@ -849,10 +849,10 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                 <div className="w-full rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 p-3" onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
                                     <div className="flex justify-between text-[11px] font-semibold text-slate-700"><span className="flex items-center gap-1"><span className="w-5 h-5 rounded-md bg-violet-600 text-white flex items-center justify-center text-[10px]">◍</span>Epochs</span><span className="text-violet-700 font-bold bg-white px-2 py-0.5 rounded-full border border-violet-200">{totalEpochs}</span></div>
                                     <input type="range" min={5} max={100} step={5} value={totalEpochs} onChange={e => setTotalEpochs(parseInt(e.target.value))} onInput={e => setTotalEpochs(parseInt((e.target as HTMLInputElement).value))} disabled={isTraining} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} className="w-full mt-3 h-2 accent-violet-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style={{ accentColor: '#7c3aed' }} />
-                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
+                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-sm font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
                                 </div>
                                 {(epochResults.length > 0 || isTraining) && <div className="w-full"><AccuracyChart epochResults={epochResults} isTraining={isTraining} currentEpoch={currentEpoch} /></div>}
-                                {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs font-medium text-red-700">{trainingError}</div>}
+                                {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm font-bold text-red-700">{trainingError}</div>}
                             </div>
                             <div className="grid grid-cols-3 gap-px bg-slate-100 border-t border-slate-100">
                                 <div className="bg-white py-2.5 text-center"><p className="text-[10px] font-medium text-slate-500 tracking-wide uppercase">Folders</p><p className="text-sm font-semibold text-slate-900">{mode.project?.classes.length || 0}</p></div>
@@ -900,13 +900,13 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                         <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${isTestDragging ? 'bg-white text-slate-900 border-white' : 'bg-white/10 border-white/20 text-white/80'}`}><span className="text-lg">🤸</span></div>
                                         <p className="text-sm font-medium text-white">{isTestDragging ? 'Drop image to test' : 'No input'}</p>
                                         <p className="text-xs text-white/60 max-w-[220px]">Turn on camera for realtime pose or drop an image</p>
-                                        <div className="flex gap-2"><button onPointerDown={e => e.stopPropagation()} onClick={camera.startCamera} className="h-8 px-3 rounded-lg bg-white text-slate-900 text-xs font-medium">Enable camera</button><button onPointerDown={e => e.stopPropagation()} onClick={() => testFileInputRef.current?.click()} className="h-8 px-3 rounded-lg bg-white/10 border border-white/20 text-white text-xs font-medium">Upload</button></div>
+                                        <div className="flex gap-2"><button onPointerDown={e => e.stopPropagation()} onClick={camera.startCamera} className="h-11 px-5 rounded-xl bg-white text-slate-900 text-sm font-bold">Enable camera</button><button onPointerDown={e => e.stopPropagation()} onClick={() => testFileInputRef.current?.click()} className="h-11 px-5 rounded-xl bg-white/10 border border-white/20 text-white text-sm font-bold">Upload</button></div>
                                     </div>
                                 )}
                             </div>
                             <div className="flex gap-2 p-3 flex-wrap" onPointerDown={e => e.stopPropagation()}>
-                                <button onClick={camera.toggleCamera} className={`h-8 px-3 rounded-lg text-xs font-medium border ${camera.cameraOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>{camera.cameraOn ? 'Camera on' : 'Camera off'}</button>
-                                <button onClick={() => testFileInputRef.current?.click()} className="h-8 px-3 rounded-lg bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 text-xs font-medium">Upload</button>
+                                <button onClick={camera.toggleCamera} className={`h-11 px-5 rounded-xl text-sm font-bold border ${camera.cameraOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>{camera.cameraOn ? 'Camera on' : 'Camera off'}</button>
+                                <button onClick={() => testFileInputRef.current?.click()} className="h-11 px-5 rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 text-sm font-bold">Upload</button>
                                 <span className="ml-auto inline-flex h-8 items-center px-2.5 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-medium text-slate-600">{mode.project?.classes.length || 0} folders • {totalSamplesAll} poses</span>
                             </div>
                             {camera.cameraError && <div className="mx-3 mb-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{camera.cameraError}</div>}
@@ -918,10 +918,10 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                                             <p className="text-[11px] font-medium text-slate-500 tracking-wide uppercase mb-2">All folders — ranked</p>
                                             {sortedPredictionEntries.map(([label, _conf], idx) => {
                                                 const isTop = idx === 0; const col = mode.project?.classes.find(c => c.name === label)?.color || '#0F172A'
-                                                return <div key={label} className={`mb-1.5 last:mb-0 p-2 rounded-lg border ${isTop ? 'bg-white border-slate-300' : 'bg-white border-slate-200'}`}><div className="flex justify-between text-xs font-medium"><span className="flex items-center gap-1.5 truncate"><span className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-semibold shrink-0" style={{ background: col }}>{label[0].toUpperCase()}</span><span className="truncate text-slate-900">{label}</span>{isTop && <span className="text-amber-500">★</span>}</span></div></div>
+                                                return <div key={label} className={`mb-1.5 last:mb-0 p-2 rounded-lg border ${isTop ? 'bg-white border-slate-300' : 'bg-white border-slate-200'}`}><div className="flex justify-between text-sm font-bold"><span className="flex items-center gap-1.5 truncate"><span className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-semibold shrink-0" style={{ background: col }}>{label[0].toUpperCase()}</span><span className="truncate text-slate-900">{label}</span>{isTop && <span className="text-amber-500">★</span>}</span></div></div>
                                             })}
                                         </div>
-                                        <div className="flex gap-2"><button onClick={() => { setTestImage(null); setPrediction(null) }} className="flex-1 h-8 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700">Clear</button><button onClick={handleExportReport} className="flex-1 h-8 rounded-lg bg-slate-900 text-white text-xs font-medium">Download report</button></div>
+                                        <div className="flex gap-2"><button onClick={() => { setTestImage(null); setPrediction(null) }} className="flex-1 h-11 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-700">Clear</button><button onClick={handleExportReport} className="flex-1 h-11 rounded-xl bg-slate-900 text-white text-sm font-bold">Download report</button></div>
                                     </>
                                 )}
                             </div>
@@ -933,10 +933,10 @@ export default function PoseClassifierPanel({ mode }: PoseClassifierPanelProps) 
                 <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white rounded-full shadow-sm border border-slate-200 px-2 py-1.5">
                     <span className="text-[11px] font-medium text-slate-600 px-2">Canvas</span>
                     <button onClick={zoomOut} className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-700">−</button>
-                    <span className="text-xs font-medium w-11 text-center text-slate-900">{Math.round(zoom * 100)}%</span>
+                    <span className="text-sm font-bold w-11 text-center text-slate-900">{Math.round(zoom * 100)}%</span>
                     <button onClick={zoomIn} className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-700">+</button>
                     <div className="w-px h-5 bg-slate-200 mx-1" />
-                    <button onClick={resetView} className="h-7 px-3 rounded-full bg-slate-900 text-white text-xs font-medium">Reset</button>
+                    <button onClick={resetView} className="h-7 px-3 rounded-full bg-slate-900 text-white text-sm font-bold">Reset</button>
                 </div>
             </div>
 

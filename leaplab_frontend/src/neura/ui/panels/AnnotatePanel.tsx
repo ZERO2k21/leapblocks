@@ -486,7 +486,7 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
     return (
         <div className="flex-1 flex flex-col overflow-y-auto neura-scrollbar">
             {savedMessage && (
-                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-5 py-2.5 bg-[#006c44] text-white rounded-xl text-xs font-bold shadow-[0_4px_16px_rgba(0,0,0,0.15)] animate-fade-in">
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-5 py-2.5 bg-[#006c44] text-white rounded-xl text-sm font-bold shadow-[0_4px_16px_rgba(0,0,0,0.15)] animate-fade-in">
                     {savedMessage}
                 </div>
             )}
@@ -501,7 +501,7 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className={`py-1.5 px-3.5 rounded-lg text-xs font-bold ${progress >= 100 ? 'bg-emerald-100 text-[#006c44]' : 'bg-[#f5f3ff] text-[#630ed4]'}`}>
+                    <div className={`py-1.5 px-3.5 rounded-lg text-sm font-bold ${progress >= 100 ? 'bg-emerald-100 text-[#006c44]' : 'bg-[#f5f3ff] text-[#630ed4]'}`}>
                         {Math.round(progress)}%
                     </div>
                 </div>
@@ -683,9 +683,9 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                                 <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 text-[#4a4455] font-bold text-xs bg-transparent border-none cursor-pointer">📂 Upload</button>
                                 {totalImages > 1 && (
                                     <div className="flex items-center gap-1.5">
-                                        <button onClick={() => setCurrentImageIndex(Math.max(0, currentImageIndex - 1))} disabled={currentImageIndex === 0} className={`py-1 px-2 rounded text-xs font-bold bg-gray-100 border-none ${currentImageIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-200'}`}>◀</button>
+                                        <button onClick={() => setCurrentImageIndex(Math.max(0, currentImageIndex - 1))} disabled={currentImageIndex === 0} className={`py-1 px-2 rounded text-sm font-bold bg-gray-100 border-none ${currentImageIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-200'}`}>◀</button>
                                         <span className="text-[11px] font-bold text-gray-500 min-w-[40px] text-center">{currentImageIndex + 1}/{totalImages}</span>
-                                        <button onClick={() => setCurrentImageIndex(Math.min(totalImages - 1, currentImageIndex + 1))} disabled={currentImageIndex >= totalImages - 1} className={`py-1 px-2 rounded text-xs font-bold bg-gray-100 border-none ${currentImageIndex >= totalImages - 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-200'}`}>▶</button>
+                                        <button onClick={() => setCurrentImageIndex(Math.min(totalImages - 1, currentImageIndex + 1))} disabled={currentImageIndex >= totalImages - 1} className={`py-1 px-2 rounded text-sm font-bold bg-gray-100 border-none ${currentImageIndex >= totalImages - 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-200'}`}>▶</button>
                                     </div>
                                 )}
                                 <button onClick={handleUndo} disabled={undoStack.length === 0} className={`flex items-center gap-1.5 text-[#4a4455] font-bold text-xs bg-transparent border-none ${undoStack.length === 0 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer opacity-100'}`}>↩️ Undo</button>
@@ -693,11 +693,11 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                             </div>
                             <div className="flex items-center gap-3.5">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-[#4a4455]">🔍</span>
+                                    <span className="text-sm font-bold text-[#4a4455]">🔍</span>
                                     <input type="range" min="50" max="200" value={mode.zoom} onChange={(e) => mode.setZoom(Number(e.target.value))} className="w-20 h-1 rounded-full appearance-none cursor-pointer accent-[#630ed4]" />
-                                    <span className="text-xs font-bold text-[#4a4455]">{mode.zoom}%</span>
+                                    <span className="text-sm font-bold text-[#4a4455]">{mode.zoom}%</span>
                                 </div>
-                                <button onClick={handleSave} disabled={!annotationImage || !mode.selectedClassId} className={`py-2 px-4.5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold border-none ${!annotationImage || !mode.selectedClassId ? 'cursor-not-allowed opacity-40' : 'cursor-pointer opacity-100'}`}>💾 Save</button>
+                                <button onClick={handleSave} disabled={!annotationImage || !mode.selectedClassId} className={`py-2 px-4.5 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-sm font-bold border-none ${!annotationImage || !mode.selectedClassId ? 'cursor-not-allowed opacity-40' : 'cursor-pointer opacity-100'}`}>💾 Save</button>
                             </div>
                         </div>
                     </div>
@@ -733,8 +733,8 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                             <h3 className="text-sm font-bold text-[#131b2e] mb-2.5">✏️ Edit Label</h3>
                             <input value={editingBoxId === mode.selectedBoxId ? editingLabel : (mode.currentAnnotation?.boxes.find(b => b.id === mode.selectedBoxId)?.label || '')} onChange={(e) => { if (editingBoxId === mode.selectedBoxId) setEditingLabel(e.target.value); else { setEditingBoxId(mode.selectedBoxId); setEditingLabel(e.target.value) } }} onFocus={() => { if (editingBoxId !== mode.selectedBoxId) { const box = mode.currentAnnotation?.boxes.find(b => b.id === mode.selectedBoxId); if (box) { setEditingBoxId(mode.selectedBoxId); setEditingLabel(box.label) } } }} onBlur={handleSaveLabel} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLabel(); if (e.key === 'Escape') { setEditingBoxId(null); setEditingLabel('') } }} className="w-full py-2.5 px-3 text-xs border border-gray-200 rounded-lg outline-none" placeholder="Enter label..." />
                             <div className="flex gap-2 mt-2.5">
-                                {selectedClass && <button onClick={() => { if (editingBoxId === mode.selectedBoxId) setEditingLabel(selectedClass.name); else { setEditingBoxId(mode.selectedBoxId); setEditingLabel(selectedClass.name) } }} className="flex-1 p-2 bg-[#f5f3ff] text-[#630ed4] rounded-lg text-xs font-bold border-none cursor-pointer">Use Class</button>}
-                                <button onClick={() => { saveUndoState(); mode.removeBox(mode.selectedBoxId!) }} className="flex-1 p-2 bg-red-50 text-red-800 rounded-lg text-xs font-bold border-none cursor-pointer">🗑️ Delete</button>
+                                {selectedClass && <button onClick={() => { if (editingBoxId === mode.selectedBoxId) setEditingLabel(selectedClass.name); else { setEditingBoxId(mode.selectedBoxId); setEditingLabel(selectedClass.name) } }} className="flex-1 p-2 bg-[#f5f3ff] text-[#630ed4] rounded-lg text-sm font-bold border-none cursor-pointer">Use Class</button>}
+                                <button onClick={() => { saveUndoState(); mode.removeBox(mode.selectedBoxId!) }} className="flex-1 p-2 bg-red-50 text-red-800 rounded-lg text-sm font-bold border-none cursor-pointer">🗑️ Delete</button>
                             </div>
                         </div>
                     )}

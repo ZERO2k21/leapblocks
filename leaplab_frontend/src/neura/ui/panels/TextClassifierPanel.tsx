@@ -391,7 +391,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-[#F8FAFC] relative">
-            {savedMessage && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[80] px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-medium shadow-lg">{savedMessage}</div>}
+            {savedMessage && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[80] px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-lg">{savedMessage}</div>}
 
             {/* Professional header — single row, no duplicate */}
             <div className="shrink-0 h-[48px] flex items-center justify-between px-4 bg-white border-b border-slate-200 z-20">
@@ -417,15 +417,15 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{inferenceTime} ms
                     </span>
                     <div className="w-px h-6 bg-slate-200 hidden sm:block" />
-                    <button onClick={() => setShowAddClass(true)} className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-sm">+ New folder</button>
+                    <button onClick={() => setShowAddClass(true)} className="hidden sm:inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-sm">+ New folder</button>
                 </div>
             </div>
 
             {showAddClass && (
                 <div className="absolute top-[56px] left-1/2 -translate-x-1/2 z-30 bg-white rounded-xl shadow-xl border border-slate-200 p-3 flex gap-2 items-center w-[min(420px,95vw)]">
-                    <input autoFocus value={newClassName} onChange={e => setNewClassName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAddClass(); if (e.key === 'Escape') setShowAddClass(false) }} placeholder="Folder name e.g. Happy" className="flex-1 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100" />
+                    <input autoFocus value={newClassName} onChange={e => setNewClassName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAddClass(); if (e.key === 'Escape') setShowAddClass(false) }} placeholder="Folder name e.g. Happy" className="flex-1 h-11 px-5 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100" />
                     <button onClick={handleAddClass} className="h-9 px-4 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800">Add</button>
-                    <button onClick={() => setShowAddClass(false)} className="h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600">Cancel</button>
+                    <button onClick={() => setShowAddClass(false)} className="h-11 px-5 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600">Cancel</button>
                 </div>
             )}
 
@@ -516,13 +516,13 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                                 onPointerDown={e => e.stopPropagation()}
                                                 placeholder="Type text…"
                                                 disabled={atLimit}
-                                                className="flex-1 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100 disabled:bg-slate-50 disabled:text-slate-400"
+                                                className="flex-1 h-11 px-5 rounded-lg border border-slate-200 bg-white text-sm outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100 disabled:bg-slate-50 disabled:text-slate-400"
                                             />
                                             <button
                                                 onPointerDown={e => e.stopPropagation()}
                                                 onClick={e => { e.stopPropagation(); handleAddTextForClass(cls.id) }}
                                                 disabled={!inputVal.trim() || atLimit}
-                                                className={`h-9 px-3 rounded-lg text-xs font-bold shrink-0 ${!inputVal.trim() || atLimit ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'bg-violet-600 hover:bg-violet-700 text-white shadow-sm'}`}
+                                                className={`h-11 px-5 rounded-lg text-sm font-bold shrink-0 ${!inputVal.trim() || atLimit ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'bg-violet-600 hover:bg-violet-700 text-white shadow-sm'}`}
                                             >
                                                 Add
                                             </button>
@@ -544,7 +544,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                             <div className="flex-1 flex flex-col items-center justify-center gap-2 py-4 text-center">
                                                 <div className="w-12 h-12 rounded-xl border flex items-center justify-center bg-slate-50 border-slate-200 text-slate-400"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /><path d="M10 13H8" /><path d="M16 17H8" /><path d="M13 13h1" /></svg></div>
                                                 <div>
-                                                    <p className="text-xs font-medium text-slate-700">No texts yet</p>
+                                                    <p className="text-sm font-bold text-slate-700">No texts yet</p>
                                                     <p className="text-[11px] text-slate-500">Type above and Add</p>
                                                 </div>
                                             </div>
@@ -577,7 +577,7 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                             </div>
                             <h3 className="text-sm font-semibold text-slate-900">No folders yet</h3>
                             <p className="text-xs text-slate-500 mt-1 max-w-[260px]">Create a folder for each class. Each folder is a separate compartment on the canvas.</p>
-                            <button onClick={() => setShowAddClass(true)} className="mt-4 h-9 px-4 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800">Add first folder</button>
+                            <button onClick={() => setShowAddClass(true)} className="mt-4 h-9 px-4 rounded-lg bg-slate-900 text-white text-sm font-bold hover:bg-slate-800">Add first folder</button>
                         </div>
                     )}
 
@@ -608,10 +608,10 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                 <div className="w-full rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 p-3" onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
                                     <div className="flex justify-between text-[11px] font-semibold text-slate-700"><span className="flex items-center gap-1"><span className="w-5 h-5 rounded-md bg-violet-600 text-white flex items-center justify-center text-[10px]">◍</span>Epochs</span><span className="text-violet-700 font-bold bg-white px-2 py-0.5 rounded-full border border-violet-200">{totalEpochs}</span></div>
                                     <input type="range" min={5} max={100} step={5} value={totalEpochs} onChange={e => setTotalEpochs(parseInt(e.target.value))} onInput={e => setTotalEpochs(parseInt((e.target as HTMLInputElement).value))} disabled={isTraining} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} className="w-full mt-3 h-2 accent-violet-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style={{ accentColor: '#7c3aed' }} />
-                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
+                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-sm font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
                                 </div>
                                 {(epochResults.length > 0 || isTraining) && <div className="w-full"><AccuracyChart epochResults={epochResults} isTraining={isTraining} currentEpoch={currentEpoch} /></div>}
-                                {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs font-medium text-red-700">{trainingError}</div>}
+                                {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm font-bold text-red-700">{trainingError}</div>}
                             </div>
                             <div className="grid grid-cols-3 gap-px bg-slate-100 border-t border-slate-100">
                                 <div className="bg-white py-2.5 text-center"><p className="text-[10px] font-medium text-slate-500 tracking-wide uppercase">Folders</p><p className="text-sm font-semibold text-slate-900">{mode.project?.classes.length || 0}</p></div>
@@ -647,8 +647,8 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                     className="w-full min-h-[72px] p-3 text-sm border border-slate-200 rounded-lg outline-none bg-white text-slate-900 placeholder:text-slate-400 focus:border-violet-300 focus:ring-2 focus:ring-violet-100 resize-none"
                                 />
                                 <div className="flex gap-2">
-                                    <button onPointerDown={e => e.stopPropagation()} onClick={() => handlePredict(textInput)} disabled={!textInput.trim() || isProcessing || modelLoading} className={`flex-1 h-8 rounded-lg text-xs font-bold border ${!textInput.trim() || isProcessing || modelLoading ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-slate-900 text-white border-slate-900 hover:bg-slate-800'}`}>{isProcessing ? 'Analyzing…' : 'Predict'}</button>
-                                    <button onPointerDown={e => e.stopPropagation()} onClick={() => { setTextInput(''); setPrediction(null) }} className="h-8 px-3 rounded-lg bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 text-xs font-medium">Clear</button>
+                                    <button onPointerDown={e => e.stopPropagation()} onClick={() => handlePredict(textInput)} disabled={!textInput.trim() || isProcessing || modelLoading} className={`flex-1 h-11 rounded-xl text-sm font-bold border ${!textInput.trim() || isProcessing || modelLoading ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-slate-900 text-white border-slate-900 hover:bg-slate-800'}`}>{isProcessing ? 'Analyzing…' : 'Predict'}</button>
+                                    <button onPointerDown={e => e.stopPropagation()} onClick={() => { setTextInput(''); setPrediction(null) }} className="h-11 px-5 rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 text-sm font-bold">Clear</button>
                                     <span className="ml-auto inline-flex h-8 items-center px-2.5 rounded-full bg-white border border-slate-200 text-[11px] font-medium text-slate-600">{mode.project?.classes.length || 0} folders • {totalSamplesAll} texts</span>
                                 </div>
                                 {modelLoading && (
@@ -659,17 +659,17 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                                 )}
                             </div>
                             <div className="px-3 pb-3 pt-3 flex flex-col gap-2 max-h-[300px] overflow-auto" onPointerDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
-                                {!canTrain && !mode.modelTrained ? <div className="text-center py-8 text-xs text-slate-500">Add texts and train to see predictions</div> : isProcessing ? <div className="flex flex-col items-center justify-center py-6 gap-2"><div className="w-8 h-8 border-2 border-slate-200 border-t-violet-600 rounded-full animate-spin" /><p className="text-xs font-bold text-slate-500">Analyzing...</p></div> : !prediction ? <div className="text-center py-6 text-xs text-slate-400">{textInput.trim() ? 'No prediction — add more samples and train' : 'Type something above to test'}</div> : (
+                                {!canTrain && !mode.modelTrained ? <div className="text-center py-8 text-xs text-slate-500">Add texts and train to see predictions</div> : isProcessing ? <div className="flex flex-col items-center justify-center py-6 gap-2"><div className="w-8 h-8 border-2 border-slate-200 border-t-violet-600 rounded-full animate-spin" /><p className="text-sm font-bold text-slate-500">Analyzing...</p></div> : !prediction ? <div className="text-center py-6 text-xs text-slate-400">{textInput.trim() ? 'No prediction — add more samples and train' : 'Type something above to test'}</div> : (
                                     <>
                                         {topLabel && <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 flex justify-between items-center"><div><p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Top prediction</p><p className="text-sm font-semibold text-slate-900 mt-0.5 flex items-center gap-2"><span className="w-6 h-6 rounded-md bg-slate-900 text-white flex items-center justify-center text-[11px] font-semibold">{topLabel[0].toUpperCase()}</span>{topLabel}</p></div><div className="text-right"><p className="text-[11px] text-slate-500">{inferenceTime} ms</p></div></div>}
                                         <div className="rounded-xl bg-slate-50 border border-slate-200 p-2.5">
                                             <p className="text-[11px] font-medium text-slate-500 tracking-wide uppercase mb-2">All folders — ranked</p>
                                             {sortedPredictionEntries.map(([label, conf], idx) => {
                                                 const isTop = idx === 0; const col = mode.project?.classes.find(c => c.name === label)?.color || '#0F172A'
-                                                return <div key={label} className={`mb-1.5 last:mb-0 p-2 rounded-lg border ${isTop ? 'bg-white border-slate-300' : 'bg-white border-slate-200'}`}><div className="flex justify-between text-xs font-medium"><span className="flex items-center gap-1.5 truncate"><span className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-semibold shrink-0" style={{ background: col }}>{label[0].toUpperCase()}</span><span className="truncate text-slate-900">{label}</span>{isTop && <span className="text-amber-500">★</span>}</span></div></div>
+                                                return <div key={label} className={`mb-1.5 last:mb-0 p-2 rounded-lg border ${isTop ? 'bg-white border-slate-300' : 'bg-white border-slate-200'}`}><div className="flex justify-between text-sm font-bold"><span className="flex items-center gap-1.5 truncate"><span className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-semibold shrink-0" style={{ background: col }}>{label[0].toUpperCase()}</span><span className="truncate text-slate-900">{label}</span>{isTop && <span className="text-amber-500">★</span>}</span></div></div>
                                             })}
                                         </div>
-                                        <div className="flex gap-2"><button onClick={() => { setTextInput(''); setPrediction(null) }} className="flex-1 h-8 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700">Clear</button><button onClick={handleExportReport} className="flex-1 h-8 rounded-lg bg-slate-900 text-white text-xs font-medium">Download report</button></div>
+                                        <div className="flex gap-2"><button onClick={() => { setTextInput(''); setPrediction(null) }} className="flex-1 h-11 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-700">Clear</button><button onClick={handleExportReport} className="flex-1 h-11 rounded-xl bg-slate-900 text-white text-sm font-bold">Download report</button></div>
                                     </>
                                 )}
                             </div>
@@ -681,10 +681,10 @@ export default function TextClassifierPanel({ mode }: TextClassifierPanelProps) 
                 <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white rounded-full shadow-sm border border-slate-200 px-2 py-1.5">
                     <span className="text-[11px] font-medium text-slate-600 px-2">Canvas</span>
                     <button onClick={zoomOut} className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-700">−</button>
-                    <span className="text-xs font-medium w-11 text-center text-slate-900">{Math.round(zoom * 100)}%</span>
+                    <span className="text-sm font-bold w-11 text-center text-slate-900">{Math.round(zoom * 100)}%</span>
                     <button onClick={zoomIn} className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-700">+</button>
                     <div className="w-px h-5 bg-slate-200 mx-1" />
-                    <button onClick={resetView} className="h-7 px-3 rounded-full bg-slate-900 text-white text-xs font-medium">Reset</button>
+                    <button onClick={resetView} className="h-7 px-3 rounded-full bg-slate-900 text-white text-sm font-bold">Reset</button>
                 </div>
             </div>
 
