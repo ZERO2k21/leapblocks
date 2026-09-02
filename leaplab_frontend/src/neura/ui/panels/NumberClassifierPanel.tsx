@@ -6,7 +6,11 @@ import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
 import AccuracyChart from '../components/AccuracyChart'
 import NotRelatedModal from '../components/NotRelatedModal'
-import TabularPanel from './TabularPanel'
+import { useTabularState } from '../../hooks/useTabularState'
+import DataPanel from './DataPanel'
+import SetupPanel from './SetupPanel'
+import TabularTrainPanel from './TabularTrainPanel'
+import TabularTestPanel from './TabularTestPanel'
 
 interface NumberClassifierPanelProps { mode: UseNeuraProjectReturn }
 
@@ -66,8 +70,15 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const [draggingId, setDraggingId] = useState<string | null>(null)
     const dragStartRef = useRef<{ id: string; startX: number; startY: number; origX: number; origY: number } | null>(null)
 
+    // Data canvas node positions (horizontal layout)
+    const [dataNodePos, setDataNodePos] = useState({ x: 80, y: 180 })
+    const [setupNodePos, setSetupNodePos] = useState({ x: 520, y: 180 })
+    const [trainNodePos, setTrainNodePos] = useState({ x: 960, y: 180 })
+    const [testNodePos, setTestNodePos] = useState({ x: 1400, y: 180 })
+
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const camera = useCamera({ videoConstraints: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'environment', frameRate: { ideal: 30 } } })
+    const tabular = useTabularState(mode)
 
     useEffect(() => { mode.setHideSidebar(true); return () => mode.setHideSidebar(false) }, [])
 
@@ -526,6 +537,10 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             const nx = s.origX + (cur.x - s.startX), ny = s.origY + (cur.y - s.startY)
             if (s.id === 'brain') setBrainPos({ x: nx, y: ny })
             else if (s.id === 'vision') setVisionPos({ x: nx, y: ny })
+            else if (s.id === 'data-node') setDataNodePos({ x: nx, y: ny })
+            else if (s.id === 'setup-node') setSetupNodePos({ x: nx, y: ny })
+            else if (s.id === 'train-node') setTrainNodePos({ x: nx, y: ny })
+            else if (s.id === 'test-node') setTestNodePos({ x: nx, y: ny })
             else setClassPositions(prev => ({ ...prev, [s.id]: { x: nx, y: ny } }))
         }
     }
@@ -602,6 +617,10 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                 const nx = s.origX + (curX - s.startX), ny = s.origY + (curY - s.startY)
                 if (s.id === 'brain') setBrainPos({ x: nx, y: ny })
                 else if (s.id === 'vision') setVisionPos({ x: nx, y: ny })
+                else if (s.id === 'data-node') setDataNodePos({ x: nx, y: ny })
+                else if (s.id === 'setup-node') setSetupNodePos({ x: nx, y: ny })
+                else if (s.id === 'train-node') setTrainNodePos({ x: nx, y: ny })
+                else if (s.id === 'test-node') setTestNodePos({ x: nx, y: ny })
                 else setClassPositions(prev => ({ ...prev, [s.id]: { x: nx, y: ny } }))
             }
         }
@@ -687,9 +706,159 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
             )}
 
             {ninjaMode === 'data' ? (
-                <div className="flex-1 overflow-auto bg-[#F8FAFC] min-h-0">
-                    <TabularPanel mode={mode} />
+            <div
+                ref={viewportRef}
+                onMouseDown={handleViewportMouseDown as any}
+                onMouseMove={handleViewportMouseMove as any}
+                onMouseUp={handleViewportMouseUp as any}
+                onPointerDown={handleViewportMouseDown as any}
+                onPointerMove={handleViewportMouseMove as any}
+                onPointerUp={handleViewportMouseUp as any}
+                onWheel={handleWheel}
+                onTouchStart={handleTouchStart as any}
+                onTouchMove={handleTouchMove as any}
+                onTouchEnd={handleTouchEnd as any}
+                style={{ touchAction: 'none' }}
+                className={`flex-1 relative overflow-hidden ${isPanning ? 'cursor-grabbing' : 'cursor-grab'} bg-[#F8FAFC]`}
+            >
+                {/* Grid background */}
+                <div className="absolute inset-0" style={{ backgroundImage: `radial-gradient(circle, #DDD6FE 1.2px, transparent 1.2px)`, backgroundSize: '20px 20px', backgroundPosition: `${pan.x}px ${pan.y}px` }} />
+                <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: `linear-gradient(#7C3AED 1px, transparent 1px), linear-gradient(90deg, #7C3AED 1px, transparent 1px)`, backgroundSize: '80px 80px', backgroundPosition: `${pan.x}px ${pan.y}px` }} />
+
+                <div className="absolute inset-0" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: '0 0', width: 3000, height: 2000 }}>
+                    {/* SVG wires connecting nodes */}
+                    <svg className="absolute inset-0 pointer-events-none" width={3000} height={2000} style={{ overflow: 'visible' }}>
+                        <defs>
+                            <linearGradient id="dataWire" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#630ed4" stopOpacity="0.4" /><stop offset="100%" stopColor="#7c3aed" stopOpacity="0.4" /></linearGradient>
+                            <linearGradient id="dataWireActive" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#630ed4" stopOpacity="1" /><stop offset="100%" stopColor="#7c3aed" stopOpacity="1" /></linearGradient>
+                            {tabular.isTraining && <style>{`@keyframes wirePulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } } .wire-animate { animation: wirePulse 1.5s ease-in-out infinite; }`}</style>}
+                        </defs>
+                        {/* Data → Setup wire */}
+                        {(() => {
+                            const x1 = dataNodePos.x + 420, y1 = dataNodePos.y + 160
+                            const x2 = setupNodePos.x, y2 = setupNodePos.y + 160
+                            const mx = (x1 + x2) / 2
+                            const active = tabular.dataReady
+                            return <path d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`} fill="none" stroke={active ? 'url(#dataWireActive)' : 'url(#dataWire)'} strokeWidth={active ? 3 : 2} strokeLinecap="round" strokeDasharray={active ? 'none' : '6 4'} className={tabular.isTraining ? 'wire-animate' : ''} />
+                        })()}
+                        {/* Setup → Train wire */}
+                        {(() => {
+                            const x1 = setupNodePos.x + 420, y1 = setupNodePos.y + 160
+                            const x2 = trainNodePos.x, y2 = trainNodePos.y + 160
+                            const mx = (x1 + x2) / 2
+                            const active = tabular.featureIndices.length > 0
+                            return <path d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`} fill="none" stroke={active ? 'url(#dataWireActive)' : 'url(#dataWire)'} strokeWidth={active ? 3 : 2} strokeLinecap="round" strokeDasharray={active ? 'none' : '6 4'} className={tabular.isTraining ? 'wire-animate' : ''} />
+                        })()}
+                        {/* Train → Test wire */}
+                        {(() => {
+                            const x1 = trainNodePos.x + 420, y1 = trainNodePos.y + 160
+                            const x2 = testNodePos.x, y2 = testNodePos.y + 160
+                            const mx = (x1 + x2) / 2
+                            const active = tabular.finalAccuracy !== null
+                            return <path d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`} fill="none" stroke={active ? 'url(#dataWireActive)' : 'url(#dataWire)'} strokeWidth={active ? 3 : 2} strokeLinecap="round" strokeDasharray={active ? 'none' : '6 4'} className={tabular.isTraining ? 'wire-animate' : ''} />
+                        })()}
+                    </svg>
+
+                    {/* ===== DATA NODE ===== */}
+                    <div data-node onPointerDown={e => startNodeDrag(e, 'data-node', dataNodePos)} style={{ left: dataNodePos.x, top: dataNodePos.y, width: 420, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'data-node' ? 'z-40' : 'z-10'}`}>
+                        <div className={`bg-white rounded-xl border shadow-md overflow-hidden flex flex-col cursor-grab active:cursor-grabbing transition-all duration-500 ${tabular.isTraining ? 'border-[#630ed4]/40 shadow-[0_0_20px_rgba(99,14,212,0.15)]' : 'border-slate-200'}`}>
+                            <div className={`h-1.5 w-full bg-gradient-to-r from-[#630ed4] to-[#7c3aed] ${tabular.isTraining ? 'animate-pulse' : ''}`} />
+                            <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-[#f5f3ff] to-white">
+                                <div className="flex items-center gap-2.5">
+                                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br from-[#630ed4] to-[#7c3aed] flex items-center justify-center text-white shadow-sm ${tabular.isTraining ? 'animate-pulse' : ''}`}><span className="text-sm">📊</span></div>
+                                    <div>
+                                        <p className="text-[13px] font-semibold text-slate-900 leading-none">Data</p>
+                                        <p className="text-[11px] text-slate-500 leading-none mt-0.5">{tabular.csvData ? `${tabular.csvData.rows.length} rows loaded` : 'Upload or create'}</p>
+                                    </div>
+                                </div>
+                                <span className={`inline-flex h-6 px-2 rounded-full text-[11px] font-medium border ${tabular.dataReady ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>{tabular.dataReady ? '✓ Ready' : 'Empty'}</span>
+                            </div>
+                            <div className="p-3">
+                                <DataPanel density="compact" collectMode={tabular.collectMode} csvData={tabular.csvData} columnInfos={tabular.columnInfos} editHeaders={tabular.editHeaders} editRows={tabular.editRows} disabledRows={tabular.disabledRows} disabledCols={tabular.disabledCols} isDragging={tabular.isDragging} newRowCount={tabular.newRowCount} newColCount={tabular.newColCount} fileInputRef={tabular.fileInputRef} onSetCollectMode={tabular.setCollectMode} onFileUpload={tabular.handleFileUpload} onDrop={tabular.handleDrop} onCreateDataset={tabular.handleCreateDataset} onUseEditedData={tabular.handleUseEditedData} onEditHeadersChange={tabular.setEditHeaders} onEditRowsChange={tabular.setEditRows} onDisabledRowsChange={tabular.setDisabledRows} onDisabledColsChange={tabular.setDisabledCols} onIsDraggingChange={tabular.setIsDragging} onNewRowCountChange={tabular.setNewRowCount} onNewColCountChange={tabular.setNewColCount} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ===== SETUP NODE ===== */}
+                    <div data-node onPointerDown={e => startNodeDrag(e, 'setup-node', setupNodePos)} style={{ left: setupNodePos.x, top: setupNodePos.y, width: 420, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'setup-node' ? 'z-40' : 'z-10'}`}>
+                        <div className={`bg-white rounded-xl border shadow-md overflow-hidden flex flex-col cursor-grab active:cursor-grabbing transition-all duration-500 ${tabular.isTraining ? 'border-[#f7941e]/40 shadow-[0_0_20px_rgba(247,148,30,0.15)]' : 'border-slate-200'}`}>
+                            <div className={`h-1.5 w-full bg-gradient-to-r from-[#f7941e] to-[#fbb034] ${tabular.isTraining ? 'animate-pulse' : ''}`} />
+                            <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-amber-50 to-white">
+                                <div className="flex items-center gap-2.5">
+                                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br from-[#f7941e] to-[#fbb034] flex items-center justify-center text-white shadow-sm ${tabular.isTraining ? 'animate-pulse' : ''}`}><span className="text-sm">⚙️</span></div>
+                                    <div>
+                                        <p className="text-[13px] font-semibold text-slate-900 leading-none">Setup</p>
+                                        <p className="text-[11px] text-slate-500 leading-none mt-0.5">{tabular.featureIndices.length > 0 ? `${tabular.featureIndices.length} features → ${tabular.taskType}` : 'Select columns'}</p>
+                                    </div>
+                                </div>
+                                <span className={`inline-flex h-6 px-2 rounded-full text-[11px] font-medium border ${tabular.featureIndices.length > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>{tabular.featureIndices.length > 0 ? '✓ Configured' : 'Pending'}</span>
+                            </div>
+                            <div className="p-3">
+                                {tabular.dataReady ? (
+                                    <SetupPanel density="compact" csvData={tabular.csvData} columnInfos={tabular.columnInfos} featureIndices={tabular.featureIndices} targetIndex={tabular.targetIndex} taskType={tabular.taskType} onFeatureToggle={tabular.handleFeatureToggle} onTargetChange={tabular.setTargetIndex} onTaskTypeChange={(t) => { tabular.setTaskType(t); tabular.setConfig((prev: any) => ({ ...prev, taskType: t })) }} />
+                                ) : (
+                                    <div className="flex items-center justify-center h-24 text-[10px] text-slate-400 font-bold">Upload data first</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ===== TRAIN NODE ===== */}
+                    <div data-node onPointerDown={e => startNodeDrag(e, 'train-node', trainNodePos)} style={{ left: trainNodePos.x, top: trainNodePos.y, width: 420, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'train-node' ? 'z-40' : 'z-10'}`}>
+                        <div className={`bg-white rounded-xl border shadow-md overflow-hidden flex flex-col cursor-grab active:cursor-grabbing transition-all duration-500 ${tabular.isTraining ? 'border-[#53ad4e]/40 shadow-[0_0_24px_rgba(83,173,78,0.2)] scale-[1.02]' : 'border-slate-200'}`}>
+                            <div className={`h-1.5 w-full bg-gradient-to-r from-[#53ad4e] to-[#4caf50] ${tabular.isTraining ? 'animate-pulse' : ''}`} />
+                            <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-white">
+                                <div className="flex items-center gap-2.5">
+                                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br from-[#53ad4e] to-[#4caf50] flex items-center justify-center text-white shadow-sm ${tabular.isTraining ? 'animate-bounce' : ''}`}><span className="text-sm">🧠</span></div>
+                                    <div>
+                                        <p className="text-[13px] font-semibold text-slate-900 leading-none">Train</p>
+                                        <p className="text-[11px] text-slate-500 leading-none mt-0.5">{tabular.isTraining ? `Epoch ${tabular.currentEpoch}/${tabular.config.epochs}` : tabular.finalAccuracy !== null ? `${tabular.finalAccuracy}% accuracy` : 'Configure & train'}</p>
+                                    </div>
+                                </div>
+                                <span className={`inline-flex h-6 px-2 rounded-full text-[11px] font-medium border ${tabular.isTraining ? 'bg-violet-50 text-violet-700 border-violet-200 animate-pulse' : tabular.finalAccuracy !== null ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>{tabular.isTraining ? '⏳ Training…' : tabular.finalAccuracy !== null ? '✓ Done' : 'Idle'}</span>
+                            </div>
+                            <div className="p-3">
+                                {tabular.featureIndices.length > 0 ? (
+                                    <TabularTrainPanel density="compact" config={tabular.config} taskType={tabular.taskType} isTraining={tabular.isTraining} currentEpoch={tabular.currentEpoch} epochResults={tabular.epochResults} valEpochResults={tabular.valEpochResults} trainMetrics={tabular.trainMetrics} finalAccuracy={tabular.finalAccuracy} trainSummary={tabular.trainSummary} featureIndices={tabular.featureIndices} onConfigChange={tabular.setConfig} onTrain={tabular.handleTrain} onExportModel={tabular.handleExportModel} />
+                                ) : (
+                                    <div className="flex items-center justify-center h-24 text-[10px] text-slate-400 font-bold">Select features first</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ===== TEST NODE ===== */}
+                    <div data-node onPointerDown={e => startNodeDrag(e, 'test-node', testNodePos)} style={{ left: testNodePos.x, top: testNodePos.y, width: 420, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'test-node' ? 'z-40' : 'z-10'}`}>
+                        <div className={`bg-white rounded-xl border shadow-md overflow-hidden flex flex-col cursor-grab active:cursor-grabbing transition-all duration-500 ${tabular.isTraining ? 'border-[#41a2f2]/40 shadow-[0_0_20px_rgba(65,162,242,0.15)]' : 'border-slate-200'}`}>
+                            <div className={`h-1.5 w-full bg-gradient-to-r from-[#41a2f2] to-[#2196f3] ${tabular.isTraining ? 'animate-pulse' : ''}`} />
+                            <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-blue-50 to-white">
+                                <div className="flex items-center gap-2.5">
+                                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br from-[#41a2f2] to-[#2196f3] flex items-center justify-center text-white shadow-sm ${tabular.isTraining ? 'animate-pulse' : ''}`}><span className="text-sm">🧪</span></div>
+                                    <div>
+                                        <p className="text-[13px] font-semibold text-slate-900 leading-none">Test</p>
+                                        <p className="text-[11px] text-slate-500 leading-none mt-0.5">{tabular.finalAccuracy !== null ? 'Ready to predict' : 'Train first'}</p>
+                                    </div>
+                                </div>
+                                <span className={`inline-flex h-6 px-2 rounded-full text-[11px] font-medium border ${tabular.finalAccuracy !== null ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>{tabular.finalAccuracy !== null ? '✓ Active' : 'Locked'}</span>
+                            </div>
+                            <div className="p-3">
+                                {tabular.finalAccuracy !== null ? (
+                                    <TabularTestPanel density="compact" columnInfos={tabular.columnInfos} featureIndices={tabular.featureIndices} targetIndex={tabular.targetIndex} taskType={tabular.taskType} onPredict={tabular.handlePredict} onExportModel={tabular.handleExportModel} />
+                                ) : (
+                                    <div className="flex items-center justify-center h-24 text-[10px] text-slate-400 font-bold">Train a model first</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                {/* Zoom controls */}
+                <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-1.5">
+                    <button onClick={zoomIn} className="w-8 h-8 rounded-lg bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-600 hover:bg-slate-50 text-sm font-bold">+</button>
+                    <button onClick={zoomOut} className="w-8 h-8 rounded-lg bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-600 hover:bg-slate-50 text-sm font-bold">−</button>
+                    <button onClick={resetView} className="w-8 h-8 rounded-lg bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-600 hover:bg-slate-50 text-[9px] font-bold">1:1</button>
+                </div>
+            </div>
             ) : (
             <>{/* Canvas */}
             <div
