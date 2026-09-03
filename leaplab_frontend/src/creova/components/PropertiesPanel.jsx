@@ -9,7 +9,7 @@
  */
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Smartphone, ChevronDown, ChevronRight, Pencil, X } from 'lucide-react';
+import { Trash2, Smartphone, ChevronDown, ChevronRight, Pencil, X, Check } from 'lucide-react';
 import { COMPONENT_METADATA } from '../data/componentMetadata';
 import AssetPicker from './AssetPicker';
 import ComponentIcon from './ComponentIcon';
@@ -92,7 +92,7 @@ function ColorPickerInput({ id, propKey, value, updateProp }) {
 export default function PropertiesPanel({ appState }) {
   const {
     screens, activeScreen, selectedId, selectedComponent,
-    setSelectedId, updateProp, removeComponent, addScreen, renameComponent,
+    setSelectedId, updateProp, removeComponent, addScreen, renameComponent, renameScreen,
     media, addMedia
   } = appState;
 
@@ -110,8 +110,13 @@ export default function PropertiesPanel({ appState }) {
   }), []);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
+  const [renameError, setRenameError] = useState('');
   const renameInputRef = useRef(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [titleDraft, setTitleDraft] = useState('');
+  const [titleError, setTitleError] = useState('');
+  const [isTitleEditing, setIsTitleEditing] = useState(false);
+  const titleInputRef = useRef(null);
 
   const currentScreen = screens.find(s => s.id === activeScreen) || screens[0];
   const components = currentScreen?.components || [];
@@ -158,29 +163,87 @@ export default function PropertiesPanel({ appState }) {
     }
   }, [isRenaming]);
 
+  useEffect(() => {
+    if (isTitleEditing && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [isTitleEditing]);
+
+  useEffect(() => {
+    if (selectedComponent?.type === 'Screen' && !isTitleEditing) {
+      const t = selectedComponent.props?.Title ?? currentScreen?.title ?? '';
+      setTitleDraft(t);
+      setTitleError('');
+    }
+  }, [selectedComponent?.id, selectedComponent?.props?.Title, currentScreen?.title, isTitleEditing]);
+
   const handleStartRename = () => {
     if (!selectedComponent) return;
     setIsRenaming(true);
     setRenameValue(selectedComponent.id);
+    setRenameError('');
+  };
+
+  const handleRenameCancel = () => {
+    setIsRenaming(false);
+    setRenameValue('');
+    setRenameError('');
   };
 
   const handleRenameSubmit = () => {
     if (!selectedComponent) return;
     const oldId = selectedComponent.id;
     const newId = renameValue?.trim();
-    if (newId && newId !== oldId && renameComponent) {
-      renameComponent(oldId, newId);
+    if (!newId) {
+      setRenameError('Name cannot be empty');
+      return;
+    }
+    if (newId === oldId) {
+      handleRenameCancel();
+      return;
+    }
+    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(newId)) {
+      setRenameError('Start with letter, only letters, numbers, _');
+      return;
+    }
+    if (newId.length > 20) {
+      setRenameError('Max 20 characters');
+      return;
+    }
+    const isScreen = selectedComponent.type === 'Screen';
+    if (isScreen) {
+      if (screens.some(s => s.id === newId)) {
+        setRenameError('Screen name already exists');
+        return;
+      }
+      if (renameScreen) renameScreen(oldId, newId);
+      else if (renameComponent) renameComponent(oldId, newId);
+    } else {
+      const cur = screens.find(s => s.id === activeScreen);
+      const allIds = [];
+      const collect = (list) => {
+        if (!list) return;
+        list.forEach(n => { allIds.push(n.id); if (n.children) collect(n.children); });
+      };
+      if (cur) {
+        collect(cur.components);
+        (cur.nonVisibleComponents || []).forEach(c => allIds.push(c.id));
+        if (allIds.includes(newId) || screens.some(s => s.id === newId)) {
+          setRenameError('Name already exists');
+          return;
+        }
+      }
+      if (renameComponent) renameComponent(oldId, newId);
     }
     setIsRenaming(false);
     setRenameValue('');
+    setRenameError('');
   };
 
   const handleRenameKeyDown = (e) => {
     if (e.key === 'Enter') handleRenameSubmit();
-    if (e.key === 'Escape') {
-      setIsRenaming(false);
-      setRenameValue('');
-    }
+    if (e.key === 'Escape') handleRenameCancel();
   };
 
   const toggleSection = (section) => {
@@ -389,6 +452,43 @@ export default function PropertiesPanel({ appState }) {
     };
 
     const renderSingleProp = (key, value) => {
+      if (type === 'Screen' && key === 'Title') {
+        const handleTitleSave = () => {
+          const newTitle = titleDraft?.trim();
+          if (!newTitle) { setTitleError('Title cannot be empty'); return; }
+          updateProp(id, key, titleDraft);
+          setIsTitleEditing(false);
+          setTitleError('');
+        };
+        const handleTitleCancel = () => {
+          setIsTitleEditing(false);
+          setTitleDraft(value ?? '');
+          setTitleError('');
+        };
+        if (!isTitleEditing) {
+          return (
+            <div key={key} className="flex flex-col gap-2 py-3.5 px-5 border-b border-slate-100 bg-white hover:bg-slate-50/50 transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Title</label>
+                <button type="button" onClick={() => { setIsTitleEditing(true); setTitleDraft(value ?? ''); setTitleError(''); }} className="w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Edit Title"><Pencil className="w-3 h-3" /></button>
+              </div>
+              <div className="text-sm font-semibold text-slate-800 truncate px-1 py-1">{value || <span className="text-slate-400">Empty</span>}</div>
+            </div>
+          );
+        }
+        return (
+          <div key={key} className="flex flex-col gap-2 py-3.5 px-5 border-b border-slate-100 bg-white">
+            <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Title</label>
+            <div className="flex items-center gap-1.5">
+              <input ref={titleInputRef} type="text" value={titleDraft} onChange={(e) => { setTitleDraft(e.target.value); if (titleError) setTitleError(''); }} onKeyDown={(e) => { if (e.key === 'Enter') handleTitleSave(); if (e.key === 'Escape') handleTitleCancel(); }} placeholder="Enter screen title" className="flex-1 h-9 px-3 text-xs font-semibold bg-slate-50 text-slate-900 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:bg-white" />
+              <button type="button" onMouseDown={e=>e.preventDefault()} onClick={handleTitleSave} className="w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center shrink-0" title="Save"><Check className="w-4 h-4" /></button>
+              <button type="button" onMouseDown={e=>e.preventDefault()} onClick={handleTitleCancel} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg flex items-center justify-center shrink-0 border border-slate-200" title="Cancel"><X className="w-4 h-4" /></button>
+            </div>
+            {titleError && <span className="text-[11px] font-semibold text-rose-600 px-1">{titleError}</span>}
+            <span className="text-[10px] text-slate-400 px-1">Valid name (letters, numbers, _) renames screen everywhere.</span>
+          </div>
+        );
+      }
       const metaType = getPropertyType(type, key);
       const isColor = key.toLowerCase().includes('color') || metaType === 'Color';
       const isBoolean = typeof value === 'boolean' || metaType === 'Boolean';
@@ -546,16 +646,41 @@ export default function PropertiesPanel({ appState }) {
             {/* Row 2: Module Title (ID) */}
             <div className="min-w-0">
               {isRenaming ? (
-                <input
-                  ref={renameInputRef}
-                  type="text"
-                  value={renameValue}
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  onBlur={handleRenameSubmit}
-                  onKeyDown={handleRenameKeyDown}
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-base font-black tracking-tight p-1 px-2.5 rounded-lg border-2 border-blue-500 bg-slate-50 text-slate-900 w-full outline-none"
-                />
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      ref={renameInputRef}
+                      type="text"
+                      value={renameValue}
+                      onChange={(e) => { setRenameValue(e.target.value); if (renameError) setRenameError(''); }}
+                      onKeyDown={handleRenameKeyDown}
+                      onClick={(e) => e.stopPropagation()}
+                      placeholder="Enter name"
+                      className="text-base font-black tracking-tight p-1 px-2.5 rounded-lg border-2 border-blue-500 bg-slate-50 text-slate-900 flex-1 min-w-0 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={handleRenameSubmit}
+                      className="w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-colors"
+                      title="Save"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={handleRenameCancel}
+                      className="w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg flex items-center justify-center shrink-0 border border-slate-200 transition-colors"
+                      title="Cancel"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {renameError && (
+                    <span className="text-[11px] font-semibold text-rose-600 px-1">{renameError}</span>
+                  )}
+                </div>
               ) : (
                 <h3 className="text-base font-black text-slate-900 tracking-tight truncate leading-snug m-0" title={id}>{id}</h3>
               )}
