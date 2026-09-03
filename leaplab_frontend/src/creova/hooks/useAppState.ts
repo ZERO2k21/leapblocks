@@ -266,20 +266,25 @@ export function useAppState() {
   }), [activeScreen, selectedId, getNextComponentName]);
 
   const updateProp = useCallback((id: string, key: string, value: any): Promise<void> => new Promise((resolve) => {
+    let titleRename: { oldId: string; newId: string } | null = null;
     setScreens(prevScreens => prevScreens.map(screen => {
-      if (screen.id !== activeScreen) return screen;
-      const next = deepClone(screen);
-
+      // Screen-level prop: match any screen by id (not just active)
       if (id === screen.id) {
-        // Update Screen property directly
+        const next = deepClone(screen);
         if (key === 'AboutScreen') next.aboutScreen = value;
         else if (key === 'BackgroundColor') next.backgroundColor = value;
         else if (key === 'BackgroundImage') next.backgroundImage = value;
         else if (key === 'AlignHorizontal') next.alignHorizontal = value;
         else if (key === 'AlignVertical') next.alignVertical = value;
         else if (key === 'ShowStatusBar') next.showStatusBar = value;
-        else if (key === 'Title') next.title = value;
-        else if (key === 'TitleVisible') next.titleVisible = value;
+        else if (key === 'Title') {
+          next.title = value;
+          const trimmed = (value ?? '').toString().trim();
+          if (trimmed && trimmed !== screen.id && /^[A-Za-z][A-Za-z0-9_]*$/.test(trimmed) && !prevScreens.some(s => s.id === trimmed)) {
+            titleRename = { oldId: screen.id, newId: trimmed };
+            next.id = trimmed;
+          }
+        } else if (key === 'TitleVisible') next.titleVisible = value;
         else if (key === 'ScreenOrientation') next.screenOrientation = value;
         else if (key === 'Theme') next.theme = value;
         else if (key === 'AppName') {
@@ -287,6 +292,8 @@ export function useAppState() {
         }
         return next;
       }
+      if (screen.id !== activeScreen) return screen;
+      const next = deepClone(screen);
 
       if (isInTree(next.components, id)) {
         next.components = updateNodeById(next.components, id, comp => ({
@@ -303,6 +310,12 @@ export function useAppState() {
 
       return next;
     }));
+    if (titleRename) {
+      const tr = titleRename;
+      setActiveScreen(prev => prev === tr.oldId ? tr.newId : prev);
+      setSelectedId(prev => prev === tr.oldId ? tr.newId : prev);
+      setBlockLogic(prev => replaceIdInBlockXml(prev, tr.oldId, tr.newId));
+    }
     resolve();
   }), [activeScreen]);
 
@@ -398,28 +411,84 @@ export function useAppState() {
     resolve();
   }), [activeScreen]);
 
+  const renameScreen = useCallback((oldId: string, newId: string): Promise<void> => new Promise((resolve) => {
+    const trimmedOld = oldId?.trim();
+    const trimmedNew = newId?.trim();
+    if (!trimmedOld || !trimmedNew || trimmedOld === trimmedNew) { resolve(); return; }
+    let didRename = false;
+    setScreens(prev => {
+      if (prev.some(s => s.id === trimmedNew)) return prev;
+      const exists = prev.find(s => s.id === trimmedOld);
+      if (!exists) return prev;
+      didRename = true;
+      return prev.map(s => {
+        if (s.id !== trimmedOld) return s;
+        const next = deepClone(s);
+        next.id = trimmedNew;
+        if (next.title === trimmedOld || !next.title) next.title = trimmedNew;
+        return next;
+      });
+    });
+    // Defer check to next tick since didRename is set synchronously inside updater
+    setTimeout(() => {
+      if (didRename) {
+        setActiveScreen(prev => prev === trimmedOld ? trimmedNew : prev);
+        setSelectedId(prev => prev === trimmedOld ? trimmedNew : prev);
+        setBlockLogic(prev => replaceIdInBlockXml(prev, trimmedOld, trimmedNew));
+      }
+      resolve();
+    }, 0);
+  }), []);
+
   const renameComponent = useCallback((oldId: string, newId: string): Promise<void> => new Promise((resolve) => {
     if (!oldId || !newId || oldId === newId) { resolve(); return; }
 
-    setScreens(prevScreens => prevScreens.map(screen => {
-      if (screen.id !== activeScreen) return screen;
-      const next = deepClone(screen);
-
-      if (isInTree(next.components, oldId)) {
-        next.components = updateNodeById(next.components, oldId, comp => ({ ...comp, id: newId }));
-      } else {
-        next.nonVisibleComponents = next.nonVisibleComponents.map(comp =>
-          comp.id === oldId ? { ...comp, id: newId } : comp
-        );
+    // If oldId is a screen id, delegate to renameScreen
+    // Use functional check via setScreens snapshot: we need to know if it's a screen
+    // We check via current screens state captured in closure (add screens to deps for freshness)
+    // To avoid stale, we handle both cases inside setScreens
+    let isScreenRename = false;
+    setScreens(prevScreens => {
+      const isScreen = prevScreens.some(s => s.id === oldId);
+      if (isScreen) {
+        isScreenRename = true;
+        if (prevScreens.some(s => s.id === newId)) return prevScreens;
+        return prevScreens.map(s => {
+          if (s.id !== oldId) return s;
+          const next = deepClone(s);
+          next.id = newId;
+          if (next.title === oldId || !next.title) next.title = newId;
+          return next;
+        });
       }
+      // Component rename: only active screen
+      return prevScreens.map(screen => {
+        if (screen.id !== activeScreen) return screen;
+        const next = deepClone(screen);
+        if (isInTree(next.components, oldId)) {
+          next.components = updateNodeById(next.components, oldId, comp => ({ ...comp, id: newId }));
+        } else {
+          next.nonVisibleComponents = next.nonVisibleComponents.map(comp =>
+            comp.id === oldId ? { ...comp, id: newId } : comp
+          );
+        }
+        return next;
+      });
+    });
 
-      return next;
-    }));
-
-    setBlockLogic(prev => replaceIdInBlockXml(prev, oldId, newId));
-    if (selectedId === oldId) setSelectedId(newId);
-    resolve();
-  }), [activeScreen, selectedId]);
+    // Defer active/selected/block updates to next tick to ensure isScreenRename is set
+    // Use timeout 0 to run after setScreens callback
+    setTimeout(() => {
+      if (isScreenRename) {
+        setActiveScreen(prev => prev === oldId ? newId : prev);
+        setSelectedId(prev => prev === oldId ? newId : prev);
+      } else {
+        if (selectedId === oldId) setSelectedId(newId);
+      }
+      setBlockLogic(prev => replaceIdInBlockXml(prev, oldId, newId));
+      resolve();
+    }, 0);
+  }), [activeScreen, selectedId, renameScreen]);
 
   const addMedia = useCallback((mediaItem: MediaItem): Promise<void> => new Promise((resolve) => {
     setMedia(prev => [...prev, mediaItem]);
@@ -518,6 +587,7 @@ export function useAppState() {
     removeComponent,
     addScreen,
     deleteScreen,
+    renameScreen,
     setActiveScreen,
     setSelectedId,
     setAppName,
@@ -552,6 +622,7 @@ export function useAppState() {
     removeComponent,
     addScreen,
     deleteScreen,
+    renameScreen,
     renameComponent,
     addMedia,
     deleteMedia,
