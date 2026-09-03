@@ -370,7 +370,10 @@ export function createGeometry(shape: GeometryShape): THREE.BufferGeometry {
       return new THREE.TetrahedronGeometry(shape.radius ?? 1)
 
     case 'text3d': {
-      const text = shape.text || 'Hello'
+      const text = shape.text ?? 'Hello'
+      if (!text) {
+        return new THREE.BoxGeometry(0.001, 0.001, 0.001)
+      }
       const size = shape.fontSize ?? 1
       const depth = shape.textDepth ?? 0.5
       const geo = new TextGeometry(text, {
