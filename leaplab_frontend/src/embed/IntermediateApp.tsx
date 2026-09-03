@@ -3481,15 +3481,15 @@ const IntermediateApp: React.FC<{ onBack: () => void; onOpenPython?: () => void;
 
                             <div className={styles.actionButtons}>
 
-                                <button className={styles.runButtonTop} onClick={handleRunClick} title="Run">
+                                <button className={`${styles.runButtonTop} ${isRunning ? 'opacity-50 pointer-events-none' : ''}`} onClick={handleRunClick} title="Run" aria-pressed={isRunning} onMouseDown={(e)=> e.currentTarget.style.transform='scale(0.92)'} onMouseUp={(e)=> e.currentTarget.style.transform='scale(1.05)'} onMouseLeave={(e)=> e.currentTarget.style.transform=''}>
 
-                                    <svg viewBox="0 0 24 24" width="22" height="22"><path fill="#4CBB17" d="M5 3v18M19 8l-14-5v10l14 5V8z" stroke="#4CBB17" strokeWidth="1.5" strokeLinejoin="round" /></svg>
+                                    <svg viewBox="0 0 24 24" width="22" height="22" className={isRunning ? 'animate-pulse' : ''}><path fill={isRunning ? "#A0A0A0" : "#4CBB17"} d="M5 3v18M19 8l-14-5v10l14 5V8z" stroke={isRunning ? "#A0A0A0" : "#4CBB17"} strokeWidth="1.5" strokeLinejoin="round" /></svg>
 
                                 </button>
 
-                                <button className={styles.stopButtonTop} onClick={handleStopClick} title="Stop">
+                                <button className={`${styles.stopButtonTop} ${!isRunning ? 'opacity-40 pointer-events-none' : 'animate-pulse'}`} onClick={handleStopClick} title="Stop" aria-pressed={!isRunning} onMouseDown={(e)=> e.currentTarget.style.transform='scale(0.92)'} onMouseUp={(e)=> e.currentTarget.style.transform='scale(1.05)'} onMouseLeave={(e)=> e.currentTarget.style.transform=''}>
 
-                                    <svg viewBox="0 0 24 24" width="22" height="22"><polygon fill="#EC5959" points="7.3,2 16.7,2 22,7.3 22,16.7 16.7,22 7.3,22 2,16.7 2,7.3" /></svg>
+                                    <svg viewBox="0 0 24 24" width="22" height="22"><polygon fill={!isRunning ? "#A0A0A0" : "#EC5959"} points="7.3,2 16.7,2 22,7.3 22,16.7 16.7,22 7.3,22 2,16.7 2,7.3" /></svg>
 
                                 </button>
 

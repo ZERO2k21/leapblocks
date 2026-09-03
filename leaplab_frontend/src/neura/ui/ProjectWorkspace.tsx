@@ -99,6 +99,16 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
 
     const fileInputRef = useRef<HTMLInputElement>(null)
 
+    const handleSave = useCallback(async () => {
+        if (!mode.project) return
+        try {
+            await fileService.saveProject(mode.project.name, 'neura', mode.project)
+        } catch (e: any) {
+            console.error('[Neura] Save failed', e)
+            throw e
+        }
+    }, [mode.project])
+
     const handleDownload = useCallback(() => {
         if (!mode.project) return
         fileService.saveProjectLocally(mode.project.name, 'neura', mode.project)
@@ -382,7 +392,7 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
             <IgniteTopbar
                 title={mode.project?.name || 'Classifier'}
                 onBack={handleHomeClick}
-                onSave={handleDownload}
+                onSave={handleSave}
                 onDownload={handleDownload}
                 onNew={handleNewProject}
                 onOpen={handleOpenProject}

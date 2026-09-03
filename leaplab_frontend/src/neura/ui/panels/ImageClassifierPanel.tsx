@@ -447,9 +447,9 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
             const cur = getCanvasPoint(e.clientX, e.clientY)
             const s = dragStartRef.current
             const nx = s.origX + (cur.x - s.startX), ny = s.origY + (cur.y - s.startY)
-            if (s.id === 'brain') { const cand = nudgeToNonColliding('brain', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setBrainPos(cand) }
-            else if (s.id === 'vision') { const cand = nudgeToNonColliding('vision', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setVisionPos(cand) }
-            else { const cand = nudgeToNonColliding(s.id, {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setClassPositions(prev => ({ ...prev, [s.id]: cand })) }
+            if (s.id === 'brain') { const cand = nudgeToNonColliding('brain', {x:nx,y:ny}, classPositions, brainPos, visionPos, { expandedClasses } as any); setBrainPos(cand) }
+            else if (s.id === 'vision') { const cand = nudgeToNonColliding('vision', {x:nx,y:ny}, classPositions, brainPos, visionPos, { expandedClasses } as any); setVisionPos(cand) }
+            else { const cand = nudgeToNonColliding(s.id, {x:nx,y:ny}, classPositions, brainPos, visionPos, { expandedClasses } as any); setClassPositions(prev => ({ ...prev, [s.id]: cand })) }
         }
     }
     const handleViewportMouseUp = () => { setIsPanning(false); panStartRef.current = null; if (draggingId) setDraggingId(null) }
@@ -530,9 +530,9 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                 const curX = (cx - rect.left - pan.x) / zoom, curY = (cy - rect.top - pan.y) / zoom
                 const s = dragStartRef.current
                 const nx = s.origX + (curX - s.startX), ny = s.origY + (curY - s.startY)
-                if (s.id === 'brain') { const cand = nudgeToNonColliding('brain', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setBrainPos(cand) }
-            else if (s.id === 'vision') { const cand = nudgeToNonColliding('vision', {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setVisionPos(cand) }
-            else { const cand = nudgeToNonColliding(s.id, {x:nx,y:ny}, classPositions, brainPos, visionPos, { isSingleDataset: (typeof isSingleDataset!=='undefined'?isSingleDataset:false), datasetPos: (typeof datasetPos!=='undefined'?datasetPos:undefined) as any, expandedClasses } as any); setClassPositions(prev => ({ ...prev, [s.id]: cand })) }
+                if (s.id === 'brain') { const cand = nudgeToNonColliding('brain', {x:nx,y:ny}, classPositions, brainPos, visionPos, { expandedClasses } as any); setBrainPos(cand) }
+            else if (s.id === 'vision') { const cand = nudgeToNonColliding('vision', {x:nx,y:ny}, classPositions, brainPos, visionPos, { expandedClasses } as any); setVisionPos(cand) }
+            else { const cand = nudgeToNonColliding(s.id, {x:nx,y:ny}, classPositions, brainPos, visionPos, { expandedClasses } as any); setClassPositions(prev => ({ ...prev, [s.id]: cand })) }
             }
         }
         const onUp = () => { setIsPanning(false); panStartRef.current = null; setDraggingId(null) }
@@ -732,12 +732,12 @@ export default function ImageClassifierPanel({ mode }: ImageClassifierPanelProps
                         )
                     })}
 
-                    {/* Add folder — kept ABOVE training block (Brain) so it never hides behind expanded folders */}
+                    {/* Add folder — centered ABOVE training block (Brain) */}
                     <button
                         data-node
                         onPointerDown={e => e.stopPropagation()}
                         onClick={() => setShowAddClass(true)}
-                        style={{ left: brainPos.x, top: brainPos.y - 80, width: 344, height: 60 }}
+                        style={{ left: brainPos.x + (400 - 344) / 2, top: brainPos.y - 80, width: 344, height: 60 }}
                         className="absolute z-30 inline-flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-violet-300 bg-gradient-to-r from-violet-50 to-indigo-50 backdrop-blur hover:from-violet-100 hover:to-indigo-100 hover:border-violet-400 text-violet-700 text-sm font-bold shadow-sm transition-all hover:scale-[1.01]"
                     >
                         <span className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-sm">＋</span>

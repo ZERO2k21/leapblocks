@@ -3,8 +3,8 @@
  * All rights reserved. Proprietary and confidential.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
-import React, { useState, useEffect } from "react";
-import { Play, Square, Trash2, Package, CornerDownLeft } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Play, Square, Trash2, Package, CornerDownLeft, Search, Copy, Check, X } from "lucide-react";
 import PipPanel from "../panels/PipPanel";
 
 const getLogTextColor = (type, text) => {
@@ -51,6 +51,54 @@ export default function TerminalPanel({
     const [terminalHeight, setTerminalHeight] = useState(
         typeof window !== 'undefined' && window.innerWidth < 768 ? 160 : 220
     );
+    const [searchQuery, setSearchQuery] = useState("");
+    const [showSearch, setShowSearch] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const [copiedLine, setCopiedLine] = useState(null);
+    const [contextMenu, setContextMenu] = useState(null);
+    const searchInputRef = useRef(null);
+    const terminalScrollRef = useRef(null);
+
+    const filteredOutput = searchQuery
+        ? terminalOutput.filter((log) => log.text.toLowerCase().includes(searchQuery.toLowerCase()))
+        : terminalOutput;
+
+    const handleCopyAll = async () => {
+        const text = terminalOutput.map((l) => l.text).join("\n");
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+        }
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+    };
+
+    const handleCopyLine = async (text, idx) => {
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+        }
+        setCopiedLine(idx);
+        setTimeout(() => setCopiedLine(null), 1500);
+    };
+
+    const handleClear = () => {
+        onClear?.();
+        setContextMenu(null);
+    };
 
     useEffect(() => {
         const handleResize = () => {
@@ -59,6 +107,16 @@ export default function TerminalPanel({
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    useEffect(() => {
+        const close = () => setContextMenu(null);
+        window.addEventListener('click', close);
+        return () => window.removeEventListener('click', close);
+    }, []);
+
+    useEffect(() => {
+        if (showSearch) setTimeout(() => searchInputRef.current?.focus(), 50);
+    }, [showSearch]);
 
     const tabs = [
         { id: "terminal", label: "Terminal", icon: <span className="text-xs">▶</span> },
@@ -97,21 +155,100 @@ export default function TerminalPanel({
                             terminalInputRef.current?.focus();
                         }
                     }}
-                    className={`flex-1 flex flex-col overflow-hidden bg-zinc-900 ${isWaitingForInput ? "cursor-text" : "cursor-default"}`}
+                    onContextMenu={(e) => {
+                        e.preventDefault();
+                        setContextMenu({ x: e.clientX, y: e.clientY });
+                    }}
+                    className={`flex-1 flex flex-col overflow-hidden bg-zinc-900 relative ${isWaitingForInput ? "cursor-text" : "cursor-default"}`}
                 >
-                    <div className="flex-1 overflow-y-auto py-2 px-3.5 font-mono text-xs leading-relaxed">
+                    {/* Toolbar: search / copy / clear */}
+                    <div className="flex items-center gap-1.5 px-2 py-1.5 bg-zinc-800 border-b border-zinc-700 shrink-0">
+                        {!showSearch ? (
+                            <button
+                                type="button"
+                                onClick={() => setShowSearch(true)}
+                                title="Search logs (Ctrl+F)"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-zinc-700 hover:bg-zinc-600 text-slate-200 border border-zinc-600 transition-colors"
+                            >
+                                <Search size={12} /> Search
+                            </button>
+                        ) : (
+                            <div className="flex items-center gap-1 flex-1">
+                                <div className="relative flex-1 flex items-center">
+                                    <Search size={12} className="absolute left-2 text-slate-400" />
+                                    <input
+                                        ref={searchInputRef}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Escape') { setSearchQuery(""); setShowSearch(false); }
+                                        }}
+                                        placeholder="Search logs..."
+                                        className="w-full pl-7 pr-7 py-1 rounded-md bg-zinc-900 border border-zinc-600 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-purple-500"
+                                    />
+                                    {searchQuery && (
+                                        <button onClick={() => setSearchQuery("")} className="absolute right-1 p-0.5 hover:bg-zinc-700 rounded">
+                                            <X size={12} className="text-slate-400" />
+                                        </button>
+                                    )}
+                                </div>
+                                <span className="text-xs text-slate-400 whitespace-nowrap">
+                                    {searchQuery ? `${filteredOutput.length}/${terminalOutput.length}` : `${terminalOutput.length} lines`}
+                                </span>
+                                <button onClick={() => { setSearchQuery(""); setShowSearch(false); }} className="p-1 hover:bg-zinc-700 rounded">
+                                    <X size={14} className="text-slate-400" />
+                                </button>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-1 ml-auto">
+                            <button
+                                type="button"
+                                onClick={handleCopyAll}
+                                disabled={terminalOutput.length === 0}
+                                title="Copy all logs"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 disabled:cursor-not-allowed text-slate-200 border border-zinc-600 transition-colors"
+                            >
+                                {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />} {copied ? "Copied" : "Copy"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleClear}
+                                disabled={terminalOutput.length === 0}
+                                title="Clear Terminal"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-zinc-700 hover:bg-red-900/30 hover:text-red-300 disabled:opacity-40 disabled:cursor-not-allowed text-slate-200 border border-zinc-600 transition-colors"
+                            >
+                                <Trash2 size={12} /> Clear
+                            </button>
+                        </div>
+                    </div>
+                    {contextMenu && (
+                        <div
+                            className="fixed z-50 min-w-[180px] py-1 rounded-lg bg-zinc-800 border border-zinc-700 shadow-xl"
+                            style={{ left: contextMenu.x, top: contextMenu.y }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button onClick={() => { handleCopyAll(); setContextMenu(null); }} className="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-zinc-700 flex items-center gap-2"><Copy size={12} /> Copy All</button>
+                            <button onClick={handleClear} className="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-zinc-700 flex items-center gap-2"><Trash2 size={12} /> Clear Output</button>
+                            <div className="h-px bg-zinc-700 my-1" />
+                            <button onClick={() => { setShowSearch(true); setContextMenu(null); }} className="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-zinc-700 flex items-center gap-2"><Search size={12} /> Search Logs</button>
+                        </div>
+                    )}
+                    <div ref={terminalScrollRef} className="flex-1 overflow-y-auto py-2 px-3.5 font-mono text-xs leading-relaxed">
                         {terminalOutput.length === 0 ? (
                             <div className="text-emerald-500 italic">
                                 <div>// LeapBlocks Python Terminal</div>
                                 <div>// Click Run or Run All to execute</div>
                                 <div>// Open the REPL tab for interactive commands</div>
                             </div>
-                        ) : terminalOutput.map((log, i) => {
+                        ) : filteredOutput.length === 0 && searchQuery ? (
+                            <div className="text-slate-500 italic py-4 text-center">No logs match “{searchQuery}”</div>
+                        ) : filteredOutput.map((log, i) => {
+                            const originalIdx = terminalOutput.indexOf(log);
                             const isSpecialInfo = log.text.includes("🤖") || log.text.includes("➡️") || log.text.includes("🏃") || log.text.includes("🎭");
                             return (
                                 <div
-                                    key={i}
-                                    className={`mb-0.5 whitespace-pre-wrap break-words ${getLogTextColor(log.type, log.text)} ${
+                                    key={originalIdx}
+                                    className={`group flex items-start gap-1 mb-0.5 whitespace-pre-wrap break-words ${getLogTextColor(log.type, log.text)} ${
                                         isSpecialInfo
                                             ? "border-l-2 border-sky-300 pl-2"
                                             : log.type === "repl-in"
@@ -119,9 +256,25 @@ export default function TerminalPanel({
                                                 : "pl-1"
                                     }`}
                                 >
-                                    {log.type === "repl-in" ? <span className="select-none text-emerald-500">{">>> "}</span> : null}
-                                    {log.type === "error" && !log.text.startsWith("✗") ? <span className="text-red-400">✗ </span> : null}
-                                    {log.text}
+                                    <span className="flex-1 min-w-0">
+                                        {log.type === "repl-in" ? <span className="select-none text-emerald-500">{">>> "}</span> : null}
+                                        {log.type === "error" && !log.text.startsWith("✗") ? <span className="text-red-400">✗ </span> : null}
+                                        {searchQuery ? (() => {
+                                            const idx = log.text.toLowerCase().indexOf(searchQuery.toLowerCase());
+                                            if (idx === -1) return log.text;
+                                            const before = log.text.slice(0, idx);
+                                            const match = log.text.slice(idx, idx + searchQuery.length);
+                                            const after = log.text.slice(idx + searchQuery.length);
+                                            return <>{before}<mark className="bg-yellow-400/30 text-yellow-200 rounded px-0.5">{match}</mark>{after}</>;
+                                        })() : log.text}
+                                    </span>
+                                    <button
+                                        onClick={() => handleCopyLine(log.text, originalIdx)}
+                                        title="Copy line"
+                                        className="opacity-0 group-hover:opacity-100 shrink-0 p-1 rounded hover:bg-zinc-700 transition-all"
+                                    >
+                                        {copiedLine === originalIdx ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} className="text-slate-400" />}
+                                    </button>
                                 </div>
                             );
                         })}
