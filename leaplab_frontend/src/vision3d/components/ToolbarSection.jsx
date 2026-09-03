@@ -149,11 +149,12 @@ export function ToolbarSection({ fileInputRef, openProjectInputRef, handleImport
             Ruler
           </button>
           <button
-            className="flex items-center justify-center gap-2 !px-8 shrink-0 border border-slate-200/80 rounded-lg bg-slate-50 text-[13px] font-semibold text-slate-600 cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[40px] shadow-sm hover:bg-slate-100 hover:text-slate-800 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+            className="flex flex-col items-center justify-center !px-6 shrink-0 border border-slate-200/80 rounded-lg bg-slate-50 cursor-pointer transition-all duration-150 whitespace-nowrap select-none h-[40px] shadow-sm hover:bg-slate-100 disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none leading-none py-1"
             onClick={() => fileInputRef.current?.click()}
-            title="Import STL/OBJ file"
+            title="Import 3D model file (.STL, .OBJ, .GLTF, .GLB)"
           >
-            Import
+            <span className="text-[13px] font-semibold text-slate-600 leading-none">Import</span>
+            <span className="text-[8px] font-medium tracking-wide text-slate-400 leading-none mt-[2px]">.STL / .OBJ / .GLTF / .GLB</span>
           </button>
           {(() => {
             const NET_SUPPORTED = ['cube','box','cylinder','cone','tetrahedron','pyramid','sphere','halfSphere'];
@@ -311,7 +312,7 @@ export function ToolbarSection({ fileInputRef, openProjectInputRef, handleImport
         <input
           ref={fileInputRef}
           type="file"
-          accept=".stl,.obj"
+          accept=".stl,.obj,.gltf,.glb"
           onChange={handleImport}
           className="hidden"
         />

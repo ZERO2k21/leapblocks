@@ -13,7 +13,7 @@ import PreviewModal from './components/PreviewModal';
 import ShapeNet from './components/ShapeNet';
 import { use3DStore } from './store/use3DStore';
 import { useCloudProjectStore } from '../store/cloudProjectStore';
-import { importSTL, importOBJ, isImportableFile } from './engine/ImportManager';
+import { importSTL, importOBJ, importGLTF, isImportableFile } from './engine/ImportManager';
 import { saveVision3DProject } from './utils/cloudSave';
 import { importProjectFromJSON } from './utils/indexedDB';
 import { log, debug, error } from './utils/logger';
@@ -104,6 +104,8 @@ const Vision3DApp = ({ onBack }) => {
       result = await importSTL(file);
     } else if (/\.obj$/i.test(file.name)) {
       result = await importOBJ(file);
+    } else if (/\.(gltf|glb)$/i.test(file.name)) {
+      result = await importGLTF(file);
     }
 
     if (result) {

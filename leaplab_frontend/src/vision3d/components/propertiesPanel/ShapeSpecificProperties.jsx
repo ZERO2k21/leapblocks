@@ -349,26 +349,6 @@ export const ShapeSpecificProperties = ({ selectedShape, inputClass, labelClass,
         </div>
       )}
 
-      {selectedShape.type === 'heart' && (
-        <div>
-          <label className={labelClass}>Heart</label>
-          <div className="flex gap-2">
-            <div className="flex-1 flex flex-col gap-1 min-w-0">
-              <span className="text-[10px] font-bold text-slate-400 text-center uppercase tracking-wider truncate">Size</span>
-              <input type="number" value={selectedShape.heartSize ?? 1} min={0.1} step={0.1}
-                onChange={(e) => updateProp('heartSize', parseFloat(e.target.value) || 0.1)}
-                className={inputClass} />
-            </div>
-            <div className="flex-1 flex flex-col gap-1 min-w-0">
-              <span className="text-[10px] font-bold text-slate-400 text-center uppercase tracking-wider truncate">Depth</span>
-              <input type="number" value={selectedShape.heartDepth ?? 0.5} min={0.1} step={0.1}
-                onChange={(e) => updateProp('heartDepth', parseFloat(e.target.value) || 0.1)}
-                className={inputClass} />
-            </div>
-          </div>
-        </div>
-      )}
-
       {selectedShape.type === 'polygon' && (
         <div>
           <label className={labelClass}>Polygon</label>

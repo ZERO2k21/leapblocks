@@ -48,8 +48,6 @@ export interface ShapeDefaults {
   starInnerRadius?: number
   starPoints?: number
   starHeight?: number
-  heartSize?: number
-  heartDepth?: number
   polygonRadius?: number
   polygonSides?: number
   polygonHeight?: number
@@ -162,13 +160,6 @@ export const SHAPE_DEFINITIONS: ShapeDefinition[] = [
     icon: '★',
     category: 'basic',
     defaults: { starOuterRadius: 1, starInnerRadius: 0.5, starPoints: 5, starHeight: 0.5, color: '#EAB308' },
-  },
-  {
-    type: 'heart',
-    name: 'Heart',
-    icon: '♥',
-    category: 'basic',
-    defaults: { heartSize: 1, heartDepth: 0.5, color: '#EF4444' },
   },
   {
     type: 'polygon',
