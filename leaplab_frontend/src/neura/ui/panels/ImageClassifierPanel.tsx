@@ -4,6 +4,7 @@ import { useCamera } from '../../hooks/useCamera'
 import { ImageClassifier } from '../../ml/classifiers/ImageClassifier'
 import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+import { nudgeToNonColliding } from '../layoutCollision'
 import AccuracyChart from '../components/AccuracyChart'
 import NotRelatedModal from '../components/NotRelatedModal'
 

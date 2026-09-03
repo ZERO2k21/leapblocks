@@ -5,6 +5,7 @@ import { PoseClassifier } from '../../ml/classifiers/PoseClassifier'
 import type { Keypoint } from '../../ml/classifiers/PoseClassifier'
 import { RELATEDNESS_THRESHOLD } from '../../ml/KNNClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+import { nudgeToNonColliding } from '../layoutCollision'
 import AccuracyChart from '../components/AccuracyChart'
 import NotRelatedModal from '../components/NotRelatedModal'
 
