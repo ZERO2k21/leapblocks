@@ -198,22 +198,58 @@ export const use3DStore = create<FullStore>()((set, get) => ({
   removeShape: (id) => {
     const shape = get().shapes.find((s) => s.id === id)
     log('removeShape:', id, shape ? `(${shape.name})` : '(not found)')
-    set((state) => ({
-      shapes: state.shapes.filter((s) => s.id !== id),
-      selectedIds: state.selectedIds.filter((sid) => sid !== id),
-      isProjectDirty: true,
-    }))
+    const state = get()
+    const isEditing = state.editShapeId === id
+    const hasCache = !!state.geometryCache[id]
+    set((state) => {
+      const filtered = state.shapes.filter((s) => s.id !== id)
+      const cleaned = filtered.map((s) => {
+        if (s.type === 'group' && Array.isArray(s.children)) {
+          const newChildren = (s.children as string[]).filter((cid) => cid !== id)
+          if (newChildren.length !== (s.children as string[]).length) return { ...s, children: newChildren }
+        }
+        if (s.parentId === id) return { ...s, parentId: undefined }
+        return s
+      })
+      const nextCache = { ...state.geometryCache }
+      if (hasCache) delete nextCache[id]
+      return {
+        shapes: cleaned,
+        selectedIds: state.selectedIds.filter((sid) => sid !== id),
+        isProjectDirty: true,
+        ...(isEditing ? { editMode: 'object', editShapeId: null, selectedVertices: [], selectedEdges: [], selectedFaces: [], editTool: null, geometryCache: nextCache } : hasCache ? { geometryCache: nextCache } : {}),
+      }
+    })
     setTimeout(() => get().autoSaveProject(), 100)
   },
 
   removeShapes: (ids) => {
     log('removeShapes:', ids.length, 'shapes')
-    set((state) => ({
-      shapes: state.shapes.filter((s) => !ids.includes(s.id)),
-      selectedIds: [],
-      showInspector: false,
-      isProjectDirty: true,
-    }))
+    const state = get()
+    const idSet = new Set(ids)
+    const isEditingDeleted = state.editShapeId ? idSet.has(state.editShapeId) : false
+    set((state) => {
+      const filtered = state.shapes.filter((s) => !idSet.has(s.id))
+      const cleaned = filtered.map((s) => {
+        if (s.type === 'group' && Array.isArray(s.children)) {
+          const newChildren = (s.children as string[]).filter((cid) => !idSet.has(cid))
+          if (newChildren.length !== (s.children as string[]).length) return { ...s, children: newChildren }
+        }
+        if (s.parentId && idSet.has(s.parentId)) return { ...s, parentId: undefined }
+        return s
+      })
+      const nextCache = { ...state.geometryCache }
+      let cacheChanged = false
+      for (const id of ids) if (nextCache[id]) { delete nextCache[id]; cacheChanged = true }
+      return {
+        shapes: cleaned,
+        selectedIds: [],
+        showInspector: false,
+        isProjectDirty: true,
+        ...(cacheChanged ? { geometryCache: nextCache } : {}),
+        ...(isEditingDeleted ? { editMode: 'object', editShapeId: null, selectedVertices: [], selectedEdges: [], selectedFaces: [], editTool: null, geometryCache: nextCache } : {}),
+      }
+    })
     setTimeout(() => get().autoSaveProject(), 100)
   },
 
@@ -500,22 +536,26 @@ export const use3DStore = create<FullStore>()((set, get) => ({
 
   pushHistory: () => {
     debug('pushHistory')
-    const state = get()
-    const newHistory = state.history.slice(0, state.historyIndex + 1)
-    newHistory.push(JSON.parse(JSON.stringify(state.shapes, (key, val) => {
-      if (key === '_csgGeometry' && val && (val as Record<string, unknown>).attributes) return serializeGeometry(val as THREE.BufferGeometry)
-      if (key === '_customGeometry' && val && (val as Record<string, unknown>).attributes) return serializeGeometry(val as THREE.BufferGeometry)
-      return val
-    })))
+    try {
+      const state = get()
+      const newHistory = state.history.slice(0, state.historyIndex + 1)
+      newHistory.push(JSON.parse(JSON.stringify(state.shapes, (key, val) => {
+        if (key === '_csgGeometry' && val && (val as Record<string, unknown>).attributes) return serializeGeometry(val as THREE.BufferGeometry)
+        if (key === '_customGeometry' && val && (val as Record<string, unknown>).attributes) return serializeGeometry(val as THREE.BufferGeometry)
+        return val
+      })))
 
-    if (newHistory.length > MAX_HISTORY) {
-      newHistory.shift()
+      if (newHistory.length > MAX_HISTORY) {
+        newHistory.shift()
+      }
+
+      set({
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      })
+    } catch (err) {
+      error('pushHistory failed (likely large sphere geometry), skipping history:', err)
     }
-
-    set({
-      history: newHistory,
-      historyIndex: newHistory.length - 1,
-    })
   },
 
   undo: () => {
@@ -532,10 +572,13 @@ export const use3DStore = create<FullStore>()((set, get) => ({
           sh._csgGeometry = deserializeGeometry(sh._csgGeometry as Record<string, unknown>)!
         }
       }
+      const restoredIds = new Set(restoredShapes.map((s) => s.id))
+      const shouldResetEdit = state.editShapeId ? !restoredIds.has(state.editShapeId) : false
       set({
         shapes: restoredShapes,
         historyIndex: newIndex,
         selectedIds: [],
+        ...(shouldResetEdit ? { editMode: 'object', editShapeId: null, selectedVertices: [], selectedEdges: [], selectedFaces: [], editTool: null, geometryCache: {} } : {}),
       })
     }
   },
@@ -554,10 +597,13 @@ export const use3DStore = create<FullStore>()((set, get) => ({
           sh._csgGeometry = deserializeGeometry(sh._csgGeometry as Record<string, unknown>)!
         }
       }
+      const restoredIds = new Set(restoredShapes.map((s) => s.id))
+      const shouldResetEdit = state.editShapeId ? !restoredIds.has(state.editShapeId) : false
       set({
         shapes: restoredShapes,
         historyIndex: newIndex,
         selectedIds: [],
+        ...(shouldResetEdit ? { editMode: 'object', editShapeId: null, selectedVertices: [], selectedEdges: [], selectedFaces: [], editTool: null, geometryCache: {} } : {}),
       })
     }
   },
@@ -602,7 +648,14 @@ export const use3DStore = create<FullStore>()((set, get) => ({
       }
       return sh
     })
-    set({ shapes: deserialized, isProjectDirty: true })
+    const state = get()
+    const newIds = new Set(deserialized.map((s) => s.id))
+    const shouldResetEdit = state.editShapeId ? !newIds.has(state.editShapeId) : false
+    set({
+      shapes: deserialized,
+      isProjectDirty: true,
+      ...(shouldResetEdit ? { editMode: 'object', editShapeId: null, selectedVertices: [], selectedEdges: [], selectedFaces: [], editTool: null, geometryCache: {} } : {}),
+    })
   },
 
   clearScene: () => {
@@ -611,6 +664,14 @@ export const use3DStore = create<FullStore>()((set, get) => ({
       shapes: [],
       selectedIds: [],
       isProjectDirty: true,
+      editMode: 'object',
+      editShapeId: null,
+      selectedVertices: [],
+      selectedEdges: [],
+      selectedFaces: [],
+      editTool: null,
+      geometryCache: {},
+      showInspector: false,
     })
     setTimeout(() => get().autoSaveProject(), 100)
   },
