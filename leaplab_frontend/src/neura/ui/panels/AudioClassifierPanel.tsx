@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react'
 import type { UseNeuraProjectReturn } from '../../hooks/useNeuraProject'
 import { AudioClassifier } from '../../ml/classifiers/AudioClassifier'
 import { MAX_SAMPLES_PER_CLASS } from '../../types/neura.types'
+import { layoutNonColliding, nudgeToNonColliding } from '../layoutCollision'
 import AccuracyChart from '../components/AccuracyChart'
 import NotRelatedModal from '../components/NotRelatedModal'
 
@@ -84,6 +85,15 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             return next
         })
     }, [mode.project?.classes.map(c => c.id).join(',')])
+
+    // Non-colliding rule: brain / listen / classes never overlap
+    useEffect(() => {
+        if (!mode.project) return
+        // treat listenPos as vision for layout
+        const { brainPos: nb, visionPos: nv } = layoutNonColliding(classPositions, brainPos, listenPos as any, { expandedClasses } as any)
+        if (nb.x !== brainPos.x || nb.y !== brainPos.y) setBrainPos(nb)
+        if (nv.x !== (listenPos as any).x || nv.y !== (listenPos as any).y) setListenPos(nv as any)
+    }, [mode.project?.classes.length, Object.keys(classPositions).length, JSON.stringify(expandedClasses)])
 
     useEffect(() => {
         if (!mode.project) return
@@ -519,9 +529,9 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
             const cur = getCanvasPoint(e.clientX, e.clientY)
             const s = dragStartRef.current
             const nx = s.origX + (cur.x - s.startX), ny = s.origY + (cur.y - s.startY)
-            if (s.id === 'brain') setBrainPos({ x: nx, y: ny })
-            else if (s.id === 'listen') setListenPos({ x: nx, y: ny })
-            else setClassPositions(prev => ({ ...prev, [s.id]: { x: nx, y: ny } }))
+            if (s.id === 'brain') { const cand = nudgeToNonColliding('brain', {x:nx,y:ny}, classPositions, brainPos, listenPos as any, { expandedClasses } as any); setBrainPos(cand) }
+            else if (s.id === 'listen') { const cand = nudgeToNonColliding('vision', {x:nx,y:ny}, classPositions, brainPos, listenPos as any, { expandedClasses } as any); setListenPos(cand as any) }
+            else { const cand = nudgeToNonColliding(s.id, {x:nx,y:ny}, classPositions, brainPos, listenPos as any, { expandedClasses } as any); setClassPositions(prev => ({ ...prev, [s.id]: cand })) }
         }
     }
     const handleViewportMouseUp = () => { setIsPanning(false); panStartRef.current = null; if (draggingId) setDraggingId(null) }
@@ -595,9 +605,9 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                 const curX = (cx - rect.left - pan.x) / zoom, curY = (cy - rect.top - pan.y) / zoom
                 const s = dragStartRef.current
                 const nx = s.origX + (curX - s.startX), ny = s.origY + (curY - s.startY)
-                if (s.id === 'brain') setBrainPos({ x: nx, y: ny })
-                else if (s.id === 'listen') setListenPos({ x: nx, y: ny })
-                else setClassPositions(prev => ({ ...prev, [s.id]: { x: nx, y: ny } }))
+                if (s.id === 'brain') { const cand = nudgeToNonColliding('brain', {x:nx,y:ny}, classPositions, brainPos, listenPos as any, { expandedClasses } as any); setBrainPos(cand) }
+                else if (s.id === 'listen') { const cand = nudgeToNonColliding('vision', {x:nx,y:ny}, classPositions, brainPos, listenPos as any, { expandedClasses } as any); setListenPos(cand as any) }
+                else { const cand = nudgeToNonColliding(s.id, {x:nx,y:ny}, classPositions, brainPos, listenPos as any, { expandedClasses } as any); setClassPositions(prev => ({ ...prev, [s.id]: cand })) }
             }
         }
         const onUp = () => { setIsPanning(false); panStartRef.current = null; setDraggingId(null) }
@@ -653,7 +663,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-[#F8FAFC] relative">
-            {savedMessage && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[80] px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-medium shadow-lg">{savedMessage}</div>}
+            {savedMessage && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[80] px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-lg">{savedMessage}</div>}
             <input ref={fileInputRef} type="file" accept=".wav,.mp3,audio/wav,audio/mpeg" multiple onChange={handleFileChange} className="hidden" />
             <input ref={testFileInputRef} type="file" accept=".wav,.mp3,audio/wav,audio/mpeg" onChange={handleTestUpload as any} className="hidden" />
 
@@ -680,19 +690,19 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                     <span className="hidden lg:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-medium text-slate-600">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{inferenceTime} ms
                     </span>
-                    <button onClick={isMicOn ? stopAudio : startAudio} disabled={isMicStarting} className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium border transition-colors ${isMicOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'} ${isMicStarting ? 'opacity-60 cursor-wait' : ''}`}>
+                    <button onClick={isMicOn ? stopAudio : startAudio} disabled={isMicStarting} className={`inline-flex items-center gap-1.5 h-11 px-5 rounded-xl text-sm font-bold border transition-colors ${isMicOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'} ${isMicStarting ? 'opacity-60 cursor-wait' : ''}`}>
                         <span className={`w-2 h-2 rounded-full ${isMicOn ? 'bg-emerald-400 animate-pulse' : 'bg-slate-300'}`} />{isMicOn ? 'Mic on' : isMicStarting ? 'Starting…' : 'Mic off'}
                     </button>
                     <div className="w-px h-6 bg-slate-200 hidden sm:block" />
-                    <button onClick={() => setShowAddClass(true)} className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-sm">+ New folder</button>
+                    <button onClick={() => setShowAddClass(true)} className="hidden sm:inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-sm">+ New folder</button>
                 </div>
             </div>
 
             {showAddClass && (
                 <div className="absolute top-[56px] left-1/2 -translate-x-1/2 z-30 bg-white rounded-xl shadow-xl border border-slate-200 p-3 flex gap-2 items-center w-[min(420px,95vw)]">
-                    <input autoFocus value={newClassName} onChange={e => setNewClassName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAddClass(); if (e.key === 'Escape') setShowAddClass(false) }} placeholder="Folder name e.g. Clap" className="flex-1 h-9 px-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100" />
+                    <input autoFocus value={newClassName} onChange={e => setNewClassName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAddClass(); if (e.key === 'Escape') setShowAddClass(false) }} placeholder="Folder name e.g. Clap" className="flex-1 h-11 px-5 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100" />
                     <button onClick={handleAddClass} className="h-9 px-4 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800">Add</button>
-                    <button onClick={() => setShowAddClass(false)} className="h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600">Cancel</button>
+                    <button onClick={() => setShowAddClass(false)} className="h-11 px-5 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600">Cancel</button>
                 </div>
             )}
 
@@ -770,7 +780,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                         </div>
                                     </div>
                                     <div className="h-1.5 bg-slate-100 shrink-0"><div className="h-full transition-all" style={{ width: `${progress}%`, background: cls.color }} /></div>
-                                    {isDragOver && <div className="mx-3 mt-3 h-8 rounded-lg bg-violet-50 border border-violet-200 text-violet-700 text-xs font-medium flex items-center justify-center">Drop audio here</div>}
+                                    {isDragOver && <div className="mx-3 mt-3 h-11 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 text-sm font-bold flex items-center justify-center">Drop audio here</div>}
                                     <div
                                         onDragOver={e => { e.preventDefault(); setDragOverClass(cls.id) }}
                                         onDragLeave={e => { e.preventDefault(); if (dragOverClass === cls.id) setDragOverClass(null) }}
@@ -797,7 +807,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                                     ))}
                                                 </div>
                                                 {cls.samples.length > 6 && <div className="text-[11px] text-slate-500 text-center">+{cls.samples.length - 6} more</div>}
-                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleImportClick(cls.id) }} disabled={atLimit || isImporting} className={`w-full inline-flex items-center justify-center gap-2 h-9 rounded-lg border text-xs font-bold transition-all ${atLimit ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-violet-50 to-indigo-50 border-violet-200 text-violet-700 hover:from-violet-100 hover:to-indigo-100 hover:border-violet-300 hover:shadow-sm'}`}>
+                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleImportClick(cls.id) }} disabled={atLimit || isImporting} className={`w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl border text-sm font-bold transition-all ${atLimit ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-violet-50 to-indigo-50 border-violet-200 text-violet-700 hover:from-violet-100 hover:to-indigo-100 hover:border-violet-300 hover:shadow-sm'}`}>
                                                     <span className="w-6 h-6 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs">+</span>
                                                     Add sounds <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white border border-violet-200 text-violet-600 font-bold">multi</span>
                                                 </button>
@@ -806,16 +816,16 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                             <div className="flex-1 flex flex-col items-center justify-center gap-3 py-4">
                                                 <div className={`w-12 h-12 rounded-xl border flex items-center justify-center ${isDragOver ? 'bg-violet-50 border-violet-200 text-violet-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M12 3v10.55A4 4 0 1 0 14 17V7a2 2 0 0 0-2-2z" /></svg></div>
                                                 <div className="text-center">
-                                                    <p className="text-xs font-medium text-slate-700">No sounds yet</p>
+                                                    <p className="text-sm font-bold text-slate-700">No sounds yet</p>
                                                     <p className="text-[11px] text-slate-500">Drop audio or use +</p>
                                                 </div>
-                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleImportClick(cls.id) }} className="h-8 px-4 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold shadow-sm hover:from-violet-700 hover:to-indigo-700">＋ Add sounds</button>
+                                                <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleImportClick(cls.id) }} className="h-11 px-6 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-bold shadow-sm hover:from-violet-700 hover:to-indigo-700">＋ Add sounds</button>
                                                 <p className="text-[10px] text-slate-400">WAV, MP3 • Multi-select supported</p>
                                             </div>
                                         )}
                                         <div className="flex gap-2 pt-2 border-t border-slate-100 mt-auto">
-                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); mode.setSelectedClassId(cls.id); handleCaptureForClass(cls.id) }} disabled={atLimit || isTraining} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : isRec ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>{isRec ? '● Recording…' : '🎙️ Record'}</button>
-                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleImportClick(cls.id) }} disabled={atLimit} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>📂 Import</button>
+                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); mode.setSelectedClassId(cls.id); handleCaptureForClass(cls.id) }} disabled={atLimit || isTraining} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-full text-sm font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : isRec ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>{isRec ? '● Recording…' : '🎙️ Record'}</button>
+                                            <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleImportClick(cls.id) }} disabled={atLimit} className={`flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-full text-sm font-bold border ${atLimit ? 'bg-slate-50 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-violet-200'}`}>📂 Import</button>
                                         </div>
                                     </div>
                                 </div>
@@ -841,7 +851,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                             </div>
                             <h3 className="text-sm font-semibold text-slate-900">No folders yet</h3>
                             <p className="text-xs text-slate-500 mt-1 max-w-[260px]">Create a folder for each sound class. Each folder is a separate compartment on the canvas.</p>
-                            <button onClick={() => setShowAddClass(true)} className="mt-4 h-9 px-4 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800">Add first folder</button>
+                            <button onClick={() => setShowAddClass(true)} className="mt-4 h-9 px-4 rounded-lg bg-slate-900 text-white text-sm font-bold hover:bg-slate-800">Add first folder</button>
                         </div>
                     )}
 
@@ -872,11 +882,11 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                 <div className="w-full rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 p-3" onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
                                     <div className="flex justify-between text-[11px] font-semibold text-slate-700"><span className="flex items-center gap-1"><span className="w-5 h-5 rounded-md bg-violet-600 text-white flex items-center justify-center text-[10px]">◍</span>Epochs</span><span className="text-violet-700 font-bold bg-white px-2 py-0.5 rounded-full border border-violet-200">{totalEpochs}</span></div>
                                     <input type="range" min={5} max={100} step={5} value={totalEpochs} onChange={e => setTotalEpochs(parseInt(e.target.value))} onInput={e => setTotalEpochs(parseInt((e.target as HTMLInputElement).value))} disabled={isTraining} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} className="w-full mt-3 h-2 accent-violet-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style={{ accentColor: '#7c3aed' }} />
-                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-xs font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
+                                    <div className="flex gap-1.5 mt-3">{[10, 25, 50, 100].map(v => <button key={v} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setTotalEpochs(v) }} className={`flex-1 h-7 rounded-full text-sm font-bold border transition-all ${totalEpochs === v ? 'bg-violet-600 text-white border-violet-600 shadow-sm scale-105' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-700'}`}>{v}</button>)}</div>
                                 </div>
                                 {(epochResults.length > 0 || isTraining) && <div className="w-full"><AccuracyChart epochResults={epochResults} isTraining={isTraining} currentEpoch={currentEpoch} /></div>}
-                                {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs font-medium text-red-700">{trainingError}</div>}
-                                {importError && <div className="w-full rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs font-medium text-amber-700">{importError}</div>}
+                                {trainingError && <div className="w-full rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm font-bold text-red-700">{trainingError}</div>}
+                                {importError && <div className="w-full rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm font-bold text-amber-700">{importError}</div>}
                             </div>
                             <div className="grid grid-cols-3 gap-px bg-slate-100 border-t border-slate-100">
                                 <div className="bg-white py-2.5 text-center"><p className="text-[10px] font-medium text-slate-500 tracking-wide uppercase">Folders</p><p className="text-sm font-semibold text-slate-900">{mode.project?.classes.length || 0}</p></div>
@@ -932,7 +942,7 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                 )}
                             </div>
                             <div className="flex gap-2 p-3 flex-wrap" onPointerDown={e => e.stopPropagation()}>
-                                <button onClick={isMicOn ? stopAudio : startAudio} disabled={isMicStarting} className={`h-8 px-3 rounded-lg text-xs font-medium border ${isMicOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'} ${isMicStarting ? 'opacity-60 cursor-wait' : ''}`}>{isMicOn ? 'Mic on' : 'Mic off'}</button>
+                                <button onClick={isMicOn ? stopAudio : startAudio} disabled={isMicStarting} className={`h-11 px-5 rounded-xl text-sm font-bold border ${isMicOn ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'} ${isMicStarting ? 'opacity-60 cursor-wait' : ''}`}>{isMicOn ? 'Mic on' : 'Mic off'}</button>
                                 <button
                                     onClick={async () => {
                                         if (!micStreamRef.current || isProcessing || !isMicOn) return
@@ -952,9 +962,9 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                         setIsProcessing(false)
                                     }}
                                     disabled={!isMicOn || isProcessing}
-                                    className={`h-8 px-3 rounded-lg text-xs font-medium border ${isProcessing ? 'bg-amber-100 text-amber-700 border-amber-200' : !isMicOn ? 'bg-white text-slate-400 border-slate-200' : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'}`}>{isProcessing ? 'Analyzing…' : '◎ Record & Test'}</button>
-                                <button onClick={() => testFileInputRef.current?.click()} disabled={isProcessing} className="h-8 px-3 rounded-lg bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 text-xs font-medium">Upload .wav/.mp3</button>
-                                <button onClick={() => setPrediction(null)} className="h-8 px-3 rounded-lg bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 text-xs font-medium">Clear</button>
+                                    className={`h-11 px-5 rounded-xl text-sm font-bold border ${isProcessing ? 'bg-amber-100 text-amber-700 border-amber-200' : !isMicOn ? 'bg-white text-slate-400 border-slate-200' : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'}`}>{isProcessing ? 'Analyzing…' : '◎ Record & Test'}</button>
+                                <button onClick={() => testFileInputRef.current?.click()} disabled={isProcessing} className="h-11 px-5 rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 text-sm font-bold">Upload .wav/.mp3</button>
+                                <button onClick={() => setPrediction(null)} className="h-11 px-5 rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 text-sm font-bold">Clear</button>
                                 <span className="ml-auto inline-flex h-8 items-center px-2.5 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-medium text-slate-600">{mode.project?.classes.length || 0} folders • {totalSamplesAll} sounds</span>
                             </div>
                             {importError && <div className="mx-3 mb-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">{importError}</div>}
@@ -967,10 +977,10 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                                             {sortedPredictionEntries.map(([label, conf], idx) => {
                                                 const isTop = idx === 0; const col = mode.project?.classes.find(c => c.name === label)?.color || '#0F172A'
                                                 // confidence without %/bars — just ranked
-                                                return <div key={label} className={`mb-1.5 last:mb-0 p-2 rounded-lg border flex items-center justify-between ${isTop ? 'bg-white border-slate-300 shadow-sm' : 'bg-white border-slate-200'}`}><span className="flex items-center gap-1.5 truncate text-xs font-medium text-slate-900"><span className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-semibold shrink-0" style={{ background: col }}>{label[0].toUpperCase()}</span><span className="truncate">{label}</span>{isTop && <span className="text-amber-500">★</span>}</span><span className={`w-2 h-2 rounded-full ${isTop ? 'bg-emerald-500' : 'bg-slate-300'}`} title="rank indicator" /></div>
+                                                return <div key={label} className={`mb-1.5 last:mb-0 p-2 rounded-lg border flex items-center justify-between ${isTop ? 'bg-white border-slate-300 shadow-sm' : 'bg-white border-slate-200'}`}><span className="flex items-center gap-1.5 truncate text-sm font-bold text-slate-900"><span className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-semibold shrink-0" style={{ background: col }}>{label[0].toUpperCase()}</span><span className="truncate">{label}</span>{isTop && <span className="text-amber-500">★</span>}</span><span className={`w-2 h-2 rounded-full ${isTop ? 'bg-emerald-500' : 'bg-slate-300'}`} title="rank indicator" /></div>
                                             })}
                                         </div>
-                                        <div className="flex gap-2"><button onClick={() => { setPrediction(null) }} className="flex-1 h-8 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700">Clear</button><button onClick={handleExportReport} className="flex-1 h-8 rounded-lg bg-slate-900 text-white text-xs font-medium">Download report</button></div>
+                                        <div className="flex gap-2"><button onClick={() => { setPrediction(null) }} className="flex-1 h-11 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-700">Clear</button><button onClick={handleExportReport} className="flex-1 h-11 rounded-xl bg-slate-900 text-white text-sm font-bold">Download report</button></div>
                                     </>
                                 )}
                             </div>
@@ -982,10 +992,10 @@ export default function AudioClassifierPanel({ mode }: AudioClassifierPanelProps
                 <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white rounded-full shadow-sm border border-slate-200 px-2 py-1.5">
                     <span className="text-[11px] font-medium text-slate-600 px-2">Canvas</span>
                     <button onClick={zoomOut} className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-700">−</button>
-                    <span className="text-xs font-medium w-11 text-center text-slate-900">{Math.round(zoom * 100)}%</span>
+                    <span className="text-sm font-bold w-11 text-center text-slate-900">{Math.round(zoom * 100)}%</span>
                     <button onClick={zoomIn} className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-700">+</button>
                     <div className="w-px h-5 bg-slate-200 mx-1" />
-                    <button onClick={resetView} className="h-7 px-3 rounded-full bg-slate-900 text-white text-xs font-medium">Reset</button>
+                    <button onClick={resetView} className="h-7 px-3 rounded-full bg-slate-900 text-white text-sm font-bold">Reset</button>
                 </div>
             </div>
 

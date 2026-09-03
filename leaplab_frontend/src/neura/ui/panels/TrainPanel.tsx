@@ -139,7 +139,7 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
                         <div className="text-[3rem] mb-3">🎉</div>
                         <h3 className="text-xl font-extrabold text-gray-900 mb-2">Training Complete!</h3>
                         <p className="text-[13px] text-gray-500 mb-4">Your AI learned from {totalSamples} pictures</p>
-                        <div className="inline-flex items-center gap-1.5 py-1.5 px-3.5 bg-emerald-50 rounded-lg text-xs font-bold text-emerald-600">
+                        <div className="inline-flex items-center gap-1.5 py-1.5 px-3.5 bg-emerald-50 rounded-lg text-sm font-bold text-emerald-600">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                             Ready to test!
                         </div>
@@ -245,13 +245,13 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
                                 <>
                                     <button
                                         onClick={handleResetTraining}
-                                        className="py-2.5 px-5 bg-gray-100 text-gray-700 rounded-xl text-xs font-bold border border-gray-200 cursor-pointer"
+                                        className="py-2.5 px-5 bg-gray-100 text-gray-700 rounded-xl text-sm font-bold border border-gray-200 cursor-pointer"
                                     >
                                         🔄 Train Again
                                     </button>
                                     <button
                                         onClick={() => mode.setMode('test')}
-                                        className="py-2.5 px-6 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-xs font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.25)]"
+                                        className="py-2.5 px-6 bg-gradient-to-br from-[#630ed4] to-[#7c3aed] text-white rounded-xl text-sm font-bold border-none cursor-pointer shadow-[0_4px_12px_rgba(99,14,212,0.25)]"
                                     >
                                         🔍 Test AI
                                     </button>
@@ -322,14 +322,14 @@ export default function TrainPanel({ mode, trainer, onTrained }: TrainPanelProps
                     <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
                         <div className="flex justify-between items-center mb-1.5">
                             <span className="text-[10px] font-bold text-gray-700">🖼️ Samples</span>
-                            <span className="text-xs font-bold text-gray-500">{totalSamples}</span>
+                            <span className="text-sm font-bold text-gray-500">{totalSamples}</span>
                         </div>
                     </div>
 
                     <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
                         <div className="flex justify-between items-center mb-1.5">
                             <span className="text-[10px] font-bold text-gray-700">📁 Classes</span>
-                            <span className="text-xs font-bold text-gray-500">{totalClasses}</span>
+                            <span className="text-sm font-bold text-gray-500">{totalClasses}</span>
                         </div>
                     </div>
                 </div>

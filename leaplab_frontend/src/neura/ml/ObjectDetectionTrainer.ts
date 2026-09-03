@@ -265,7 +265,7 @@ export class ObjectDetectionTrainer {
 
                 let prediction: any = null
                 try {
-                    prediction = await knn.predictFromData(removedData, 3)
+                    prediction = await knn.predictFromData(removedData, 5)
                 } catch (e) {
                     console.warn('[ObjectDetectionTrainer] LOO predict failed:', e)
                 }
