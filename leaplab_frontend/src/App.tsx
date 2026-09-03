@@ -12,9 +12,51 @@ import { getSharedProject, fetchCloudProjectContent } from './services/cloudProj
 import { useCloudProjectStore } from './store/cloudProjectStore';
 import { isEmbedded } from './hooks/useIsEmbedded';
 
-const LandingPage = lazy(() => import('./LandingPage'));
+// Retry helper for Vite chunk-load failures (stale cache after HMR / new deploy)
+function lazyWithRetry<T>(importFn: () => Promise<{ default: T }>) {
+    return lazy(async () => {
+        try {
+            const mod = await importFn();
+            try { sessionStorage.removeItem('chunk-retry'); } catch {}
+            return mod;
+        } catch (err: any) {
+            const msg = err?.message || String(err);
+            const isChunkError = msg.includes('Failed to fetch dynamically imported module')
+                || msg.includes('Importing a module script failed')
+                || msg.includes('Loading chunk')
+                || msg.includes('ChunkLoadError');
+            if (isChunkError) {
+                const hasRetried = (() => { try { return sessionStorage.getItem('chunk-retry') === '1'; } catch { return false; } })();
+                if (!hasRetried) {
+                    try { sessionStorage.setItem('chunk-retry', '1'); } catch {}
+                    window.location.reload();
+                    return new Promise(() => {}) as any;
+                }
+            }
+            throw err;
+        }
+    });
+}
 
-const IntermediateApp = lazy(() => {
+// Handle Vite preload errors globally (also covers <link rel="modulepreload"> failures)
+if (typeof window !== 'undefined') {
+    window.addEventListener('vite:preloadError', (e: Event) => {
+        e.preventDefault();
+        try {
+            const hasRetried = sessionStorage.getItem('chunk-retry') === '1';
+            if (!hasRetried) {
+                sessionStorage.setItem('chunk-retry', '1');
+                window.location.reload();
+            }
+        } catch {
+            window.location.reload();
+        }
+    });
+}
+
+const LandingPage = lazyWithRetry(() => import('./LandingPage'));
+
+const IntermediateApp = lazyWithRetry(() => {
     if (typeof window !== 'undefined' && typeof (window as any).define === 'function' && (window as any).define.amd) {
         (window as any).define = undefined;
     }
@@ -22,7 +64,7 @@ const IntermediateApp = lazy(() => {
 });
 
 // @ts-ignore
-const JuniorApp = lazy(() => {
+const JuniorApp = lazyWithRetry(() => {
     if (typeof window !== 'undefined' && typeof (window as any).define === 'function' && (window as any).define.amd) {
         (window as any).define = undefined;
     }
@@ -30,13 +72,13 @@ const JuniorApp = lazy(() => {
 });
 
 // @ts-ignore
-const PythonApp = lazy(() => import('./leaplogix/client/LogixApp'));
+const PythonApp = lazyWithRetry(() => import('./leaplogix/client/LogixApp'));
 
 // @ts-ignore
-const PythonNotebook = lazy(() => import('./python/PythonNotebook'));
+const PythonNotebook = lazyWithRetry(() => import('./python/PythonNotebook'));
 
 // @ts-ignore
-const AppInventor = lazy(() => {
+const AppInventor = lazyWithRetry(() => {
     if (typeof window !== 'undefined' && typeof (window as any).define === 'function' && (window as any).define.amd) {
         (window as any).define = undefined;
     }
@@ -44,13 +86,13 @@ const AppInventor = lazy(() => {
 });
 
 // @ts-ignore
-const ElectraWorkspace = lazy(() => import('./Electra/Client/Src/ElectraWorkspace'));
+const ElectraWorkspace = lazyWithRetry(() => import('./Electra/Client/Src/ElectraWorkspace'));
 
-const NeuraApp = lazy(() => import('./neura/NeuraApp'));
+const NeuraApp = lazyWithRetry(() => import('./neura/NeuraApp'));
 
-const Leap3DApp = lazy(() => import('./vision3d'));
+const Leap3DApp = lazyWithRetry(() => import('./vision3d'));
 
-const PulseApp = lazy(() => import('./PulseApp'));
+const PulseApp = lazyWithRetry(() => import('./PulseApp'));
 
 type AppMode = 'home' | 'intermediate' | 'junior' | 'python' | 'notebook' | 'creova' | 'appforge' | 'electra' | 'neura' | 'vision3d' | 'pulse';
 
@@ -74,27 +116,42 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
     }
     render() {
         if (this.state.hasError) {
+            const errMsg = this.state.error?.message || String(this.state.error || '');
+            const isChunkError = errMsg.includes('Failed to fetch dynamically imported module')
+                || errMsg.includes('Importing a module script failed')
+                || errMsg.includes('Loading chunk')
+                || errMsg.includes('ChunkLoadError');
+            const handleDismiss = () => {
+                try { sessionStorage.removeItem('chunk-retry'); } catch {}
+                this.setState({ hasError: false, error: null });
+            };
+            const handleReload = () => {
+                try { sessionStorage.removeItem('chunk-retry'); } catch {}
+                window.location.reload();
+            };
             if (isEmbedded()) {
                 // Compact inline error bar for embed context — does not cover the whole page
                 return (
                     <div className="fixed bottom-0 left-0 right-0 z-[99999] bg-[#2a1a1a] text-[#ff6b6b] font-mono px-4 py-2.5 flex items-center justify-between border-t-2 border-red-500">
                         <div className="flex items-center gap-2.5 overflow-hidden">
-                            <span className="font-bold whitespace-nowrap">Error:</span>
+                            <span className="font-bold whitespace-nowrap">{isChunkError ? 'Update:' : 'Error:'}</span>
                             <span className="text-xs opacity-85 overflow-hidden text-ellipsis whitespace-nowrap">
-                                {this.state.error?.message || String(this.state.error)}
+                                {isChunkError ? 'New version available — please reload.' : (this.state.error?.message || String(this.state.error))}
                             </span>
                         </div>
                         <div className="flex gap-2 shrink-0">
+                            {!isChunkError && (
+                                <button
+                                    type="button"
+                                    onClick={handleDismiss}
+                                    className="px-3 py-1 rounded border border-gray-600 bg-transparent text-gray-300 cursor-pointer text-xs hover:bg-white/5"
+                                >
+                                    Dismiss
+                                </button>
+                            )}
                             <button
                                 type="button"
-                                onClick={() => this.setState({ hasError: false, error: null })}
-                                className="px-3 py-1 rounded border border-gray-600 bg-transparent text-gray-300 cursor-pointer text-xs hover:bg-white/5"
-                            >
-                                Dismiss
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => window.location.reload()}
+                                onClick={handleReload}
                                 className="px-3 py-1 rounded border-0 bg-red-500 text-white cursor-pointer text-xs font-semibold hover:bg-red-600"
                             >
                                 Reload
@@ -106,13 +163,19 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
             // Full-page error for non-embedded context
             return (
                 <div className="p-5 bg-white text-red-500 font-mono">
-                    <h1 className="text-xl font-bold mb-2">Something went wrong.</h1>
-                    <pre className="p-3 bg-red-50 rounded border border-red-200 text-xs overflow-auto">{this.state.error?.toString()}</pre>
+                    <h1 className="text-xl font-bold mb-2">{isChunkError ? 'Update available' : 'Something went wrong.'}</h1>
+                    {isChunkError ? (
+                        <p className="p-3 bg-amber-50 rounded border border-amber-200 text-xs text-amber-900">A new version of the app is available. The previous page is cached. Click Reload to get the latest version.</p>
+                    ) : (
+                        <pre className="p-3 bg-red-50 rounded border border-red-200 text-xs overflow-auto">{this.state.error?.toString()}</pre>
+                    )}
                     <div className="flex gap-2.5 mt-3">
-                        <button type="button" onClick={() => this.setState({ hasError: false, error: null })} className="px-3.5 py-1.5 rounded border border-slate-300 bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer hover:bg-slate-200">
-                            Dismiss
-                        </button>
-                        <button type="button" onClick={() => window.location.reload()} className="px-3.5 py-1.5 rounded border-0 bg-red-500 text-white text-xs font-semibold cursor-pointer hover:bg-red-600">
+                        {!isChunkError && (
+                            <button type="button" onClick={handleDismiss} className="px-3.5 py-1.5 rounded border border-slate-300 bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer hover:bg-slate-200">
+                                Dismiss
+                            </button>
+                        )}
+                        <button type="button" onClick={handleReload} className="px-3.5 py-1.5 rounded border-0 bg-red-500 text-white text-xs font-semibold cursor-pointer hover:bg-red-600">
                             Reload
                         </button>
                     </div>
@@ -138,6 +201,11 @@ export default function App() {
     const modeRef = React.useRef(mode);
     modeRef.current = mode;
     const handleSetModeRef = React.useRef<any>(null);
+
+    // Clear chunk-retry flag on successful navigation (chunk loaded)
+    useEffect(() => {
+        try { sessionStorage.removeItem('chunk-retry'); } catch {}
+    }, [mode]);
 
     // ── Global window-level drag-and-drop file upload ──
     const [isGlobalDragOver, setIsGlobalDragOver] = useState(false);

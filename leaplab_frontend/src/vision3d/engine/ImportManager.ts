@@ -15,7 +15,7 @@ interface ImportResult {
 
 let STLLoader: new () => { parse(buffer: ArrayBuffer): THREE.BufferGeometry } | null = null
 let OBJLoader: new () => { parse(text: string): THREE.Group } | null = null
-let GLTFLoader: new () => { parse(data: ArrayBuffer, onLoad: (gltf: { scene: THREE.Group }) => void, onError: (err: unknown) => void) => void } | null = null
+let GLTFLoader: any = null
 
 async function loadSTLLoader() {
   if (!STLLoader) {
@@ -127,7 +127,8 @@ export async function importGLTF(file: File): Promise<ImportResult | null> {
     return new Promise((resolve) => {
       loader.parse(
         buffer,
-        (gltf) => {
+        '',
+        async (gltf: { scene: THREE.Group }) => {
           const geometries: THREE.BufferGeometry[] = []
           gltf.scene.traverse((child) => {
             if ((child as THREE.Mesh).isMesh) {
@@ -149,7 +150,7 @@ export async function importGLTF(file: File): Promise<ImportResult | null> {
             const { mergeBufferGeometries } = await import(
               'three/addons/utils/BufferGeometryUtils.js'
             )
-            mergedGeo = mergeBufferGeometries(geometries, false)
+            mergedGeo = mergeBufferGeometries(geometries, false) as THREE.BufferGeometry
             geometries.forEach((g) => g.dispose())
             log('GLTF imported:', file.name, '(merged', geometries.length, 'meshes)')
           } else {
@@ -164,7 +165,7 @@ export async function importGLTF(file: File): Promise<ImportResult | null> {
             color: '#4F46E5',
           })
         },
-        (err) => {
+        (err: unknown) => {
           error('Failed to import GLTF:', err)
           resolve(null)
         }
