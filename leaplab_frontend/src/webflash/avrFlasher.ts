@@ -53,6 +53,8 @@ interface AvrBoardProfile {
     pageSize: number;
     /** Expected chip signature (device signature bytes). */
     signature: number[];
+    /** Additional signatures that are code-compatible (e.g. 328 vs 328P). */
+    alternateSignatures?: number[][];
     /** Flash size in bytes. */
     flashSize: number;
     /** Try these baud rates in order (most bootloaders auto-baud). */
@@ -61,11 +63,26 @@ interface AvrBoardProfile {
     protocol: 'stk500v1' | 'stk500v2';
 }
 
+function signaturesEqual(a: ArrayLike<number>, b: number[]): boolean {
+    return a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+}
+
+function isSignatureAccepted(actual: ArrayLike<number>, profile: AvrBoardProfile): boolean {
+    if (signaturesEqual(actual, profile.signature)) return true;
+    if (profile.alternateSignatures) {
+        for (const alt of profile.alternateSignatures) {
+            if (signaturesEqual(actual, alt)) return true;
+        }
+    }
+    return false;
+}
+
 const AVR_BOARD_PROFILES: Record<string, AvrBoardProfile> = {
     'arduino:avr:uno': {
         fqbn: 'arduino:avr:uno',
         pageSize: 128,
-        signature: [0x1e, 0x95, 0x02], // ATmega328P
+        signature: [0x1e, 0x95, 0x0f], // ATmega328P (0x1e 0x95 0x0f = 30.149.15)
+        alternateSignatures: [[0x1e, 0x95, 0x14]], // ATmega328 (non-P) is code-compatible — accept it
         flashSize: 32 * 1024,
         bauds: [115200, 57600],
         protocol: 'stk500v1',
@@ -73,7 +90,8 @@ const AVR_BOARD_PROFILES: Record<string, AvrBoardProfile> = {
     'arduino:avr:nano': {
         fqbn: 'arduino:avr:nano',
         pageSize: 128,
-        signature: [0x1e, 0x95, 0x02], // ATmega328P
+        signature: [0x1e, 0x95, 0x0f], // ATmega328P — real Nano reports 30.149.15 (was wrongly 30.149.2)
+        alternateSignatures: [[0x1e, 0x95, 0x14]], // ATmega328
         flashSize: 32 * 1024,
         bauds: [115200, 57600, 19200],
         protocol: 'stk500v1',
@@ -81,7 +99,8 @@ const AVR_BOARD_PROFILES: Record<string, AvrBoardProfile> = {
     'arduino:avr:nano_old': {
         fqbn: 'arduino:avr:nano_old',
         pageSize: 128,
-        signature: [0x1e, 0x95, 0x02], // ATmega328P
+        signature: [0x1e, 0x95, 0x0f], // ATmega328P (old bootloader still same chip)
+        alternateSignatures: [[0x1e, 0x95, 0x14]],
         flashSize: 32 * 1024,
         bauds: [57600, 115200, 19200],
         protocol: 'stk500v1',
@@ -454,10 +473,10 @@ async function syncV2AtBaud(stream: SerialStream, profile: AvrBoardProfile, opti
         const resp = await v2Command(session, V2_CMD_READ_SIGNATURE, new Uint8Array([0x30, 0x00, 0x00, i]), 3000);
         signature[i] = resp[0];
     }
-    const expected = profile.signature.join('.');
     const actual = Array.from(signature).join('.');
-    if (signature[0] !== profile.signature[0] || signature[1] !== profile.signature[1] || signature[2] !== profile.signature[2]) {
-        throw new Error(`Chip mismatch: expected signature ${expected} but the board reports ${actual}. Check that the correct board is selected.`);
+    if (!isSignatureAccepted(signature, profile)) {
+        const allAccepted = [profile.signature, ...(profile.alternateSignatures ?? [])].map(s => s.join('.')).join(' or ');
+        throw new Error(`Chip mismatch: expected signature ${allAccepted} but the board reports ${actual}. Check that the correct board is selected.`);
     }
     options.onLog?.(`Chip verified: signature ${actual} (${profile.fqbn}).`);
 
@@ -544,12 +563,12 @@ export async function flashAvr(port: SerialPort, options: AvrFlashOptions): Prom
             throw new Error('Could not sync with the bootloader. Check the USB cable and that the board has an Arduino bootloader.');
         }
 
-        // Verify the chip signature matches the selected board.
+        // Verify the chip signature matches the selected board (ATmega328P = 30.149.15, ATmega328 = 30.149.20 both accepted).
         const signature = await stream.stkCommand(new Uint8Array([STK_READ_SIGN, CRC_EOP]), 3);
-        const expected = profile.signature.join('.');
         const actual = Array.from(signature).join('.');
-        if (signature[0] !== profile.signature[0] || signature[1] !== profile.signature[1] || signature[2] !== profile.signature[2]) {
-            throw new Error(`Chip mismatch: expected signature ${expected} but the board reports ${actual}. Check that the correct board is selected.`);
+        if (!isSignatureAccepted(signature, profile)) {
+            const allAccepted = [profile.signature, ...(profile.alternateSignatures ?? [])].map(s => s.join('.')).join(' or ');
+            throw new Error(`Chip mismatch: expected signature ${allAccepted} but the board reports ${actual}. Check that the correct board is selected.`);
         }
         options.onLog?.(`Chip verified: signature ${actual} (${options.fqbn}).`);
 
