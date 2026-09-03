@@ -41,7 +41,6 @@ export const ShapeRenderer = ({ shape }) => {
     shape.paraboloidRadius, shape.paraboloidHeight, shape.paraboloidSegments,
     shape.tubeOuterRadius, shape.tubeInnerRadius, shape.tubeHeight, shape.tubeRadialSegments,
     shape.starOuterRadius, shape.starInnerRadius, shape.starPoints, shape.starHeight,
-    shape.heartSize, shape.heartDepth,
     shape.polygonRadius, shape.polygonSides, shape.polygonHeight,
     shape.text, shape.fontSize, shape.textDepth,
   ]);

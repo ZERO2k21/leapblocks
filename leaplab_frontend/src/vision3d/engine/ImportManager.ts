@@ -7,7 +7,7 @@ import * as THREE from 'three'
 import { log, error } from '../utils/logger'
 
 interface ImportResult {
-  type: 'stl' | 'obj'
+  type: 'stl' | 'obj' | 'gltf' | 'glb'
   name: string
   geometry: THREE.BufferGeometry
   color: string
@@ -15,6 +15,7 @@ interface ImportResult {
 
 let STLLoader: new () => { parse(buffer: ArrayBuffer): THREE.BufferGeometry } | null = null
 let OBJLoader: new () => { parse(text: string): THREE.Group } | null = null
+let GLTFLoader: new () => { parse(data: ArrayBuffer, onLoad: (gltf: { scene: THREE.Group }) => void, onError: (err: unknown) => void) => void } | null = null
 
 async function loadSTLLoader() {
   if (!STLLoader) {
@@ -30,6 +31,14 @@ async function loadOBJLoader() {
     OBJLoader = module.OBJLoader
   }
   return OBJLoader
+}
+
+async function loadGLTFLoader() {
+  if (!GLTFLoader) {
+    const module = await import('three/addons/loaders/GLTFLoader.js')
+    GLTFLoader = module.GLTFLoader
+  }
+  return GLTFLoader
 }
 
 export async function importSTL(file: File): Promise<ImportResult | null> {
@@ -109,12 +118,72 @@ export async function importOBJ(file: File): Promise<ImportResult | null> {
   }
 }
 
-export function isImportableFile(filename: string): boolean {
-  return /\.(stl|obj)$/i.test(filename)
+export async function importGLTF(file: File): Promise<ImportResult | null> {
+  try {
+    const LoaderClass = await loadGLTFLoader()
+    const loader = new LoaderClass()
+    const buffer = await file.arrayBuffer()
+
+    return new Promise((resolve) => {
+      loader.parse(
+        buffer,
+        (gltf) => {
+          const geometries: THREE.BufferGeometry[] = []
+          gltf.scene.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+              const mesh = child as THREE.Mesh
+              mesh.geometry.computeVertexNormals()
+              mesh.geometry.center()
+              geometries.push(mesh.geometry)
+            }
+          })
+
+          if (geometries.length === 0) {
+            error('GLTF: no meshes found')
+            resolve(null)
+            return
+          }
+
+          let mergedGeo: THREE.BufferGeometry
+          if (geometries.length > 1) {
+            const { mergeBufferGeometries } = await import(
+              'three/addons/utils/BufferGeometryUtils.js'
+            )
+            mergedGeo = mergeBufferGeometries(geometries, false)
+            geometries.forEach((g) => g.dispose())
+            log('GLTF imported:', file.name, '(merged', geometries.length, 'meshes)')
+          } else {
+            mergedGeo = geometries[0]
+          }
+
+          const isGLB = /\.glb$/i.test(file.name)
+          resolve({
+            type: isGLB ? 'glb' : 'gltf',
+            name: file.name.replace(/\.(gltf|glb)$/i, ''),
+            geometry: mergedGeo,
+            color: '#4F46E5',
+          })
+        },
+        (err) => {
+          error('Failed to import GLTF:', err)
+          resolve(null)
+        }
+      )
+    })
+  } catch (err) {
+    error('Failed to import GLTF:', err)
+    return null
+  }
 }
 
-export function getFileType(filename: string): 'stl' | 'obj' | null {
+export function isImportableFile(filename: string): boolean {
+  return /\.(stl|obj|gltf|glb)$/i.test(filename)
+}
+
+export function getFileType(filename: string): 'stl' | 'obj' | 'gltf' | 'glb' | null {
   if (/\.stl$/i.test(filename)) return 'stl'
   if (/\.obj$/i.test(filename)) return 'obj'
+  if (/\.gltf$/i.test(filename)) return 'gltf'
+  if (/\.glb$/i.test(filename)) return 'glb'
   return null
 }

@@ -73,8 +73,6 @@ interface GeometryShape {
   starInnerRadius?: number
   starPoints?: number
   starHeight?: number
-  heartSize?: number
-  heartDepth?: number
   polygonRadius?: number
   polygonSides?: number
   polygonHeight?: number
@@ -336,16 +334,6 @@ export function createGeometry(shape: GeometryShape): THREE.BufferGeometry {
       }
       shape2d.closePath()
       return new THREE.ExtrudeGeometry(shape2d, { depth: height, bevelEnabled: false })
-    }
-
-    case 'heart': {
-      const s = shape.heartSize ?? 1
-      const depth = shape.heartDepth ?? 0.5
-      const shape2d = new THREE.Shape()
-      shape2d.moveTo(0, -s * 0.7)
-      shape2d.bezierCurveTo(-s * 1.0, -s * 0.3, -s * 1.0, s * 0.6, 0, s * 0.3)
-      shape2d.bezierCurveTo(s * 1.0, s * 0.6, s * 1.0, -s * 0.3, 0, -s * 0.7)
-      return new THREE.ExtrudeGeometry(shape2d, { depth, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 3 })
     }
 
     case 'polygon': {
