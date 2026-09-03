@@ -229,6 +229,60 @@ class FileService {
         URL.revokeObjectURL(url);
     }
 
+    async saveProjectAsLocally(projectName: string, mode: SessionMode, payload: any): Promise<{ saved: boolean; newName?: string }> {
+        const projectData: ProjectData = {
+            version: '1.0',
+            projectName,
+            mode,
+            timestamp: Date.now(),
+            ...payload
+        };
+        const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+        const cleanName = (projectName || '').trim() || 'project';
+        const suggestedFileName = `${cleanName.replace(/\s+/g, '_')}.leap`;
+
+        // Try native File System Access API (Chrome/Edge) - shows Save As dialog with filename prompt
+        const win = window as any;
+        if (typeof win.showSaveFilePicker === 'function') {
+            try {
+                const handle = await win.showSaveFilePicker({
+                    suggestedName: suggestedFileName,
+                    types: [{ description: 'LeapLab Project', accept: { 'application/json': ['.leap'] } }],
+                });
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                // Derive new name from picked file if available
+                const pickedName: string | undefined = handle?.name || (handle as any)?.name;
+                const newName = pickedName ? pickedName.replace(/\.leap$/i, '') : undefined;
+                return { saved: true, newName };
+            } catch (err: any) {
+                // AbortError means user cancelled - don't fallback to download
+                if (err?.name === 'AbortError') return { saved: false };
+                console.warn('[FileService] showSaveFilePicker failed, falling back to prompt/download', err);
+            }
+        }
+
+        // Fallback: prompt for filename (works in all browsers) then download
+        let newName: string | null = null;
+        try {
+            newName = window.prompt('Save As - Enter file name:', cleanName);
+        } catch {}
+        if (newName === null) return { saved: false }; // cancelled prompt
+        const finalClean = (newName.trim() || cleanName).replace(/\s+/g, '_');
+        const finalFileName = `${finalClean}.leap`;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = finalFileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        const changed = finalClean !== cleanName.replace(/\s+/g, '_');
+        return { saved: true, newName: changed ? newName.trim() : undefined };
+    }
+
     async shareProject(projectName: string, mode: SessionMode, payload: any): Promise<void> {
         const projectData: ProjectData = {
             version: '1.0',

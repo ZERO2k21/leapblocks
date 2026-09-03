@@ -116,8 +116,34 @@ export function useProjectActions(
   }, [appState]);
 
   const handleSaveAsProject = useCallback(async (): Promise<void> => {
-    await handleSaveProject();
-  }, [handleSaveProject]);
+    const payload = appState.getSerializedState();
+    const liveBlockXml = typeof window !== 'undefined' ? (window as any).__LEAP_BLOCK_XML__ : null;
+    if (typeof liveBlockXml === 'string' && liveBlockXml.trim()) {
+      payload.blockLogic = liveBlockXml;
+    }
+    const currentName = appState.appName || 'project';
+    const win = window as any;
+    if (win.electronAPI?.saveProject) {
+      try {
+        const result = await win.electronAPI.saveProject(payload);
+        if (result?.success && result.projectPath) {
+          setProjectPath(result.projectPath);
+          const parts = result.projectPath.split(/[\\/]/);
+          const name = parts[parts.length - 1]?.replace(/\.(leap|lbp)$/i, '');
+          if (name) appState.setAppName(name);
+        }
+        return;
+      } catch (e) { console.warn('[Creova] electron saveAs failed, fallback', e); }
+    }
+    try {
+      const res = await fileService.saveProjectAsLocally(currentName, 'creova', payload);
+      if (res.saved && res.newName) appState.setAppName(res.newName);
+      if (res.saved) showToast('Project saved successfully!', 'success');
+    } catch (err: any) {
+      console.error('Failed to Save As:', err);
+      alert(`Save As failed: ${err?.message || err}`);
+    }
+  }, [appState, setProjectPath]);
 
   const handleUndo = useCallback(async (): Promise<void> => {
     const win = window as any;

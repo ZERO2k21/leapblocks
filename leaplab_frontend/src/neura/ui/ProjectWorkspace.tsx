@@ -104,9 +104,27 @@ export default function ProjectWorkspace({ type, onBack, template, children }: P
         fileService.saveProjectLocally(mode.project.name, 'neura', mode.project)
     }, [mode.project])
 
-    const handleSaveAs = useCallback(() => {
-        handleDownload()
-    }, [handleDownload])
+    const handleSaveAs = useCallback(async () => {
+        if (!mode.project) return
+        const win = window as any;
+        // Electron: native dialog
+        if (win.electronAPI?.saveProject) {
+            try {
+                const result = await win.electronAPI.saveProject(mode.project);
+                if (result?.success && result.projectPath) {
+                    const parts = result.projectPath.split(/[\\/]/);
+                    const name = parts[parts.length - 1]?.replace(/\.(leap|lbp)$/i, '');
+                    if (name) mode.setProjectName(name);
+                }
+                return;
+            } catch (e) { console.warn('[Neura] electron saveAs failed', e); }
+        }
+        // Web: File System Access API with filename prompt
+        try {
+            const res = await fileService.saveProjectAsLocally(mode.project.name, 'neura', mode.project);
+            if (res.saved && res.newName) mode.setProjectName(res.newName);
+        } catch (e) { console.warn('[Neura] Save As failed', e); }
+    }, [mode.project])
 
     const hasUnsavedWork = mode.project && mode.project.classes.length > 0
 

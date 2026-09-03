@@ -589,7 +589,37 @@ export default function ForgeElectra({
   };
 
   const handleSaveAsProject = async () => {
-    await handleSaveProject();
+    const projectData = {
+      nodes,
+      edges,
+      code,
+      board,
+      mode: 'electra' as const,
+    };
+    const win = window as any;
+    // Electron: native Save As dialog (no existing path)
+    if (win.electronAPI?.saveProject) {
+      try {
+        const result = await win.electronAPI.saveProject(projectData);
+        if (result?.success && result.projectPath) {
+          setProjectPath(result.projectPath);
+          const parts = result.projectPath.split(/[\\/]/);
+          const name = parts[parts.length - 1]?.replace(/\.(leap|lbp)$/i, '');
+          if (name) setProjectName(name);
+          showToast('Project saved successfully!', 'success');
+        }
+        return;
+      } catch (e) { console.warn('[Forge] electron saveAs failed, fallback to picker', e); }
+    }
+    // Web: File System Access API with filename prompt
+    try {
+      const res = await fileService.saveProjectAsLocally(projectName || 'project', 'electra', projectData);
+      if (res.saved && res.newName) setProjectName(res.newName);
+      if (res.saved) showToast('Project saved successfully!', 'success');
+    } catch (e: any) {
+      console.error('[Forge] Save As failed', e);
+      showToast(e?.message || 'Save As failed', 'error');
+    }
   };
 
   // Edit Operations
