@@ -70,8 +70,6 @@ export interface CreatedShape {
   starInnerRadius?: number
   starPoints?: number
   starHeight?: number
-  heartSize?: number
-  heartDepth?: number
   polygonRadius?: number
   polygonSides?: number
   polygonHeight?: number
@@ -152,8 +150,6 @@ export function createShape(type: string, position: number[] = [0, 0, 0]): Creat
     starInnerRadius: defaults.starInnerRadius,
     starPoints: defaults.starPoints,
     starHeight: defaults.starHeight,
-    heartSize: defaults.heartSize,
-    heartDepth: defaults.heartDepth,
     polygonRadius: defaults.polygonRadius,
     polygonSides: defaults.polygonSides,
     polygonHeight: defaults.polygonHeight,
