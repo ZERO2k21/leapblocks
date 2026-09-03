@@ -94,6 +94,12 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
         }
     }, [mode.selectedClassId, currentImageIndex, classSamples.length])
 
+    // Clear undo/redo stacks when switching images — stacks are per-image
+    useEffect(() => {
+        setUndoStack([])
+        setRedoStack([])
+    }, [mode.currentAnnotation?.id, currentImageIndex])
+
     const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file || !file.type.startsWith('image/')) return
@@ -249,20 +255,31 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
     }, [mode.currentAnnotation])
 
     const handleUndo = useCallback(() => {
-        if (undoStack.length > 0 && mode.currentAnnotation) {
-            const prevBoxes = undoStack[undoStack.length - 1]
-            setRedoStack(prev => [...prev, [...mode.currentAnnotation!.boxes]]); setUndoStack(prev => prev.slice(0, -1))
-            mode.setCurrentAnnotation({ ...mode.currentAnnotation, boxes: prevBoxes })
-        }
+        if (undoStack.length === 0 || !mode.currentAnnotation) return
+        const prevBoxes = undoStack[undoStack.length - 1]
+        const currBoxesCopy: BoundingBox[] = mode.currentAnnotation.boxes.map(b => ({ ...b }))
+        const prevBoxesCopy: BoundingBox[] = prevBoxes.map(b => ({ ...b }))
+        setRedoStack(prev => [...prev, currBoxesCopy])
+        setUndoStack(prev => prev.slice(0, -1))
+        mode.setCurrentAnnotation({ ...mode.currentAnnotation, boxes: prevBoxesCopy })
     }, [undoStack, mode])
 
     const handleRedo = useCallback(() => {
-        if (redoStack.length > 0 && mode.currentAnnotation) {
-            const nextBoxes = redoStack[redoStack.length - 1]
-            setUndoStack(prev => [...prev, [...mode.currentAnnotation!.boxes]]); setRedoStack(prev => prev.slice(0, -1))
-            mode.setCurrentAnnotation({ ...mode.currentAnnotation, boxes: nextBoxes })
-        }
+        if (redoStack.length === 0 || !mode.currentAnnotation) return
+        const nextBoxes = redoStack[redoStack.length - 1]
+        const currBoxesCopy: BoundingBox[] = mode.currentAnnotation.boxes.map(b => ({ ...b }))
+        const nextBoxesCopy: BoundingBox[] = nextBoxes.map(b => ({ ...b }))
+        setUndoStack(prev => [...prev, currBoxesCopy])
+        setRedoStack(prev => prev.slice(0, -1))
+        mode.setCurrentAnnotation({ ...mode.currentAnnotation, boxes: nextBoxesCopy })
     }, [redoStack, mode])
+
+    const handleClear = useCallback(() => {
+        if (!mode.currentAnnotation || mode.currentAnnotation.boxes.length === 0) return
+        saveUndoState()
+        mode.setCurrentAnnotation({ ...mode.currentAnnotation, boxes: [] })
+        mode.setSelectedBoxId(null)
+    }, [mode, saveUndoState])
 
     const getRelativePos = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         if (!canvasRef.current) return { x: 0, y: 0 }
@@ -442,12 +459,13 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                 if (e.key === 'Escape') { setEditingBoxId(null); setEditingLabel('') }
                 return
             }
+            const isMod = e.ctrlKey || e.metaKey
+            if (isMod && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); handleUndo(); return }
+            if (isMod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) { e.preventDefault(); handleRedo(); return }
             if (e.key === 'Delete' || e.key === 'Backspace') { if (mode.selectedBoxId) { saveUndoState(); mode.removeBox(mode.selectedBoxId) } }
             if (e.key === 'b' || e.key === 'B') mode.setActiveTool('box')
             if (e.key.toLowerCase() === 'l') setShowLabels(v => !v)
             if (e.key === 'Escape') mode.setSelectedBoxId(null)
-            if (e.ctrlKey && e.key === 'z') { e.preventDefault(); handleUndo() }
-            if (e.ctrlKey && e.key === 'y') { e.preventDefault(); handleRedo() }
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
@@ -587,10 +605,13 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                     <div className="relative flex-1 bg-white border border-gray-200 rounded-2xl overflow-hidden min-h-0">
                         {/* Toolbar */}
                         <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 bg-white/95 p-2 rounded-xl border border-gray-200 shadow-sm">
-                            <button onClick={() => mode.setActiveTool('box')} className={`p-2 rounded-lg text-sm border-none cursor-pointer ${mode.activeTool === 'box' ? 'bg-[#630ed4] text-white' : 'bg-transparent text-[#4a4455]'}`}>⬜</button>
-                            <button onClick={handleAutoDetect} disabled={isAutoDetecting || !annotationImage} className={`p-2 rounded-lg text-sm border-none cursor-pointer ${isAutoDetecting ? 'bg-amber-500 text-white' : 'bg-transparent text-[#4a4455]'} ${!annotationImage ? 'opacity-40' : 'opacity-100'}`}>🤖</button>
+                            <button onClick={() => mode.setActiveTool('box')} className={`p-2 rounded-lg text-sm border-none cursor-pointer ${mode.activeTool === 'box' ? 'bg-[#630ed4] text-white' : 'bg-transparent text-[#4a4455]'}`} title="Box tool (B)">⬜</button>
+                            <button onClick={handleAutoDetect} disabled={isAutoDetecting || !annotationImage} className={`p-2 rounded-lg text-sm border-none cursor-pointer ${isAutoDetecting ? 'bg-amber-500 text-white' : 'bg-transparent text-[#4a4455]'} ${!annotationImage ? 'opacity-40' : 'opacity-100'}`} title="Auto-detect">🤖</button>
                             <div className="w-full h-px bg-gray-200 my-1" />
-                            <button onClick={() => mode.setActiveTool('delete')} className={`p-2 rounded-lg text-sm border-none cursor-pointer ${mode.activeTool === 'delete' ? 'bg-red-700 text-white' : 'bg-transparent text-[#4a4455]'}`}>🗑️</button>
+                            <button onClick={() => mode.setActiveTool('delete')} className={`p-2 rounded-lg text-sm border-none cursor-pointer ${mode.activeTool === 'delete' ? 'bg-red-700 text-white' : 'bg-transparent text-[#4a4455]'}`} title="Delete tool — click a box to delete">🗑️</button>
+                            <div className="w-full h-px bg-gray-200 my-1" />
+                            <button onClick={handleUndo} disabled={undoStack.length === 0} className={`p-2 rounded-lg text-sm border-none ${undoStack.length === 0 ? 'cursor-not-allowed opacity-30 text-[#4a4455] bg-transparent' : 'cursor-pointer bg-transparent text-[#4a4455] hover:bg-gray-100'}`} title="Undo (Ctrl+Z)" aria-label="Undo">↩️</button>
+                            <button onClick={handleRedo} disabled={redoStack.length === 0} className={`p-2 rounded-lg text-sm border-none ${redoStack.length === 0 ? 'cursor-not-allowed opacity-30 text-[#4a4455] bg-transparent' : 'cursor-pointer bg-transparent text-[#4a4455] hover:bg-gray-100'}`} title="Redo (Ctrl+Y / Ctrl+Shift+Z)" aria-label="Redo">↪️</button>
                             <div className="w-full h-px bg-gray-200 my-1" />
                             <button onClick={() => setShowLabels(v => !v)} className={`p-2 rounded-lg text-[11px] font-bold border-none cursor-pointer ${showLabels ? 'bg-violet-600 text-white' : 'bg-transparent text-[#4a4455]'}`} title="Toggle labels (L)">🏷️</button>
                         </div>
@@ -688,8 +709,9 @@ export default function AnnotatePanel({ mode }: AnnotatePanelProps) {
                                         <button onClick={() => setCurrentImageIndex(Math.min(totalImages - 1, currentImageIndex + 1))} disabled={currentImageIndex >= totalImages - 1} className={`py-1 px-2 rounded text-sm font-bold bg-gray-100 border-none ${currentImageIndex >= totalImages - 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-200'}`}>▶</button>
                                     </div>
                                 )}
-                                <button onClick={handleUndo} disabled={undoStack.length === 0} className={`flex items-center gap-1.5 text-[#4a4455] font-bold text-xs bg-transparent border-none ${undoStack.length === 0 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer opacity-100'}`}>↩️ Undo</button>
-                                <button onClick={handleRedo} disabled={redoStack.length === 0} className={`flex items-center gap-1.5 text-[#4a4455] font-bold text-xs bg-transparent border-none ${redoStack.length === 0 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer opacity-100'}`}>↪️ Redo</button>
+                                <button onClick={handleUndo} disabled={undoStack.length === 0} className={`flex items-center gap-1.5 text-[#4a4455] font-bold text-xs bg-transparent border-none ${undoStack.length === 0 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer opacity-100 hover:text-[#630ed4]'}`} title="Undo (Ctrl+Z)" aria-label="Undo">↩️ Undo</button>
+                                <button onClick={handleRedo} disabled={redoStack.length === 0} className={`flex items-center gap-1.5 text-[#4a4455] font-bold text-xs bg-transparent border-none ${redoStack.length === 0 ? 'cursor-not-allowed opacity-30' : 'cursor-pointer opacity-100 hover:text-[#630ed4]'}`} title="Redo (Ctrl+Y / Ctrl+Shift+Z)" aria-label="Redo">↪️ Redo</button>
+                                <button onClick={handleClear} disabled={totalBoxes === 0} className={`flex items-center gap-1.5 font-bold text-xs bg-transparent border-none ${totalBoxes === 0 ? 'cursor-not-allowed opacity-30 text-[#4a4455]' : 'cursor-pointer text-red-600 hover:text-red-700'}`} title="Clear all boxes" aria-label="Clear">🗑️ Clear</button>
                             </div>
                             <div className="flex items-center gap-3.5">
                                 <div className="flex items-center gap-2">
