@@ -78,6 +78,8 @@ export default function DataTable({
                                         <input
                                             value={h}
                                             onChange={(e) => handleHeaderChange(i, e.target.value)}
+                                            onPointerDown={(e) => e.stopPropagation()}
+                                            onMouseDown={(e) => e.stopPropagation()}
                                             disabled={disabledCols.has(i)}
                                             className={`w-full py-2 px-3 text-left font-bold text-[#630ed4] bg-transparent border-none outline-none text-xs ${
                                                 disabledCols.has(i) ? 'opacity-40 cursor-not-allowed' : 'cursor-text hover:bg-[#f5f3ff]'
@@ -117,12 +119,16 @@ export default function DataTable({
                                         key={ci}
                                         className={`border-b border-gray-100 p-0 ${isDisabled ? 'opacity-40' : ''}`}
                                         onClick={() => !isDisabled && setEditingCell({ row: ri, col: ci })}
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onMouseDown={(e) => e.stopPropagation()}
                                     >
                                         {isEditing ? (
                                             <input
                                                 autoFocus
                                                 value={val}
                                                 onChange={(e) => handleCellChange(ri, ci, e.target.value)}
+                                                onPointerDown={(e) => e.stopPropagation()}
+                                                onMouseDown={(e) => e.stopPropagation()}
                                                 onBlur={() => setEditingCell(null)}
                                                 onKeyDown={(e) => { if (e.key === 'Enter') setEditingCell(null) }}
                                                 className="w-full py-1 px-2 text-xs font-mono bg-[#f5f3ff] outline-none border-none"

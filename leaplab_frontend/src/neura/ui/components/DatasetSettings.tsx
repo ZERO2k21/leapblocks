@@ -164,7 +164,7 @@ export default function DatasetSettings({
     )
 
     return (
-        <div className="bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl p-3 border border-[#630ed4]/10">
+        <div className="bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl p-3 border border-[#630ed4]/10" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
             <div className="text-[10px] font-bold text-[#630ed4] tracking-widest uppercase mb-2">⚙️ Dataset Settings</div>
 
             {/* Row 1: Shuffle + Set as Output */}

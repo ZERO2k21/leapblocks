@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { TabularColumnInfo, TabularTaskType } from '../../types/neura.types'
 
 interface NumericTestPanelProps {
@@ -26,6 +26,17 @@ export default function NumericTestPanel({
     const [result, setResult] = useState<{ value: string | number; confidence?: number; probabilities?: Record<string, number> } | null>(null)
     const [isPredicting, setIsPredicting] = useState(false)
 
+    // keep inputs in sync when features/columns change (e.g., after Create/Setup) - makes table editable efficiently
+    useEffect(() => {
+        setInputValues(featureIndices.map(i => {
+            const col = columnInfos[i]
+            if (!col) return 0
+            if (col.type === 'numeric') return 0
+            return col.labelMap ? Object.keys(col.labelMap)[0] : ''
+        }))
+        setResult(null)
+    }, [featureIndices, columnInfos])
+
     const handlePredict = async () => {
         setIsPredicting(true)
         try {
@@ -47,7 +58,7 @@ export default function NumericTestPanel({
     return (
         <div className="flex flex-col gap-3">
             {/* Input fields */}
-            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200">
+            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
                 <div className="text-[10px] font-bold text-[#4a4455] tracking-widest uppercase mb-2">Enter values</div>
                 <div className="flex flex-col gap-2">
                     {featureIndices.map((fi, uiIdx) => {
@@ -63,6 +74,9 @@ export default function NumericTestPanel({
                                             newVals[uiIdx] = e.target.value
                                             setInputValues(newVals)
                                         }}
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        onClick={(e) => e.stopPropagation()}
                                         className="flex-1 py-1.5 px-2.5 rounded-lg border border-gray-200 text-xs font-bold text-[#131b2e] bg-white focus:outline-none focus:border-[#630ed4]"
                                     >
                                         {Object.keys(col.labelMap).map(opt => (
@@ -74,9 +88,12 @@ export default function NumericTestPanel({
                                         type="number"
                                         step="any"
                                         value={inputValues[uiIdx] as number}
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        onClick={(e) => e.stopPropagation()}
                                         onChange={(e) => {
                                             const newVals = [...inputValues]
-                                            newVals[uiIdx] = Number(e.target.value)
+                                            newVals[uiIdx] = e.target.value === '' ? 0 : Number(e.target.value)
                                             setInputValues(newVals)
                                         }}
                                         className="flex-1 py-1.5 px-2.5 rounded-lg border border-gray-200 text-xs font-bold text-[#131b2e] bg-white focus:outline-none focus:border-[#630ed4]"
@@ -88,6 +105,8 @@ export default function NumericTestPanel({
                 </div>
                 <button
                     onClick={handlePredict}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
                     disabled={isPredicting}
                     className={`mt-3 w-full py-2.5 rounded-xl text-xs font-bold border-none transition-all ${
                         isPredicting

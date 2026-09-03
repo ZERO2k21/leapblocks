@@ -91,8 +91,8 @@ export function useTabularState(mode: UseNeuraProjectReturn): TabularState & Tab
     const [trainSummary, setTrainSummary] = useState('')
 
     const [isDragging, setIsDragging] = useState(false)
-    const [newRowCount, setNewRowCount] = useState(10)
-    const [newColCount, setNewColCount] = useState(3)
+    const [newRowCount, setNewRowCount] = useState(12)
+    const [newColCount, setNewColCount] = useState(10)
     const [editHeaders, setEditHeaders] = useState<string[]>([])
     const [editRows, setEditRows] = useState<(string | number)[][]>([])
     const [disabledRows, setDisabledRows] = useState<Set<number>>(new Set())

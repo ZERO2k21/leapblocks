@@ -37,11 +37,13 @@ export default function ColumnSelector({
     return (
         <div className="flex flex-col gap-3">
             {/* Task type selector */}
-            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200">
+            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
                 <div className="text-[10px] font-bold text-[#4a4455] tracking-widest uppercase mb-2">Is your output a category or a number?</div>
                 <div className="flex gap-2">
                     <button
                         onClick={() => onTaskTypeChange('classification')}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
                         className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold border-2 transition-all ${
                             taskType === 'classification'
                                 ? 'border-[#630ed4] bg-[#f5f3ff] text-[#630ed4]'
@@ -54,6 +56,8 @@ export default function ColumnSelector({
                     </button>
                     <button
                         onClick={() => onTaskTypeChange('regression')}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
                         className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold border-2 transition-all ${
                             taskType === 'regression'
                                 ? 'border-[#630ed4] bg-[#f5f3ff] text-[#630ed4]'
@@ -68,11 +72,14 @@ export default function ColumnSelector({
             </div>
 
             {/* Target column */}
-            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200">
+            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
                 <div className="text-[10px] font-bold text-[#4a4455] tracking-widest uppercase mb-2">🎯 Output Column (what to predict)</div>
                 <select
                     value={targetIndex}
                     onChange={(e) => onTargetChange(Number(e.target.value))}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
                     className="w-full py-2 px-3 rounded-lg border border-gray-200 text-xs font-bold text-[#131b2e] bg-white focus:outline-none focus:border-[#630ed4] focus:ring-1 focus:ring-[#630ed4]"
                 >
                     {columnInfos.map((col) => {
@@ -88,7 +95,7 @@ export default function ColumnSelector({
             </div>
 
             {/* Feature columns */}
-            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200">
+            <div className="bg-white/85 backdrop-blur-md rounded-xl p-3 border border-gray-200" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-2">
                     <div className="text-[10px] font-bold text-[#4a4455] tracking-widest uppercase">📥 Input Columns (features)</div>
                     <span className="text-[10px] font-bold text-[#630ed4]">{featureIndices.length} selected</span>
@@ -103,6 +110,8 @@ export default function ColumnSelector({
                                 <button
                                     key={col.index}
                                     onClick={() => onFeatureToggle(col.index)}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
                                     className={`flex items-center gap-2 py-2 px-3 rounded-lg text-xs font-bold border transition-all text-left ${
                                         isSelected
                                             ? 'border-[#630ed4] bg-[#f5f3ff] text-[#630ed4]'

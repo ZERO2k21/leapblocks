@@ -70,17 +70,39 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     const [draggingId, setDraggingId] = useState<string | null>(null)
     const dragStartRef = useRef<{ id: string; startX: number; startY: number; origX: number; origY: number } | null>(null)
 
-    // Data canvas node positions (horizontal layout)
+    // Data canvas node positions (horizontal layout) — spaced like Vision (120-140px gaps) so wires are visible
     const [dataNodePos, setDataNodePos] = useState({ x: 80, y: 180 })
-    const [setupNodePos, setSetupNodePos] = useState({ x: 520, y: 180 })
-    const [trainNodePos, setTrainNodePos] = useState({ x: 960, y: 180 })
-    const [testNodePos, setTestNodePos] = useState({ x: 1400, y: 180 })
+    const [setupNodePos, setSetupNodePos] = useState({ x: 640, y: 180 })
+    const [trainNodePos, setTrainNodePos] = useState({ x: 1200, y: 180 })
+    const [testNodePos, setTestNodePos] = useState({ x: 1760, y: 180 })
+    const dataNodeRef = useRef<HTMLDivElement>(null)
+    const setupNodeRef = useRef<HTMLDivElement>(null)
+    const trainNodeRef = useRef<HTMLDivElement>(null)
+    const testNodeRef = useRef<HTMLDivElement>(null)
+    const [nodeHeights, setNodeHeights] = useState({ data: 220, setup: 260, train: 200, test: 180 })
 
     const savedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const camera = useCamera({ videoConstraints: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'environment', frameRate: { ideal: 30 } } })
     const tabular = useTabularState(mode)
 
     useEffect(() => { mode.setHideSidebar(true); return () => mode.setHideSidebar(false) }, [])
+
+    // measure node heights for centre-point wires (like Vision)
+    useEffect(() => {
+        const update = () => setNodeHeights({
+            data: dataNodeRef.current?.offsetHeight || 220,
+            setup: setupNodeRef.current?.offsetHeight || 260,
+            train: trainNodeRef.current?.offsetHeight || 200,
+            test: testNodeRef.current?.offsetHeight || 180,
+        })
+        update()
+        const ro = new ResizeObserver(update)
+        if (dataNodeRef.current) ro.observe(dataNodeRef.current)
+        if (setupNodeRef.current) ro.observe(setupNodeRef.current)
+        if (trainNodeRef.current) ro.observe(trainNodeRef.current)
+        if (testNodeRef.current) ro.observe(testNodeRef.current)
+        return () => ro.disconnect()
+    }, [tabular.csvData, tabular.columnInfos.length, tabular.featureIndices.length, tabular.finalAccuracy, tabular.isTraining, tabular.step, tabular.collectMode])
 
     const showSaved = useCallback((msg: string) => {
         setSavedMessage(msg)
@@ -546,6 +568,8 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
     }
     const handleViewportMouseUp = () => { setIsPanning(false); panStartRef.current = null; if (draggingId) setDraggingId(null) }
     const handleWheel = (e: React.WheelEvent) => {
+        const target = e.target as HTMLElement
+        if (target.closest('[data-node]') && !e.ctrlKey) return
         const delta = -e.deltaY * 0.001
         const newZoom = Math.min(1.4, Math.max(0.6, zoom + delta))
         const rect = viewportRef.current?.getBoundingClientRect()
@@ -630,11 +654,13 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
         return () => { window.removeEventListener('mousemove', onMove as any); window.removeEventListener('mouseup', onUp as any); window.removeEventListener('pointermove', onMove as any); window.removeEventListener('pointerup', onUp as any) }
     }, [isPanning, draggingId, zoom, pan])
 
-    // Prevent trackpad pinch from zooming the browser page — always zoom canvas instead
+    // Prevent trackpad pinch from zooming the browser page — always zoom canvas instead, but allow scrolling inside editable nodes
     useEffect(() => {
         const el = viewportRef.current
         if (!el) return
         const onWheelNative = (e: WheelEvent) => {
+            const target = e.target as HTMLElement
+            if (target.closest('[data-node]') && !e.ctrlKey) return
             if (e.ctrlKey || Math.abs(e.deltaY) > 0) {
                 e.preventDefault()
             }
@@ -733,34 +759,36 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                             <linearGradient id="dataWireActive" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#630ed4" stopOpacity="1" /><stop offset="100%" stopColor="#7c3aed" stopOpacity="1" /></linearGradient>
                             {tabular.isTraining && <style>{`@keyframes wirePulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } } .wire-animate { animation: wirePulse 1.5s ease-in-out infinite; }`}</style>}
                         </defs>
-                        {/* Data → Setup wire */}
+                        {/* Data → Setup wire — centre-point of layouts (like Vision) */}
                         {(() => {
-                            const x1 = dataNodePos.x + 420, y1 = dataNodePos.y + 160
-                            const x2 = setupNodePos.x, y2 = setupNodePos.y + 160
+                            const x1 = dataNodePos.x + 420, y1 = dataNodePos.y + nodeHeights.data / 2
+                            const x2 = setupNodePos.x, y2 = setupNodePos.y + nodeHeights.setup / 2
                             const mx = (x1 + x2) / 2
                             const active = tabular.dataReady
-                            return <path d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`} fill="none" stroke={active ? 'url(#dataWireActive)' : 'url(#dataWire)'} strokeWidth={active ? 3 : 2} strokeLinecap="round" strokeDasharray={active ? 'none' : '6 4'} className={tabular.isTraining ? 'wire-animate' : ''} />
+                            return <path d={`M ${x1} ${y1} C ${mx} ${y1 + 28}, ${mx} ${y2 + 28}, ${x2} ${y2}`} fill="none" stroke={active ? 'url(#dataWireActive)' : '#CBD5E1'} strokeWidth={active ? 3.5 : 2} strokeLinecap="round" strokeDasharray={active ? 'none' : '6 4'} className={tabular.isTraining ? 'wire-animate' : ''} />
                         })()}
-                        {/* Setup → Train wire */}
+                        {/* Setup → Train wire — centre-point */}
                         {(() => {
-                            const x1 = setupNodePos.x + 420, y1 = setupNodePos.y + 160
-                            const x2 = trainNodePos.x, y2 = trainNodePos.y + 160
+                            const x1 = setupNodePos.x + 420, y1 = setupNodePos.y + nodeHeights.setup / 2
+                            const x2 = trainNodePos.x, y2 = trainNodePos.y + nodeHeights.train / 2
                             const mx = (x1 + x2) / 2
-                            const active = tabular.featureIndices.length > 0
-                            return <path d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`} fill="none" stroke={active ? 'url(#dataWireActive)' : 'url(#dataWire)'} strokeWidth={active ? 3 : 2} strokeLinecap="round" strokeDasharray={active ? 'none' : '6 4'} className={tabular.isTraining ? 'wire-animate' : ''} />
+                            const hasData = tabular.dataReady
+                            const configured = tabular.featureIndices.length > 0
+                            return <path d={`M ${x1} ${y1} C ${mx} ${y1 + 28}, ${mx} ${y2 + 28}, ${x2} ${y2}`} fill="none" stroke={!hasData ? '#CBD5E1' : configured ? 'url(#dataWireActive)' : 'url(#dataWire)'} strokeWidth={hasData ? 3.5 : 2} strokeLinecap="round" strokeDasharray={!hasData ? '6 4' : 'none'} className={tabular.isTraining ? 'wire-animate' : ''} />
                         })()}
-                        {/* Train → Test wire */}
+                        {/* Train → Test wire — centre-point */}
                         {(() => {
-                            const x1 = trainNodePos.x + 420, y1 = trainNodePos.y + 160
-                            const x2 = testNodePos.x, y2 = testNodePos.y + 160
+                            const x1 = trainNodePos.x + 420, y1 = trainNodePos.y + nodeHeights.train / 2
+                            const x2 = testNodePos.x, y2 = testNodePos.y + nodeHeights.test / 2
                             const mx = (x1 + x2) / 2
-                            const active = tabular.finalAccuracy !== null
-                            return <path d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`} fill="none" stroke={active ? 'url(#dataWireActive)' : 'url(#dataWire)'} strokeWidth={active ? 3 : 2} strokeLinecap="round" strokeDasharray={active ? 'none' : '6 4'} className={tabular.isTraining ? 'wire-animate' : ''} />
+                            const hasData = tabular.dataReady
+                            const done = tabular.finalAccuracy !== null
+                            return <path d={`M ${x1} ${y1} C ${mx} ${y1 + 28}, ${mx} ${y2 + 28}, ${x2} ${y2}`} fill="none" stroke={!hasData ? '#CBD5E1' : done ? 'url(#dataWireActive)' : 'url(#dataWire)'} strokeWidth={hasData ? 3.5 : 2} strokeLinecap="round" strokeDasharray={!hasData ? '6 4' : 'none'} className={tabular.isTraining ? 'wire-animate' : ''} />
                         })()}
                     </svg>
 
                     {/* ===== DATA NODE ===== */}
-                    <div data-node onPointerDown={e => startNodeDrag(e, 'data-node', dataNodePos)} style={{ left: dataNodePos.x, top: dataNodePos.y, width: 420, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'data-node' ? 'z-40' : 'z-10'}`}>
+                    <div ref={dataNodeRef} data-node onPointerDown={e => startNodeDrag(e, 'data-node', dataNodePos)} style={{ left: dataNodePos.x, top: dataNodePos.y, width: 420, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'data-node' ? 'z-40' : 'z-10'}`}>
                         <div className={`bg-white rounded-xl border shadow-md overflow-hidden flex flex-col cursor-grab active:cursor-grabbing transition-all duration-500 ${tabular.isTraining ? 'border-[#630ed4]/40 shadow-[0_0_20px_rgba(99,14,212,0.15)]' : 'border-slate-200'}`}>
                             <div className={`h-1.5 w-full bg-gradient-to-r from-[#630ed4] to-[#7c3aed] ${tabular.isTraining ? 'animate-pulse' : ''}`} />
                             <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-[#f5f3ff] to-white">
@@ -780,7 +808,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     </div>
 
                     {/* ===== SETUP NODE ===== */}
-                    <div data-node onPointerDown={e => startNodeDrag(e, 'setup-node', setupNodePos)} style={{ left: setupNodePos.x, top: setupNodePos.y, width: 420, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'setup-node' ? 'z-40' : 'z-10'}`}>
+                    <div ref={setupNodeRef} data-node onPointerDown={e => startNodeDrag(e, 'setup-node', setupNodePos)} style={{ left: setupNodePos.x, top: setupNodePos.y, width: 420, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'setup-node' ? 'z-40' : 'z-10'}`}>
                         <div className={`bg-white rounded-xl border shadow-md overflow-hidden flex flex-col cursor-grab active:cursor-grabbing transition-all duration-500 ${tabular.isTraining ? 'border-[#f7941e]/40 shadow-[0_0_20px_rgba(247,148,30,0.15)]' : 'border-slate-200'}`}>
                             <div className={`h-1.5 w-full bg-gradient-to-r from-[#f7941e] to-[#fbb034] ${tabular.isTraining ? 'animate-pulse' : ''}`} />
                             <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-amber-50 to-white">
@@ -804,7 +832,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     </div>
 
                     {/* ===== TRAIN NODE ===== */}
-                    <div data-node onPointerDown={e => startNodeDrag(e, 'train-node', trainNodePos)} style={{ left: trainNodePos.x, top: trainNodePos.y, width: 420, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'train-node' ? 'z-40' : 'z-10'}`}>
+                    <div ref={trainNodeRef} data-node onPointerDown={e => startNodeDrag(e, 'train-node', trainNodePos)} style={{ left: trainNodePos.x, top: trainNodePos.y, width: 420, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'train-node' ? 'z-40' : 'z-10'}`}>
                         <div className={`bg-white rounded-xl border shadow-md overflow-hidden flex flex-col cursor-grab active:cursor-grabbing transition-all duration-500 ${tabular.isTraining ? 'border-[#53ad4e]/40 shadow-[0_0_24px_rgba(83,173,78,0.2)] scale-[1.02]' : 'border-slate-200'}`}>
                             <div className={`h-1.5 w-full bg-gradient-to-r from-[#53ad4e] to-[#4caf50] ${tabular.isTraining ? 'animate-pulse' : ''}`} />
                             <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-white">
@@ -828,7 +856,7 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                     </div>
 
                     {/* ===== TEST NODE ===== */}
-                    <div data-node onPointerDown={e => startNodeDrag(e, 'test-node', testNodePos)} style={{ left: testNodePos.x, top: testNodePos.y, width: 420, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'test-node' ? 'z-40' : 'z-10'}`}>
+                    <div ref={testNodeRef} data-node onPointerDown={e => startNodeDrag(e, 'test-node', testNodePos)} style={{ left: testNodePos.x, top: testNodePos.y, width: 420, touchAction: 'none' as any }} className={`absolute select-none ${draggingId === 'test-node' ? 'z-40' : 'z-10'}`}>
                         <div className={`bg-white rounded-xl border shadow-md overflow-hidden flex flex-col cursor-grab active:cursor-grabbing transition-all duration-500 ${tabular.isTraining ? 'border-[#41a2f2]/40 shadow-[0_0_20px_rgba(65,162,242,0.15)]' : 'border-slate-200'}`}>
                             <div className={`h-1.5 w-full bg-gradient-to-r from-[#41a2f2] to-[#2196f3] ${tabular.isTraining ? 'animate-pulse' : ''}`} />
                             <div className="h-11 px-4 flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-blue-50 to-white">
@@ -1080,8 +1108,10 @@ export default function NumberClassifierPanel({ mode }: NumberClassifierPanelPro
                                     <div className="flex items-center gap-2 mt-2">
                                         <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); clearCanvas(); setTimeout(initDrawCanvas, 20) }} className="h-11 px-5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-bold hover:bg-red-100">🗑️ Clear</button>
                                         <span className="text-[11px] text-slate-500 flex-1 text-center truncate">{selectedClass ? `To: ${selectedClass.name}` : 'No folder'}</span>
-                                        <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handlePredictDrawing() }} disabled={isProcessing || modelLoading} className={`h-11 px-5 rounded-xl text-sm font-bold border ${isProcessing ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>{isProcessing ? 'Analyzing…' : '🎯 Predict'}</button>
                                     </div>
+                                    <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handlePredictDrawing() }} disabled={isProcessing || modelLoading} className={`mt-2 w-full h-11 rounded-xl text-sm font-bold border flex items-center justify-center gap-1.5 shadow-sm transition-colors ${isProcessing || modelLoading ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 hover:border-emerald-700'}`}>
+                                        {isProcessing ? 'Analyzing…' : '🎯 Predict'}
+                                    </button>
                                     {selectedClass && (
                                         <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); handleCaptureDrawingForClass(selectedClass.id) }} disabled={selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS} className={`mt-2 w-full h-11 rounded-xl text-sm font-bold border flex items-center justify-center gap-1.5 ${selectedClass.samples.length >= MAX_SAMPLES_PER_CLASS ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-600 hover:from-violet-700 hover:to-indigo-700 shadow-sm'}`}>
                                             ✏️ Save drawing to {selectedClass.name}

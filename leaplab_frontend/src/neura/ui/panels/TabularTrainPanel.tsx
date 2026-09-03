@@ -39,7 +39,7 @@ export default function TabularTrainPanel({
     return (
         <div className={`flex flex-col ${isCompact ? 'py-2 px-2 gap-2' : 'py-3 px-4 gap-3'} overflow-y-auto neura-scrollbar`}>
             {/* Training Config */}
-            <div className={`bg-white/85 backdrop-blur-md rounded-xl border border-gray-200 shrink-0 ${isCompact ? 'p-2' : 'p-3'}`}>
+            <div className={`bg-white/85 backdrop-blur-md rounded-xl border border-gray-200 shrink-0 ${isCompact ? 'p-2' : 'p-3'}`} onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
                 <div className={`grid ${isCompact ? 'grid-cols-2 gap-2' : 'grid-cols-2 gap-3'}`}>
                     {/* Epochs */}
                     <div>
@@ -47,11 +47,11 @@ export default function TabularTrainPanel({
                             <span className={`${isCompact ? 'text-[8px]' : 'text-[10px]'} font-bold text-gray-500 uppercase`}>Epochs</span>
                             <span className={`${isCompact ? 'text-xs' : 'text-sm'} font-extrabold text-[#630ed4]`}>{config.epochs}</span>
                         </div>
-                        <input type="range" min="5" max="200" value={config.epochs} onChange={(e) => onConfigChange(prev => ({ ...prev, epochs: Number(e.target.value) }))} disabled={isTraining} className="w-full h-1.5 rounded-full accent-[#630ed4]" />
+                        <input type="range" min="5" max="200" value={config.epochs} onChange={(e) => onConfigChange(prev => ({ ...prev, epochs: Number(e.target.value) }))} onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} disabled={isTraining} className="w-full h-1.5 rounded-full accent-[#630ed4]" />
                         {!isCompact && <p className="text-[9px] text-gray-400 mt-1 leading-tight">One full pass through your data. Too few → underfits.</p>}
                         <div className="flex gap-1 mt-1">
                             {[10, 25, 50, 100].map(p => (
-                                <button key={p} onClick={() => onConfigChange(prev => ({ ...prev, epochs: p }))} disabled={isTraining} className={`flex-1 ${isCompact ? 'py-0 text-[8px]' : 'py-0.5 text-[9px]'} rounded font-bold border-none ${config.epochs === p ? 'bg-[#630ed4] text-white' : 'bg-violet-100 text-gray-600'}`}>{p}</button>
+                                <button key={p} onClick={() => onConfigChange(prev => ({ ...prev, epochs: p }))} onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} disabled={isTraining} className={`flex-1 ${isCompact ? 'py-0 text-[8px]' : 'py-0.5 text-[9px]'} rounded font-bold border-none ${config.epochs === p ? 'bg-[#630ed4] text-white' : 'bg-violet-100 text-gray-600'}`}>{p}</button>
                             ))}
                         </div>
                     </div>
@@ -64,7 +64,7 @@ export default function TabularTrainPanel({
                         </div>
                         <div className="flex gap-1">
                             {[8, 16, 32, 64].map(bs => (
-                                <button key={bs} onClick={() => onConfigChange(prev => ({ ...prev, batchSize: bs }))} disabled={isTraining} className={`flex-1 ${isCompact ? 'py-1 text-[8px]' : 'py-1.5 text-[10px]'} rounded-lg font-bold border-none transition-all ${config.batchSize === bs ? 'bg-[#630ed4] text-white' : 'bg-violet-100 text-gray-600 hover:bg-violet-200'}`}>{bs}</button>
+                                <button key={bs} onClick={() => onConfigChange(prev => ({ ...prev, batchSize: bs }))} onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} disabled={isTraining} className={`flex-1 ${isCompact ? 'py-1 text-[8px]' : 'py-1.5 text-[10px]'} rounded-lg font-bold border-none transition-all ${config.batchSize === bs ? 'bg-[#630ed4] text-white' : 'bg-violet-100 text-gray-600 hover:bg-violet-200'}`}>{bs}</button>
                             ))}
                         </div>
                         {!isCompact && <p className="text-[9px] text-gray-400 mt-1 leading-tight">Rows processed before each weight update. Larger → smoother but slower.</p>}
@@ -76,7 +76,7 @@ export default function TabularTrainPanel({
                             <span className={`${isCompact ? 'text-[8px]' : 'text-[10px]'} font-bold text-gray-500 uppercase`}>LR</span>
                             <span className={`${isCompact ? 'text-xs' : 'text-sm'} font-extrabold text-[#630ed4]`}>{config.learningRate}</span>
                         </div>
-                        <input type="range" min="0.0001" max="0.1" step="0.0001" value={config.learningRate} onChange={(e) => onConfigChange(prev => ({ ...prev, learningRate: Number(e.target.value) }))} disabled={isTraining} className="w-full h-1.5 rounded-full accent-[#630ed4]" />
+                        <input type="range" min="0.0001" max="0.1" step="0.0001" value={config.learningRate} onChange={(e) => onConfigChange(prev => ({ ...prev, learningRate: Number(e.target.value) }))} onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} disabled={isTraining} className="w-full h-1.5 rounded-full accent-[#630ed4]" />
                         {!isCompact && <p className="text-[9px] text-gray-400 mt-1 leading-tight">How big a correction each step makes. Too high → overshoots.</p>}
                     </div>
 
@@ -86,7 +86,7 @@ export default function TabularTrainPanel({
                             <span className={`${isCompact ? 'text-[8px]' : 'text-[10px]'} font-bold text-gray-500 uppercase`}>Val</span>
                             <span className={`${isCompact ? 'text-xs' : 'text-sm'} font-extrabold text-[#630ed4]`}>{Math.round(config.valSplit * 100)}%</span>
                         </div>
-                        <input type="range" min="0.1" max="0.4" step="0.05" value={config.valSplit} onChange={(e) => onConfigChange(prev => ({ ...prev, valSplit: Number(e.target.value) }))} disabled={isTraining} className="w-full h-1.5 rounded-full accent-[#630ed4]" />
+                        <input type="range" min="0.1" max="0.4" step="0.05" value={config.valSplit} onChange={(e) => onConfigChange(prev => ({ ...prev, valSplit: Number(e.target.value) }))} onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} disabled={isTraining} className="w-full h-1.5 rounded-full accent-[#630ed4]" />
                         {!isCompact && <p className="text-[9px] text-gray-400 mt-1 leading-tight">Portion held out to check if the model generalizes.</p>}
                     </div>
                 </div>
@@ -95,6 +95,8 @@ export default function TabularTrainPanel({
             {/* Train Button */}
             <button
                 onClick={onTrain}
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
                 disabled={isTraining || featureIndices.length === 0}
                 className={`w-full rounded-xl font-bold border-none transition-all shrink-0 ${
                     isCompact ? 'py-2 text-[10px]' : 'py-3 text-xs'
