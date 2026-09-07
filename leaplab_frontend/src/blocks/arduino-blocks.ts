@@ -1445,7 +1445,7 @@ export const arduinoBlocks = [
 
         inputsInline: true,
 
-        output: 'Boolean',
+        output: ['Number', 'Boolean'],
 
         colour: COLORS.sensors,
 
@@ -1509,7 +1509,7 @@ export const arduinoBlocks = [
 
         inputsInline: true,
 
-        output: 'Boolean',
+        output: ['Number', 'Boolean'],
 
         colour: COLORS.sensors,
 
@@ -1533,7 +1533,7 @@ export const arduinoBlocks = [
 
         inputsInline: true,
 
-        output: 'Boolean',
+        output: ['Number', 'Boolean'],
 
         colour: COLORS.sensors,
 
@@ -1589,7 +1589,7 @@ export const arduinoBlocks = [
 
         inputsInline: true,
 
-        output: 'Boolean',
+        output: ['Number', 'Boolean'],
 
         colour: COLORS.sensors,
 

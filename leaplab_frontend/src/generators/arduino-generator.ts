@@ -462,8 +462,6 @@ arduinoGenerator.forBlock['arduino_digital_read'] = function (block) {
 
 };
 
-
-
 arduinoGenerator.forBlock['arduino_pir'] = function (block) {
 
     const pin = block.getFieldValue('PIN');
@@ -472,9 +470,11 @@ arduinoGenerator.forBlock['arduino_pir'] = function (block) {
 
     log('arduino_pir', 'Generating', { pin });
 
-    return [`digitalRead(${pin}) == HIGH`, ORDER_RELATIONAL];
+    return [`((digitalRead(${pin}) == HIGH) ? 1 : 0)`, ORDER_ATOMIC];
 
 };
+
+
 
 arduinoGenerator.forBlock['arduino_ir_obstacle'] = function (block) {
 
@@ -484,7 +484,7 @@ arduinoGenerator.forBlock['arduino_ir_obstacle'] = function (block) {
 
     log('arduino_ir_obstacle', 'Generating', { pin });
 
-    return [`digitalRead(${pin}) == LOW`, ORDER_RELATIONAL];
+    return [`((digitalRead(${pin}) == LOW) ? 1 : 0)`, ORDER_ATOMIC];
 
 };
 
@@ -520,11 +520,11 @@ arduinoGenerator.forBlock['arduino_digital_sensor'] = function (block) {
 
     if (sensor === 'IR') {
 
-        return [`digitalRead(${pin}) == LOW`, ORDER_RELATIONAL];
+        return [`((digitalRead(${pin}) == LOW) ? 1 : 0)`, ORDER_ATOMIC];
 
     }
 
-    return [`digitalRead(${pin}) == HIGH`, ORDER_RELATIONAL];
+    return [`((digitalRead(${pin}) == HIGH) ? 1 : 0)`, ORDER_ATOMIC];
 
 };
 
@@ -1502,7 +1502,7 @@ arduinoGenerator.forBlock['arduino_button'] = function (block) {
 
     log('arduino_button', 'Generating', { pin });
 
-    return [`digitalRead(${pin}) == LOW`, ORDER_RELATIONAL];
+    return [`((digitalRead(${pin}) == LOW) ? 1 : 0)`, ORDER_ATOMIC];
 
 };
 
@@ -1538,7 +1538,7 @@ arduinoGenerator.forBlock['arduino_pir'] = function (block) {
 
     log('arduino_pir', 'Generating', { pin });
 
-    return [`digitalRead(${pin}) == HIGH`, ORDER_RELATIONAL];
+    return [`((digitalRead(${pin}) == HIGH) ? 1 : 0)`, ORDER_ATOMIC];
 
 };
 

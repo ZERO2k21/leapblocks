@@ -1086,12 +1086,14 @@ export class ArduinoRuntime {
       Serial: {
         begin(baud: number): void { self.serialBaud = baud; },
         print(val: any): void {
+          if (typeof val === 'boolean') val = val ? 1 : 0;
           const text = String(val);
           self.serialBuffer += text;
           self.pendingSerialOutput += text;
           self.flushSerial();
         },
         println(val: any = ''): void {
+          if (typeof val === 'boolean') val = val ? 1 : 0;
           const text = String(val) + '\n';
           self.serialBuffer += text;
           self.pendingSerialOutput += text;
@@ -1132,8 +1134,8 @@ export class ArduinoRuntime {
       // Serial1 / Serial2 stubs
       Serial1: {
         begin(_baud: number): void { },
-        print(val: any): void { self.onSerial?.(`[S1] ${val}`); },
-        println(val: any = ''): void { self.onSerial?.(`[S1] ${val}\n`); },
+        print(val: any): void { if (typeof val === 'boolean') val = val ? 1 : 0; self.onSerial?.(`[S1] ${val}`); },
+        println(val: any = ''): void { if (typeof val === 'boolean') val = val ? 1 : 0; self.onSerial?.(`[S1] ${val}\n`); },
         write(_val: any): void { },
         available(): number { return 0; },
         read(): number { return -1; },
