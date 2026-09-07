@@ -256,6 +256,24 @@ arduinoGenerator.finish = function (code: string) {
 
 
 
+// Only add setup entry if key does not exist yet.
+// Used for Serial.begin fallback so an explicit baud-rate block is never
+// duplicated/overridden by the implicit 9600 fallback.
+
+(arduinoGenerator as any).addSetupIfMissing = function (name: string, code: string) {
+
+    if (!this.setups_) this.setups_ = {};
+
+    if (!(name in this.setups_)) {
+
+        this.setups_[name] = code;
+
+    }
+
+};
+
+
+
 // Helper to add definitions/includes
 
 (arduinoGenerator as any).addDefinition = function (name: string, code: string) {
@@ -800,7 +818,7 @@ arduinoGenerator.forBlock['data_setintable'] = function (block, generator) {
 
     const value = generator.valueToCode(block, 'VALUE', ORDER_NONE) || '""';
 
-    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    (arduinoGenerator as any).addSetupIfMissing('serial_begin', '  Serial.begin(9600);');
 
     return `  Serial.print("TABLE_SET:${name},"); Serial.print(${col}); Serial.print(","); Serial.print(${row}); Serial.print(","); Serial.println(${value});\n`;
 
@@ -814,7 +832,7 @@ arduinoGenerator.forBlock['data_addcolumn'] = function (block, generator) {
 
     const col = generator.valueToCode(block, 'COLUMN', ORDER_NONE) || '""';
 
-    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    (arduinoGenerator as any).addSetupIfMissing('serial_begin', '  Serial.begin(9600);');
 
     return `  Serial.print("TABLE_ADD_COL:${name},"); Serial.println(${col});\n`;
 
@@ -828,7 +846,7 @@ arduinoGenerator.forBlock['data_deletecolumn'] = function (block, generator) {
 
     const col = generator.valueToCode(block, 'COLUMN', ORDER_NONE) || '""';
 
-    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    (arduinoGenerator as any).addSetupIfMissing('serial_begin', '  Serial.begin(9600);');
 
     return `  Serial.print("TABLE_DEL_COL:${name},"); Serial.println(${col});\n`;
 
@@ -854,7 +872,7 @@ arduinoGenerator.forBlock['data_showtable'] = function (block) {
 
     const { name } = getVarInfo(block);
 
-    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    (arduinoGenerator as any).addSetupIfMissing('serial_begin', '  Serial.begin(9600);');
 
     return `  Serial.println("TABLE_SHOW:${name}");\n`;
 
@@ -866,7 +884,7 @@ arduinoGenerator.forBlock['data_hidetable'] = function (block) {
 
     const { name } = getVarInfo(block);
 
-    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    (arduinoGenerator as any).addSetupIfMissing('serial_begin', '  Serial.begin(9600);');
 
     return `  Serial.println("TABLE_HIDE:${name}");\n`;
 
@@ -880,7 +898,7 @@ arduinoGenerator.forBlock['data_deleterow'] = function (block, generator) {
 
     const row = generator.valueToCode(block, 'ROW', ORDER_NONE) || '1';
 
-    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    (arduinoGenerator as any).addSetupIfMissing('serial_begin', '  Serial.begin(9600);');
 
     return `  Serial.print("TABLE_DEL_ROW:${name},"); Serial.println(${row});\n`;
 
@@ -892,7 +910,7 @@ arduinoGenerator.forBlock['data_cleartable'] = function (block) {
 
     const { name } = getVarInfo(block);
 
-    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    (arduinoGenerator as any).addSetupIfMissing('serial_begin', '  Serial.begin(9600);');
 
     return `  Serial.println("TABLE_CLEAR:${name}");\n`;
 
@@ -916,7 +934,7 @@ arduinoGenerator.forBlock['data_exporttable'] = function (block) {
 
     const { name } = getVarInfo(block);
 
-    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    (arduinoGenerator as any).addSetupIfMissing('serial_begin', '  Serial.begin(9600);');
 
     return `  Serial.println("TABLE_EXPORT:${name}");\n`;
 
@@ -946,7 +964,11 @@ arduinoGenerator.forBlock['arduino_serial_begin'] = function (block) {
 
     (arduinoGenerator as any).addSetup('serial_begin', `  Serial.begin(${baud});`);
 
-    return `  Serial.begin(${baud});\n`;
+    // NOTE: setup injection (finish()) already emits this line inside
+    // void setup(). Returning it inline as well produced
+    // Serial.begin x2/x3. So emit nothing here.
+
+    return '';
 
 };
 
@@ -958,7 +980,7 @@ arduinoGenerator.forBlock['arduino_serial_print'] = function (block, generator) 
 
     log('arduino_serial_print', 'Generating', { text });
 
-    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    (arduinoGenerator as any).addSetupIfMissing('serial_begin', '  Serial.begin(9600);');
 
     return `  Serial.print(${text});\n`;
 
@@ -972,7 +994,7 @@ arduinoGenerator.forBlock['arduino_serial_println'] = function (block, generator
 
     log('arduino_serial_println', 'Generating', { text });
 
-    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    (arduinoGenerator as any).addSetupIfMissing('serial_begin', '  Serial.begin(9600);');
 
     return `  Serial.println(${text});\n`;
 
@@ -986,7 +1008,7 @@ arduinoGenerator.forBlock['arduino_serial_print_labeled'] = function (block, gen
 
     const value = generator.valueToCode(block, 'VALUE', ORDER_ATOMIC) || '0';
 
-    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    (arduinoGenerator as any).addSetupIfMissing('serial_begin', '  Serial.begin(9600);');
 
     return `  Serial.print(${label});\n  Serial.println(${value});\n`;
 
@@ -998,7 +1020,7 @@ arduinoGenerator.forBlock['arduino_serial_available'] = function () {
 
     log('arduino_serial_available', 'Generating');
 
-    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    (arduinoGenerator as any).addSetupIfMissing('serial_begin', '  Serial.begin(9600);');
 
     return [`Serial.available()`, ORDER_ATOMIC];
 
@@ -1010,7 +1032,7 @@ arduinoGenerator.forBlock['arduino_serial_read'] = function () {
 
     log('arduino_serial_read', 'Generating');
 
-    (arduinoGenerator as any).addSetup('serial_begin_fallback', '  Serial.begin(9600);');
+    (arduinoGenerator as any).addSetupIfMissing('serial_begin', '  Serial.begin(9600);');
 
     return [`Serial.read()`, ORDER_ATOMIC];
 
