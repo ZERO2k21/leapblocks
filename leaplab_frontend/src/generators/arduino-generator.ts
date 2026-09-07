@@ -84,6 +84,8 @@ arduinoGenerator.init = function (workspace: Blockly.Workspace) {
 
     (this as any).setups_ = {};
 
+    (this as any).loopBuffer_ = '';
+
 };
 
 
@@ -218,9 +220,20 @@ arduinoGenerator.finish = function (code: string) {
 
         } else if (hasSetup) {
 
-            // Case 2: Setup exists but no loop (ensure empty loop for linker)
+            // Case 2: Setup exists but no loop.
+            // Nested Forever contents (hoisted) become the loop body.
 
-            finalCode += processedCode + `\nvoid loop() {\n  // main loop\n}\n`;
+            const hoisted = (generator.loopBuffer_ || '');
+
+            if (hoisted.trim()) {
+
+                finalCode += processedCode + `\nvoid loop() {\n${hoisted}}\n`;
+
+            } else {
+
+                finalCode += processedCode + `\nvoid loop() {\n  // main loop\n}\n`;
+
+            }
 
         } else {
 
@@ -231,6 +244,16 @@ arduinoGenerator.finish = function (code: string) {
         }
 
     } else {
+
+        // Top-level loop exists. Merge any nested Forever contents into it.
+
+        const hoisted = (generator.loopBuffer_ || '');
+
+        if (hoisted.trim()) {
+
+            processedCode = processedCode.replace(/void loop\(\)\s*\{/, (m) => `${m}\n${hoisted}`);
+
+        }
 
         finalCode += processedCode;
 
@@ -310,13 +333,17 @@ arduinoGenerator.forBlock['arduino_loop'] = function (block, generator) {
 
 
 
-    // If this block has a parent, it's nested (probably inside setup)
-
-    // In that case, generate a while(true) loop instead of a function definition
+    // Forever must always end up in void loop().
+    // If nested inside setup (or anything else), hoist its contents and
+    // let finish() emit them as void loop() instead of while(true) in setup.
 
     if (block.getParent()) {
 
-        return `  while (true) {\n${doCode}    delay(1);\n  }\n`;
+        const gen: any = (generator as any) || (arduinoGenerator as any);
+
+        gen.loopBuffer_ = (gen.loopBuffer_ || '') + doCode;
+
+        return `  // Forever contents moved to void loop()\n`;
 
     }
 
