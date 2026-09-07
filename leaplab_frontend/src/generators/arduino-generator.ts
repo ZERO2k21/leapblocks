@@ -196,6 +196,35 @@ arduinoGenerator.finish = function (code: string) {
 
 
 
+    // Hoist nested Forever contents (marker sections) out of setup so they
+    // always end up in void loop(). Leave a pointer comment behind.
+
+    const foreverSections: string[] = [];
+
+    processedCode = processedCode.replace(
+        /\/\/ <leapblocks:forever>\n([\s\S]*?)\/\/ <\/leapblocks:forever>\n?/g,
+        (_m, body) => {
+            foreverSections.push(body);
+            return `  // (Forever contents moved to void loop() below)\n`;
+        }
+    );
+
+    // Legacy side-channel buffer (kept for safety across hot reloads).
+
+    if ((generator.loopBuffer_ || '').trim()) {
+
+        foreverSections.push(generator.loopBuffer_);
+
+        generator.loopBuffer_ = '';
+
+    }
+
+    const hoistedLoop = foreverSections.join('');
+
+    const hasHoistedLoop = hoistedLoop.trim().length > 0;
+
+
+
     if (!hasSetup) {
 
         finalCode += `void setup() {\n${setups}\n}\n\n`;
@@ -223,11 +252,9 @@ arduinoGenerator.finish = function (code: string) {
             // Case 2: Setup exists but no loop.
             // Nested Forever contents (hoisted) become the loop body.
 
-            const hoisted = (generator.loopBuffer_ || '');
+            if (hasHoistedLoop) {
 
-            if (hoisted.trim()) {
-
-                finalCode += processedCode + `\nvoid loop() {\n${hoisted}}\n`;
+                finalCode += processedCode + `\nvoid loop() {\n${hoistedLoop}}\n`;
 
             } else {
 
@@ -247,11 +274,9 @@ arduinoGenerator.finish = function (code: string) {
 
         // Top-level loop exists. Merge any nested Forever contents into it.
 
-        const hoisted = (generator.loopBuffer_ || '');
+        if (hasHoistedLoop) {
 
-        if (hoisted.trim()) {
-
-            processedCode = processedCode.replace(/void loop\(\)\s*\{/, (m) => `${m}\n${hoisted}`);
+            processedCode = processedCode.replace(/void loop\(\)\s*\{/, (m) => `${m}\n${hoistedLoop}`);
 
         }
 
@@ -334,8 +359,10 @@ arduinoGenerator.forBlock['arduino_loop'] = function (block, generator) {
 
 
     // Forever must always end up in void loop().
-    // If nested inside setup (or anything else), hoist its contents and
-    // let finish() emit them as void loop() instead of while(true) in setup.
+    // If nested inside setup (or anything else), wrap its contents in markers
+    // so finish() can hoist them into void loop(). Markers are stateless
+    // (no generator-instance side channel), so hoisting survives any
+    // init/finish ordering. finish() strips the markers and leaves a pointer.
 
     if (block.getParent()) {
 
@@ -343,7 +370,7 @@ arduinoGenerator.forBlock['arduino_loop'] = function (block, generator) {
 
         gen.loopBuffer_ = (gen.loopBuffer_ || '') + doCode;
 
-        return `  // Forever contents moved to void loop()\n`;
+        return `  // <leapblocks:forever>\n${doCode}  // </leapblocks:forever>\n`;
 
     }
 
