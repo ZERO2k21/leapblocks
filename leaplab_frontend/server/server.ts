@@ -198,13 +198,121 @@ const HEADER_TO_LIB: Record<string, string> = {
   'PubSubClient.h': 'PubSubClient',
   'ArduinoJson.h': 'ArduinoJson',
   'ESP32Servo.h': 'ESP32Servo',
+  'WebSocketsClient.h': 'WebSockets',
+  'WebSockets.h': 'WebSockets',
+  'WebSocketsServer.h': 'WebSockets',
+  'MFRC522.h': 'MFRC522',
+  'IRremote.h': 'IRremote',
+  'Keypad.h': 'Keypad',
+  'OneWire.h': 'OneWire',
+  'DallasTemperature.h': 'DallasTemperature',
 };
 
-function extractIncludesLocal(code: string): string[] {
+// Framework headers that must NEVER become lib_deps. See project.ts for rationale.
+const BUILTIN_HEADERS_LOCAL: ReadonlySet<string> = new Set([
+  'Arduino.h', 'WProgram.h', 'pins_arduino.h', 'binary.h',
+  'Client.h', 'Server.h', 'Udp.h', 'Stream.h', 'Printable.h', 'Print.h',
+  'WString.h', 'HardwareSerial.h', 'IPAddress.h', 'String.h',
+  'SPI.h', 'Wire.h', 'EEPROM.h', 'SD.h', 'SoftwareSerial.h', 'Servo.h',
+  'BluetoothSerial.h',
+  'WiFi.h', 'WiFiClient.h', 'WiFiClientSecure.h', 'WiFiUdp.h', 'WiFiAP.h',
+  'WiFiGeneric.h', 'WiFiMulti.h', 'WiFiScan.h', 'WiFiServer.h', 'WiFiSTA.h', 'ETH.h',
+  'HTTPClient.h', 'HTTPUpdate.h', 'WebServer.h', 'ESPmDNS.h', 'DNSServer.h',
+  'ArduinoOTA.h', 'Update.h', 'Preferences.h', 'SPIFFS.h', 'LittleFS.h', 'FFat.h',
+  'FS.h', 'SD_MMC.h', 'Ticker.h', 'ESP.h', 'Esp.h',
+  'BLEDevice.h', 'BLEUtils.h', 'BLEServer.h', 'BLEService.h', 'BLECharacteristic.h',
+  'BLE2902.h', 'BLE2901.h', 'BLEAdvertising.h', 'BLEClient.h', 'BLEScan.h',
+  'BLEAddress.h', 'BLEUUID.h', 'BLERemoteService.h', 'BLERemoteCharacteristic.h',
+  'BLEHIDDevice.h', 'BLESecurity.h',
+]);
+
+function isBuiltinHeaderLocal(header: string): boolean {
+  const base = header.split('/').pop()!.trim();
+  if (BUILTIN_HEADERS_LOCAL.has(base)) return true;
+  if (/^(avr|esp_|esp32|freertos|driver|soc|hal|lwip|mbedtls|nvs|spi_flash)\//i.test(header)) return true;
+  if (/^BLE.*\.h$/i.test(base)) return true;
+  if (/^esp_.*\.h$/i.test(base)) return true;
+  return false;
+}
+
+function evalArchConditionLocal(expr: string, isESP32: boolean): boolean | null {
+  const e = expr.trim();
+  const hasESP32 = /ARDUINO_ARCH_ESP32|\bESP32\b|ARDUINO_ESP32/.test(e);
+  const hasAVR = /ARDUINO_ARCH_AVR|__AVR__|ARDUINO_AVR_|ARDUINO_ARCH_MEGA|ARDUINO_ARCH_SAMD|__arm__/.test(e);
+  const hasESP8266 = /ESP8266/.test(e);
+  const negated = /!\s*defined|!\s*\(|not\b/i.test(e);
+  if (hasESP32 && !hasAVR && !hasESP8266) return negated ? !isESP32 : isESP32;
+  if (hasAVR && !hasESP32) return negated ? isESP32 : !isESP32;
+  if (hasESP8266 && !hasESP32 && !hasAVR) return negated ? true : false;
+  if (hasESP32 && hasAVR) {
+    if (/\|\|/.test(e)) return true;
+    if (/&&/.test(e)) return false;
+    return null;
+  }
+  return null;
+}
+
+function stripInactiveArchBlocksLocal(code: string, isESP32: boolean): string {
+  const lines = code.split('\n');
+  const stack: Array<{ parentActive: boolean; taken: boolean; active: boolean }> = [];
+  const cur = () => (stack.length === 0 ? true : stack[stack.length - 1].active);
+  const out: string[] = [];
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    let m: RegExpMatchArray | null;
+    if ((m = line.match(/^#\s*ifdef\s+(\w+)/))) {
+      const c = evalArchConditionLocal(`defined(${m[1]})`, isESP32);
+      const holds = c === null ? true : c;
+      const parent = cur();
+      stack.push({ parentActive: parent, taken: parent && holds, active: parent && holds });
+      out.push(''); continue;
+    }
+    if ((m = line.match(/^#\s*ifndef\s+(\w+)/))) {
+      const c = evalArchConditionLocal(`defined(${m[1]})`, isESP32);
+      const holds = c === null ? true : !c;
+      const parent = cur();
+      stack.push({ parentActive: parent, taken: parent && holds, active: parent && holds });
+      out.push(''); continue;
+    }
+    if ((m = line.match(/^#\s*if\s+(.*)/))) {
+      const c = evalArchConditionLocal(m[1], isESP32);
+      const holds = c === null ? true : c;
+      const parent = cur();
+      stack.push({ parentActive: parent, taken: parent && holds, active: parent && holds });
+      out.push(''); continue;
+    }
+    if ((m = line.match(/^#\s*elif\s+(.*)/))) {
+      const top = stack[stack.length - 1];
+      if (top) {
+        if (!top.parentActive || top.taken) top.active = false;
+        else {
+          const c = evalArchConditionLocal(m[1], isESP32);
+          const holds = c === null ? true : c;
+          top.active = holds; top.taken = holds;
+        }
+      }
+      out.push(''); continue;
+    }
+    if (/^#\s*else\b/.test(line)) {
+      const top = stack[stack.length - 1];
+      if (top) {
+        if (!top.parentActive || top.taken) top.active = false;
+        else { top.active = true; top.taken = true; }
+      }
+      out.push(''); continue;
+    }
+    if (/^#\s*endif\b/.test(line)) { stack.pop(); out.push(''); continue; }
+    out.push(cur() ? rawLine : '');
+  }
+  return out.join('\n');
+}
+
+function extractIncludesLocal(code: string, opts?: { isESP32?: boolean }): string[] {
+  const effective = opts?.isESP32 === undefined ? code : stripInactiveArchBlocksLocal(code, opts.isESP32);
   const headers: string[] = [];
   const re = /#include\s*[<"]([^>"]+)[>"]/g;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(code)) !== null) {
+  while ((m = re.exec(effective)) !== null) {
     const h = m[1].trim().split('/').pop()!;
     if (h.endsWith('.h') || h.endsWith('.hpp')) headers.push(h);
   }
@@ -226,16 +334,18 @@ function headerExistsLocal(header: string, libDirs: string[]): boolean {
   }
   return false;
 }
-function resolveLibDepsLocal(code: string, opts: { libDirs?: string[]; libDeps?: string[] }): string[] {
+function resolveLibDepsLocal(code: string, opts: { libDirs?: string[]; libDeps?: string[]; isESP32?: boolean }): string[] {
   const base = opts.libDeps ? [...opts.libDeps] : [];
   const lower = new Set(base.map(b => b.toLowerCase()));
-  const headers = extractIncludesLocal(code);
+  const headers = extractIncludesLocal(code, opts.isESP32 === undefined ? undefined : { isESP32: opts.isESP32 });
   const libDirs = opts.libDirs || [];
   for (const h of headers) {
+    if (isBuiltinHeaderLocal(h)) continue;
     if (headerExistsLocal(h, libDirs)) continue;
-    if (['Arduino.h', 'SPI.h', 'Wire.h', 'EEPROM.h'].includes(h)) continue;
-    const mapped = HEADER_TO_LIB[h] || h.replace(/\.h$/i, '');
-    if (['Arduino', 'SPI', 'Wire', 'EEPROM'].includes(mapped)) continue;
+    const mapped = HEADER_TO_LIB[h];
+    // Unknown headers: never guess `header minus .h` (that is what turned the
+    // ESP32-core BluetoothSerial.h into the mbed-only registry lib).
+    if (!mapped) continue;
     if (!lower.has(mapped.toLowerCase())) { base.push(mapped); lower.add(mapped.toLowerCase()); }
   }
   return base;
@@ -261,7 +371,7 @@ function createPioProject(
   fs.mkdirSync(srcDir, { recursive: true });
   fs.writeFileSync(path.join(srcDir, 'main.ino'), code, 'utf-8');
 
-  const resolvedDeps = resolveLibDepsLocal(code, opts);
+  const resolvedDeps = resolveLibDepsLocal(code, { ...opts, isESP32: target.platform === 'espressif32' });
   const effectiveDeps = resolvedDeps.length ? resolvedDeps : opts.libDeps;
   const lines = [
     `[env:${target.board}]`,
@@ -828,8 +938,15 @@ app.post('/compile', async (req: Request, res: Response) => {
       if (exitCode !== 0) {
         const combined = (stderr || '') + '\n' + (stdout || '');
         const missing = parseMissingHeaderLocal(combined);
-        if (missing) {
-          const libName = HEADER_TO_LIB[missing] || missing.replace(/\.h$/i, '');
+        if (missing && isBuiltinHeaderLocal(missing)) {
+          console.error(`[COMPILE:${reqId}] ❌ Missing core header ${missing} — not installing a registry lib (it ships with the platform)`);
+        }
+        if (missing && !isBuiltinHeaderLocal(missing)) {
+          const libName = HEADER_TO_LIB[missing];
+          // No explicit mapping → do NOT guess (prevents BluetoothSerial→mbed etc).
+          if (!libName) {
+            console.error(`[COMPILE:${reqId}] ❌ Missing header ${missing} has no known library mapping — not retrying`);
+          } else {
           console.warn(`[COMPILE:${reqId}] Missing header ${missing} → trying library "${libName}"`);
           try {
             if (FORGE_LIB_LIBRARIES) {
@@ -847,6 +964,7 @@ app.post('/compile', async (req: Request, res: Response) => {
           const retry = await runCLI(['run', '-d', projectDir, '-j', '2'], 900_000);
           stdout = retry.stdout; stderr = retry.stderr; exitCode = retry.code;
           pioDuration = ((Date.now() - pioStartTime) / 1000).toFixed(2);
+          }
         }
         if (exitCode !== 0) {
           console.error(`[COMPILE:${reqId}] ❌ Build FAILED (exit ${exitCode}) in ${pioDuration}s`);

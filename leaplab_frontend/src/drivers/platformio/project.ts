@@ -27,6 +27,11 @@ export interface PioProjectOptions {
 }
 
 // ── Header → PlatformIO library name map (covers all bundled libs + common community libs) ─
+// NOTE: Arduino / ESP32 core headers (WiFi.h, BluetoothSerial.h, HTTPClient.h,
+// SPI.h, Wire.h, Servo.h, SoftwareSerial.h, …) are deliberately NOT mapped here.
+// They ship with the platform framework — adding them to lib_deps would make
+// PlatformIO fetch a wrong same-named library from the registry (e.g. the mbed
+// "BluetoothSerial" lib, which needs mbed.h and breaks AVR builds).
 export const HEADER_TO_LIBRARY: Record<string, string> = {
     'RTClib.h': 'RTClib',
     'Adafruit_BusIO_Register.h': 'Adafruit BusIO',
@@ -52,27 +57,163 @@ export const HEADER_TO_LIBRARY: Record<string, string> = {
     'PubSubClient.h': 'PubSubClient',
     'ArduinoJson.h': 'ArduinoJson',
     'ESP32Servo.h': 'ESP32Servo',
-    'Servo.h': 'Servo',
-    'SoftwareSerial.h': 'SoftwareSerial',
-    'WiFi.h': 'WiFi',
-    'HTTPClient.h': 'HTTPClient',
     'WebSocketsClient.h': 'WebSockets',
+    'WebSockets.h': 'WebSockets',
+    'WebSocketsServer.h': 'WebSockets',
     'MFRC522.h': 'MFRC522',
     'IRremote.h': 'IRremote',
     'Keypad.h': 'Keypad',
     'OneWire.h': 'OneWire',
     'DallasTemperature.h': 'DallasTemperature',
-    'SPI.h': 'SPI',
-    'Wire.h': 'Wire',
-    'SD.h': 'SD',
-    'EEPROM.h': 'EEPROM',
 };
 
-export function extractIncludes(code: string): string[] {
+/**
+ * Headers that ship with the Arduino-AVR / ESP32 Arduino cores and must NEVER
+ * be turned into lib_deps. Without this guard, `#include "BluetoothSerial.h"`
+ * (ESP32 core) resolves to the PlatformIO registry lib "BluetoothSerial"
+ * (an mbed-OS lib needing mbed.h) and breaks every AVR build — even when the
+ * include sits inside `#ifdef ARDUINO_ARCH_ESP32`.
+ */
+export const BUILTIN_HEADERS: ReadonlySet<string> = new Set([
+    // Arduino core (all platforms)
+    'Arduino.h', 'WProgram.h', 'pins_arduino.h', 'binary.h',
+    'Client.h', 'Server.h', 'Udp.h', 'Stream.h', 'Printable.h', 'Print.h',
+    'WString.h', 'HardwareSerial.h', 'IPAddress.h', 'String.h',
+    'SPI.h', 'Wire.h', 'EEPROM.h', 'SD.h', 'SoftwareSerial.h', 'Servo.h',
+    // ESP32 Arduino core — networking / BT / BLE / HTTP / FS / system
+    'BluetoothSerial.h',
+    'WiFi.h', 'WiFiClient.h', 'WiFiClientSecure.h', 'WiFiUdp.h', 'WiFiAP.h',
+    'WiFiGeneric.h', 'WiFiMulti.h', 'WiFiScan.h', 'WiFiServer.h', 'WiFiSTA.h', 'ETH.h',
+    'HTTPClient.h', 'HTTPUpdate.h', 'WebServer.h', 'ESPmDNS.h', 'DNSServer.h',
+    'ArduinoOTA.h', 'Update.h', 'Preferences.h', 'SPIFFS.h', 'LittleFS.h', 'FFat.h',
+    'FS.h', 'SD_MMC.h', 'Ticker.h', 'ESP.h', 'Esp.h',
+    'BLEDevice.h', 'BLEUtils.h', 'BLEServer.h', 'BLEService.h', 'BLECharacteristic.h',
+    'BLE2902.h', 'BLE2901.h', 'BLEAdvertising.h', 'BLEClient.h', 'BLEScan.h',
+    'BLEAddress.h', 'BLEUUID.h', 'BLERemoteService.h', 'BLERemoteCharacteristic.h',
+    'BLEHIDDevice.h', 'BLESecurity.h',
+]);
+
+export function isBuiltinHeader(header: string): boolean {
+    const base = header.split('/').pop()!.trim();
+    if (BUILTIN_HEADERS.has(base)) return true;
+    // Framework-internal paths are always builtin.
+    if (/^(avr|esp_|esp32|freertos|driver|soc|hal|lwip|mbedtls|nvs|spi_flash)\//i.test(header)) return true;
+    if (/^BLE.*\.h$/i.test(base)) return true;
+    if (/^esp_.*\.h$/i.test(base)) return true;
+    if (/^soc\/.*|^hal\/.*|^driver\/.*|^freertos\/.*/i.test(header)) return true;
+    return false;
+}
+
+/**
+ * Evaluate an `#if`/`#ifdef` condition for a known target.
+ * Returns true/false when the condition is a recognised architecture guard,
+ * otherwise null (unknown macro → caller must assume the branch is active).
+ */
+function evalArchCondition(expr: string, isESP32: boolean): boolean | null {
+    const e = expr.trim();
+    const hasESP32 = /ARDUINO_ARCH_ESP32|\bESP32\b|ARDUINO_ESP32/.test(e);
+    const hasAVR = /ARDUINO_ARCH_AVR|__AVR__|ARDUINO_AVR_|ARDUINO_ARCH_MEGA|ARDUINO_ARCH_SAMD|__arm__/.test(e);
+    const hasESP8266 = /ESP8266/.test(e);
+    const negated = /!\s*defined|!\s*\(|not\b/i.test(e);
+    if (hasESP32 && !hasAVR && !hasESP8266) return negated ? !isESP32 : isESP32;
+    if (hasAVR && !hasESP32) return negated ? isESP32 : !isESP32;
+    if (hasESP8266 && !hasESP32 && !hasAVR) return negated ? true : false;
+    if (hasESP32 && hasAVR) {
+        // e.g. `#if defined(ESP32) || defined(__AVR__)` → active on both our targets.
+        if (/\|\|/.test(e)) return true;
+        if (/&&/.test(e)) return false;
+        return null;
+    }
+    return null;
+}
+
+interface CondFrame { parentActive: boolean; taken: boolean; active: boolean; }
+
+function currentActive(stack: CondFrame[]): boolean {
+    return stack.length === 0 ? true : stack[stack.length - 1].active;
+}
+
+/**
+ * Keep only the lines that are compiled for the given target, dropping
+ * `#include`s hidden inside inactive `#ifdef ARDUINO_ARCH_*` branches.
+ * Unknown macros are treated as active (safe default — never drop code we
+ * cannot prove is inactive). Used before scanning for library headers.
+ */
+export function stripInactiveArchBlocks(code: string, isESP32: boolean): string {
+    const lines = code.split('\n');
+    const stack: CondFrame[] = [];
+    const out: string[] = [];
+    for (const rawLine of lines) {
+        const line = rawLine.trim();
+        let m: RegExpMatchArray | null;
+        if ((m = line.match(/^#\s*ifdef\s+(\w+)/))) {
+            const cond = evalArchCondition(`defined(${m[1]})`, isESP32);
+            const holds = cond === null ? true : cond;
+            const parent = currentActive(stack);
+            stack.push({ parentActive: parent, taken: parent && holds, active: parent && holds });
+            out.push('');
+            continue;
+        }
+        if ((m = line.match(/^#\s*ifndef\s+(\w+)/))) {
+            const cond = evalArchCondition(`defined(${m[1]})`, isESP32);
+            const holds = cond === null ? true : !cond;
+            const parent = currentActive(stack);
+            stack.push({ parentActive: parent, taken: parent && holds, active: parent && holds });
+            out.push('');
+            continue;
+        }
+        if ((m = line.match(/^#\s*if\s+(.*)/))) {
+            const cond = evalArchCondition(m[1], isESP32);
+            const holds = cond === null ? true : cond;
+            const parent = currentActive(stack);
+            stack.push({ parentActive: parent, taken: parent && holds, active: parent && holds });
+            out.push('');
+            continue;
+        }
+        if ((m = line.match(/^#\s*elif\s+(.*)/))) {
+            const top = stack[stack.length - 1];
+            if (top) {
+                if (!top.parentActive || top.taken) {
+                    top.active = false;
+                } else {
+                    const cond = evalArchCondition(m[1], isESP32);
+                    const holds = cond === null ? true : cond;
+                    top.active = holds;
+                    top.taken = holds;
+                }
+            }
+            out.push('');
+            continue;
+        }
+        if (/^#\s*else\b/.test(line)) {
+            const top = stack[stack.length - 1];
+            if (top) {
+                if (!top.parentActive || top.taken) top.active = false;
+                else { top.active = true; top.taken = true; }
+            }
+            out.push('');
+            continue;
+        }
+        if (/^#\s*endif\b/.test(line)) {
+            stack.pop();
+            out.push('');
+            continue;
+        }
+        out.push(currentActive(stack) ? rawLine : '');
+    }
+    return out.join('\n');
+}
+
+export function isEsp32PioTarget(opts: { board: string; platform: string }): boolean {
+    return opts.platform === 'espressif32' || opts.board.startsWith('esp32');
+}
+
+export function extractIncludes(code: string, opts?: { isESP32?: boolean }): string[] {
+    const effective = opts?.isESP32 === undefined ? code : stripInactiveArchBlocks(code, opts.isESP32);
     const headers: string[] = [];
     const re = /#include\s*[<"]([^>"]+)[>"]/g;
     let m: RegExpExecArray | null;
-    while ((m = re.exec(code)) !== null) {
+    while ((m = re.exec(effective)) !== null) {
         const h = m[1].trim();
         if (h.endsWith('.h') || h.endsWith('.hpp')) {
             const base = h.split('/').pop()!;
@@ -111,22 +252,24 @@ function headerExistsInLibDirs(header: string, libDirs: string[]): boolean {
 export function resolveLibDepsFromCode(code: string, opts: PioProjectOptions): string[] {
     const base = opts.libDeps ? [...opts.libDeps] : [];
     const baseLower = new Set(base.map(b => b.toLowerCase()));
-    const headers = extractIncludes(code);
+    const isESP32 = isEsp32PioTarget({ board: opts.board, platform: opts.platform });
+    // Only scan includes that are actually compiled for this target — guarded
+    // `#ifdef ARDUINO_ARCH_ESP32` blocks must not pull ESP32-only libs into AVR builds.
+    const headers = extractIncludes(code, { isESP32 });
     const libDirs = opts.libDirs || [];
 
     for (const header of headers) {
+        // Core / framework headers never need lib_deps (prevents the
+        // BluetoothSerial→mbed / WiFi→external-WiFi breakage on AVR).
+        if (isBuiltinHeader(header)) continue;
         if (headerExistsInLibDirs(header, libDirs)) continue;
-        // Skip built-in core headers that never need lib_deps
-        if (['Arduino.h', 'SPI.h', 'Wire.h', 'EEPROM.h', 'SoftwareSerial.h', 'Servo.h'].includes(header) && headerExistsInLibDirs(header, libDirs) === false) {
-            // These are either core or bundled; only add if mapping says otherwise
-            // For core headers, don't force lib_deps unless missing in bundled
-            if (['SPI.h', 'Wire.h', 'EEPROM.h'].includes(header)) continue;
-        }
-        const mapped = HEADER_TO_LIBRARY[header] || header.replace(/\.h$/i, '').replace(/\.hpp$/i, '');
+        const mapped = HEADER_TO_LIBRARY[header];
+        // Unknown headers: do NOT guess `header minus .h` — that is what turned
+        // BluetoothSerial.h into the mbed-only "BluetoothSerial" registry lib.
+        // Only auto-add headers we have an explicit mapping for; anything else
+        // surfaces as a real compiler error or via the missing-header retry.
         if (!mapped) continue;
         if (baseLower.has(mapped.toLowerCase())) continue;
-        // Avoid adding core libs that are always available
-        if (['Arduino', 'SPI', 'Wire', 'EEPROM'].includes(mapped)) continue;
         base.push(mapped);
         baseLower.add(mapped.toLowerCase());
     }

@@ -14,7 +14,7 @@ import * as os from 'os';
 import { getPioPathIfAvailable, ensurePlatformIO, getBundledPioEnv, getBundledLibrariesSeedPath } from './ensurePlatformIO';
 import { runPio, platformEnsure, pkgInstallLibrary, pkgUninstallLibrary, PioResult, PioRunOptions } from './pio';
 import { fqbnToPioTarget, isEsp32Fqbn, PioBoardTarget } from './boardMap';
-import { createPioProject, getPioBuildDir, listPioBuildFiles, parseMissingHeaderFromError, HEADER_TO_LIBRARY } from './project';
+import { createPioProject, getPioBuildDir, listPioBuildFiles, parseMissingHeaderFromError, HEADER_TO_LIBRARY, isBuiltinHeader } from './project';
 import { searchRegistry, RegistryLibrary } from './registry';
 import { flashHexViaStk500 } from './stk500';
 import { parseIntelHex } from '../../webflash/intelHex';
@@ -233,8 +233,17 @@ export class ArduinoUploader {
 
         // ── Auto-recovery for missing header (e.g. user typed #include <RTClib.h> but lib not bundled) ─
         const missingHeader = parseMissingHeaderFromError((result.stderr || '') + '\n' + (result.stdout || ''));
+        if (missingHeader && isBuiltinHeader(missingHeader)) {
+            // Core header (e.g. BluetoothSerial.h on AVR) — it ships with the
+            // platform, so installing a same-named registry lib would break the
+            // build (mbed BluetoothSerial needs mbed.h). Surface the real error.
+            throw new Error(this.formatPioError(result));
+        }
         if (missingHeader) {
-            const mappedLib = HEADER_TO_LIBRARY[missingHeader] || missingHeader.replace(/\.h$/i, '');
+            const mappedLib = HEADER_TO_LIBRARY[missingHeader];
+            if (!mappedLib) {
+                throw new Error(this.formatPioError(result));
+            }
             console.warn(`[FORGE UPLOADER] Build failed due to missing header ${missingHeader} → trying library "${mappedLib}"`);
             // Try to install the library into forge-lib (best-effort, then retry via lib_deps)
             try {
