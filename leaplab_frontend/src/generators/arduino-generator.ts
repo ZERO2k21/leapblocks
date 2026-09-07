@@ -209,16 +209,6 @@ arduinoGenerator.finish = function (code: string) {
         }
     );
 
-    // Legacy side-channel buffer (kept for safety across hot reloads).
-
-    if ((generator.loopBuffer_ || '').trim()) {
-
-        foreverSections.push(generator.loopBuffer_);
-
-        generator.loopBuffer_ = '';
-
-    }
-
     const hoistedLoop = foreverSections.join('');
 
     const hasHoistedLoop = hoistedLoop.trim().length > 0;
@@ -360,15 +350,10 @@ arduinoGenerator.forBlock['arduino_loop'] = function (block, generator) {
 
     // Forever must always end up in void loop().
     // If nested inside setup (or anything else), wrap its contents in markers
-    // so finish() can hoist them into void loop(). Markers are stateless
-    // (no generator-instance side channel), so hoisting survives any
-    // init/finish ordering. finish() strips the markers and leaves a pointer.
+    // so finish() can hoist them into void loop(). Markers are stateless,
+    // so hoisting survives any init/finish ordering. finish() strips them.
 
     if (block.getParent()) {
-
-        const gen: any = (generator as any) || (arduinoGenerator as any);
-
-        gen.loopBuffer_ = (gen.loopBuffer_ || '') + doCode;
 
         return `  // <leapblocks:forever>\n${doCode}  // </leapblocks:forever>\n`;
 
